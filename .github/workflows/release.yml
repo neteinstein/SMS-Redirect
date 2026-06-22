@@ -34,6 +34,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           ./gradlew assembleRelease \
+            -PVERSION_CODE=${{ github.run_number }} \
             -Pandroid.injected.signing.store.file=${{ github.workspace }}/app/keystore.jks \
             -Pandroid.injected.signing.store.****** \
             -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
