@@ -39,87 +39,94 @@ class SettingsViewModelTest {
         kotlinx.coroutines.Dispatchers.resetMain()
     }
 
-    private fun createViewModel(): SettingsViewModel {
-        return SettingsViewModel(
+    private fun createViewModel(): SettingsViewModel =
+        SettingsViewModel(
             getSendWhileRoamingUseCase = GetSendWhileRoamingUseCase(settingsRepository),
             setSendWhileRoamingUseCase = SetSendWhileRoamingUseCase(settingsRepository),
             getKeepHistoryUseCase = GetKeepHistoryUseCase(settingsRepository),
             setKeepHistoryUseCase = SetKeepHistoryUseCase(settingsRepository),
             getDefaultPrefixUseCase = GetDefaultPrefixUseCase(settingsRepository),
             setDefaultPrefixUseCase = SetDefaultPrefixUseCase(settingsRepository),
-            getForwardHistoryUseCase = GetForwardHistoryUseCase(historyRepository)
+            getForwardHistoryUseCase = GetForwardHistoryUseCase(historyRepository),
         )
-    }
 
     @Test
-    fun `init observes sendWhileRoaming`() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
-        assertFalse(vm.sendWhileRoaming.value)
-    }
+    fun `init observes sendWhileRoaming`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+            assertFalse(vm.sendWhileRoaming.value)
+        }
 
     @Test
-    fun `init observes keepHistory`() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
-        assertTrue(vm.keepHistory.value)
-    }
+    fun `init observes keepHistory`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+            assertTrue(vm.keepHistory.value)
+        }
 
     @Test
-    fun `init observes defaultPrefix`() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
-        assertEquals("+351", vm.defaultPrefix.value)
-    }
+    fun `init observes defaultPrefix`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+            assertEquals("+351", vm.defaultPrefix.value)
+        }
 
     @Test
-    fun `init observes forwardHistory`() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
-        assertEquals(emptyList<Any>(), vm.forwardHistory.value)
-    }
+    fun `init observes forwardHistory`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+            assertEquals(emptyList<Any>(), vm.forwardHistory.value)
+        }
 
     @Test
-    fun `setSendWhileRoaming updates state`() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
+    fun `setSendWhileRoaming updates state`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
 
-        vm.setSendWhileRoaming(true)
-        advanceUntilIdle()
+            vm.setSendWhileRoaming(true)
+            advanceUntilIdle()
 
-        assertTrue(vm.sendWhileRoaming.value)
-    }
-
-    @Test
-    fun `setKeepHistory updates state`() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
-
-        vm.setKeepHistory(false)
-        advanceUntilIdle()
-
-        assertFalse(vm.keepHistory.value)
-    }
+            assertTrue(vm.sendWhileRoaming.value)
+        }
 
     @Test
-    fun `setDefaultPrefix updates state`() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
+    fun `setKeepHistory updates state`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
 
-        vm.setDefaultPrefix("+44")
-        advanceUntilIdle()
+            vm.setKeepHistory(false)
+            advanceUntilIdle()
 
-        assertEquals("+44", vm.defaultPrefix.value)
-    }
+            assertFalse(vm.keepHistory.value)
+        }
 
     @Test
-    fun `setDefaultPrefix to empty clears prefix`() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
+    fun `setDefaultPrefix updates state`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
 
-        vm.setDefaultPrefix("")
-        advanceUntilIdle()
+            vm.setDefaultPrefix("+44")
+            advanceUntilIdle()
 
-        assertEquals("", vm.defaultPrefix.value)
-    }
+            assertEquals("+44", vm.defaultPrefix.value)
+        }
+
+    @Test
+    fun `setDefaultPrefix to empty clears prefix`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.setDefaultPrefix("")
+            advanceUntilIdle()
+
+            assertEquals("", vm.defaultPrefix.value)
+        }
 }

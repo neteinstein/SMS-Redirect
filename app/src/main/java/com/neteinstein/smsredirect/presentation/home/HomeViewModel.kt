@@ -17,9 +17,8 @@ import kotlinx.coroutines.launch
 class HomeViewModel(
     getRulesUseCase: GetRulesUseCase,
     private val deleteRuleUseCase: DeleteRuleUseCase,
-    private val reorderRulesUseCase: ReorderRulesUseCase
+    private val reorderRulesUseCase: ReorderRulesUseCase,
 ) : ViewModel() {
-
     private val _rules = MutableStateFlow<List<Rule>>(emptyList())
     val rules: StateFlow<List<Rule>> = _rules.asStateFlow()
 
@@ -33,7 +32,10 @@ class HomeViewModel(
         }
     }
 
-    fun moveRule(fromIndex: Int, toIndex: Int) {
+    fun moveRule(
+        fromIndex: Int,
+        toIndex: Int,
+    ) {
         val current = _rules.value.toMutableList()
         if (fromIndex !in current.indices || toIndex !in current.indices) return
         val item = current.removeAt(fromIndex)
@@ -51,7 +53,7 @@ class HomeViewModel(
 class HomeViewModelFactory(
     private val getRulesUseCase: GetRulesUseCase,
     private val deleteRuleUseCase: DeleteRuleUseCase,
-    private val reorderRulesUseCase: ReorderRulesUseCase
+    private val reorderRulesUseCase: ReorderRulesUseCase,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")

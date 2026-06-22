@@ -11,5 +11,5 @@ data class RuleEntity(
     val senderText: String,
     val phoneNumber: String,
     val targetNumber: String,
-    @ColumnInfo(defaultValue = "0") val sortOrder: Int = 0
+    @ColumnInfo(defaultValue = "0") val sortOrder: Int = 0,
 )

@@ -6,7 +6,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
-class FakeRuleRepository(initial: List<Rule> = emptyList()) : RuleRepository {
+class FakeRuleRepository(
+    initial: List<Rule> = emptyList(),
+) : RuleRepository {
     private val rules = MutableStateFlow(initial)
 
     override fun getRules(): Flow<List<Rule>> = rules

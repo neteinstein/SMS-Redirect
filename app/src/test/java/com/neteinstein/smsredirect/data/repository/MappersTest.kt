@@ -8,19 +8,19 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MappersTest {
-
     // --- RuleMappers ---
 
     @Test
     fun `RuleEntity toDomain maps all fields`() {
-        val entity = RuleEntity(
-            id = 5,
-            name = "TestRule",
-            senderText = "BANK",
-            phoneNumber = "+1555",
-            targetNumber = "+351999",
-            sortOrder = 3
-        )
+        val entity =
+            RuleEntity(
+                id = 5,
+                name = "TestRule",
+                senderText = "BANK",
+                phoneNumber = "+1555",
+                targetNumber = "+351999",
+                sortOrder = 3,
+            )
 
         val domain = entity.toDomain()
 
@@ -34,14 +34,15 @@ class MappersTest {
 
     @Test
     fun `Rule toEntity maps all fields`() {
-        val rule = Rule(
-            id = 7,
-            name = "MyRule",
-            senderText = "SHOP",
-            phoneNumber = "+44123",
-            targetNumber = "+351888",
-            sortOrder = 2
-        )
+        val rule =
+            Rule(
+                id = 7,
+                name = "MyRule",
+                senderText = "SHOP",
+                phoneNumber = "+44123",
+                targetNumber = "+351888",
+                sortOrder = 2,
+            )
 
         val entity = rule.toEntity()
 
@@ -55,14 +56,15 @@ class MappersTest {
 
     @Test
     fun `Rule roundtrip preserves all fields`() {
-        val original = Rule(
-            id = 10,
-            name = "Roundtrip",
-            senderText = "X",
-            phoneNumber = "Y",
-            targetNumber = "Z",
-            sortOrder = 99
-        )
+        val original =
+            Rule(
+                id = 10,
+                name = "Roundtrip",
+                senderText = "X",
+                phoneNumber = "Y",
+                targetNumber = "Z",
+                sortOrder = 99,
+            )
 
         val roundtripped = original.toEntity().toDomain()
 
@@ -80,14 +82,15 @@ class MappersTest {
 
     @Test
     fun `ForwardHistoryEntity toDomain maps all fields`() {
-        val entity = ForwardHistoryEntity(
-            id = 3,
-            sender = "BANK",
-            targetNumber = "+351999",
-            messageBody = "Hello World",
-            ruleName = "BankRule",
-            forwardedAtEpochMs = 1719000000000L
-        )
+        val entity =
+            ForwardHistoryEntity(
+                id = 3,
+                sender = "BANK",
+                targetNumber = "+351999",
+                messageBody = "Hello World",
+                ruleName = "BankRule",
+                forwardedAtEpochMs = 1719000000000L,
+            )
 
         val domain = entity.toDomain()
 
@@ -101,14 +104,15 @@ class MappersTest {
 
     @Test
     fun `ForwardHistory toEntity maps all fields`() {
-        val history = ForwardHistory(
-            id = 8,
-            sender = "SHOP",
-            targetNumber = "+44123",
-            messageBody = "Order confirmed",
-            ruleName = "ShopRule",
-            forwardedAtEpochMs = 1719100000000L
-        )
+        val history =
+            ForwardHistory(
+                id = 8,
+                sender = "SHOP",
+                targetNumber = "+44123",
+                messageBody = "Order confirmed",
+                ruleName = "ShopRule",
+                forwardedAtEpochMs = 1719100000000L,
+            )
 
         val entity = history.toEntity()
 
@@ -122,14 +126,15 @@ class MappersTest {
 
     @Test
     fun `ForwardHistory roundtrip preserves all fields`() {
-        val original = ForwardHistory(
-            id = 15,
-            sender = "Test",
-            targetNumber = "999",
-            messageBody = "body",
-            ruleName = "Rule",
-            forwardedAtEpochMs = 123456789L
-        )
+        val original =
+            ForwardHistory(
+                id = 15,
+                sender = "Test",
+                targetNumber = "999",
+                messageBody = "body",
+                ruleName = "Rule",
+                forwardedAtEpochMs = 123456789L,
+            )
 
         val roundtripped = original.toEntity().toDomain()
 

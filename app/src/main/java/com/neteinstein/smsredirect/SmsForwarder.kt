@@ -16,14 +16,17 @@ class SmsForwarder(
     private val findMatchingRuleUseCase: FindMatchingRuleUseCase,
     private val canForwardSmsUseCase: CanForwardSmsUseCase,
     private val getKeepHistoryNowUseCase: GetKeepHistoryNowUseCase,
-    private val recordForwardHistoryUseCase: RecordForwardHistoryUseCase
+    private val recordForwardHistoryUseCase: RecordForwardHistoryUseCase,
 ) {
-
     companion object {
         private const val TAG = "SmsForwarder"
     }
 
-    suspend fun forward(context: Context, sender: String?, body: String) {
+    suspend fun forward(
+        context: Context,
+        sender: String?,
+        body: String,
+    ) {
         Log.d(TAG, "forward() called — sender='$sender', bodyLength=${body.length}")
 
         if (body.isBlank()) {
@@ -77,7 +80,7 @@ class SmsForwarder(
                     sender = sender.orEmpty(),
                     targetNumber = rule.targetNumber,
                     messageBody = body,
-                    ruleName = rule.name
+                    ruleName = rule.name,
                 )
                 Log.d(TAG, "Forward saved to history")
             } else {

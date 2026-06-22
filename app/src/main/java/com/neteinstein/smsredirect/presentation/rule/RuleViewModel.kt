@@ -4,11 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.smsredirect.domain.model.Rule
+import com.neteinstein.smsredirect.domain.repository.RuleRepository
 import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
-import com.neteinstein.smsredirect.domain.repository.RuleRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +21,7 @@ data class RuleUiState(
     val senderText: String = "",
     val targetNumber: String = "",
     val error: String? = null,
-    val saved: Boolean = false
+    val saved: Boolean = false,
 )
 
 class RuleViewModel(
@@ -30,9 +30,8 @@ class RuleViewModel(
     private val updateRuleUseCase: UpdateRuleUseCase,
     private val ruleRepository: RuleRepository,
     private val getDefaultPrefixNowUseCase: GetDefaultPrefixNowUseCase,
-    private val defaultRuleNameProvider: (Int) -> String = { "Rule #$it" }
+    private val defaultRuleNameProvider: (Int) -> String = { "Rule #$it" },
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(RuleUiState())
     val uiState: StateFlow<RuleUiState> = _uiState.asStateFlow()
 
@@ -46,7 +45,7 @@ class RuleViewModel(
                     id = rule.id,
                     name = rule.name,
                     senderText = sender,
-                    targetNumber = rule.targetNumber
+                    targetNumber = rule.targetNumber,
                 )
             }
         }
@@ -75,17 +74,19 @@ class RuleViewModel(
             val prefix = getDefaultPrefixNowUseCase()
             val senderValue = normalizePhoneNumber(current.senderText.trim(), prefix)
             val targetValue = normalizePhoneNumber(current.targetNumber.trim(), prefix)
-            val name = current.name.trim().ifBlank {
-                val count = ruleRepository.getRuleCount()
-                defaultRuleNameProvider(count + 1)
-            }
-            val rule = Rule(
-                id = current.id,
-                name = name,
-                senderText = senderValue,
-                phoneNumber = senderValue,
-                targetNumber = targetValue
-            )
+            val name =
+                current.name.trim().ifBlank {
+                    val count = ruleRepository.getRuleCount()
+                    defaultRuleNameProvider(count + 1)
+                }
+            val rule =
+                Rule(
+                    id = current.id,
+                    name = name,
+                    senderText = senderValue,
+                    phoneNumber = senderValue,
+                    targetNumber = targetValue,
+                )
             val result = if (rule.id == 0L) addRuleUseCase(rule) else updateRuleUseCase(rule)
             if (result.isSuccess) {
                 _uiState.update { it.copy(saved = true, error = null) }
@@ -105,7 +106,10 @@ class RuleViewModel(
          * but has no country code prefix (+), prepend the configured prefix.
          * When prefix is empty (None), the number is returned as-is.
          */
-        fun normalizePhoneNumber(value: String, prefix: String = ""): String {
+        fun normalizePhoneNumber(
+            value: String,
+            prefix: String = "",
+        ): String {
             if (value.isBlank()) return value
             if (value.startsWith("+")) return value
             if (prefix.isBlank()) return value
@@ -136,7 +140,7 @@ class RuleViewModelFactory(
     private val updateRuleUseCase: UpdateRuleUseCase,
     private val ruleRepository: RuleRepository,
     private val getDefaultPrefixNowUseCase: GetDefaultPrefixNowUseCase,
-    private val defaultRuleNameProvider: (Int) -> String = { "Rule #$it" }
+    private val defaultRuleNameProvider: (Int) -> String = { "Rule #$it" },
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
@@ -146,7 +150,7 @@ class RuleViewModelFactory(
             updateRuleUseCase = updateRuleUseCase,
             ruleRepository = ruleRepository,
             getDefaultPrefixNowUseCase = getDefaultPrefixNowUseCase,
-            defaultRuleNameProvider = defaultRuleNameProvider
+            defaultRuleNameProvider = defaultRuleNameProvider,
         ) as T
     }
 }

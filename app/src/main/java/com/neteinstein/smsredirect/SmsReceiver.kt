@@ -11,12 +11,14 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 class SmsReceiver : BroadcastReceiver() {
-
     companion object {
         private const val TAG = "SmsReceiver"
     }
 
-    override fun onReceive(context: Context, intent: Intent?) {
+    override fun onReceive(
+        context: Context,
+        intent: Intent?,
+    ) {
         Log.d(TAG, "onReceive triggered — action=${intent?.action}")
 
         if (intent?.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) {

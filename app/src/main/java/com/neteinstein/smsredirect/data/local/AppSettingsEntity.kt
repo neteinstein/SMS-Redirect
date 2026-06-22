@@ -9,5 +9,5 @@ data class AppSettingsEntity(
     @PrimaryKey val id: Int = 1,
     @ColumnInfo(defaultValue = "0") val sendWhileRoaming: Boolean = false,
     @ColumnInfo(defaultValue = "1") val keepHistory: Boolean = true,
-    @ColumnInfo(defaultValue = "+351") val defaultPrefix: String = "+351"
+    @ColumnInfo(defaultValue = "+351") val defaultPrefix: String = "+351",
 )

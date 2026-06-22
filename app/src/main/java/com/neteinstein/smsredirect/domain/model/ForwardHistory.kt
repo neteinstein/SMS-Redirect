@@ -6,5 +6,5 @@ data class ForwardHistory(
     val targetNumber: String = "",
     val messageBody: String = "",
     val ruleName: String = "",
-    val forwardedAtEpochMs: Long = 0
+    val forwardedAtEpochMs: Long = 0,
 )
