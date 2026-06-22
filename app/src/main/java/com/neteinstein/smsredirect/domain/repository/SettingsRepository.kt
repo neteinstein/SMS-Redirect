@@ -20,4 +20,10 @@ interface SettingsRepository {
     suspend fun getDefaultPrefix(): String
 
     suspend fun setDefaultPrefix(prefix: String)
+
+    fun observeForwardPrefix(): Flow<String>
+
+    suspend fun getForwardPrefix(): String
+
+    suspend fun setForwardPrefix(prefix: String)
 }

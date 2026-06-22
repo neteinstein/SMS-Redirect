@@ -23,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -116,6 +117,32 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
+                val showNotificationAccessDialog =
+                    remember {
+                        mutableStateOf(!isNotificationListenerEnabled())
+                    }
+
+                if (showNotificationAccessDialog.value) {
+                    AlertDialog(
+                        onDismissRequest = { showNotificationAccessDialog.value = false },
+                        title = { Text(stringResource(R.string.notification_access_title)) },
+                        text = { Text(stringResource(R.string.notification_access_message)) },
+                        dismissButton = {
+                            TextButton(onClick = { showNotificationAccessDialog.value = false }) {
+                                Text(stringResource(R.string.action_cancel))
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showNotificationAccessDialog.value = false
+                                openNotificationListenerSettings()
+                            }) {
+                                Text(stringResource(R.string.action_open_screen))
+                            }
+                        },
+                    )
+                }
+
                 NavHost(navController = navController, startDestination = Routes.Splash) {
                     composable(Routes.Splash) {
                         SplashScreen()
@@ -176,6 +203,8 @@ class MainActivity : ComponentActivity() {
                                         appContainer.setKeepHistoryUseCase,
                                         appContainer.getDefaultPrefixUseCase,
                                         appContainer.setDefaultPrefixUseCase,
+                                        appContainer.getForwardPrefixUseCase,
+                                        appContainer.setForwardPrefixUseCase,
                                         appContainer.getForwardHistoryUseCase,
                                     ),
                             )
@@ -197,15 +226,18 @@ class MainActivity : ComponentActivity() {
                         val sendWhileRoaming by settingsViewModel.sendWhileRoaming.collectAsState()
                         val keepHistory by settingsViewModel.keepHistory.collectAsState()
                         val defaultPrefix by settingsViewModel.defaultPrefix.collectAsState()
+                        val forwardPrefix by settingsViewModel.forwardPrefix.collectAsState()
                         val forwardHistory by settingsViewModel.forwardHistory.collectAsState()
                         SettingsScreen(
                             missingPermissions = missingPerms,
                             sendWhileRoaming = sendWhileRoaming,
                             keepHistory = keepHistory,
+                            forwardPrefix = forwardPrefix,
                             defaultPrefix = defaultPrefix,
                             forwardHistory = forwardHistory,
                             onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming,
                             onKeepHistoryChanged = settingsViewModel::setKeepHistory,
+                            onForwardPrefixSaved = settingsViewModel::setForwardPrefix,
                             onDefaultPrefixChanged = settingsViewModel::setDefaultPrefix,
                             onBack = { navController.popBackStack() },
                         )
@@ -315,7 +347,12 @@ class MainActivity : ComponentActivity() {
                                     requestTargetContactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
                                 }
                             },
-                            onSave = { ruleViewModel.saveRule(getString(R.string.rule_error_invalid_target)) },
+                            onSave = {
+                                ruleViewModel.saveRule(
+                                    invalidTargetError = getString(R.string.rule_error_invalid_target),
+                                    duplicateRuleError = getString(R.string.rule_error_duplicate),
+                                )
+                            },
                             onBack = { navController.popBackStack() },
                         )
                     }
@@ -349,11 +386,20 @@ class MainActivity : ComponentActivity() {
             }.orEmpty()
     }
 
-    private fun currentMissingPermissions(): List<String> =
-        requiredPermissions
-            .filter {
-                ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-            }.map { it.removePrefix("android.permission.") }
+    private fun currentMissingPermissions(): List<String> {
+        val missing =
+            requiredPermissions
+                .filter {
+                    ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+                }.map { it.removePrefix("android.permission.") }
+                .toMutableList()
+
+        if (!isNotificationListenerEnabled()) {
+            missing.add("NOTIFICATION_ACCESS")
+        }
+
+        return missing
+    }
 
     private fun shouldShowBatteryOptimizationDialog(): Boolean {
         val powerManager = getSystemService(POWER_SERVICE) as? PowerManager ?: return false
@@ -392,6 +438,17 @@ class MainActivity : ComponentActivity() {
             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                 data = Uri.parse("package:$packageName")
             }
+        runCatching { startActivity(intent) }
+    }
+
+    private fun isNotificationListenerEnabled(): Boolean {
+        val componentName = ComponentName(this, RcsNotificationListener::class.java)
+        val enabledListeners = NotificationManagerCompat.getEnabledListenerPackages(this)
+        return packageName in enabledListeners
+    }
+
+    private fun openNotificationListenerSettings() {
+        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
         runCatching { startActivity(intent) }
     }
 

@@ -5,10 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 import android.util.Log
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 
 class SmsReceiver : BroadcastReceiver() {
     companion object {
@@ -37,17 +33,6 @@ class SmsReceiver : BroadcastReceiver() {
 
         Log.i(TAG, "SMS received from='$sender', bodyLength=${body.length}")
 
-        val pendingResult = goAsync()
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-        scope.launch {
-            try {
-                val app = context.applicationContext as SmsRedirectApplication
-                app.appContainer.smsForwarder.forward(context, sender, body)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error during SMS forwarding", e)
-            } finally {
-                pendingResult.finish()
-            }
-        }
+        ForwardSmsWorker.enqueue(context, sender, body)
     }
 }
