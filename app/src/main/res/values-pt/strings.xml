@@ -2,6 +2,8 @@
     <string name="app_name">Redirecionador SMS</string>
     <string name="battery_optimization_title">Desativar otimização de bateria</string>
     <string name="battery_optimization_message">Para manter o redirecionamento de SMS confiável, desative a otimização de bateria para esta app.</string>
+    <string name="notification_access_title">Ativar acesso a notificações</string>
+    <string name="notification_access_message">Para captar mensagens RCS do Google Mensagens, esta app precisa de acesso a notificações. Isto permite ler notificações de mensagens recebidas e reencaminhá-las.</string>
     <string name="action_cancel">Cancelar</string>
     <string name="action_back">Voltar</string>
     <string name="action_ok">OK</string>

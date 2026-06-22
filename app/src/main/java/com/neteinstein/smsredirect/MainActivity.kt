@@ -23,6 +23,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.res.stringResource
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -105,6 +106,31 @@ class MainActivity : ComponentActivity() {
                         TextButton(onClick = {
                             showBatteryDialog.value = false
                             openBatteryOptimizationSettings()
+                        }) {
+                            Text(stringResource(R.string.action_open_screen))
+                        }
+                    }
+                )
+            }
+
+            val showNotificationAccessDialog = remember {
+                mutableStateOf(!isNotificationListenerEnabled())
+            }
+
+            if (showNotificationAccessDialog.value) {
+                AlertDialog(
+                    onDismissRequest = { showNotificationAccessDialog.value = false },
+                    title = { Text(stringResource(R.string.notification_access_title)) },
+                    text = { Text(stringResource(R.string.notification_access_message)) },
+                    dismissButton = {
+                        TextButton(onClick = { showNotificationAccessDialog.value = false }) {
+                            Text(stringResource(R.string.action_cancel))
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showNotificationAccessDialog.value = false
+                            openNotificationListenerSettings()
                         }) {
                             Text(stringResource(R.string.action_open_screen))
                         }
@@ -336,11 +362,18 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun currentMissingPermissions(): List<String> {
-        return requiredPermissions
+        val missing = requiredPermissions
             .filter {
                 ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
             }
             .map { it.removePrefix("android.permission.") }
+            .toMutableList()
+
+        if (!isNotificationListenerEnabled()) {
+            missing.add("NOTIFICATION_ACCESS")
+        }
+
+        return missing
     }
 
     private fun shouldShowBatteryOptimizationDialog(): Boolean {
@@ -379,6 +412,17 @@ class MainActivity : ComponentActivity() {
         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = Uri.parse("package:$packageName")
         }
+        runCatching { startActivity(intent) }
+    }
+
+    private fun isNotificationListenerEnabled(): Boolean {
+        val componentName = ComponentName(this, RcsNotificationListener::class.java)
+        val enabledListeners = NotificationManagerCompat.getEnabledListenerPackages(this)
+        return packageName in enabledListeners
+    }
+
+    private fun openNotificationListenerSettings() {
+        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
         runCatching { startActivity(intent) }
     }
 

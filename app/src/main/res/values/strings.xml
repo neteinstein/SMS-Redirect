@@ -2,6 +2,8 @@
     <string name="app_name">SMS Redirect</string>
     <string name="battery_optimization_title">Disable battery optimization</string>
     <string name="battery_optimization_message">To keep SMS forwarding reliable, disable battery optimization for this app.</string>
+    <string name="notification_access_title">Enable notification access</string>
+    <string name="notification_access_message">To capture RCS messages from Google Messages, this app needs notification access. This allows it to read incoming message notifications and forward them.</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_back">Back</string>
     <string name="action_ok">OK</string>
