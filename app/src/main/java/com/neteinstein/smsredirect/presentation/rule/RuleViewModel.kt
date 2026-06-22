@@ -61,12 +61,17 @@ class RuleViewModel(
     }
 
     fun onTargetChanged(value: String) {
-        _uiState.update { it.copy(targetNumber = value, error = null) }
+        val filtered = value.filter { it.isDigit() || it in "+- ()" }
+        _uiState.update { it.copy(targetNumber = filtered, error = null) }
     }
 
-    fun saveRule() {
+    fun saveRule(invalidTargetError: String = "Target must be a valid phone number") {
         viewModelScope.launch {
             val current = uiState.value
+            if (!isValidPhoneNumber(current.targetNumber.trim())) {
+                _uiState.update { it.copy(error = invalidTargetError) }
+                return@launch
+            }
             val prefix = getDefaultPrefixNowUseCase()
             val senderValue = normalizePhoneNumber(current.senderText.trim(), prefix)
             val targetValue = normalizePhoneNumber(current.targetNumber.trim(), prefix)
@@ -109,6 +114,18 @@ class RuleViewModel(
             val nonDigits = value.count { !it.isDigit() && it != ' ' && it != '-' && it != '(' && it != ')' }
             if (nonDigits > 0) return value
             return "$prefix$digitsOnly"
+        }
+
+        /**
+         * Validates that the value is a phone number pattern:
+         * must contain at least 4 digits, and only digits, +, spaces, dashes, and parentheses.
+         */
+        fun isValidPhoneNumber(value: String): Boolean {
+            if (value.isBlank()) return false
+            val allowed = value.all { it.isDigit() || it in "+- ()" }
+            if (!allowed) return false
+            val digitCount = value.count(Char::isDigit)
+            return digitCount >= 4
         }
     }
 }
