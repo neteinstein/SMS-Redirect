@@ -64,7 +64,8 @@ class RuleViewModel(
     fun saveRule() {
         viewModelScope.launch {
             val current = uiState.value
-            val senderValue = current.senderText.trim()
+            val senderValue = normalizePhoneNumber(current.senderText.trim())
+            val targetValue = normalizePhoneNumber(current.targetNumber.trim())
             val name = current.name.trim().ifBlank {
                 val count = ruleRepository.getRuleCount()
                 "Rule #${count + 1}"
@@ -74,7 +75,7 @@ class RuleViewModel(
                 name = name,
                 senderText = senderValue,
                 phoneNumber = senderValue,
-                targetNumber = current.targetNumber.trim()
+                targetNumber = targetValue
             )
             val result = if (rule.id == 0L) addRuleUseCase(rule) else updateRuleUseCase(rule)
             if (result.isSuccess) {
@@ -87,6 +88,25 @@ class RuleViewModel(
 
     fun clearSavedFlag() {
         _uiState.update { it.copy(saved = false) }
+    }
+
+    companion object {
+        private const val DEFAULT_COUNTRY_CODE = "+351"
+
+        /**
+         * If the value looks like a phone number (digits only, optionally starting with 0)
+         * but has no country code prefix (+), prepend the default country code.
+         */
+        fun normalizePhoneNumber(value: String): String {
+            if (value.isBlank()) return value
+            if (value.startsWith("+")) return value
+            val digitsOnly = value.filter(Char::isDigit)
+            if (digitsOnly.length < 4) return value
+            // Only prepend if it looks like a phone number (mostly digits)
+            val nonDigits = value.count { !it.isDigit() && it != ' ' && it != '-' && it != '(' && it != ')' }
+            if (nonDigits > 0) return value
+            return "$DEFAULT_COUNTRY_CODE$digitsOnly"
+        }
     }
 }
 

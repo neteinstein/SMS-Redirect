@@ -114,4 +114,39 @@ class RuleViewModelTest {
         val savedRule = repository.getRulesSnapshot().first()
         assertEquals("My Custom Rule", savedRule.name)
     }
+
+    @Test
+    fun `normalizePhoneNumber prepends country code for local numbers`() {
+        assertEquals("+351912345678", RuleViewModel.normalizePhoneNumber("912345678"))
+        assertEquals("+351912345678", RuleViewModel.normalizePhoneNumber("912 345 678"))
+        assertEquals("+351912345678", RuleViewModel.normalizePhoneNumber("912-345-678"))
+    }
+
+    @Test
+    fun `normalizePhoneNumber preserves numbers with country code`() {
+        assertEquals("+351912345678", RuleViewModel.normalizePhoneNumber("+351912345678"))
+        assertEquals("+44123456789", RuleViewModel.normalizePhoneNumber("+44123456789"))
+    }
+
+    @Test
+    fun `normalizePhoneNumber does not modify text senders`() {
+        assertEquals("BANK", RuleViewModel.normalizePhoneNumber("BANK"))
+        assertEquals("MyCompany", RuleViewModel.normalizePhoneNumber("MyCompany"))
+        assertEquals("", RuleViewModel.normalizePhoneNumber(""))
+    }
+
+    @Test
+    fun `save prepends country code to target number`() = runTest {
+        val repository = FakeRuleRepository()
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository)
+
+        vm.onSenderChanged("BANK")
+        vm.onTargetChanged("912345678")
+        vm.saveRule()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.saved)
+        val savedRule = repository.getRulesSnapshot().first()
+        assertEquals("+351912345678", savedRule.targetNumber)
+    }
 }
