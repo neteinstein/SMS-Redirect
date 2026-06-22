@@ -7,6 +7,7 @@ import com.neteinstein.smsredirect.domain.model.Rule
 import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
+import com.neteinstein.smsredirect.domain.repository.RuleRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,6 +16,7 @@ import kotlinx.coroutines.launch
 
 data class RuleUiState(
     val id: Long = 0,
+    val name: String = "",
     val senderText: String = "",
     val targetNumber: String = "",
     val error: String? = null,
@@ -24,7 +26,8 @@ data class RuleUiState(
 class RuleViewModel(
     private val getRuleUseCase: GetRuleUseCase,
     private val addRuleUseCase: AddRuleUseCase,
-    private val updateRuleUseCase: UpdateRuleUseCase
+    private val updateRuleUseCase: UpdateRuleUseCase,
+    private val ruleRepository: RuleRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RuleUiState())
@@ -38,11 +41,16 @@ class RuleViewModel(
             _uiState.update {
                 it.copy(
                     id = rule.id,
+                    name = rule.name,
                     senderText = sender,
                     targetNumber = rule.targetNumber
                 )
             }
         }
+    }
+
+    fun onNameChanged(value: String) {
+        _uiState.update { it.copy(name = value, error = null) }
     }
 
     fun onSenderChanged(value: String) {
@@ -57,8 +65,13 @@ class RuleViewModel(
         viewModelScope.launch {
             val current = uiState.value
             val senderValue = current.senderText.trim()
+            val name = current.name.trim().ifBlank {
+                val count = ruleRepository.getRuleCount()
+                "Rule #${count + 1}"
+            }
             val rule = Rule(
                 id = current.id,
+                name = name,
                 senderText = senderValue,
                 phoneNumber = senderValue,
                 targetNumber = current.targetNumber.trim()
@@ -80,10 +93,11 @@ class RuleViewModel(
 class RuleViewModelFactory(
     private val getRuleUseCase: GetRuleUseCase,
     private val addRuleUseCase: AddRuleUseCase,
-    private val updateRuleUseCase: UpdateRuleUseCase
+    private val updateRuleUseCase: UpdateRuleUseCase,
+    private val ruleRepository: RuleRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
-        return RuleViewModel(getRuleUseCase, addRuleUseCase, updateRuleUseCase) as T
+        return RuleViewModel(getRuleUseCase, addRuleUseCase, updateRuleUseCase, ruleRepository) as T
     }
 }

@@ -15,6 +15,8 @@ class FakeRuleRepository(initial: List<Rule> = emptyList()) : RuleRepository {
 
     override suspend fun getRulesSnapshot(): List<Rule> = rules.value
 
+    override suspend fun getRuleCount(): Int = rules.value.size
+
     override suspend fun insert(rule: Rule) {
         val nextId = (rules.value.maxOfOrNull { it.id } ?: 0L) + 1L
         rules.update { listOf(rule.copy(id = nextId)) + it }
@@ -22,6 +24,10 @@ class FakeRuleRepository(initial: List<Rule> = emptyList()) : RuleRepository {
 
     override suspend fun update(rule: Rule) {
         rules.update { list -> list.map { if (it.id == rule.id) rule else it } }
+    }
+
+    override suspend fun updateAll(rules: List<Rule>) {
+        this.rules.value = rules
     }
 
     override suspend fun delete(rule: Rule) {

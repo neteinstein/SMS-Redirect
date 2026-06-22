@@ -37,7 +37,7 @@ class RuleViewModelTest {
         val repository = FakeRuleRepository(
             listOf(Rule(id = 1, senderText = "BANK", phoneNumber = "123", targetNumber = "777"))
         )
-        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository))
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository)
 
         vm.loadRule(1)
         advanceUntilIdle()
@@ -49,7 +49,7 @@ class RuleViewModelTest {
     @Test
     fun `save validates and reports error`() = runTest {
         val repository = FakeRuleRepository()
-        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository))
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository)
 
         vm.saveRule()
         advanceUntilIdle()
@@ -62,7 +62,7 @@ class RuleViewModelTest {
         val repository = FakeRuleRepository(
             listOf(Rule(id = 2, senderText = "", phoneNumber = "+1555123", targetNumber = "999"))
         )
-        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository))
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository)
 
         vm.loadRule(2)
         advanceUntilIdle()
@@ -74,7 +74,7 @@ class RuleViewModelTest {
     @Test
     fun `save inserts valid rule`() = runTest {
         val repository = FakeRuleRepository()
-        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository))
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository)
 
         vm.onSenderChanged("SHOP")
         vm.onTargetChanged("444")
@@ -82,5 +82,36 @@ class RuleViewModelTest {
         advanceUntilIdle()
 
         assertTrue(vm.uiState.value.saved)
+    }
+
+    @Test
+    fun `save generates default name when empty`() = runTest {
+        val repository = FakeRuleRepository()
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository)
+
+        vm.onSenderChanged("TEST")
+        vm.onTargetChanged("555")
+        vm.saveRule()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.saved)
+        val savedRule = repository.getRulesSnapshot().first()
+        assertEquals("Rule #1", savedRule.name)
+    }
+
+    @Test
+    fun `save preserves custom name`() = runTest {
+        val repository = FakeRuleRepository()
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository)
+
+        vm.onNameChanged("My Custom Rule")
+        vm.onSenderChanged("BANK")
+        vm.onTargetChanged("999")
+        vm.saveRule()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.saved)
+        val savedRule = repository.getRulesSnapshot().first()
+        assertEquals("My Custom Rule", savedRule.name)
     }
 }

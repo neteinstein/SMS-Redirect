@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun RuleScreen(
     uiState: RuleUiState,
+    onNameChanged: (String) -> Unit,
     onSenderChanged: (String) -> Unit,
     onTargetChanged: (String) -> Unit,
     onPickSenderContact: () -> Unit,
@@ -44,6 +45,13 @@ fun RuleScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            OutlinedTextField(
+                value = uiState.name,
+                onValueChange = onNameChanged,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Rule Name") },
+                placeholder = { Text("Optional - auto-generated if empty") }
+            )
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
