@@ -37,6 +37,7 @@ import com.neteinstein.smsredirect.presentation.settings.SettingsScreen
 import com.neteinstein.smsredirect.presentation.settings.SettingsViewModel
 import com.neteinstein.smsredirect.presentation.settings.SettingsViewModelFactory
 import com.neteinstein.smsredirect.presentation.splash.SplashScreen
+import com.neteinstein.smsredirect.presentation.theme.SmsRedirectTheme
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
@@ -60,6 +61,7 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
+            SmsRedirectTheme {
             val appContainer = (application as SmsRedirectApplication).appContainer
             val navController = rememberNavController()
             val showBatteryDialog = remember { mutableStateOf(shouldShowBatteryOptimizationDialog()) }
@@ -145,20 +147,37 @@ class MainActivity : ComponentActivity() {
 
                     val uiState by ruleViewModel.uiState.collectAsState()
 
-                    val pickContactLauncher = rememberLauncherForActivityResult(
+                    val pickSenderContactLauncher = rememberLauncherForActivityResult(
                         contract = ActivityResultContracts.PickContact()
                     ) { uri ->
                         if (uri != null) {
                             val number = resolvePhoneNumber(uri)
-                            if (number.isNotBlank()) ruleViewModel.onPhoneChanged(number)
+                            if (number.isNotBlank()) ruleViewModel.onSenderChanged(number)
                         }
                     }
 
-                    val requestContactsPermissionLauncher = rememberLauncherForActivityResult(
+                    val pickTargetContactLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.PickContact()
+                    ) { uri ->
+                        if (uri != null) {
+                            val number = resolvePhoneNumber(uri)
+                            if (number.isNotBlank()) ruleViewModel.onTargetChanged(number)
+                        }
+                    }
+
+                    val requestSenderContactsPermissionLauncher = rememberLauncherForActivityResult(
                         contract = ActivityResultContracts.RequestPermission()
                     ) { granted ->
                         if (granted) {
-                            pickContactLauncher.launch(null)
+                            pickSenderContactLauncher.launch(null)
+                        }
+                    }
+
+                    val requestTargetContactsPermissionLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.RequestPermission()
+                    ) { granted ->
+                        if (granted) {
+                            pickTargetContactLauncher.launch(null)
                         }
                     }
 
@@ -176,22 +195,33 @@ class MainActivity : ComponentActivity() {
                     RuleScreen(
                         uiState = uiState,
                         onSenderChanged = ruleViewModel::onSenderChanged,
-                        onPhoneChanged = ruleViewModel::onPhoneChanged,
                         onTargetChanged = ruleViewModel::onTargetChanged,
-                        onPickContact = {
+                        onPickSenderContact = {
                             if (ContextCompat.checkSelfPermission(
                                     this@MainActivity,
                                     Manifest.permission.READ_CONTACTS
                                 ) == PackageManager.PERMISSION_GRANTED
                             ) {
-                                pickContactLauncher.launch(null)
+                                pickSenderContactLauncher.launch(null)
                             } else {
-                                requestContactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                                requestSenderContactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                            }
+                        },
+                        onPickTargetContact = {
+                            if (ContextCompat.checkSelfPermission(
+                                    this@MainActivity,
+                                    Manifest.permission.READ_CONTACTS
+                                ) == PackageManager.PERMISSION_GRANTED
+                            ) {
+                                pickTargetContactLauncher.launch(null)
+                            } else {
+                                requestTargetContactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
                             }
                         },
                         onSave = ruleViewModel::saveRule
                     )
                 }
+            }
             }
         }
     }
