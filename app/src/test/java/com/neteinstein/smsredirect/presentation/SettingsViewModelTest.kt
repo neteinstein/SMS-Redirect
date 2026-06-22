@@ -4,9 +4,11 @@ import com.neteinstein.smsredirect.FakeForwardHistoryRepository
 import com.neteinstein.smsredirect.FakeSettingsRepository
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.presentation.settings.SettingsViewModel
@@ -47,6 +49,8 @@ class SettingsViewModelTest {
             setKeepHistoryUseCase = SetKeepHistoryUseCase(settingsRepository),
             getDefaultPrefixUseCase = GetDefaultPrefixUseCase(settingsRepository),
             setDefaultPrefixUseCase = SetDefaultPrefixUseCase(settingsRepository),
+            getForwardPrefixUseCase = GetForwardPrefixUseCase(settingsRepository),
+            setForwardPrefixUseCase = SetForwardPrefixUseCase(settingsRepository),
             getForwardHistoryUseCase = GetForwardHistoryUseCase(historyRepository),
         )
 
@@ -80,6 +84,14 @@ class SettingsViewModelTest {
             val vm = createViewModel()
             advanceUntilIdle()
             assertEquals(emptyList<Any>(), vm.forwardHistory.value)
+        }
+
+    @Test
+    fun `init observes forwardPrefix`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+            assertEquals("SMS Redirect:", vm.forwardPrefix.value)
         }
 
     @Test
@@ -128,5 +140,17 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             assertEquals("", vm.defaultPrefix.value)
+        }
+
+    @Test
+    fun `setForwardPrefix updates state`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.setForwardPrefix("Forwarded SMS:")
+            advanceUntilIdle()
+
+            assertEquals("Forwarded SMS:", vm.forwardPrefix.value)
         }
 }
