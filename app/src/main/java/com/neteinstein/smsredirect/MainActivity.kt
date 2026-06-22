@@ -9,17 +9,23 @@ import android.provider.ContactsContract
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.runtime.setValue
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -107,15 +113,20 @@ class MainActivity : ComponentActivity() {
                         )
                     )
                     val rules by homeViewModel.rules.collectAsState()
-                    val missingPerms = remember {
-                        requiredPermissions
-                            .filter {
-                                ContextCompat.checkSelfPermission(
-                                    this@MainActivity, it
-                                ) != PackageManager.PERMISSION_GRANTED
+                    val lifecycleOwner = LocalLifecycleOwner.current
+                    var permissionCheckTick by remember { mutableIntStateOf(0) }
+                    DisposableEffect(lifecycleOwner) {
+                        val observer = LifecycleEventObserver { _, event ->
+                            if (event == Lifecycle.Event.ON_RESUME) {
+                                permissionCheckTick++
                             }
-                            .map { it.removePrefix("android.permission.") }
+                        }
+                        lifecycleOwner.lifecycle.addObserver(observer)
+                        onDispose {
+                            lifecycleOwner.lifecycle.removeObserver(observer)
+                        }
                     }
+                    val missingPerms = remember(permissionCheckTick) { currentMissingPermissions() }
                     HomeScreen(
                         rules = rules,
                         missingPermissions = missingPerms,
@@ -261,6 +272,14 @@ class MainActivity : ComponentActivity() {
         )?.use { cursor ->
             if (cursor.moveToFirst()) cursor.getString(0) else ""
         }.orEmpty()
+    }
+
+    private fun currentMissingPermissions(): List<String> {
+        return requiredPermissions
+            .filter {
+                ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+            }
+            .map { it.removePrefix("android.permission.") }
     }
 
     private fun shouldShowBatteryOptimizationDialog(): Boolean {
