@@ -72,6 +72,24 @@ class MainActivity : ComponentActivity() {
             val appContainer = (application as SmsRedirectApplication).appContainer
             val navController = rememberNavController()
             val showBatteryDialog = remember { mutableStateOf(shouldShowBatteryOptimizationDialog()) }
+            val showSideloadDialog = remember { mutableStateOf(shouldShowSideloadWarning()) }
+
+            if (showSideloadDialog.value) {
+                AlertDialog(
+                    onDismissRequest = { dismissSideloadWarning(); showSideloadDialog.value = false },
+                    title = { Text(stringResource(R.string.sideload_warning_title)) },
+                    text = { Text(stringResource(R.string.sideload_warning_message)) },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            dismissSideloadWarning()
+                            showSideloadDialog.value = false
+                            openAppSettings()
+                        }) {
+                            Text(stringResource(R.string.action_ok))
+                        }
+                    }
+                )
+            }
 
             if (showBatteryDialog.value) {
                 AlertDialog(
@@ -147,6 +165,8 @@ class MainActivity : ComponentActivity() {
                             appContainer.setSendWhileRoamingUseCase,
                             appContainer.getKeepHistoryUseCase,
                             appContainer.setKeepHistoryUseCase,
+                            appContainer.getDefaultPrefixUseCase,
+                            appContainer.setDefaultPrefixUseCase,
                             appContainer.getForwardHistoryUseCase
                         )
                     )
@@ -166,14 +186,18 @@ class MainActivity : ComponentActivity() {
                     val missingPerms = remember(permissionCheckTick) { currentMissingPermissions() }
                     val sendWhileRoaming by settingsViewModel.sendWhileRoaming.collectAsState()
                     val keepHistory by settingsViewModel.keepHistory.collectAsState()
+                    val defaultPrefix by settingsViewModel.defaultPrefix.collectAsState()
                     val forwardHistory by settingsViewModel.forwardHistory.collectAsState()
                     SettingsScreen(
                         missingPermissions = missingPerms,
                         sendWhileRoaming = sendWhileRoaming,
                         keepHistory = keepHistory,
+                        defaultPrefix = defaultPrefix,
                         forwardHistory = forwardHistory,
                         onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming,
-                        onKeepHistoryChanged = settingsViewModel::setKeepHistory
+                        onKeepHistoryChanged = settingsViewModel::setKeepHistory,
+                        onDefaultPrefixChanged = settingsViewModel::setDefaultPrefix,
+                        onBack = { navController.popBackStack() }
                     )
                 }
 
@@ -191,6 +215,7 @@ class MainActivity : ComponentActivity() {
                             appContainer.addRuleUseCase,
                             appContainer.updateRuleUseCase,
                             appContainer.ruleRepository,
+                            appContainer.getDefaultPrefixNowUseCase,
                             defaultRuleNameProvider = { index ->
                                 getString(R.string.rule_default_name_format, index)
                             }
@@ -319,5 +344,37 @@ class MainActivity : ComponentActivity() {
             data = Uri.parse("package:$packageName")
         }
         runCatching { startActivity(intent) }
+    }
+
+    private fun shouldShowSideloadWarning(): Boolean {
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        if (prefs.getBoolean(KEY_SIDELOAD_DISMISSED, false)) return false
+        return !isInstalledFromPlayStore()
+    }
+
+    private fun isInstalledFromPlayStore(): Boolean {
+        return runCatching {
+            val sourceInfo = packageManager.getInstallSourceInfo(packageName)
+            sourceInfo.installingPackageName == "com.android.vending"
+        }.getOrDefault(false)
+    }
+
+    private fun dismissSideloadWarning() {
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_SIDELOAD_DISMISSED, true)
+            .apply()
+    }
+
+    private fun openAppSettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.parse("package:$packageName")
+        }
+        runCatching { startActivity(intent) }
+    }
+
+    companion object {
+        private const val PREFS_NAME = "sms_redirect_prefs"
+        private const val KEY_SIDELOAD_DISMISSED = "sideload_warning_dismissed"
     }
 }

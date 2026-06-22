@@ -3,7 +3,12 @@
     <string name="battery_optimization_title">Desativar otimização de bateria</string>
     <string name="battery_optimization_message">Para manter o redirecionamento de SMS confiável, desative a otimização de bateria para esta app.</string>
     <string name="action_cancel">Cancelar</string>
+    <string name="action_back">Voltar</string>
+    <string name="action_ok">OK</string>
     <string name="action_open_screen">Abrir ecrã</string>
+
+    <string name="sideload_warning_title">Permitir definições restritas</string>
+    <string name="sideload_warning_message">Esta app não foi instalada pela Play Store. É necessário um passo extra:\n\n1. Vá a Definições > Apps > Redirecionador SMS\n2. Toque no menu de três pontos (canto superior direito)\n3. Selecione \"Permitir definições restritas\"\n\nPrima OK para abrir o ecrã de definições da app.</string>
 
     <string name="home_title_rules">Regras de Redirecionamento SMS</string>
     <string name="home_cd_settings">Definições</string>
@@ -13,6 +18,10 @@
     <string name="home_sender_format">Remetente: %1$s</string>
     <string name="home_target_format">Destino: %1$s</string>
     <string name="home_cd_delete_rule">Apagar</string>
+
+    <string name="delete_rule_dialog_title">Apagar regra</string>
+    <string name="delete_rule_dialog_message">Tem a certeza que deseja apagar \"%1$s\"?</string>
+    <string name="action_delete">Apagar</string>
 
     <string name="missing_permissions_banner_title">Permissões em falta - o redirecionamento de SMS não vai funcionar:</string>
     <string name="permission_item_format">• %1$s</string>
@@ -31,6 +40,9 @@
     <string name="settings_title">Definições</string>
     <string name="settings_send_while_roaming">Enviar em roaming</string>
     <string name="settings_keep_history">Manter histórico</string>
+    <string name="settings_default_prefix_label">Prefixo padrão</string>
+    <string name="settings_prefix_none">Nenhum</string>
+    <string name="settings_prefix_portugal">Portugal (+351)</string>
     <string name="settings_history_title">Histórico de reencaminhamento (últimos 50)</string>
     <string name="settings_no_forwarded_sms">Ainda não há SMS reencaminhados</string>
     <string name="settings_history_sender_target_format">%1$s → %2$s</string>

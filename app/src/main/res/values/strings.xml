@@ -3,7 +3,12 @@
     <string name="battery_optimization_title">Disable battery optimization</string>
     <string name="battery_optimization_message">To keep SMS forwarding reliable, disable battery optimization for this app.</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_back">Back</string>
+    <string name="action_ok">OK</string>
     <string name="action_open_screen">Open screen</string>
+
+    <string name="sideload_warning_title">Allow restricted settings</string>
+    <string name="sideload_warning_message">This app was not installed via the Play Store. An extra step is required:\n\n1. Go to Settings > Apps > SMS Redirect\n2. Tap the three-dot menu (top right)\n3. Select \"Allow restricted settings\"\n\nPress OK to open the app settings screen.</string>
 
     <string name="home_title_rules">SMS Redirect Rules</string>
     <string name="home_cd_settings">Settings</string>
@@ -13,6 +18,10 @@
     <string name="home_sender_format">Sender: %1$s</string>
     <string name="home_target_format">Target: %1$s</string>
     <string name="home_cd_delete_rule">Delete</string>
+
+    <string name="delete_rule_dialog_title">Delete rule</string>
+    <string name="delete_rule_dialog_message">Are you sure you want to delete \"%1$s\"?</string>
+    <string name="action_delete">Delete</string>
 
     <string name="missing_permissions_banner_title">Missing permissions - SMS forwarding will not work:</string>
     <string name="permission_item_format">• %1$s</string>
@@ -31,6 +40,9 @@
     <string name="settings_title">Settings</string>
     <string name="settings_send_while_roaming">Send while roaming</string>
     <string name="settings_keep_history">Keep history</string>
+    <string name="settings_default_prefix_label">Default prefix</string>
+    <string name="settings_prefix_none">None</string>
+    <string name="settings_prefix_portugal">Portugal (+351)</string>
     <string name="settings_history_title">Forward history (last 50)</string>
     <string name="settings_no_forwarded_sms">No forwarded SMS yet</string>
     <string name="settings_history_sender_target_format">%1$s → %2$s</string>

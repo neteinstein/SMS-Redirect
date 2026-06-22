@@ -15,12 +15,15 @@ import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.ReorderRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.RecordForwardHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetKeepHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
 
@@ -53,6 +56,9 @@ class SmsRedirectApplication : Application() {
             setSendWhileRoamingUseCase = SetSendWhileRoamingUseCase(settingsRepository),
             getKeepHistoryUseCase = GetKeepHistoryUseCase(settingsRepository),
             setKeepHistoryUseCase = SetKeepHistoryUseCase(settingsRepository),
+            getDefaultPrefixUseCase = GetDefaultPrefixUseCase(settingsRepository),
+            setDefaultPrefixUseCase = SetDefaultPrefixUseCase(settingsRepository),
+            getDefaultPrefixNowUseCase = GetDefaultPrefixNowUseCase(settingsRepository),
             getForwardHistoryUseCase = GetForwardHistoryUseCase(forwardHistoryRepository),
             findMatchingRuleUseCase = findMatchingRuleUseCase,
             canForwardSmsUseCase = canForwardSmsUseCase,
@@ -79,6 +85,9 @@ data class AppContainer(
     val setSendWhileRoamingUseCase: SetSendWhileRoamingUseCase,
     val getKeepHistoryUseCase: GetKeepHistoryUseCase,
     val setKeepHistoryUseCase: SetKeepHistoryUseCase,
+    val getDefaultPrefixUseCase: GetDefaultPrefixUseCase,
+    val setDefaultPrefixUseCase: SetDefaultPrefixUseCase,
+    val getDefaultPrefixNowUseCase: GetDefaultPrefixNowUseCase,
     val getForwardHistoryUseCase: GetForwardHistoryUseCase,
     val findMatchingRuleUseCase: FindMatchingRuleUseCase,
     val canForwardSmsUseCase: CanForwardSmsUseCase,

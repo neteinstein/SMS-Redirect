@@ -9,4 +9,7 @@ interface SettingsRepository {
     fun observeKeepHistory(): Flow<Boolean>
     suspend fun getKeepHistory(): Boolean
     suspend fun setKeepHistory(enabled: Boolean)
+    fun observeDefaultPrefix(): Flow<String>
+    suspend fun getDefaultPrefix(): String
+    suspend fun setDefaultPrefix(prefix: String)
 }
