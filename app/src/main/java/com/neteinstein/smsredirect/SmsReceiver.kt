@@ -17,6 +17,8 @@ class SmsReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent?) {
+        Log.d(TAG, "onReceive triggered — action=${intent?.action}")
+
         if (intent?.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) {
             Log.d(TAG, "Ignoring non-SMS intent: ${intent?.action}")
             return
