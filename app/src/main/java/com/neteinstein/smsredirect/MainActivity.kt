@@ -102,7 +102,8 @@ class MainActivity : ComponentActivity() {
                     val homeViewModel: HomeViewModel = viewModel(
                         factory = HomeViewModelFactory(
                             appContainer.getRulesUseCase,
-                            appContainer.deleteRuleUseCase
+                            appContainer.deleteRuleUseCase,
+                            appContainer.reorderRulesUseCase
                         )
                     )
                     val rules by homeViewModel.rules.collectAsState()
@@ -111,7 +112,9 @@ class MainActivity : ComponentActivity() {
                         onAddRule = { navController.navigate(Routes.ruleRoute()) },
                         onOpenSettings = { navController.navigate(Routes.Settings) },
                         onEditRule = { navController.navigate(Routes.ruleRoute(it)) },
-                        onDeleteRule = homeViewModel::deleteRule
+                        onDeleteRule = homeViewModel::deleteRule,
+                        onMoveRule = homeViewModel::moveRule,
+                        onDragEnd = homeViewModel::commitReorder
                     )
                 }
 
@@ -141,7 +144,8 @@ class MainActivity : ComponentActivity() {
                         factory = RuleViewModelFactory(
                             appContainer.getRuleUseCase,
                             appContainer.addRuleUseCase,
-                            appContainer.updateRuleUseCase
+                            appContainer.updateRuleUseCase,
+                            appContainer.ruleRepository
                         )
                     )
 
@@ -194,6 +198,7 @@ class MainActivity : ComponentActivity() {
 
                     RuleScreen(
                         uiState = uiState,
+                        onNameChanged = ruleViewModel::onNameChanged,
                         onSenderChanged = ruleViewModel::onSenderChanged,
                         onTargetChanged = ruleViewModel::onTargetChanged,
                         onPickSenderContact = {
