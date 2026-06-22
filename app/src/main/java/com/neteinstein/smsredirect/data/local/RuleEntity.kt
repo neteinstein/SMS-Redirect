@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 data class RuleEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val senderText: String,
-    val phoneNumber: String
+    val phoneNumber: String,
+    val targetNumber: String
 )

@@ -21,6 +21,7 @@ fun RuleScreen(
     uiState: RuleUiState,
     onSenderChanged: (String) -> Unit,
     onPhoneChanged: (String) -> Unit,
+    onTargetChanged: (String) -> Unit,
     onPickContact: () -> Unit,
     onSave: () -> Unit
 ) {
@@ -47,6 +48,12 @@ fun RuleScreen(
                 onValueChange = onPhoneChanged,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Phone Number") }
+            )
+            OutlinedTextField(
+                value = uiState.targetNumber,
+                onValueChange = onTargetChanged,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Target Number") }
             )
             Button(onClick = onPickContact, modifier = Modifier.fillMaxWidth()) {
                 Text("Pick from Contacts")

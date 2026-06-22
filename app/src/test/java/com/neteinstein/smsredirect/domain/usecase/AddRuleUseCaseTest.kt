@@ -11,10 +11,10 @@ import org.junit.Test
 class AddRuleUseCaseTest {
 
     @Test
-    fun `returns error when both sender and phone are blank`() = runTest {
+    fun `returns error when target missing or sender and phone are blank`() = runTest {
         val useCase = AddRuleUseCase(FakeRuleRepository())
 
-        val result = useCase(Rule(senderText = " ", phoneNumber = ""))
+        val result = useCase(Rule(senderText = " ", phoneNumber = "", targetNumber = ""))
 
         assertTrue(result.isFailure)
     }
@@ -24,12 +24,13 @@ class AddRuleUseCaseTest {
         val repository = FakeRuleRepository()
         val useCase = AddRuleUseCase(repository)
 
-        val result = useCase(Rule(senderText = "BANK"))
+        val result = useCase(Rule(senderText = "BANK", targetNumber = "5551234"))
         val rules = repository.getRulesValue()
 
         assertTrue(result.isSuccess)
         assertEquals(1, rules.size)
         assertEquals("BANK", rules.first().senderText)
+        assertEquals("5551234", rules.first().targetNumber)
     }
 }
 

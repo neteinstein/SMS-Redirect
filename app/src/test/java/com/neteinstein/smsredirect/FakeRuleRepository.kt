@@ -13,6 +13,8 @@ class FakeRuleRepository(initial: List<Rule> = emptyList()) : RuleRepository {
 
     override suspend fun getRule(id: Long): Rule? = rules.value.firstOrNull { it.id == id }
 
+    override suspend fun getRulesSnapshot(): List<Rule> = rules.value
+
     override suspend fun insert(rule: Rule) {
         val nextId = (rules.value.maxOfOrNull { it.id } ?: 0L) + 1L
         rules.update { listOf(rule.copy(id = nextId)) + it }

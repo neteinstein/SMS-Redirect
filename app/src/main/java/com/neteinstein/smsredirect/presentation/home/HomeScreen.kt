@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -33,11 +34,21 @@ import com.neteinstein.smsredirect.domain.model.Rule
 fun HomeScreen(
     rules: List<Rule>,
     onAddRule: () -> Unit,
+    onOpenSettings: () -> Unit,
     onEditRule: (Long) -> Unit,
     onDeleteRule: (Rule) -> Unit
 ) {
     Scaffold(
-        topBar = { TopAppBar(title = { Text("SMS Redirect Rules") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("SMS Redirect Rules") },
+                actions = {
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddRule) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Add rule")
@@ -91,6 +102,7 @@ private fun RuleCard(
                 Text("Rule #${rule.id}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text("Sender: ${rule.senderText.ifBlank { "-" }}")
                 Text("Phone: ${rule.phoneNumber.ifBlank { "-" }}")
+                Text("Target: ${rule.targetNumber.ifBlank { "-" }}")
             }
             IconButton(onClick = { onDeleteRule(rule) }) {
                 Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete")

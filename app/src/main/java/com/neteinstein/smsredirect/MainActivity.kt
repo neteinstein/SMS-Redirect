@@ -1,15 +1,24 @@
 package com.neteinstein.smsredirect
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.PowerManager
 import android.provider.ContactsContract
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -24,6 +33,9 @@ import com.neteinstein.smsredirect.presentation.navigation.Routes
 import com.neteinstein.smsredirect.presentation.rule.RuleScreen
 import com.neteinstein.smsredirect.presentation.rule.RuleViewModel
 import com.neteinstein.smsredirect.presentation.rule.RuleViewModelFactory
+import com.neteinstein.smsredirect.presentation.settings.SettingsScreen
+import com.neteinstein.smsredirect.presentation.settings.SettingsViewModel
+import com.neteinstein.smsredirect.presentation.settings.SettingsViewModelFactory
 import com.neteinstein.smsredirect.presentation.splash.SplashScreen
 import kotlinx.coroutines.delay
 
@@ -32,7 +44,9 @@ class MainActivity : ComponentActivity() {
     private val requiredPermissions = arrayOf(
         Manifest.permission.READ_SMS,
         Manifest.permission.RECEIVE_SMS,
-        Manifest.permission.READ_CONTACTS
+        Manifest.permission.READ_CONTACTS,
+        Manifest.permission.SEND_SMS,
+        Manifest.permission.READ_PHONE_STATE
     )
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
@@ -48,6 +62,28 @@ class MainActivity : ComponentActivity() {
         setContent {
             val appContainer = (application as SmsRedirectApplication).appContainer
             val navController = rememberNavController()
+            val showBatteryDialog = remember { mutableStateOf(shouldShowBatteryOptimizationDialog()) }
+
+            if (showBatteryDialog.value) {
+                AlertDialog(
+                    onDismissRequest = { showBatteryDialog.value = false },
+                    title = { Text("Disable battery optimization") },
+                    text = { Text("To keep SMS forwarding reliable, disable battery optimization for this app.") },
+                    dismissButton = {
+                        TextButton(onClick = { showBatteryDialog.value = false }) {
+                            Text("Cancel")
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showBatteryDialog.value = false
+                            openBatteryOptimizationSettings()
+                        }) {
+                            Text("Open screen")
+                        }
+                    }
+                )
+            }
 
             NavHost(navController = navController, startDestination = Routes.Splash) {
                 composable(Routes.Splash) {
@@ -71,8 +107,23 @@ class MainActivity : ComponentActivity() {
                     HomeScreen(
                         rules = rules,
                         onAddRule = { navController.navigate(Routes.ruleRoute()) },
+                        onOpenSettings = { navController.navigate(Routes.Settings) },
                         onEditRule = { navController.navigate(Routes.ruleRoute(it)) },
                         onDeleteRule = homeViewModel::deleteRule
+                    )
+                }
+
+                composable(Routes.Settings) {
+                    val settingsViewModel: SettingsViewModel = viewModel(
+                        factory = SettingsViewModelFactory(
+                            appContainer.getSendWhileRoamingUseCase,
+                            appContainer.setSendWhileRoamingUseCase
+                        )
+                    )
+                    val sendWhileRoaming by settingsViewModel.sendWhileRoaming.collectAsState()
+                    SettingsScreen(
+                        sendWhileRoaming = sendWhileRoaming,
+                        onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming
                     )
                 }
 
@@ -126,6 +177,7 @@ class MainActivity : ComponentActivity() {
                         uiState = uiState,
                         onSenderChanged = ruleViewModel::onSenderChanged,
                         onPhoneChanged = ruleViewModel::onPhoneChanged,
+                        onTargetChanged = ruleViewModel::onTargetChanged,
                         onPickContact = {
                             if (ContextCompat.checkSelfPermission(
                                     this@MainActivity,
@@ -164,5 +216,17 @@ class MainActivity : ComponentActivity() {
         )?.use { cursor ->
             if (cursor.moveToFirst()) cursor.getString(0) else ""
         }.orEmpty()
+    }
+
+    private fun shouldShowBatteryOptimizationDialog(): Boolean {
+        val powerManager = getSystemService(POWER_SERVICE) as? PowerManager ?: return false
+        return !powerManager.isIgnoringBatteryOptimizations(packageName)
+    }
+
+    private fun openBatteryOptimizationSettings() {
+        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+            data = Uri.parse("package:$packageName")
+        }
+        runCatching { startActivity(intent) }
     }
 }

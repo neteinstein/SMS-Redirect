@@ -17,6 +17,7 @@ data class RuleUiState(
     val id: Long = 0,
     val senderText: String = "",
     val phoneNumber: String = "",
+    val targetNumber: String = "",
     val error: String? = null,
     val saved: Boolean = false
 )
@@ -38,7 +39,8 @@ class RuleViewModel(
                 it.copy(
                     id = rule.id,
                     senderText = rule.senderText,
-                    phoneNumber = rule.phoneNumber
+                    phoneNumber = rule.phoneNumber,
+                    targetNumber = rule.targetNumber
                 )
             }
         }
@@ -52,10 +54,19 @@ class RuleViewModel(
         _uiState.update { it.copy(phoneNumber = value, error = null) }
     }
 
+    fun onTargetChanged(value: String) {
+        _uiState.update { it.copy(targetNumber = value, error = null) }
+    }
+
     fun saveRule() {
         viewModelScope.launch {
             val current = uiState.value
-            val rule = Rule(id = current.id, senderText = current.senderText.trim(), phoneNumber = current.phoneNumber.trim())
+            val rule = Rule(
+                id = current.id,
+                senderText = current.senderText.trim(),
+                phoneNumber = current.phoneNumber.trim(),
+                targetNumber = current.targetNumber.trim()
+            )
             val result = if (rule.id == 0L) addRuleUseCase(rule) else updateRuleUseCase(rule)
             if (result.isSuccess) {
                 _uiState.update { it.copy(saved = true, error = null) }

@@ -34,7 +34,9 @@ class RuleViewModelTest {
 
     @Test
     fun `loads existing rule for editing`() = runTest {
-        val repository = FakeRuleRepository(listOf(Rule(id = 1, senderText = "BANK", phoneNumber = "123")))
+        val repository = FakeRuleRepository(
+            listOf(Rule(id = 1, senderText = "BANK", phoneNumber = "123", targetNumber = "777"))
+        )
         val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository))
 
         vm.loadRule(1)
@@ -42,6 +44,7 @@ class RuleViewModelTest {
 
         assertEquals("BANK", vm.uiState.value.senderText)
         assertEquals("123", vm.uiState.value.phoneNumber)
+        assertEquals("777", vm.uiState.value.targetNumber)
     }
 
     @Test
@@ -61,6 +64,7 @@ class RuleViewModelTest {
         val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository))
 
         vm.onSenderChanged("SHOP")
+        vm.onTargetChanged("444")
         vm.saveRule()
         advanceUntilIdle()
 

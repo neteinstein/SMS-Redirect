@@ -16,6 +16,9 @@ interface RuleDao {
     @Query("SELECT * FROM rules WHERE id = :id")
     suspend fun getRule(id: Long): RuleEntity?
 
+    @Query("SELECT * FROM rules ORDER BY id DESC")
+    suspend fun getRulesSnapshot(): List<RuleEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(rule: RuleEntity)
 

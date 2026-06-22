@@ -32,7 +32,7 @@ class HomeViewModelTest {
 
     @Test
     fun `loads and deletes rules`() = runTest {
-        val repository = FakeRuleRepository(listOf(Rule(id = 1, senderText = "TEST")))
+        val repository = FakeRuleRepository(listOf(Rule(id = 1, senderText = "TEST", targetNumber = "555")))
         val vm = HomeViewModel(GetRulesUseCase(repository), DeleteRuleUseCase(repository))
 
         advanceUntilIdle()

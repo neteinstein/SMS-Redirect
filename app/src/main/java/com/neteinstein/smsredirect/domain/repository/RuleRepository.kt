@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 interface RuleRepository {
     fun getRules(): Flow<List<Rule>>
     suspend fun getRule(id: Long): Rule?
+    suspend fun getRulesSnapshot(): List<Rule>
     suspend fun insert(rule: Rule)
     suspend fun update(rule: Rule)
     suspend fun delete(rule: Rule)

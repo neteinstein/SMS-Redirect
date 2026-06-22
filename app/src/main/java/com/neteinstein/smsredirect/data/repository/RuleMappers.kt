@@ -6,11 +6,13 @@ import com.neteinstein.smsredirect.domain.model.Rule
 internal fun RuleEntity.toDomain(): Rule = Rule(
     id = id,
     senderText = senderText,
-    phoneNumber = phoneNumber
+    phoneNumber = phoneNumber,
+    targetNumber = targetNumber
 )
 
 internal fun Rule.toEntity(): RuleEntity = RuleEntity(
     id = id,
     senderText = senderText,
-    phoneNumber = phoneNumber
+    phoneNumber = phoneNumber,
+    targetNumber = targetNumber
 )
