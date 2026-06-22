@@ -2,6 +2,8 @@
     <string name="app_name">Redirecionador SMS</string>
     <string name="battery_optimization_title">Desativar otimização de bateria</string>
     <string name="battery_optimization_message">Para manter o redirecionamento de SMS confiável, desative a otimização de bateria para esta app.</string>
+    <string name="notification_access_title">Ativar acesso a notificações</string>
+    <string name="notification_access_message">Para captar mensagens RCS do Google Mensagens, esta app precisa de acesso a notificações. Isto permite ler notificações de mensagens recebidas e reencaminhá-las.</string>
     <string name="action_cancel">Cancelar</string>
     <string name="action_back">Voltar</string>
     <string name="action_ok">OK</string>
@@ -35,6 +37,7 @@
     <string name="rule_cd_pick_sender_contact">Escolher remetente dos contactos</string>
     <string name="rule_cd_pick_target_contact">Escolher destino dos contactos</string>
     <string name="rule_error_invalid_target">O destino deve ser um número de telefone válido (dígitos, +, espaços e hífens permitidos)</string>
+    <string name="rule_error_duplicate">Esta regra já existe</string>
     <string name="rule_action_save">Guardar Regra</string>
     <string name="rule_default_name_format">Regra #%1$d</string>
 
@@ -42,6 +45,8 @@
     <string name="settings_send_while_roaming">Enviar em roaming</string>
     <string name="settings_keep_history">Manter histórico</string>
     <string name="settings_default_prefix_label">Prefixo padrão</string>
+    <string name="settings_forward_prefix_label">Prefixo da mensagem reencaminhada</string>
+    <string name="settings_forward_prefix_save">Guardar prefixo</string>
     <string name="settings_prefix_none">Nenhum</string>
     <string name="settings_prefix_portugal">Portugal (+351)</string>
     <string name="settings_history_title">Histórico de reencaminhamento (últimos 50)</string>

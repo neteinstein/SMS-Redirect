@@ -294,4 +294,54 @@ class RuleViewModelTest {
         assertEquals("+351912111222", rule.senderText)
         assertEquals("+351933444555", rule.targetNumber)
     }
+
+    @Test
+    fun `save rejects duplicate rule with same sender and target`() = runTest {
+        val repository = FakeRuleRepository(
+            listOf(Rule(id = 1, name = "Existing", senderText = "BANK", phoneNumber = "BANK", targetNumber = "+351912345678"))
+        )
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
+
+        vm.onSenderChanged("BANK")
+        vm.onTargetChanged("+351912345678")
+        vm.saveRule(duplicateRuleError = "This rule already exists")
+        advanceUntilIdle()
+
+        assertEquals("This rule already exists", vm.uiState.value.error)
+        assertEquals(false, vm.uiState.value.saved)
+        assertEquals(1, repository.getRulesSnapshot().size)
+    }
+
+    @Test
+    fun `save allows rule with same sender but different target`() = runTest {
+        val repository = FakeRuleRepository(
+            listOf(Rule(id = 1, name = "Existing", senderText = "BANK", phoneNumber = "BANK", targetNumber = "+351912345678"))
+        )
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
+
+        vm.onSenderChanged("BANK")
+        vm.onTargetChanged("+351999888777")
+        vm.saveRule()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.saved)
+        assertEquals(2, repository.getRulesSnapshot().size)
+    }
+
+    @Test
+    fun `update existing rule does not flag itself as duplicate`() = runTest {
+        val repository = FakeRuleRepository(
+            listOf(Rule(id = 5, name = "MyRule", senderText = "SHOP", phoneNumber = "SHOP", targetNumber = "+351911222333"))
+        )
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
+
+        vm.loadRule(5)
+        advanceUntilIdle()
+        vm.onNameChanged("Renamed Rule")
+        vm.saveRule()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.saved)
+        assertEquals(null, vm.uiState.value.error)
+    }
 }

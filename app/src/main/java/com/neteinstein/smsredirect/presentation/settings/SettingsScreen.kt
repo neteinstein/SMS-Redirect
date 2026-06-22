@@ -11,12 +11,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,10 +50,12 @@ fun SettingsScreen(
     missingPermissions: List<String>,
     sendWhileRoaming: Boolean,
     keepHistory: Boolean,
+    forwardPrefix: String,
     defaultPrefix: String,
     forwardHistory: List<ForwardHistory>,
     onSendWhileRoamingChanged: (Boolean) -> Unit,
     onKeepHistoryChanged: (Boolean) -> Unit,
+    onForwardPrefixSaved: (String) -> Unit,
     onDefaultPrefixChanged: (String) -> Unit,
     onBack: () -> Unit
 ) {
@@ -119,6 +123,11 @@ fun SettingsScreen(
                 onCheckedChange = onKeepHistoryChanged
             )
 
+            ForwardPrefixRow(
+                currentPrefix = forwardPrefix,
+                onSave = onForwardPrefixSaved
+            )
+
             DefaultPrefixDropdown(
                 selectedPrefix = defaultPrefix,
                 onPrefixSelected = onDefaultPrefixChanged
@@ -151,6 +160,40 @@ fun SettingsScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ForwardPrefixRow(
+    currentPrefix: String,
+    onSave: (String) -> Unit
+) {
+    var text by remember(currentPrefix) { mutableStateOf(currentPrefix) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        OutlinedTextField(
+            value = text,
+            onValueChange = { text = it },
+            label = { Text(stringResource(R.string.settings_forward_prefix_label)) },
+            singleLine = true,
+            modifier = Modifier.weight(1f)
+        )
+        FilledIconButton(
+            onClick = { onSave(text) },
+            enabled = text != currentPrefix
+        ) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = stringResource(R.string.settings_forward_prefix_save)
+            )
         }
     }
 }
