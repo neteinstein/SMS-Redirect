@@ -20,7 +20,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.neteinstein.smsredirect.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,7 +37,17 @@ fun RuleScreen(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text(if (uiState.id == 0L) "Create Rule" else "Edit Rule") })
+            TopAppBar(
+                title = {
+                    Text(
+                        if (uiState.id == 0L) {
+                            stringResource(R.string.rule_title_create)
+                        } else {
+                            stringResource(R.string.rule_title_edit)
+                        }
+                    )
+                }
+            )
         }
     ) { padding ->
         Column(
@@ -49,8 +61,8 @@ fun RuleScreen(
                 value = uiState.name,
                 onValueChange = onNameChanged,
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Rule Name") },
-                placeholder = { Text("Optional - auto-generated if empty") }
+                label = { Text(stringResource(R.string.rule_label_name)) },
+                placeholder = { Text(stringResource(R.string.rule_placeholder_name_optional)) }
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically
@@ -59,12 +71,12 @@ fun RuleScreen(
                     value = uiState.senderText,
                     onValueChange = onSenderChanged,
                     modifier = Modifier.weight(1f),
-                    label = { Text("Sender") }
+                    label = { Text(stringResource(R.string.rule_label_sender)) }
                 )
                 IconButton(onClick = onPickSenderContact) {
                     Icon(
                         imageVector = Icons.Default.ContactPhone,
-                        contentDescription = "Pick sender from contacts"
+                        contentDescription = stringResource(R.string.rule_cd_pick_sender_contact)
                     )
                 }
             }
@@ -75,12 +87,12 @@ fun RuleScreen(
                     value = uiState.targetNumber,
                     onValueChange = onTargetChanged,
                     modifier = Modifier.weight(1f),
-                    label = { Text("Target Number") }
+                    label = { Text(stringResource(R.string.rule_label_target_number)) }
                 )
                 IconButton(onClick = onPickTargetContact) {
                     Icon(
                         imageVector = Icons.Default.ContactPhone,
-                        contentDescription = "Pick target from contacts"
+                        contentDescription = stringResource(R.string.rule_cd_pick_target_contact)
                     )
                 }
             }
@@ -88,7 +100,7 @@ fun RuleScreen(
                 Text(text = it, color = MaterialTheme.colorScheme.error)
             }
             Button(onClick = onSave, modifier = Modifier.fillMaxWidth()) {
-                Text("Save Rule")
+                Text(stringResource(R.string.rule_action_save))
             }
         }
     }

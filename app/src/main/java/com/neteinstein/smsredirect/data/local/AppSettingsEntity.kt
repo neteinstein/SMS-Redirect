@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "app_settings")
 data class AppSettingsEntity(
     @PrimaryKey val id: Int = 1,
-    @ColumnInfo(defaultValue = "0") val sendWhileRoaming: Boolean = false
+    @ColumnInfo(defaultValue = "0") val sendWhileRoaming: Boolean = false,
+    @ColumnInfo(defaultValue = "1") val keepHistory: Boolean = true
 )

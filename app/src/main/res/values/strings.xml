@@ -1,3 +1,39 @@
 <resources>
     <string name="app_name">SMS Redirect</string>
+    <string name="battery_optimization_title">Disable battery optimization</string>
+    <string name="battery_optimization_message">To keep SMS forwarding reliable, disable battery optimization for this app.</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_open_screen">Open screen</string>
+
+    <string name="home_title_rules">SMS Redirect Rules</string>
+    <string name="home_cd_settings">Settings</string>
+    <string name="home_cd_add_rule">Add rule</string>
+    <string name="home_no_rules">No rules yet. Add one to get started.</string>
+    <string name="home_cd_drag_to_reorder">Drag to reorder</string>
+    <string name="home_sender_format">Sender: %1$s</string>
+    <string name="home_target_format">Target: %1$s</string>
+    <string name="home_cd_delete_rule">Delete</string>
+
+    <string name="missing_permissions_banner_title">Missing permissions - SMS forwarding will not work:</string>
+    <string name="permission_item_format">• %1$s</string>
+
+    <string name="rule_title_create">Create Rule</string>
+    <string name="rule_title_edit">Edit Rule</string>
+    <string name="rule_label_name">Rule Name</string>
+    <string name="rule_placeholder_name_optional">Optional - auto-generated if empty</string>
+    <string name="rule_label_sender">Sender</string>
+    <string name="rule_label_target_number">Target Number</string>
+    <string name="rule_cd_pick_sender_contact">Pick sender from contacts</string>
+    <string name="rule_cd_pick_target_contact">Pick target from contacts</string>
+    <string name="rule_action_save">Save Rule</string>
+    <string name="rule_default_name_format">Rule #%1$d</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_send_while_roaming">Send while roaming</string>
+    <string name="settings_keep_history">Keep history</string>
+    <string name="settings_history_title">Forward history (last 50)</string>
+    <string name="settings_no_forwarded_sms">No forwarded SMS yet</string>
+    <string name="settings_history_sender_target_format">%1$s → %2$s</string>
+    <string name="settings_history_rule_format">Rule: %1$s</string>
+    <string name="settings_history_unknown_sender">Unknown sender</string>
 </resources>

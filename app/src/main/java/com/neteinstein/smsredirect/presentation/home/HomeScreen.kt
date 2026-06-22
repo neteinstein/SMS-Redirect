@@ -39,10 +39,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.neteinstein.smsredirect.R
 import com.neteinstein.smsredirect.domain.model.Rule
 import kotlin.math.roundToInt
 
@@ -61,17 +63,23 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("SMS Redirect Rules") },
+                title = { Text(stringResource(R.string.home_title_rules)) },
                 actions = {
                     IconButton(onClick = onOpenSettings) {
-                        Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.home_cd_settings)
+                        )
                     }
                 }
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddRule) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Add rule")
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = stringResource(R.string.home_cd_add_rule)
+                )
             }
         }
     ) { padding ->
@@ -96,14 +104,14 @@ fun HomeScreen(
                     )
                     Column {
                         Text(
-                            "Missing permissions — SMS forwarding won't work:",
+                            stringResource(R.string.missing_permissions_banner_title),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onErrorContainer
                         )
                         missingPermissions.forEach { perm ->
                             Text(
-                                "• $perm",
+                                stringResource(R.string.permission_item_format, perm),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onErrorContainer
                             )
@@ -118,7 +126,7 @@ fun HomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text("No rules yet. Add one to get started.")
+                    Text(stringResource(R.string.home_no_rules))
                 }
             } else {
             val listState = rememberLazyListState()
@@ -209,21 +217,36 @@ private fun RuleCard(
         ) {
             Icon(
                 imageVector = Icons.Default.DragHandle,
-                contentDescription = "Drag to reorder",
+                contentDescription = stringResource(R.string.home_cd_drag_to_reorder),
                 modifier = Modifier.padding(end = 12.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    rule.name.ifBlank { "Rule #${rule.id}" },
+                    rule.name.ifBlank {
+                        stringResource(R.string.rule_default_name_format, rule.id)
+                    },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                Text("Sender: ${rule.senderText.ifBlank { "-" }}")
-                Text("Target: ${rule.targetNumber.ifBlank { "-" }}")
+                Text(
+                    stringResource(
+                        R.string.home_sender_format,
+                        rule.senderText.ifBlank { "-" }
+                    )
+                )
+                Text(
+                    stringResource(
+                        R.string.home_target_format,
+                        rule.targetNumber.ifBlank { "-" }
+                    )
+                )
             }
             IconButton(onClick = { onDeleteRule(rule) }) {
-                Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete")
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = stringResource(R.string.home_cd_delete_rule)
+                )
             }
         }
     }

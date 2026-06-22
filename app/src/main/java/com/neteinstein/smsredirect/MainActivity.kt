@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -75,11 +76,11 @@ class MainActivity : ComponentActivity() {
             if (showBatteryDialog.value) {
                 AlertDialog(
                     onDismissRequest = { showBatteryDialog.value = false },
-                    title = { Text("Disable battery optimization") },
-                    text = { Text("To keep SMS forwarding reliable, disable battery optimization for this app.") },
+                    title = { Text(stringResource(R.string.battery_optimization_title)) },
+                    text = { Text(stringResource(R.string.battery_optimization_message)) },
                     dismissButton = {
                         TextButton(onClick = { showBatteryDialog.value = false }) {
-                            Text("Cancel")
+                            Text(stringResource(R.string.action_cancel))
                         }
                     },
                     confirmButton = {
@@ -87,7 +88,7 @@ class MainActivity : ComponentActivity() {
                             showBatteryDialog.value = false
                             openBatteryOptimizationSettings()
                         }) {
-                            Text("Open screen")
+                            Text(stringResource(R.string.action_open_screen))
                         }
                     }
                 )
@@ -143,13 +144,36 @@ class MainActivity : ComponentActivity() {
                     val settingsViewModel: SettingsViewModel = viewModel(
                         factory = SettingsViewModelFactory(
                             appContainer.getSendWhileRoamingUseCase,
-                            appContainer.setSendWhileRoamingUseCase
+                            appContainer.setSendWhileRoamingUseCase,
+                            appContainer.getKeepHistoryUseCase,
+                            appContainer.setKeepHistoryUseCase,
+                            appContainer.getForwardHistoryUseCase
                         )
                     )
+                    val lifecycleOwner = LocalLifecycleOwner.current
+                    var permissionCheckTick by remember { mutableIntStateOf(0) }
+                    DisposableEffect(lifecycleOwner) {
+                        val observer = LifecycleEventObserver { _, event ->
+                            if (event == Lifecycle.Event.ON_RESUME) {
+                                permissionCheckTick++
+                            }
+                        }
+                        lifecycleOwner.lifecycle.addObserver(observer)
+                        onDispose {
+                            lifecycleOwner.lifecycle.removeObserver(observer)
+                        }
+                    }
+                    val missingPerms = remember(permissionCheckTick) { currentMissingPermissions() }
                     val sendWhileRoaming by settingsViewModel.sendWhileRoaming.collectAsState()
+                    val keepHistory by settingsViewModel.keepHistory.collectAsState()
+                    val forwardHistory by settingsViewModel.forwardHistory.collectAsState()
                     SettingsScreen(
+                        missingPermissions = missingPerms,
                         sendWhileRoaming = sendWhileRoaming,
-                        onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming
+                        keepHistory = keepHistory,
+                        forwardHistory = forwardHistory,
+                        onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming,
+                        onKeepHistoryChanged = settingsViewModel::setKeepHistory
                     )
                 }
 
@@ -166,7 +190,10 @@ class MainActivity : ComponentActivity() {
                             appContainer.getRuleUseCase,
                             appContainer.addRuleUseCase,
                             appContainer.updateRuleUseCase,
-                            appContainer.ruleRepository
+                            appContainer.ruleRepository,
+                            defaultRuleNameProvider = { index ->
+                                getString(R.string.rule_default_name_format, index)
+                            }
                         )
                     )
 

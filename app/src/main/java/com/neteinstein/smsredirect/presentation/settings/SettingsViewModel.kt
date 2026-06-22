@@ -3,7 +3,11 @@ package com.neteinstein.smsredirect.presentation.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.neteinstein.smsredirect.domain.model.ForwardHistory
+import com.neteinstein.smsredirect.domain.usecase.GetForwardHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,15 +18,28 @@ import kotlinx.coroutines.launch
 
 class SettingsViewModel(
     getSendWhileRoamingUseCase: GetSendWhileRoamingUseCase,
-    private val setSendWhileRoamingUseCase: SetSendWhileRoamingUseCase
+    private val setSendWhileRoamingUseCase: SetSendWhileRoamingUseCase,
+    getKeepHistoryUseCase: GetKeepHistoryUseCase,
+    private val setKeepHistoryUseCase: SetKeepHistoryUseCase,
+    getForwardHistoryUseCase: GetForwardHistoryUseCase
 ) : ViewModel() {
 
     private val _sendWhileRoaming = MutableStateFlow(false)
     val sendWhileRoaming: StateFlow<Boolean> = _sendWhileRoaming.asStateFlow()
+    private val _keepHistory = MutableStateFlow(true)
+    val keepHistory: StateFlow<Boolean> = _keepHistory.asStateFlow()
+    private val _forwardHistory = MutableStateFlow<List<ForwardHistory>>(emptyList())
+    val forwardHistory: StateFlow<List<ForwardHistory>> = _forwardHistory.asStateFlow()
 
     init {
         getSendWhileRoamingUseCase()
             .onEach { _sendWhileRoaming.value = it }
+            .launchIn(viewModelScope)
+        getKeepHistoryUseCase()
+            .onEach { _keepHistory.value = it }
+            .launchIn(viewModelScope)
+        getForwardHistoryUseCase(limit = 50)
+            .onEach { _forwardHistory.value = it }
             .launchIn(viewModelScope)
     }
 
@@ -31,14 +48,29 @@ class SettingsViewModel(
             setSendWhileRoamingUseCase(enabled)
         }
     }
+
+    fun setKeepHistory(enabled: Boolean) {
+        viewModelScope.launch {
+            setKeepHistoryUseCase(enabled)
+        }
+    }
 }
 
 class SettingsViewModelFactory(
     private val getSendWhileRoamingUseCase: GetSendWhileRoamingUseCase,
-    private val setSendWhileRoamingUseCase: SetSendWhileRoamingUseCase
+    private val setSendWhileRoamingUseCase: SetSendWhileRoamingUseCase,
+    private val getKeepHistoryUseCase: GetKeepHistoryUseCase,
+    private val setKeepHistoryUseCase: SetKeepHistoryUseCase,
+    private val getForwardHistoryUseCase: GetForwardHistoryUseCase
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
-        return SettingsViewModel(getSendWhileRoamingUseCase, setSendWhileRoamingUseCase) as T
+        return SettingsViewModel(
+            getSendWhileRoamingUseCase = getSendWhileRoamingUseCase,
+            setSendWhileRoamingUseCase = setSendWhileRoamingUseCase,
+            getKeepHistoryUseCase = getKeepHistoryUseCase,
+            setKeepHistoryUseCase = setKeepHistoryUseCase,
+            getForwardHistoryUseCase = getForwardHistoryUseCase
+        ) as T
     }
 }

@@ -15,6 +15,17 @@ class SettingsRepositoryImpl(
     override suspend fun getSendWhileRoaming(): Boolean = dao.getSettings()?.sendWhileRoaming ?: false
 
     override suspend fun setSendWhileRoaming(enabled: Boolean) {
-        dao.upsert(AppSettingsEntity(sendWhileRoaming = enabled))
+        val current = dao.getSettings() ?: AppSettingsEntity()
+        dao.upsert(current.copy(sendWhileRoaming = enabled))
+    }
+
+    override fun observeKeepHistory(): Flow<Boolean> =
+        dao.observeSettings().map { it?.keepHistory ?: true }
+
+    override suspend fun getKeepHistory(): Boolean = dao.getSettings()?.keepHistory ?: true
+
+    override suspend fun setKeepHistory(enabled: Boolean) {
+        val current = dao.getSettings() ?: AppSettingsEntity()
+        dao.upsert(current.copy(keepHistory = enabled))
     }
 }
