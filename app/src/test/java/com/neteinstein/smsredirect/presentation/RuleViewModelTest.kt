@@ -43,7 +43,6 @@ class RuleViewModelTest {
         advanceUntilIdle()
 
         assertEquals("BANK", vm.uiState.value.senderText)
-        assertEquals("123", vm.uiState.value.phoneNumber)
         assertEquals("777", vm.uiState.value.targetNumber)
     }
 
@@ -56,6 +55,20 @@ class RuleViewModelTest {
         advanceUntilIdle()
 
         assertTrue(vm.uiState.value.error?.contains("required") == true)
+    }
+
+    @Test
+    fun `loads existing rule with phoneNumber as sender when senderText is blank`() = runTest {
+        val repository = FakeRuleRepository(
+            listOf(Rule(id = 2, senderText = "", phoneNumber = "+1555123", targetNumber = "999"))
+        )
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository))
+
+        vm.loadRule(2)
+        advanceUntilIdle()
+
+        assertEquals("+1555123", vm.uiState.value.senderText)
+        assertEquals("999", vm.uiState.value.targetNumber)
     }
 
     @Test
