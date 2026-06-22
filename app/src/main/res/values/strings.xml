@@ -15,6 +15,10 @@
     <string name="home_target_format">Target: %1$s</string>
     <string name="home_cd_delete_rule">Delete</string>
 
+    <string name="delete_rule_dialog_title">Delete rule</string>
+    <string name="delete_rule_dialog_message">Are you sure you want to delete \"%1$s\"?</string>
+    <string name="action_delete">Delete</string>
+
     <string name="missing_permissions_banner_title">Missing permissions - SMS forwarding will not work:</string>
     <string name="permission_item_format">• %1$s</string>
 

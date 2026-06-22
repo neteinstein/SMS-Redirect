@@ -15,6 +15,10 @@
     <string name="home_target_format">Destino: %1$s</string>
     <string name="home_cd_delete_rule">Apagar</string>
 
+    <string name="delete_rule_dialog_title">Apagar regra</string>
+    <string name="delete_rule_dialog_message">Tem a certeza que deseja apagar \"%1$s\"?</string>
+    <string name="action_delete">Apagar</string>
+
     <string name="missing_permissions_banner_title">Permissões em falta - o redirecionamento de SMS não vai funcionar:</string>
     <string name="permission_item_format">• %1$s</string>
 
