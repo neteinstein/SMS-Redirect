@@ -28,6 +28,8 @@ class SmsRedirectApplication : Application() {
             .build()
         val repository = RuleRepositoryImpl(database.ruleDao())
         val settingsRepository = SettingsRepositoryImpl(database.appSettingsDao())
+        val findMatchingRuleUseCase = FindMatchingRuleUseCase(repository)
+        val canForwardSmsUseCase = CanForwardSmsUseCase(settingsRepository)
         appContainer = AppContainer(
             ruleRepository = repository,
             getRulesUseCase = GetRulesUseCase(repository),
@@ -38,8 +40,9 @@ class SmsRedirectApplication : Application() {
             reorderRulesUseCase = ReorderRulesUseCase(repository),
             getSendWhileRoamingUseCase = GetSendWhileRoamingUseCase(settingsRepository),
             setSendWhileRoamingUseCase = SetSendWhileRoamingUseCase(settingsRepository),
-            findMatchingRuleUseCase = FindMatchingRuleUseCase(repository),
-            canForwardSmsUseCase = CanForwardSmsUseCase(settingsRepository)
+            findMatchingRuleUseCase = findMatchingRuleUseCase,
+            canForwardSmsUseCase = canForwardSmsUseCase,
+            smsForwarder = SmsForwarder(findMatchingRuleUseCase, canForwardSmsUseCase)
         )
     }
 }
@@ -55,5 +58,6 @@ data class AppContainer(
     val getSendWhileRoamingUseCase: GetSendWhileRoamingUseCase,
     val setSendWhileRoamingUseCase: SetSendWhileRoamingUseCase,
     val findMatchingRuleUseCase: FindMatchingRuleUseCase,
-    val canForwardSmsUseCase: CanForwardSmsUseCase
+    val canForwardSmsUseCase: CanForwardSmsUseCase,
+    val smsForwarder: SmsForwarder
 )
