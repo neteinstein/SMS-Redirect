@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.smsredirect.domain.model.Rule
 import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
 import com.neteinstein.smsredirect.domain.repository.RuleRepository
@@ -28,6 +29,7 @@ class RuleViewModel(
     private val addRuleUseCase: AddRuleUseCase,
     private val updateRuleUseCase: UpdateRuleUseCase,
     private val ruleRepository: RuleRepository,
+    private val getDefaultPrefixNowUseCase: GetDefaultPrefixNowUseCase,
     private val defaultRuleNameProvider: (Int) -> String = { "Rule #$it" }
 ) : ViewModel() {
 
@@ -65,8 +67,9 @@ class RuleViewModel(
     fun saveRule() {
         viewModelScope.launch {
             val current = uiState.value
-            val senderValue = normalizePhoneNumber(current.senderText.trim())
-            val targetValue = normalizePhoneNumber(current.targetNumber.trim())
+            val prefix = getDefaultPrefixNowUseCase()
+            val senderValue = normalizePhoneNumber(current.senderText.trim(), prefix)
+            val targetValue = normalizePhoneNumber(current.targetNumber.trim(), prefix)
             val name = current.name.trim().ifBlank {
                 val count = ruleRepository.getRuleCount()
                 defaultRuleNameProvider(count + 1)
@@ -92,21 +95,20 @@ class RuleViewModel(
     }
 
     companion object {
-        private const val DEFAULT_COUNTRY_CODE = "+351"
-
         /**
          * If the value looks like a phone number (digits only, optionally starting with 0)
-         * but has no country code prefix (+), prepend the default country code.
+         * but has no country code prefix (+), prepend the configured prefix.
+         * When prefix is empty (None), the number is returned as-is.
          */
-        fun normalizePhoneNumber(value: String): String {
+        fun normalizePhoneNumber(value: String, prefix: String = ""): String {
             if (value.isBlank()) return value
             if (value.startsWith("+")) return value
+            if (prefix.isBlank()) return value
             val digitsOnly = value.filter(Char::isDigit)
             if (digitsOnly.length < 4) return value
-            // Only prepend if it looks like a phone number (mostly digits)
             val nonDigits = value.count { !it.isDigit() && it != ' ' && it != '-' && it != '(' && it != ')' }
             if (nonDigits > 0) return value
-            return "$DEFAULT_COUNTRY_CODE$digitsOnly"
+            return "$prefix$digitsOnly"
         }
     }
 }
@@ -116,6 +118,7 @@ class RuleViewModelFactory(
     private val addRuleUseCase: AddRuleUseCase,
     private val updateRuleUseCase: UpdateRuleUseCase,
     private val ruleRepository: RuleRepository,
+    private val getDefaultPrefixNowUseCase: GetDefaultPrefixNowUseCase,
     private val defaultRuleNameProvider: (Int) -> String = { "Rule #$it" }
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -125,6 +128,7 @@ class RuleViewModelFactory(
             addRuleUseCase = addRuleUseCase,
             updateRuleUseCase = updateRuleUseCase,
             ruleRepository = ruleRepository,
+            getDefaultPrefixNowUseCase = getDefaultPrefixNowUseCase,
             defaultRuleNameProvider = defaultRuleNameProvider
         ) as T
     }

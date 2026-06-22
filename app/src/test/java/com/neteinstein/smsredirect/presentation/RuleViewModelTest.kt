@@ -1,8 +1,10 @@
 package com.neteinstein.smsredirect.presentation
 
 import com.neteinstein.smsredirect.FakeRuleRepository
+import com.neteinstein.smsredirect.FakeSettingsRepository
 import com.neteinstein.smsredirect.domain.model.Rule
 import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
 import com.neteinstein.smsredirect.presentation.rule.RuleViewModel
@@ -21,6 +23,8 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class RuleViewModelTest {
     private val dispatcher = StandardTestDispatcher()
+    private val settingsRepository = FakeSettingsRepository()
+    private val getDefaultPrefixNowUseCase = GetDefaultPrefixNowUseCase(settingsRepository)
 
     @Before
     fun setUp() {
@@ -37,7 +41,7 @@ class RuleViewModelTest {
         val repository = FakeRuleRepository(
             listOf(Rule(id = 1, senderText = "BANK", phoneNumber = "123", targetNumber = "777"))
         )
-        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository)
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
 
         vm.loadRule(1)
         advanceUntilIdle()
@@ -49,7 +53,7 @@ class RuleViewModelTest {
     @Test
     fun `save validates and reports error`() = runTest {
         val repository = FakeRuleRepository()
-        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository)
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
 
         vm.saveRule()
         advanceUntilIdle()
@@ -62,7 +66,7 @@ class RuleViewModelTest {
         val repository = FakeRuleRepository(
             listOf(Rule(id = 2, senderText = "", phoneNumber = "+1555123", targetNumber = "999"))
         )
-        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository)
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
 
         vm.loadRule(2)
         advanceUntilIdle()
@@ -74,7 +78,7 @@ class RuleViewModelTest {
     @Test
     fun `save inserts valid rule`() = runTest {
         val repository = FakeRuleRepository()
-        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository)
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
 
         vm.onSenderChanged("SHOP")
         vm.onTargetChanged("444")
@@ -87,7 +91,7 @@ class RuleViewModelTest {
     @Test
     fun `save generates default name when empty`() = runTest {
         val repository = FakeRuleRepository()
-        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository)
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
 
         vm.onSenderChanged("TEST")
         vm.onTargetChanged("555")
@@ -102,7 +106,7 @@ class RuleViewModelTest {
     @Test
     fun `save preserves custom name`() = runTest {
         val repository = FakeRuleRepository()
-        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository)
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
 
         vm.onNameChanged("My Custom Rule")
         vm.onSenderChanged("BANK")
@@ -117,28 +121,34 @@ class RuleViewModelTest {
 
     @Test
     fun `normalizePhoneNumber prepends country code for local numbers`() {
-        assertEquals("+351912345678", RuleViewModel.normalizePhoneNumber("912345678"))
-        assertEquals("+351912345678", RuleViewModel.normalizePhoneNumber("912 345 678"))
-        assertEquals("+351912345678", RuleViewModel.normalizePhoneNumber("912-345-678"))
+        assertEquals("+351912345678", RuleViewModel.normalizePhoneNumber("912345678", "+351"))
+        assertEquals("+351912345678", RuleViewModel.normalizePhoneNumber("912 345 678", "+351"))
+        assertEquals("+351912345678", RuleViewModel.normalizePhoneNumber("912-345-678", "+351"))
     }
 
     @Test
     fun `normalizePhoneNumber preserves numbers with country code`() {
-        assertEquals("+351912345678", RuleViewModel.normalizePhoneNumber("+351912345678"))
-        assertEquals("+44123456789", RuleViewModel.normalizePhoneNumber("+44123456789"))
+        assertEquals("+351912345678", RuleViewModel.normalizePhoneNumber("+351912345678", "+351"))
+        assertEquals("+44123456789", RuleViewModel.normalizePhoneNumber("+44123456789", "+351"))
     }
 
     @Test
     fun `normalizePhoneNumber does not modify text senders`() {
-        assertEquals("BANK", RuleViewModel.normalizePhoneNumber("BANK"))
-        assertEquals("MyCompany", RuleViewModel.normalizePhoneNumber("MyCompany"))
-        assertEquals("", RuleViewModel.normalizePhoneNumber(""))
+        assertEquals("BANK", RuleViewModel.normalizePhoneNumber("BANK", "+351"))
+        assertEquals("MyCompany", RuleViewModel.normalizePhoneNumber("MyCompany", "+351"))
+        assertEquals("", RuleViewModel.normalizePhoneNumber("", "+351"))
+    }
+
+    @Test
+    fun `normalizePhoneNumber does not prepend when prefix is empty`() {
+        assertEquals("912345678", RuleViewModel.normalizePhoneNumber("912345678", ""))
+        assertEquals("912 345 678", RuleViewModel.normalizePhoneNumber("912 345 678", ""))
     }
 
     @Test
     fun `save prepends country code to target number`() = runTest {
         val repository = FakeRuleRepository()
-        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository)
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
 
         vm.onSenderChanged("BANK")
         vm.onTargetChanged("912345678")

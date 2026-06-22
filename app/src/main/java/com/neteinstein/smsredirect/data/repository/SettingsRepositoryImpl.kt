@@ -28,4 +28,14 @@ class SettingsRepositoryImpl(
         val current = dao.getSettings() ?: AppSettingsEntity()
         dao.upsert(current.copy(keepHistory = enabled))
     }
+
+    override fun observeDefaultPrefix(): Flow<String> =
+        dao.observeSettings().map { it?.defaultPrefix ?: "+351" }
+
+    override suspend fun getDefaultPrefix(): String = dao.getSettings()?.defaultPrefix ?: "+351"
+
+    override suspend fun setDefaultPrefix(prefix: String) {
+        val current = dao.getSettings() ?: AppSettingsEntity()
+        dao.upsert(current.copy(defaultPrefix = prefix))
+    }
 }

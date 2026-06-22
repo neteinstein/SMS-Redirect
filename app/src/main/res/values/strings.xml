@@ -36,6 +36,9 @@
     <string name="settings_title">Settings</string>
     <string name="settings_send_while_roaming">Send while roaming</string>
     <string name="settings_keep_history">Keep history</string>
+    <string name="settings_default_prefix_label">Default prefix</string>
+    <string name="settings_prefix_none">None</string>
+    <string name="settings_prefix_portugal">Portugal (+351)</string>
     <string name="settings_history_title">Forward history (last 50)</string>
     <string name="settings_no_forwarded_sms">No forwarded SMS yet</string>
     <string name="settings_history_sender_target_format">%1$s → %2$s</string>

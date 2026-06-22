@@ -147,6 +147,8 @@ class MainActivity : ComponentActivity() {
                             appContainer.setSendWhileRoamingUseCase,
                             appContainer.getKeepHistoryUseCase,
                             appContainer.setKeepHistoryUseCase,
+                            appContainer.getDefaultPrefixUseCase,
+                            appContainer.setDefaultPrefixUseCase,
                             appContainer.getForwardHistoryUseCase
                         )
                     )
@@ -166,14 +168,17 @@ class MainActivity : ComponentActivity() {
                     val missingPerms = remember(permissionCheckTick) { currentMissingPermissions() }
                     val sendWhileRoaming by settingsViewModel.sendWhileRoaming.collectAsState()
                     val keepHistory by settingsViewModel.keepHistory.collectAsState()
+                    val defaultPrefix by settingsViewModel.defaultPrefix.collectAsState()
                     val forwardHistory by settingsViewModel.forwardHistory.collectAsState()
                     SettingsScreen(
                         missingPermissions = missingPerms,
                         sendWhileRoaming = sendWhileRoaming,
                         keepHistory = keepHistory,
+                        defaultPrefix = defaultPrefix,
                         forwardHistory = forwardHistory,
                         onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming,
                         onKeepHistoryChanged = settingsViewModel::setKeepHistory,
+                        onDefaultPrefixChanged = settingsViewModel::setDefaultPrefix,
                         onBack = { navController.popBackStack() }
                     )
                 }
@@ -192,6 +197,7 @@ class MainActivity : ComponentActivity() {
                             appContainer.addRuleUseCase,
                             appContainer.updateRuleUseCase,
                             appContainer.ruleRepository,
+                            appContainer.getDefaultPrefixNowUseCase,
                             defaultRuleNameProvider = { index ->
                                 getString(R.string.rule_default_name_format, index)
                             }

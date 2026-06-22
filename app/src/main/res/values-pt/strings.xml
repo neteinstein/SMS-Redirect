@@ -36,6 +36,9 @@
     <string name="settings_title">Definições</string>
     <string name="settings_send_while_roaming">Enviar em roaming</string>
     <string name="settings_keep_history">Manter histórico</string>
+    <string name="settings_default_prefix_label">Prefixo padrão</string>
+    <string name="settings_prefix_none">Nenhum</string>
+    <string name="settings_prefix_portugal">Portugal (+351)</string>
     <string name="settings_history_title">Histórico de reencaminhamento (últimos 50)</string>
     <string name="settings_no_forwarded_sms">Ainda não há SMS reencaminhados</string>
     <string name="settings_history_sender_target_format">%1$s → %2$s</string>

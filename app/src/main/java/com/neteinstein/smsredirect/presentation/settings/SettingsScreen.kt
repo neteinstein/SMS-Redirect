@@ -13,15 +13,24 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -38,9 +47,11 @@ fun SettingsScreen(
     missingPermissions: List<String>,
     sendWhileRoaming: Boolean,
     keepHistory: Boolean,
+    defaultPrefix: String,
     forwardHistory: List<ForwardHistory>,
     onSendWhileRoamingChanged: (Boolean) -> Unit,
     onKeepHistoryChanged: (Boolean) -> Unit,
+    onDefaultPrefixChanged: (String) -> Unit,
     onBack: () -> Unit
 ) {
     Scaffold(
@@ -107,6 +118,11 @@ fun SettingsScreen(
                 onCheckedChange = onKeepHistoryChanged
             )
 
+            DefaultPrefixDropdown(
+                selectedPrefix = defaultPrefix,
+                onPrefixSelected = onDefaultPrefixChanged
+            )
+
             if (keepHistory) {
                 Text(
                     text = stringResource(R.string.settings_history_title),
@@ -130,6 +146,53 @@ fun SettingsScreen(
                             ForwardHistoryCard(item)
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DefaultPrefixDropdown(
+    selectedPrefix: String,
+    onPrefixSelected: (String) -> Unit
+) {
+    val options = listOf(
+        "" to stringResource(R.string.settings_prefix_none),
+        "+351" to stringResource(R.string.settings_prefix_portugal)
+    )
+    var expanded by remember { mutableStateOf(false) }
+    val selectedLabel = options.firstOrNull { it.first == selectedPrefix }?.second
+        ?: stringResource(R.string.settings_prefix_portugal)
+
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = it }
+        ) {
+            OutlinedTextField(
+                value = selectedLabel,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text(stringResource(R.string.settings_default_prefix_label)) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                options.forEach { (value, label) ->
+                    DropdownMenuItem(
+                        text = { Text(label) },
+                        onClick = {
+                            onPrefixSelected(value)
+                            expanded = false
+                        }
+                    )
                 }
             }
         }
