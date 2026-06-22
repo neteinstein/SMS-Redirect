@@ -5,10 +5,12 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.smsredirect.domain.model.ForwardHistory
 import com.neteinstein.smsredirect.domain.usecase.GetForwardHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +27,8 @@ class SettingsViewModel(
     private val setKeepHistoryUseCase: SetKeepHistoryUseCase,
     getDefaultPrefixUseCase: GetDefaultPrefixUseCase,
     private val setDefaultPrefixUseCase: SetDefaultPrefixUseCase,
+    getForwardPrefixUseCase: GetForwardPrefixUseCase,
+    private val setForwardPrefixUseCase: SetForwardPrefixUseCase,
     getForwardHistoryUseCase: GetForwardHistoryUseCase
 ) : ViewModel() {
 
@@ -34,6 +38,8 @@ class SettingsViewModel(
     val keepHistory: StateFlow<Boolean> = _keepHistory.asStateFlow()
     private val _defaultPrefix = MutableStateFlow("+351")
     val defaultPrefix: StateFlow<String> = _defaultPrefix.asStateFlow()
+    private val _forwardPrefix = MutableStateFlow("SMS Redirect:")
+    val forwardPrefix: StateFlow<String> = _forwardPrefix.asStateFlow()
     private val _forwardHistory = MutableStateFlow<List<ForwardHistory>>(emptyList())
     val forwardHistory: StateFlow<List<ForwardHistory>> = _forwardHistory.asStateFlow()
 
@@ -46,6 +52,9 @@ class SettingsViewModel(
             .launchIn(viewModelScope)
         getDefaultPrefixUseCase()
             .onEach { _defaultPrefix.value = it }
+            .launchIn(viewModelScope)
+        getForwardPrefixUseCase()
+            .onEach { _forwardPrefix.value = it }
             .launchIn(viewModelScope)
         getForwardHistoryUseCase(limit = 50)
             .onEach { _forwardHistory.value = it }
@@ -69,6 +78,12 @@ class SettingsViewModel(
             setDefaultPrefixUseCase(prefix)
         }
     }
+
+    fun setForwardPrefix(prefix: String) {
+        viewModelScope.launch {
+            setForwardPrefixUseCase(prefix)
+        }
+    }
 }
 
 class SettingsViewModelFactory(
@@ -78,6 +93,8 @@ class SettingsViewModelFactory(
     private val setKeepHistoryUseCase: SetKeepHistoryUseCase,
     private val getDefaultPrefixUseCase: GetDefaultPrefixUseCase,
     private val setDefaultPrefixUseCase: SetDefaultPrefixUseCase,
+    private val getForwardPrefixUseCase: GetForwardPrefixUseCase,
+    private val setForwardPrefixUseCase: SetForwardPrefixUseCase,
     private val getForwardHistoryUseCase: GetForwardHistoryUseCase
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -89,6 +106,8 @@ class SettingsViewModelFactory(
             setKeepHistoryUseCase = setKeepHistoryUseCase,
             getDefaultPrefixUseCase = getDefaultPrefixUseCase,
             setDefaultPrefixUseCase = setDefaultPrefixUseCase,
+            getForwardPrefixUseCase = getForwardPrefixUseCase,
+            setForwardPrefixUseCase = setForwardPrefixUseCase,
             getForwardHistoryUseCase = getForwardHistoryUseCase
         ) as T
     }

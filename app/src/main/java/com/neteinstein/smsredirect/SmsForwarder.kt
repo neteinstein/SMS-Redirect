@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import com.neteinstein.smsredirect.domain.usecase.CanForwardSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.RecordForwardHistoryUseCase
 
@@ -16,7 +17,8 @@ class SmsForwarder(
     private val findMatchingRuleUseCase: FindMatchingRuleUseCase,
     private val canForwardSmsUseCase: CanForwardSmsUseCase,
     private val getKeepHistoryNowUseCase: GetKeepHistoryNowUseCase,
-    private val recordForwardHistoryUseCase: RecordForwardHistoryUseCase
+    private val recordForwardHistoryUseCase: RecordForwardHistoryUseCase,
+    private val getForwardPrefixNowUseCase: GetForwardPrefixNowUseCase
 ) {
 
     companion object {
@@ -56,15 +58,18 @@ class SmsForwarder(
         Log.i(TAG, "Matched rule id=${rule.id} name='${rule.name}' — forwarding to '${rule.targetNumber}'")
 
         try {
+            val forwardPrefix = getForwardPrefixNowUseCase()
+            val prefixedBody = if (forwardPrefix.isNotBlank()) "$forwardPrefix $body" else body
+
             val smsManager = context.getSystemService(SmsManager::class.java)
             if (smsManager == null) {
                 Log.e(TAG, "Failed: SmsManager is null (no default subscription?)")
                 return
             }
 
-            val parts = smsManager.divideMessage(body)
+            val parts = smsManager.divideMessage(prefixedBody)
             if (parts.size == 1) {
-                smsManager.sendTextMessage(rule.targetNumber, null, body, null, null)
+                smsManager.sendTextMessage(rule.targetNumber, null, prefixedBody, null, null)
             } else {
                 Log.d(TAG, "Message split into ${parts.size} parts")
                 smsManager.sendMultipartTextMessage(rule.targetNumber, null, parts, null, null)

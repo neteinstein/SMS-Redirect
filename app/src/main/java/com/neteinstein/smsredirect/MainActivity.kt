@@ -167,6 +167,8 @@ class MainActivity : ComponentActivity() {
                             appContainer.setKeepHistoryUseCase,
                             appContainer.getDefaultPrefixUseCase,
                             appContainer.setDefaultPrefixUseCase,
+                            appContainer.getForwardPrefixUseCase,
+                            appContainer.setForwardPrefixUseCase,
                             appContainer.getForwardHistoryUseCase
                         )
                     )
@@ -187,15 +189,18 @@ class MainActivity : ComponentActivity() {
                     val sendWhileRoaming by settingsViewModel.sendWhileRoaming.collectAsState()
                     val keepHistory by settingsViewModel.keepHistory.collectAsState()
                     val defaultPrefix by settingsViewModel.defaultPrefix.collectAsState()
+                    val forwardPrefix by settingsViewModel.forwardPrefix.collectAsState()
                     val forwardHistory by settingsViewModel.forwardHistory.collectAsState()
                     SettingsScreen(
                         missingPermissions = missingPerms,
                         sendWhileRoaming = sendWhileRoaming,
                         keepHistory = keepHistory,
+                        forwardPrefix = forwardPrefix,
                         defaultPrefix = defaultPrefix,
                         forwardHistory = forwardHistory,
                         onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming,
                         onKeepHistoryChanged = settingsViewModel::setKeepHistory,
+                        onForwardPrefixSaved = settingsViewModel::setForwardPrefix,
                         onDefaultPrefixChanged = settingsViewModel::setDefaultPrefix,
                         onBack = { navController.popBackStack() }
                     )
