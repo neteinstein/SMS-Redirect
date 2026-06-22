@@ -159,4 +159,139 @@ class RuleViewModelTest {
         val savedRule = repository.getRulesSnapshot().first()
         assertEquals("+351912345678", savedRule.targetNumber)
     }
+
+    @Test
+    fun `save prepends +351 to target with spaces`() = runTest {
+        val repository = FakeRuleRepository()
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
+
+        vm.onSenderChanged("BANK")
+        vm.onTargetChanged("912 345 678")
+        vm.saveRule()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.saved)
+        assertEquals("+351912345678", repository.getRulesSnapshot().first().targetNumber)
+    }
+
+    @Test
+    fun `save prepends +351 to target with dashes`() = runTest {
+        val repository = FakeRuleRepository()
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
+
+        vm.onSenderChanged("BANK")
+        vm.onTargetChanged("912-345-678")
+        vm.saveRule()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.saved)
+        assertEquals("+351912345678", repository.getRulesSnapshot().first().targetNumber)
+    }
+
+    @Test
+    fun `save does not double-prepend prefix when target already has country code`() = runTest {
+        val repository = FakeRuleRepository()
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
+
+        vm.onSenderChanged("BANK")
+        vm.onTargetChanged("+351912345678")
+        vm.saveRule()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.saved)
+        assertEquals("+351912345678", repository.getRulesSnapshot().first().targetNumber)
+    }
+
+    @Test
+    fun `save preserves foreign country code on target`() = runTest {
+        val repository = FakeRuleRepository()
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
+
+        vm.onSenderChanged("BANK")
+        vm.onTargetChanged("+44123456789")
+        vm.saveRule()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.saved)
+        assertEquals("+44123456789", repository.getRulesSnapshot().first().targetNumber)
+    }
+
+    @Test
+    fun `save does not prepend prefix when default prefix is None`() = runTest {
+        settingsRepository.setDefaultPrefix("")
+        val repository = FakeRuleRepository()
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
+
+        vm.onSenderChanged("BANK")
+        vm.onTargetChanged("912345678")
+        vm.saveRule()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.saved)
+        assertEquals("912345678", repository.getRulesSnapshot().first().targetNumber)
+
+        // Reset for other tests
+        settingsRepository.setDefaultPrefix("+351")
+    }
+
+    @Test
+    fun `save rejects blank target with error`() = runTest {
+        val repository = FakeRuleRepository()
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
+
+        vm.onSenderChanged("BANK")
+        vm.onTargetChanged("")
+        vm.saveRule()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.error != null)
+        assertEquals(0, repository.getRulesSnapshot().size)
+    }
+
+    @Test
+    fun `save rejects target with fewer than 4 digits`() = runTest {
+        val repository = FakeRuleRepository()
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
+
+        vm.onSenderChanged("BANK")
+        vm.onTargetChanged("123")
+        vm.saveRule()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.error != null)
+        assertEquals(0, repository.getRulesSnapshot().size)
+    }
+
+    @Test
+    fun `save accepts valid target and senderText produces valid rule`() = runTest {
+        val repository = FakeRuleRepository()
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
+
+        vm.onSenderChanged("BANK")
+        vm.onTargetChanged("912345678")
+        vm.saveRule()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.saved)
+        val rule = repository.getRulesSnapshot().first()
+        assertTrue(rule.isValid())
+        assertEquals("+351912345678", rule.targetNumber)
+        assertEquals("BANK", rule.senderText)
+    }
+
+    @Test
+    fun `save with numeric sender also normalizes sender`() = runTest {
+        val repository = FakeRuleRepository()
+        val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
+
+        vm.onSenderChanged("912111222")
+        vm.onTargetChanged("933444555")
+        vm.saveRule()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.saved)
+        val rule = repository.getRulesSnapshot().first()
+        assertEquals("+351912111222", rule.senderText)
+        assertEquals("+351933444555", rule.targetNumber)
+    }
 }
