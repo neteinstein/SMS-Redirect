@@ -296,7 +296,10 @@ class MainActivity : ComponentActivity() {
                                 requestTargetContactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
                             }
                         },
-                        onSave = { ruleViewModel.saveRule(getString(R.string.rule_error_invalid_target)) },
+                        onSave = { ruleViewModel.saveRule(
+                            invalidTargetError = getString(R.string.rule_error_invalid_target),
+                            duplicateRuleError = getString(R.string.rule_error_duplicate)
+                        ) },
                         onBack = { navController.popBackStack() }
                     )
                 }

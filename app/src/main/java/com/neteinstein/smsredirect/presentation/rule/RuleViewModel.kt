@@ -65,7 +65,10 @@ class RuleViewModel(
         _uiState.update { it.copy(targetNumber = filtered, error = null) }
     }
 
-    fun saveRule(invalidTargetError: String = "Target must be a valid phone number") {
+    fun saveRule(
+        invalidTargetError: String = "Target must be a valid phone number",
+        duplicateRuleError: String = "This rule already exists"
+    ) {
         viewModelScope.launch {
             val current = uiState.value
             if (!isValidPhoneNumber(current.targetNumber.trim())) {
@@ -75,6 +78,18 @@ class RuleViewModel(
             val prefix = getDefaultPrefixNowUseCase()
             val senderValue = normalizePhoneNumber(current.senderText.trim(), prefix)
             val targetValue = normalizeTargetNumber(current.targetNumber.trim(), prefix)
+
+            val existingRules = ruleRepository.getRulesSnapshot()
+            val isDuplicate = existingRules.any { existing ->
+                existing.id != current.id &&
+                    existing.senderText == senderValue &&
+                    existing.targetNumber == targetValue
+            }
+            if (isDuplicate) {
+                _uiState.update { it.copy(error = duplicateRuleError) }
+                return@launch
+            }
+
             val name = current.name.trim().ifBlank {
                 val count = ruleRepository.getRuleCount()
                 defaultRuleNameProvider(count + 1)

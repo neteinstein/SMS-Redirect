@@ -35,6 +35,7 @@
     <string name="rule_cd_pick_sender_contact">Pick sender from contacts</string>
     <string name="rule_cd_pick_target_contact">Pick target from contacts</string>
     <string name="rule_error_invalid_target">Target must be a valid phone number (digits, +, spaces, dashes allowed)</string>
+    <string name="rule_error_duplicate">This rule already exists</string>
     <string name="rule_action_save">Save Rule</string>
     <string name="rule_default_name_format">Rule #%1$d</string>
 
