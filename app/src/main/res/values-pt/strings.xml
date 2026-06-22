@@ -4,7 +4,11 @@
     <string name="battery_optimization_message">Para manter o redirecionamento de SMS confiável, desative a otimização de bateria para esta app.</string>
     <string name="action_cancel">Cancelar</string>
     <string name="action_back">Voltar</string>
+    <string name="action_ok">OK</string>
     <string name="action_open_screen">Abrir ecrã</string>
+
+    <string name="sideload_warning_title">Permitir definições restritas</string>
+    <string name="sideload_warning_message">Esta app não foi instalada pela Play Store. É necessário um passo extra:\n\n1. Vá a Definições > Apps > Redirecionador SMS\n2. Toque no menu de três pontos (canto superior direito)\n3. Selecione \"Permitir definições restritas\"\n\nPrima OK para abrir o ecrã de definições da app.</string>
 
     <string name="home_title_rules">Regras de Redirecionamento SMS</string>
     <string name="home_cd_settings">Definições</string>

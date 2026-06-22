@@ -4,7 +4,11 @@
     <string name="battery_optimization_message">To keep SMS forwarding reliable, disable battery optimization for this app.</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_back">Back</string>
+    <string name="action_ok">OK</string>
     <string name="action_open_screen">Open screen</string>
+
+    <string name="sideload_warning_title">Allow restricted settings</string>
+    <string name="sideload_warning_message">This app was not installed via the Play Store. An extra step is required:\n\n1. Go to Settings > Apps > SMS Redirect\n2. Tap the three-dot menu (top right)\n3. Select \"Allow restricted settings\"\n\nPress OK to open the app settings screen.</string>
 
     <string name="home_title_rules">SMS Redirect Rules</string>
     <string name="home_cd_settings">Settings</string>
