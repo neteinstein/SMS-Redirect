@@ -3,6 +3,7 @@
     <string name="battery_optimization_title">Disable battery optimization</string>
     <string name="battery_optimization_message">To keep SMS forwarding reliable, disable battery optimization for this app.</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_back">Back</string>
     <string name="action_open_screen">Open screen</string>
 
     <string name="home_title_rules">SMS Redirect Rules</string>

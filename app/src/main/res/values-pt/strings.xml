@@ -3,6 +3,7 @@
     <string name="battery_optimization_title">Desativar otimização de bateria</string>
     <string name="battery_optimization_message">Para manter o redirecionamento de SMS confiável, desative a otimização de bateria para esta app.</string>
     <string name="action_cancel">Cancelar</string>
+    <string name="action_back">Voltar</string>
     <string name="action_open_screen">Abrir ecrã</string>
 
     <string name="home_title_rules">Regras de Redirecionamento SMS</string>

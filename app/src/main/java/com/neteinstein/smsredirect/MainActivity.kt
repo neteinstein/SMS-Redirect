@@ -173,7 +173,8 @@ class MainActivity : ComponentActivity() {
                         keepHistory = keepHistory,
                         forwardHistory = forwardHistory,
                         onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming,
-                        onKeepHistoryChanged = settingsViewModel::setKeepHistory
+                        onKeepHistoryChanged = settingsViewModel::setKeepHistory,
+                        onBack = { navController.popBackStack() }
                     )
                 }
 
