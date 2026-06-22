@@ -107,8 +107,18 @@ class MainActivity : ComponentActivity() {
                         )
                     )
                     val rules by homeViewModel.rules.collectAsState()
+                    val missingPerms = remember {
+                        requiredPermissions
+                            .filter {
+                                ContextCompat.checkSelfPermission(
+                                    this@MainActivity, it
+                                ) != PackageManager.PERMISSION_GRANTED
+                            }
+                            .map { it.removePrefix("android.permission.") }
+                    }
                     HomeScreen(
                         rules = rules,
+                        missingPermissions = missingPerms,
                         onAddRule = { navController.navigate(Routes.ruleRoute()) },
                         onOpenSettings = { navController.navigate(Routes.Settings) },
                         onEditRule = { navController.navigate(Routes.ruleRoute(it)) },

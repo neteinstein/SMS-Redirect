@@ -1,6 +1,7 @@
 package com.neteinstein.smsredirect.presentation.home
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,6 +50,7 @@ import kotlin.math.roundToInt
 @Composable
 fun HomeScreen(
     rules: List<Rule>,
+    missingPermissions: List<String>,
     onAddRule: () -> Unit,
     onOpenSettings: () -> Unit,
     onEditRule: (Long) -> Unit,
@@ -72,17 +75,52 @@ fun HomeScreen(
             }
         }
     ) { padding ->
-        if (rules.isEmpty()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text("No rules yet. Add one to get started.")
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            if (missingPermissions.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.errorContainer)
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Column {
+                        Text(
+                            "Missing permissions — SMS forwarding won't work:",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        missingPermissions.forEach { perm ->
+                            Text(
+                                "• $perm",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
             }
-        } else {
+
+            if (rules.isEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text("No rules yet. Add one to get started.")
+                }
+            } else {
             val listState = rememberLazyListState()
             var draggedIndex by remember { mutableIntStateOf(-1) }
             var dragOffsetY by remember { mutableFloatStateOf(0f) }
@@ -91,7 +129,6 @@ fun HomeScreen(
                 state = listState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -144,6 +181,7 @@ fun HomeScreen(
                         elevation = elevation
                     )
                 }
+            }
             }
         }
     }
