@@ -9,17 +9,24 @@ import android.provider.ContactsContract
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.runtime.setValue
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -69,11 +76,11 @@ class MainActivity : ComponentActivity() {
             if (showBatteryDialog.value) {
                 AlertDialog(
                     onDismissRequest = { showBatteryDialog.value = false },
-                    title = { Text("Disable battery optimization") },
-                    text = { Text("To keep SMS forwarding reliable, disable battery optimization for this app.") },
+                    title = { Text(stringResource(R.string.battery_optimization_title)) },
+                    text = { Text(stringResource(R.string.battery_optimization_message)) },
                     dismissButton = {
                         TextButton(onClick = { showBatteryDialog.value = false }) {
-                            Text("Cancel")
+                            Text(stringResource(R.string.action_cancel))
                         }
                     },
                     confirmButton = {
@@ -81,7 +88,7 @@ class MainActivity : ComponentActivity() {
                             showBatteryDialog.value = false
                             openBatteryOptimizationSettings()
                         }) {
-                            Text("Open screen")
+                            Text(stringResource(R.string.action_open_screen))
                         }
                     }
                 )
@@ -107,15 +114,20 @@ class MainActivity : ComponentActivity() {
                         )
                     )
                     val rules by homeViewModel.rules.collectAsState()
-                    val missingPerms = remember {
-                        requiredPermissions
-                            .filter {
-                                ContextCompat.checkSelfPermission(
-                                    this@MainActivity, it
-                                ) != PackageManager.PERMISSION_GRANTED
+                    val lifecycleOwner = LocalLifecycleOwner.current
+                    var permissionCheckTick by remember { mutableIntStateOf(0) }
+                    DisposableEffect(lifecycleOwner) {
+                        val observer = LifecycleEventObserver { _, event ->
+                            if (event == Lifecycle.Event.ON_RESUME) {
+                                permissionCheckTick++
                             }
-                            .map { it.removePrefix("android.permission.") }
+                        }
+                        lifecycleOwner.lifecycle.addObserver(observer)
+                        onDispose {
+                            lifecycleOwner.lifecycle.removeObserver(observer)
+                        }
                     }
+                    val missingPerms = remember(permissionCheckTick) { currentMissingPermissions() }
                     HomeScreen(
                         rules = rules,
                         missingPermissions = missingPerms,
@@ -132,13 +144,36 @@ class MainActivity : ComponentActivity() {
                     val settingsViewModel: SettingsViewModel = viewModel(
                         factory = SettingsViewModelFactory(
                             appContainer.getSendWhileRoamingUseCase,
-                            appContainer.setSendWhileRoamingUseCase
+                            appContainer.setSendWhileRoamingUseCase,
+                            appContainer.getKeepHistoryUseCase,
+                            appContainer.setKeepHistoryUseCase,
+                            appContainer.getForwardHistoryUseCase
                         )
                     )
+                    val lifecycleOwner = LocalLifecycleOwner.current
+                    var permissionCheckTick by remember { mutableIntStateOf(0) }
+                    DisposableEffect(lifecycleOwner) {
+                        val observer = LifecycleEventObserver { _, event ->
+                            if (event == Lifecycle.Event.ON_RESUME) {
+                                permissionCheckTick++
+                            }
+                        }
+                        lifecycleOwner.lifecycle.addObserver(observer)
+                        onDispose {
+                            lifecycleOwner.lifecycle.removeObserver(observer)
+                        }
+                    }
+                    val missingPerms = remember(permissionCheckTick) { currentMissingPermissions() }
                     val sendWhileRoaming by settingsViewModel.sendWhileRoaming.collectAsState()
+                    val keepHistory by settingsViewModel.keepHistory.collectAsState()
+                    val forwardHistory by settingsViewModel.forwardHistory.collectAsState()
                     SettingsScreen(
+                        missingPermissions = missingPerms,
                         sendWhileRoaming = sendWhileRoaming,
-                        onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming
+                        keepHistory = keepHistory,
+                        forwardHistory = forwardHistory,
+                        onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming,
+                        onKeepHistoryChanged = settingsViewModel::setKeepHistory
                     )
                 }
 
@@ -155,7 +190,10 @@ class MainActivity : ComponentActivity() {
                             appContainer.getRuleUseCase,
                             appContainer.addRuleUseCase,
                             appContainer.updateRuleUseCase,
-                            appContainer.ruleRepository
+                            appContainer.ruleRepository,
+                            defaultRuleNameProvider = { index ->
+                                getString(R.string.rule_default_name_format, index)
+                            }
                         )
                     )
 
@@ -261,6 +299,14 @@ class MainActivity : ComponentActivity() {
         )?.use { cursor ->
             if (cursor.moveToFirst()) cursor.getString(0) else ""
         }.orEmpty()
+    }
+
+    private fun currentMissingPermissions(): List<String> {
+        return requiredPermissions
+            .filter {
+                ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+            }
+            .map { it.removePrefix("android.permission.") }
     }
 
     private fun shouldShowBatteryOptimizationDialog(): Boolean {

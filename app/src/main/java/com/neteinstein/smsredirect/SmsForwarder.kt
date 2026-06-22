@@ -9,10 +9,14 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import com.neteinstein.smsredirect.domain.usecase.CanForwardSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryNowUseCase
+import com.neteinstein.smsredirect.domain.usecase.RecordForwardHistoryUseCase
 
 class SmsForwarder(
     private val findMatchingRuleUseCase: FindMatchingRuleUseCase,
-    private val canForwardSmsUseCase: CanForwardSmsUseCase
+    private val canForwardSmsUseCase: CanForwardSmsUseCase,
+    private val getKeepHistoryNowUseCase: GetKeepHistoryNowUseCase,
+    private val recordForwardHistoryUseCase: RecordForwardHistoryUseCase
 ) {
 
     companion object {
@@ -66,6 +70,19 @@ class SmsForwarder(
                 smsManager.sendMultipartTextMessage(rule.targetNumber, null, parts, null, null)
             }
             Log.i(TAG, "SMS forwarded successfully to '${rule.targetNumber}'")
+
+            val keepHistory = getKeepHistoryNowUseCase()
+            if (keepHistory) {
+                recordForwardHistoryUseCase(
+                    sender = sender.orEmpty(),
+                    targetNumber = rule.targetNumber,
+                    messageBody = body,
+                    ruleName = rule.name
+                )
+                Log.d(TAG, "Forward saved to history")
+            } else {
+                Log.d(TAG, "Keep history disabled, skipping history record")
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to send SMS to '${rule.targetNumber}'", e)
         }

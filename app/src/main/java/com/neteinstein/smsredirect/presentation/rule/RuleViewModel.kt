@@ -27,7 +27,8 @@ class RuleViewModel(
     private val getRuleUseCase: GetRuleUseCase,
     private val addRuleUseCase: AddRuleUseCase,
     private val updateRuleUseCase: UpdateRuleUseCase,
-    private val ruleRepository: RuleRepository
+    private val ruleRepository: RuleRepository,
+    private val defaultRuleNameProvider: (Int) -> String = { "Rule #$it" }
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RuleUiState())
@@ -68,7 +69,7 @@ class RuleViewModel(
             val targetValue = normalizePhoneNumber(current.targetNumber.trim())
             val name = current.name.trim().ifBlank {
                 val count = ruleRepository.getRuleCount()
-                "Rule #${count + 1}"
+                defaultRuleNameProvider(count + 1)
             }
             val rule = Rule(
                 id = current.id,
@@ -114,10 +115,17 @@ class RuleViewModelFactory(
     private val getRuleUseCase: GetRuleUseCase,
     private val addRuleUseCase: AddRuleUseCase,
     private val updateRuleUseCase: UpdateRuleUseCase,
-    private val ruleRepository: RuleRepository
+    private val ruleRepository: RuleRepository,
+    private val defaultRuleNameProvider: (Int) -> String = { "Rule #$it" }
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
-        return RuleViewModel(getRuleUseCase, addRuleUseCase, updateRuleUseCase, ruleRepository) as T
+        return RuleViewModel(
+            getRuleUseCase = getRuleUseCase,
+            addRuleUseCase = addRuleUseCase,
+            updateRuleUseCase = updateRuleUseCase,
+            ruleRepository = ruleRepository,
+            defaultRuleNameProvider = defaultRuleNameProvider
+        ) as T
     }
 }
