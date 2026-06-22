@@ -74,7 +74,7 @@ class RuleViewModel(
             }
             val prefix = getDefaultPrefixNowUseCase()
             val senderValue = normalizePhoneNumber(current.senderText.trim(), prefix)
-            val targetValue = normalizePhoneNumber(current.targetNumber.trim(), prefix)
+            val targetValue = normalizeTargetNumber(current.targetNumber.trim(), prefix)
             val name = current.name.trim().ifBlank {
                 val count = ruleRepository.getRuleCount()
                 defaultRuleNameProvider(count + 1)
@@ -113,6 +113,20 @@ class RuleViewModel(
             if (digitsOnly.length < 4) return value
             val nonDigits = value.count { !it.isDigit() && it != ' ' && it != '-' && it != '(' && it != ')' }
             if (nonDigits > 0) return value
+            return "$prefix$digitsOnly"
+        }
+
+        /**
+         * Normalizes a target phone number by prepending the configured prefix.
+         * Unlike [normalizePhoneNumber], this always applies the prefix to digit-only
+         * values since the target field is validated to only contain phone characters.
+         */
+        fun normalizeTargetNumber(value: String, prefix: String = ""): String {
+            if (value.isBlank()) return value
+            if (value.trimStart().startsWith("+")) return value.trimStart()
+            if (prefix.isBlank()) return value
+            val digitsOnly = value.filter(Char::isDigit)
+            if (digitsOnly.length < 4) return value
             return "$prefix$digitsOnly"
         }
 
