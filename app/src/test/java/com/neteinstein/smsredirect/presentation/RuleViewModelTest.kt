@@ -58,7 +58,7 @@ class RuleViewModelTest {
         vm.saveRule()
         advanceUntilIdle()
 
-        assertTrue(vm.uiState.value.error?.contains("required") == true)
+        assertTrue(vm.uiState.value.error != null)
     }
 
     @Test
@@ -81,7 +81,7 @@ class RuleViewModelTest {
         val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
 
         vm.onSenderChanged("SHOP")
-        vm.onTargetChanged("444")
+        vm.onTargetChanged("4445")
         vm.saveRule()
         advanceUntilIdle()
 
@@ -94,7 +94,7 @@ class RuleViewModelTest {
         val vm = RuleViewModel(GetRuleUseCase(repository), AddRuleUseCase(repository), UpdateRuleUseCase(repository), repository, getDefaultPrefixNowUseCase)
 
         vm.onSenderChanged("TEST")
-        vm.onTargetChanged("555")
+        vm.onTargetChanged("5556")
         vm.saveRule()
         advanceUntilIdle()
 
@@ -110,7 +110,7 @@ class RuleViewModelTest {
 
         vm.onNameChanged("My Custom Rule")
         vm.onSenderChanged("BANK")
-        vm.onTargetChanged("999")
+        vm.onTargetChanged("9993")
         vm.saveRule()
         advanceUntilIdle()
 

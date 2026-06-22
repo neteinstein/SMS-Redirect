@@ -1,0 +1,125 @@
+package com.neteinstein.smsredirect.presentation
+
+import com.neteinstein.smsredirect.FakeForwardHistoryRepository
+import com.neteinstein.smsredirect.FakeSettingsRepository
+import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetForwardHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetKeepHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
+import com.neteinstein.smsredirect.presentation.settings.SettingsViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class SettingsViewModelTest {
+    private val dispatcher = StandardTestDispatcher()
+    private val settingsRepository = FakeSettingsRepository()
+    private val historyRepository = FakeForwardHistoryRepository()
+
+    @Before
+    fun setUp() {
+        kotlinx.coroutines.Dispatchers.setMain(dispatcher)
+    }
+
+    @After
+    fun tearDown() {
+        kotlinx.coroutines.Dispatchers.resetMain()
+    }
+
+    private fun createViewModel(): SettingsViewModel {
+        return SettingsViewModel(
+            getSendWhileRoamingUseCase = GetSendWhileRoamingUseCase(settingsRepository),
+            setSendWhileRoamingUseCase = SetSendWhileRoamingUseCase(settingsRepository),
+            getKeepHistoryUseCase = GetKeepHistoryUseCase(settingsRepository),
+            setKeepHistoryUseCase = SetKeepHistoryUseCase(settingsRepository),
+            getDefaultPrefixUseCase = GetDefaultPrefixUseCase(settingsRepository),
+            setDefaultPrefixUseCase = SetDefaultPrefixUseCase(settingsRepository),
+            getForwardHistoryUseCase = GetForwardHistoryUseCase(historyRepository)
+        )
+    }
+
+    @Test
+    fun `init observes sendWhileRoaming`() = runTest {
+        val vm = createViewModel()
+        advanceUntilIdle()
+        assertFalse(vm.sendWhileRoaming.value)
+    }
+
+    @Test
+    fun `init observes keepHistory`() = runTest {
+        val vm = createViewModel()
+        advanceUntilIdle()
+        assertTrue(vm.keepHistory.value)
+    }
+
+    @Test
+    fun `init observes defaultPrefix`() = runTest {
+        val vm = createViewModel()
+        advanceUntilIdle()
+        assertEquals("+351", vm.defaultPrefix.value)
+    }
+
+    @Test
+    fun `init observes forwardHistory`() = runTest {
+        val vm = createViewModel()
+        advanceUntilIdle()
+        assertEquals(emptyList<Any>(), vm.forwardHistory.value)
+    }
+
+    @Test
+    fun `setSendWhileRoaming updates state`() = runTest {
+        val vm = createViewModel()
+        advanceUntilIdle()
+
+        vm.setSendWhileRoaming(true)
+        advanceUntilIdle()
+
+        assertTrue(vm.sendWhileRoaming.value)
+    }
+
+    @Test
+    fun `setKeepHistory updates state`() = runTest {
+        val vm = createViewModel()
+        advanceUntilIdle()
+
+        vm.setKeepHistory(false)
+        advanceUntilIdle()
+
+        assertFalse(vm.keepHistory.value)
+    }
+
+    @Test
+    fun `setDefaultPrefix updates state`() = runTest {
+        val vm = createViewModel()
+        advanceUntilIdle()
+
+        vm.setDefaultPrefix("+44")
+        advanceUntilIdle()
+
+        assertEquals("+44", vm.defaultPrefix.value)
+    }
+
+    @Test
+    fun `setDefaultPrefix to empty clears prefix`() = runTest {
+        val vm = createViewModel()
+        advanceUntilIdle()
+
+        vm.setDefaultPrefix("")
+        advanceUntilIdle()
+
+        assertEquals("", vm.defaultPrefix.value)
+    }
+}

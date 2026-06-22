@@ -34,6 +34,7 @@
     <string name="rule_label_target_number">Número de Destino</string>
     <string name="rule_cd_pick_sender_contact">Escolher remetente dos contactos</string>
     <string name="rule_cd_pick_target_contact">Escolher destino dos contactos</string>
+    <string name="rule_error_invalid_target">O destino deve ser um número de telefone válido (dígitos, +, espaços e hífens permitidos)</string>
     <string name="rule_action_save">Guardar Regra</string>
     <string name="rule_default_name_format">Regra #%1$d</string>
 
