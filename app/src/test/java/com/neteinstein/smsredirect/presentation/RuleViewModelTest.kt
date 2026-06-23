@@ -1,5 +1,6 @@
 package com.neteinstein.smsredirect.presentation
 
+import com.neteinstein.smsredirect.FakeContactNameResolver
 import com.neteinstein.smsredirect.FakeRuleRepository
 import com.neteinstein.smsredirect.FakeSettingsRepository
 import com.neteinstein.smsredirect.domain.model.Rule
@@ -7,6 +8,8 @@ import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
+import com.neteinstein.smsredirect.presentation.rule.NameField
+import com.neteinstein.smsredirect.presentation.rule.NameSource
 import com.neteinstein.smsredirect.presentation.rule.RuleViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher

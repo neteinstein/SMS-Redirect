@@ -248,6 +248,7 @@ class MainActivity : ComponentActivity() {
                             appContainer.updateRuleUseCase,
                             appContainer.ruleRepository,
                             appContainer.getDefaultPrefixNowUseCase,
+                            appContainer.contactNameResolver,
                             defaultRuleNameProvider = { index ->
                                 getString(R.string.rule_default_name_format, index)
                             }
@@ -260,8 +261,10 @@ class MainActivity : ComponentActivity() {
                         contract = ActivityResultContracts.PickContact()
                     ) { uri ->
                         if (uri != null) {
-                            val number = resolvePhoneNumber(uri)
-                            if (number.isNotBlank()) ruleViewModel.onSenderChanged(number)
+                            val contact = resolveContact(uri)
+                            if (contact != null && contact.first.isNotBlank()) {
+                                ruleViewModel.onSenderContactPicked(contact.first, contact.second)
+                            }
                         }
                     }
 
@@ -269,8 +272,10 @@ class MainActivity : ComponentActivity() {
                         contract = ActivityResultContracts.PickContact()
                     ) { uri ->
                         if (uri != null) {
-                            val number = resolvePhoneNumber(uri)
-                            if (number.isNotBlank()) ruleViewModel.onTargetChanged(number)
+                            val contact = resolveContact(uri)
+                            if (contact != null && contact.first.isNotBlank()) {
+                                ruleViewModel.onTargetContactPicked(contact.first, contact.second)
+                            }
                         }
                     }
 
@@ -340,18 +345,29 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun resolvePhoneNumber(contactUri: android.net.Uri): String {
-        val contactId = contentResolver.query(
-            contactUri,
-            arrayOf(ContactsContract.Contacts._ID),
-            null,
-            null,
-            null
+    /**
+     * Resolves a contact URI to a pair of (phoneNumber, displayName).
+     */
+    private fun resolveContact(contactUri: android.net.Uri): Pair<String, String>? {
+        val projection = arrayOf(
+            ContactsContract.Contacts._ID,
+            ContactsContract.Contacts.DISPLAY_NAME
+        )
+        val contactData = contentResolver.query(
+            contactUri, projection, null, null, null
         )?.use { cursor ->
-            if (cursor.moveToFirst()) cursor.getString(0) else null
-        } ?: return ""
+            if (cursor.moveToFirst()) {
+                val id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID))
+                val name = cursor.getString(
+                    cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME)
+                ).orEmpty()
+                Pair(id, name)
+            } else null
+        } ?: return null
 
-        return contentResolver.query(
+        val (contactId, displayName) = contactData
+
+        val number = contentResolver.query(
             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
             arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
             "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID}=?",
@@ -360,6 +376,8 @@ class MainActivity : ComponentActivity() {
         )?.use { cursor ->
             if (cursor.moveToFirst()) cursor.getString(0) else ""
         }.orEmpty()
+
+        return if (number.isNotBlank()) Pair(number, displayName) else null
     }
 
     private fun currentMissingPermissions(): List<String> {

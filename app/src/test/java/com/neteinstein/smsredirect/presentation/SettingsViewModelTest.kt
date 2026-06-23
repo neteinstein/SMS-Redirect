@@ -4,9 +4,11 @@ import com.neteinstein.smsredirect.FakeForwardHistoryRepository
 import com.neteinstein.smsredirect.FakeSettingsRepository
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.presentation.settings.SettingsViewModel
@@ -47,6 +49,8 @@ class SettingsViewModelTest {
             setKeepHistoryUseCase = SetKeepHistoryUseCase(settingsRepository),
             getDefaultPrefixUseCase = GetDefaultPrefixUseCase(settingsRepository),
             setDefaultPrefixUseCase = SetDefaultPrefixUseCase(settingsRepository),
+            getForwardPrefixUseCase = GetForwardPrefixUseCase(settingsRepository),
+            setForwardPrefixUseCase = SetForwardPrefixUseCase(settingsRepository),
             getForwardHistoryUseCase = GetForwardHistoryUseCase(historyRepository)
         )
     }
