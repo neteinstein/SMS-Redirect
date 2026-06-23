@@ -61,7 +61,7 @@ fun HomeScreen(
     onEditRule: (Long) -> Unit,
     onDeleteRule: (Rule) -> Unit,
     onMoveRule: (Int, Int) -> Unit,
-    onDragEnd: () -> Unit
+    onDragEnd: () -> Unit,
 ) {
     var ruleToDelete by remember { mutableStateOf<Rule?>(null) }
 
@@ -82,7 +82,7 @@ fun HomeScreen(
                 }) {
                     Text(stringResource(R.string.action_delete))
                 }
-            }
+            },
         )
     }
 
@@ -94,52 +94,54 @@ fun HomeScreen(
                     IconButton(onClick = onOpenSettings) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(R.string.home_cd_settings)
+                            contentDescription = stringResource(R.string.home_cd_settings),
                         )
                     }
-                }
+                },
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddRule) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.home_cd_add_rule)
+                    contentDescription = stringResource(R.string.home_cd_add_rule),
                 )
             }
-        }
+        },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
         ) {
             if (missingPermissions.isNotEmpty()) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.errorContainer)
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.errorContainer)
+                            .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         imageVector = Icons.Default.Warning,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.padding(end = 8.dp)
+                        modifier = Modifier.padding(end = 8.dp),
                     )
                     Column {
                         Text(
                             stringResource(R.string.missing_permissions_banner_title),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onErrorContainer
+                            color = MaterialTheme.colorScheme.onErrorContainer,
                         )
                         missingPermissions.forEach { perm ->
                             Text(
                                 stringResource(R.string.permission_item_format, perm),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer
+                                color = MaterialTheme.colorScheme.onErrorContainer,
                             )
                         }
                     }
@@ -150,72 +152,75 @@ fun HomeScreen(
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.Center,
                 ) {
                     Text(stringResource(R.string.home_no_rules))
                 }
             } else {
-            val listState = rememberLazyListState()
-            var draggedIndex by remember { mutableIntStateOf(-1) }
-            var dragOffsetY by remember { mutableFloatStateOf(0f) }
+                val listState = rememberLazyListState()
+                var draggedIndex by remember { mutableIntStateOf(-1) }
+                var dragOffsetY by remember { mutableFloatStateOf(0f) }
 
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                itemsIndexed(rules, key = { _, rule -> rule.id }) { index, rule ->
-                    val isDragging = draggedIndex == index
-                    val elevation by animateDpAsState(
-                        targetValue = if (isDragging) 8.dp else 0.dp,
-                        label = "drag_elevation"
-                    )
+                LazyColumn(
+                    state = listState,
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    itemsIndexed(rules, key = { _, rule -> rule.id }) { index, rule ->
+                        val isDragging = draggedIndex == index
+                        val elevation by animateDpAsState(
+                            targetValue = if (isDragging) 8.dp else 0.dp,
+                            label = "drag_elevation",
+                        )
 
-                    RuleCard(
-                        rule = rule,
-                        onEditRule = onEditRule,
-                        onDeleteRule = { ruleToDelete = it },
-                        modifier = Modifier
-                            .zIndex(if (isDragging) 1f else 0f)
-                            .offset { IntOffset(0, if (isDragging) dragOffsetY.roundToInt() else 0) }
-                            .pointerInput(Unit) {
-                                detectDragGesturesAfterLongPress(
-                                    onDragStart = {
-                                        draggedIndex = index
-                                        dragOffsetY = 0f
+                        RuleCard(
+                            rule = rule,
+                            onEditRule = onEditRule,
+                            onDeleteRule = { ruleToDelete = it },
+                            modifier =
+                                Modifier
+                                    .zIndex(if (isDragging) 1f else 0f)
+                                    .offset { IntOffset(0, if (isDragging) dragOffsetY.roundToInt() else 0) }
+                                    .pointerInput(Unit) {
+                                        detectDragGesturesAfterLongPress(
+                                            onDragStart = {
+                                                draggedIndex = index
+                                                dragOffsetY = 0f
+                                            },
+                                            onDrag = { change, dragAmount ->
+                                                change.consume()
+                                                dragOffsetY += dragAmount.y
+
+                                                val itemHeight = size.height + 8.dp.toPx()
+                                                val offset = (dragOffsetY / itemHeight).roundToInt()
+                                                val targetIndex =
+                                                    (draggedIndex + offset)
+                                                        .coerceIn(0, rules.size - 1)
+
+                                                if (targetIndex != draggedIndex) {
+                                                    onMoveRule(draggedIndex, targetIndex)
+                                                    dragOffsetY -= (targetIndex - draggedIndex) * itemHeight
+                                                    draggedIndex = targetIndex
+                                                }
+                                            },
+                                            onDragEnd = {
+                                                draggedIndex = -1
+                                                dragOffsetY = 0f
+                                                onDragEnd()
+                                            },
+                                            onDragCancel = {
+                                                draggedIndex = -1
+                                                dragOffsetY = 0f
+                                            },
+                                        )
                                     },
-                                    onDrag = { change, dragAmount ->
-                                        change.consume()
-                                        dragOffsetY += dragAmount.y
-
-                                        val itemHeight = size.height + 8.dp.toPx()
-                                        val offset = (dragOffsetY / itemHeight).roundToInt()
-                                        val targetIndex = (draggedIndex + offset)
-                                            .coerceIn(0, rules.size - 1)
-
-                                        if (targetIndex != draggedIndex) {
-                                            onMoveRule(draggedIndex, targetIndex)
-                                            dragOffsetY -= (targetIndex - draggedIndex) * itemHeight
-                                            draggedIndex = targetIndex
-                                        }
-                                    },
-                                    onDragEnd = {
-                                        draggedIndex = -1
-                                        dragOffsetY = 0f
-                                        onDragEnd()
-                                    },
-                                    onDragCancel = {
-                                        draggedIndex = -1
-                                        dragOffsetY = 0f
-                                    }
-                                )
-                            },
-                        elevation = elevation
-                    )
+                            elevation = elevation,
+                        )
+                    }
                 }
-            }
             }
         }
     }
@@ -227,25 +232,27 @@ private fun RuleCard(
     onEditRule: (Long) -> Unit,
     onDeleteRule: (Rule) -> Unit,
     modifier: Modifier = Modifier,
-    elevation: androidx.compose.ui.unit.Dp = 0.dp
+    elevation: androidx.compose.ui.unit.Dp = 0.dp,
 ) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onEditRule(rule.id) },
-        elevation = CardDefaults.cardElevation(defaultElevation = elevation)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clickable { onEditRule(rule.id) },
+        elevation = CardDefaults.cardElevation(defaultElevation = elevation),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = Icons.Default.DragHandle,
                 contentDescription = stringResource(R.string.home_cd_drag_to_reorder),
                 modifier = Modifier.padding(end = 12.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -253,25 +260,25 @@ private fun RuleCard(
                         stringResource(R.string.rule_default_name_format, rule.id)
                     },
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
                 Text(
                     stringResource(
                         R.string.home_sender_format,
-                        rule.senderText.ifBlank { "-" }
-                    )
+                        rule.senderText.ifBlank { "-" },
+                    ),
                 )
                 Text(
                     stringResource(
                         R.string.home_target_format,
-                        rule.targetNumber.ifBlank { "-" }
-                    )
+                        rule.targetNumber.ifBlank { "-" },
+                    ),
                 )
             }
             IconButton(onClick = { onDeleteRule(rule) }) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.home_cd_delete_rule)
+                    contentDescription = stringResource(R.string.home_cd_delete_rule),
                 )
             }
         }

@@ -37,7 +37,7 @@ fun RuleScreen(
     onPickSenderContact: () -> Unit,
     onPickTargetContact: () -> Unit,
     onSave: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -48,64 +48,65 @@ fun RuleScreen(
                             stringResource(R.string.rule_title_create)
                         } else {
                             stringResource(R.string.rule_title_edit)
-                        }
+                        },
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back)
+                            contentDescription = stringResource(R.string.action_back),
                         )
                     }
-                }
+                },
             )
-        }
+        },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             OutlinedTextField(
                 value = uiState.name,
                 onValueChange = onNameChanged,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text(stringResource(R.string.rule_label_name)) },
-                placeholder = { Text(stringResource(R.string.rule_placeholder_name_optional)) }
+                placeholder = { Text(stringResource(R.string.rule_placeholder_name_optional)) },
             )
             Row(
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 OutlinedTextField(
                     value = uiState.senderText,
                     onValueChange = onSenderChanged,
                     modifier = Modifier.weight(1f),
-                    label = { Text(stringResource(R.string.rule_label_sender)) }
+                    label = { Text(stringResource(R.string.rule_label_sender)) },
                 )
                 IconButton(onClick = onPickSenderContact) {
                     Icon(
                         imageVector = Icons.Default.ContactPhone,
-                        contentDescription = stringResource(R.string.rule_cd_pick_sender_contact)
+                        contentDescription = stringResource(R.string.rule_cd_pick_sender_contact),
                     )
                 }
             }
             Row(
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 OutlinedTextField(
                     value = uiState.targetNumber,
                     onValueChange = onTargetChanged,
                     modifier = Modifier.weight(1f),
                     label = { Text(stringResource(R.string.rule_label_target_number)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 )
                 IconButton(onClick = onPickTargetContact) {
                     Icon(
                         imageVector = Icons.Default.ContactPhone,
-                        contentDescription = stringResource(R.string.rule_cd_pick_target_contact)
+                        contentDescription = stringResource(R.string.rule_cd_pick_target_contact),
                     )
                 }
             }

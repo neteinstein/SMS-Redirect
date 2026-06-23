@@ -5,7 +5,7 @@ import com.neteinstein.smsredirect.domain.model.Rule
 import com.neteinstein.smsredirect.domain.repository.RuleRepository
 
 class FindMatchingRuleUseCase(
-    private val ruleRepository: RuleRepository
+    private val ruleRepository: RuleRepository,
 ) {
     companion object {
         private const val TAG = "FindMatchingRule"
@@ -24,14 +24,19 @@ class FindMatchingRuleUseCase(
                 return@firstOrNull false
             }
 
-            val matchesText = rule.senderText.isNotBlank() &&
-                normalizedSender.contains(rule.senderText.trim(), ignoreCase = true)
-            val matchesNumber = rule.phoneNumber.isNotBlank() &&
-                normalizedSenderDigits == rule.phoneNumber.filter(Char::isDigit)
+            val matchesText =
+                rule.senderText.isNotBlank() &&
+                    normalizedSender.contains(rule.senderText.trim(), ignoreCase = true)
+            val matchesNumber =
+                rule.phoneNumber.isNotBlank() &&
+                    normalizedSenderDigits == rule.phoneNumber.filter(Char::isDigit)
 
-            Log.d(TAG, "  Rule id=${rule.id} name='${rule.name}': " +
-                "senderText='${rule.senderText}' matchesText=$matchesText, " +
-                "phoneNumber='${rule.phoneNumber}' matchesNumber=$matchesNumber")
+            Log.d(
+                TAG,
+                "  Rule id=${rule.id} name='${rule.name}': " +
+                    "senderText='${rule.senderText}' matchesText=$matchesText, " +
+                    "phoneNumber='${rule.phoneNumber}' matchesNumber=$matchesNumber",
+            )
 
             matchesText || matchesNumber
         }

@@ -4,9 +4,11 @@ import com.neteinstein.smsredirect.FakeForwardHistoryRepository
 import com.neteinstein.smsredirect.FakeSettingsRepository
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.presentation.settings.SettingsViewModel
@@ -39,87 +41,116 @@ class SettingsViewModelTest {
         kotlinx.coroutines.Dispatchers.resetMain()
     }
 
-    private fun createViewModel(): SettingsViewModel {
-        return SettingsViewModel(
+    private fun createViewModel(): SettingsViewModel =
+        SettingsViewModel(
             getSendWhileRoamingUseCase = GetSendWhileRoamingUseCase(settingsRepository),
             setSendWhileRoamingUseCase = SetSendWhileRoamingUseCase(settingsRepository),
             getKeepHistoryUseCase = GetKeepHistoryUseCase(settingsRepository),
             setKeepHistoryUseCase = SetKeepHistoryUseCase(settingsRepository),
             getDefaultPrefixUseCase = GetDefaultPrefixUseCase(settingsRepository),
             setDefaultPrefixUseCase = SetDefaultPrefixUseCase(settingsRepository),
-            getForwardHistoryUseCase = GetForwardHistoryUseCase(historyRepository)
+            getForwardPrefixUseCase = GetForwardPrefixUseCase(settingsRepository),
+            setForwardPrefixUseCase = SetForwardPrefixUseCase(settingsRepository),
+            getForwardHistoryUseCase = GetForwardHistoryUseCase(historyRepository),
         )
-    }
 
     @Test
-    fun `init observes sendWhileRoaming`() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
-        assertFalse(vm.sendWhileRoaming.value)
-    }
+    fun `init observes sendWhileRoaming`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+            assertFalse(vm.sendWhileRoaming.value)
+        }
 
     @Test
-    fun `init observes keepHistory`() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
-        assertTrue(vm.keepHistory.value)
-    }
+    fun `init observes keepHistory`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+            assertTrue(vm.keepHistory.value)
+        }
 
     @Test
-    fun `init observes defaultPrefix`() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
-        assertEquals("+351", vm.defaultPrefix.value)
-    }
+    fun `init observes defaultPrefix`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+            assertEquals("+351", vm.defaultPrefix.value)
+        }
 
     @Test
-    fun `init observes forwardHistory`() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
-        assertEquals(emptyList<Any>(), vm.forwardHistory.value)
-    }
+    fun `init observes forwardHistory`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+            assertEquals(emptyList<Any>(), vm.forwardHistory.value)
+        }
 
     @Test
-    fun `setSendWhileRoaming updates state`() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
-
-        vm.setSendWhileRoaming(true)
-        advanceUntilIdle()
-
-        assertTrue(vm.sendWhileRoaming.value)
-    }
+    fun `init observes forwardPrefix`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+            assertEquals("SMS Redirect:", vm.forwardPrefix.value)
+        }
 
     @Test
-    fun `setKeepHistory updates state`() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
+    fun `setSendWhileRoaming updates state`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
 
-        vm.setKeepHistory(false)
-        advanceUntilIdle()
+            vm.setSendWhileRoaming(true)
+            advanceUntilIdle()
 
-        assertFalse(vm.keepHistory.value)
-    }
-
-    @Test
-    fun `setDefaultPrefix updates state`() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
-
-        vm.setDefaultPrefix("+44")
-        advanceUntilIdle()
-
-        assertEquals("+44", vm.defaultPrefix.value)
-    }
+            assertTrue(vm.sendWhileRoaming.value)
+        }
 
     @Test
-    fun `setDefaultPrefix to empty clears prefix`() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
+    fun `setKeepHistory updates state`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
 
-        vm.setDefaultPrefix("")
-        advanceUntilIdle()
+            vm.setKeepHistory(false)
+            advanceUntilIdle()
 
-        assertEquals("", vm.defaultPrefix.value)
-    }
+            assertFalse(vm.keepHistory.value)
+        }
+
+    @Test
+    fun `setDefaultPrefix updates state`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.setDefaultPrefix("+44")
+            advanceUntilIdle()
+
+            assertEquals("+44", vm.defaultPrefix.value)
+        }
+
+    @Test
+    fun `setDefaultPrefix to empty clears prefix`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.setDefaultPrefix("")
+            advanceUntilIdle()
+
+            assertEquals("", vm.defaultPrefix.value)
+        }
+
+    @Test
+    fun `setForwardPrefix updates state`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.setForwardPrefix("Forwarded SMS:")
+            advanceUntilIdle()
+
+            assertEquals("Forwarded SMS:", vm.forwardPrefix.value)
+        }
 }

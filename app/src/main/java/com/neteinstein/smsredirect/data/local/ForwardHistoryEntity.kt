@@ -10,5 +10,5 @@ data class ForwardHistoryEntity(
     val targetNumber: String,
     val messageBody: String,
     val ruleName: String,
-    val forwardedAtEpochMs: Long
+    val forwardedAtEpochMs: Long,
 )

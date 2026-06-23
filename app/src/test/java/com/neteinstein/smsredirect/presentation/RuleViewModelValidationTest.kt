@@ -7,7 +7,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RuleViewModelValidationTest {
-
     @Test
     fun `isValidPhoneNumber accepts digits only`() {
         assertTrue(RuleViewModel.isValidPhoneNumber("912345678"))

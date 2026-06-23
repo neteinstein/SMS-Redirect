@@ -7,10 +7,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class ForwardHistoryRepositoryImpl(
-    private val dao: ForwardHistoryDao
+    private val dao: ForwardHistoryDao,
 ) : ForwardHistoryRepository {
-    override fun observeRecent(limit: Int): Flow<List<ForwardHistory>> =
-        dao.observeRecent(limit).map { list -> list.map { it.toDomain() } }
+    override fun observeRecent(limit: Int): Flow<List<ForwardHistory>> = dao.observeRecent(limit).map { list -> list.map { it.toDomain() } }
 
     override suspend fun insert(entry: ForwardHistory) {
         dao.insert(entry.toEntity())

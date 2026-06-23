@@ -10,13 +10,13 @@ import android.util.Log
  * to catch RCS and other internet-based messages that bypass the SMS_RECEIVED broadcast.
  */
 class RcsNotificationListener : NotificationListenerService() {
-
     companion object {
         private const val TAG = "RcsNotificationListener"
 
-        private val MESSAGING_PACKAGES = setOf(
-            "com.google.android.apps.messaging"
-        )
+        private val MESSAGING_PACKAGES =
+            setOf(
+                "com.google.android.apps.messaging",
+            )
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
