@@ -57,7 +57,7 @@ fun SettingsScreen(
     onKeepHistoryChanged: (Boolean) -> Unit,
     onForwardPrefixSaved: (String) -> Unit,
     onDefaultPrefixChanged: (String) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -67,44 +67,46 @@ fun SettingsScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back)
+                            contentDescription = stringResource(R.string.action_back),
                         )
                     }
-                }
+                },
             )
-        }
+        },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
         ) {
             if (missingPermissions.isNotEmpty()) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.errorContainer)
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.errorContainer)
+                            .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         imageVector = Icons.Default.Warning,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.padding(end = 8.dp)
+                        modifier = Modifier.padding(end = 8.dp),
                     )
                     Column {
                         Text(
                             text = stringResource(R.string.missing_permissions_banner_title),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onErrorContainer
+                            color = MaterialTheme.colorScheme.onErrorContainer,
                         )
                         missingPermissions.forEach { permission ->
                             Text(
                                 text = stringResource(R.string.permission_item_format, permission),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer
+                                color = MaterialTheme.colorScheme.onErrorContainer,
                             )
                         }
                     }
@@ -114,23 +116,23 @@ fun SettingsScreen(
             SettingSwitchRow(
                 title = stringResource(R.string.settings_send_while_roaming),
                 checked = sendWhileRoaming,
-                onCheckedChange = onSendWhileRoamingChanged
+                onCheckedChange = onSendWhileRoamingChanged,
             )
 
             SettingSwitchRow(
                 title = stringResource(R.string.settings_keep_history),
                 checked = keepHistory,
-                onCheckedChange = onKeepHistoryChanged
+                onCheckedChange = onKeepHistoryChanged,
             )
 
             ForwardPrefixRow(
                 currentPrefix = forwardPrefix,
-                onSave = onForwardPrefixSaved
+                onSave = onForwardPrefixSaved,
             )
 
             DefaultPrefixDropdown(
                 selectedPrefix = defaultPrefix,
-                onPrefixSelected = onDefaultPrefixChanged
+                onPrefixSelected = onDefaultPrefixChanged,
             )
 
             if (keepHistory) {
@@ -139,20 +141,21 @@ fun SettingsScreen(
                 Text(
                     text = stringResource(R.string.settings_history_title),
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
 
                 if (forwardHistory.isEmpty()) {
                     Text(
                         text = stringResource(R.string.settings_no_forwarded_sms),
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     )
                 } else {
                     LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(forwardHistory, key = { it.id }) { item ->
                             ForwardHistoryCard(item)
@@ -168,31 +171,32 @@ fun SettingsScreen(
 @Composable
 private fun ForwardPrefixRow(
     currentPrefix: String,
-    onSave: (String) -> Unit
+    onSave: (String) -> Unit,
 ) {
     var text by remember(currentPrefix) { mutableStateOf(currentPrefix) }
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         OutlinedTextField(
             value = text,
             onValueChange = { text = it },
             label = { Text(stringResource(R.string.settings_forward_prefix_label)) },
             singleLine = true,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         )
         FilledIconButton(
             onClick = { onSave(text) },
-            enabled = text != currentPrefix
+            enabled = text != currentPrefix,
         ) {
             Icon(
                 imageVector = Icons.Default.Check,
-                contentDescription = stringResource(R.string.settings_forward_prefix_save)
+                contentDescription = stringResource(R.string.settings_forward_prefix_save),
             )
         }
     }
@@ -202,20 +206,22 @@ private fun ForwardPrefixRow(
 @Composable
 private fun DefaultPrefixDropdown(
     selectedPrefix: String,
-    onPrefixSelected: (String) -> Unit
+    onPrefixSelected: (String) -> Unit,
 ) {
-    val options = listOf(
-        "" to stringResource(R.string.settings_prefix_none),
-        "+351" to stringResource(R.string.settings_prefix_portugal)
-    )
+    val options =
+        listOf(
+            "" to stringResource(R.string.settings_prefix_none),
+            "+351" to stringResource(R.string.settings_prefix_portugal),
+        )
     var expanded by remember { mutableStateOf(false) }
-    val selectedLabel = options.firstOrNull { it.first == selectedPrefix }?.second
-        ?: stringResource(R.string.settings_prefix_portugal)
+    val selectedLabel =
+        options.firstOrNull { it.first == selectedPrefix }?.second
+            ?: stringResource(R.string.settings_prefix_portugal)
 
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
         ExposedDropdownMenuBox(
             expanded = expanded,
-            onExpandedChange = { expanded = it }
+            onExpandedChange = { expanded = it },
         ) {
             OutlinedTextField(
                 value = selectedLabel,
@@ -223,13 +229,14 @@ private fun DefaultPrefixDropdown(
                 readOnly = true,
                 label = { Text(stringResource(R.string.settings_default_prefix_label)) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable),
             )
             ExposedDropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false }
+                onDismissRequest = { expanded = false },
             ) {
                 options.forEach { (value, label) ->
                     DropdownMenuItem(
@@ -237,7 +244,7 @@ private fun DefaultPrefixDropdown(
                         onClick = {
                             onPrefixSelected(value)
                             expanded = false
-                        }
+                        },
                     )
                 }
             }
@@ -249,19 +256,20 @@ private fun DefaultPrefixDropdown(
 private fun SettingSwitchRow(
     title: String,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(title)
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange
+            onCheckedChange = onCheckedChange,
         )
     }
 }
@@ -271,28 +279,29 @@ private fun ForwardHistoryCard(item: ForwardHistory) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                text = stringResource(
-                    R.string.settings_history_sender_target_format,
-                    item.sender.ifBlank { stringResource(R.string.settings_history_unknown_sender) },
-                    item.targetNumber
-                ),
+                text =
+                    stringResource(
+                        R.string.settings_history_sender_target_format,
+                        item.sender.ifBlank { stringResource(R.string.settings_history_unknown_sender) },
+                        item.targetNumber,
+                    ),
                 style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
             )
             Text(
                 text = DateFormat.getDateTimeInstance().format(Date(item.forwardedAtEpochMs)),
-                style = MaterialTheme.typography.bodySmall
+                style = MaterialTheme.typography.bodySmall,
             )
             if (item.ruleName.isNotBlank()) {
                 Text(
                     text = stringResource(R.string.settings_history_rule_format, item.ruleName),
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
                 )
             }
             Text(
                 text = item.messageBody,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 4.dp)
+                modifier = Modifier.padding(top = 4.dp),
             )
         }
     }

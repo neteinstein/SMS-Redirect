@@ -18,7 +18,7 @@ interface ForwardHistoryDao {
         "DELETE FROM forward_history " +
             "WHERE id NOT IN (" +
             "SELECT id FROM forward_history ORDER BY forwardedAtEpochMs DESC LIMIT :limit" +
-            ")"
+            ")",
     )
     suspend fun trimToLatest(limit: Int)
 }

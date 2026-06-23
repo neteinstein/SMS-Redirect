@@ -18,9 +18,10 @@ class FakeForwardHistoryRepository : ForwardHistoryRepository {
     }
 
     override suspend fun trimToLatest(limit: Int) {
-        entries.value = entries.value
-            .sortedByDescending { it.forwardedAtEpochMs }
-            .take(limit)
+        entries.value =
+            entries.value
+                .sortedByDescending { it.forwardedAtEpochMs }
+                .take(limit)
     }
 
     fun getAll(): List<ForwardHistory> = entries.value

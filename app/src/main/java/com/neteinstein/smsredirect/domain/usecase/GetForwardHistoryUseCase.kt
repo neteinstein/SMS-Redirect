@@ -5,7 +5,7 @@ import com.neteinstein.smsredirect.domain.repository.ForwardHistoryRepository
 import kotlinx.coroutines.flow.Flow
 
 class GetForwardHistoryUseCase(
-    private val repository: ForwardHistoryRepository
+    private val repository: ForwardHistoryRepository,
 ) {
     operator fun invoke(limit: Int = 50): Flow<List<ForwardHistory>> = repository.observeRecent(limit)
 }

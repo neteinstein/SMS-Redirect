@@ -4,7 +4,9 @@ import com.neteinstein.smsredirect.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
-class FakeSettingsRepository(initial: Boolean = false) : SettingsRepository {
+class FakeSettingsRepository(
+    initial: Boolean = false,
+) : SettingsRepository {
     private val sendWhileRoamingState = MutableStateFlow(initial)
     private val keepHistoryState = MutableStateFlow(true)
     private val defaultPrefixState = MutableStateFlow("+351")

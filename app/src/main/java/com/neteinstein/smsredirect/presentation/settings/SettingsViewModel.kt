@@ -4,10 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.smsredirect.domain.model.ForwardHistory
+import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
-import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
@@ -29,9 +29,8 @@ class SettingsViewModel(
     private val setDefaultPrefixUseCase: SetDefaultPrefixUseCase,
     getForwardPrefixUseCase: GetForwardPrefixUseCase,
     private val setForwardPrefixUseCase: SetForwardPrefixUseCase,
-    getForwardHistoryUseCase: GetForwardHistoryUseCase
+    getForwardHistoryUseCase: GetForwardHistoryUseCase,
 ) : ViewModel() {
-
     private val _sendWhileRoaming = MutableStateFlow(false)
     val sendWhileRoaming: StateFlow<Boolean> = _sendWhileRoaming.asStateFlow()
     private val _keepHistory = MutableStateFlow(true)
@@ -95,7 +94,7 @@ class SettingsViewModelFactory(
     private val setDefaultPrefixUseCase: SetDefaultPrefixUseCase,
     private val getForwardPrefixUseCase: GetForwardPrefixUseCase,
     private val setForwardPrefixUseCase: SetForwardPrefixUseCase,
-    private val getForwardHistoryUseCase: GetForwardHistoryUseCase
+    private val getForwardHistoryUseCase: GetForwardHistoryUseCase,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
@@ -108,7 +107,7 @@ class SettingsViewModelFactory(
             setDefaultPrefixUseCase = setDefaultPrefixUseCase,
             getForwardPrefixUseCase = getForwardPrefixUseCase,
             setForwardPrefixUseCase = setForwardPrefixUseCase,
-            getForwardHistoryUseCase = getForwardHistoryUseCase
+            getForwardHistoryUseCase = getForwardHistoryUseCase,
         ) as T
     }
 }

@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class RuleRepositoryImpl(
-    private val dao: RuleDao
+    private val dao: RuleDao,
 ) : RuleRepository {
     override fun getRules(): Flow<List<Rule>> = dao.getRules().map { list -> list.map { it.toDomain() } }
 

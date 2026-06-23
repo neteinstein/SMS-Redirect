@@ -8,6 +8,5 @@ object Routes {
     const val RuleIdArg = "ruleId"
     const val RuleWithArg = "$Rule?$RuleIdArg={$RuleIdArg}"
 
-    fun ruleRoute(ruleId: Long? = null): String =
-        if (ruleId == null) Rule else "$Rule?$RuleIdArg=$ruleId"
+    fun ruleRoute(ruleId: Long? = null): String = if (ruleId == null) Rule else "$Rule?$RuleIdArg=$ruleId"
 }

@@ -12,30 +12,37 @@ import androidx.work.WorkerParameters
 
 class ForwardSmsWorker(
     context: Context,
-    params: WorkerParameters
+    params: WorkerParameters,
 ) : CoroutineWorker(context, params) {
-
     companion object {
         private const val TAG = "ForwardSmsWorker"
         private const val KEY_SENDER = "sender"
         private const val KEY_BODY = "body"
 
-        fun enqueue(context: Context, sender: String?, body: String) {
-            val data = Data.Builder()
-                .putString(KEY_SENDER, sender)
-                .putString(KEY_BODY, body)
-                .build()
+        fun enqueue(
+            context: Context,
+            sender: String?,
+            body: String,
+        ) {
+            val data =
+                Data
+                    .Builder()
+                    .putString(KEY_SENDER, sender)
+                    .putString(KEY_BODY, body)
+                    .build()
 
-            val request = OneTimeWorkRequestBuilder<ForwardSmsWorker>()
-                .setInputData(data)
-                .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-                .build()
+            val request =
+                OneTimeWorkRequestBuilder<ForwardSmsWorker>()
+                    .setInputData(data)
+                    .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                    .build()
 
-            WorkManager.getInstance(context)
+            WorkManager
+                .getInstance(context)
                 .enqueueUniqueWork(
                     "forward_${System.currentTimeMillis()}",
                     ExistingWorkPolicy.APPEND_OR_REPLACE,
-                    request
+                    request,
                 )
 
             Log.d(TAG, "Enqueued forwarding work for sender='$sender'")

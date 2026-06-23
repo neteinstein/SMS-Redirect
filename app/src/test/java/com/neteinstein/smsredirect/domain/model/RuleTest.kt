@@ -5,7 +5,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RuleTest {
-
     @Test
     fun `isValid returns true when targetNumber and senderText are not blank`() {
         val rule = Rule(targetNumber = "+351912345678", senderText = "BANK")
