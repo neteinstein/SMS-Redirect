@@ -371,19 +371,26 @@ class MainActivity : ComponentActivity() {
      * Resolves a contact URI to a pair of (phoneNumber, displayName).
      */
     private fun resolveContact(contactUri: android.net.Uri): Pair<String, String>? {
-        val projection = arrayOf(
-            ContactsContract.Contacts._ID,
-            ContactsContract.Contacts.DISPLAY_NAME,
-        )
+        val projection =
+            arrayOf(
+                ContactsContract.Contacts._ID,
+                ContactsContract.Contacts.DISPLAY_NAME,
+            )
         val contactData =
             contentResolver.query(
-                contactUri, projection, null, null, null,
-            )?.use { cursor ->
+                contactUri,
+                projection,
+                null,
+                null,
+                null,
+            )
+                ?.use { cursor ->
                 if (cursor.moveToFirst()) {
                     val id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID))
-                    val name = cursor.getString(
-                        cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME),
-                    ).orEmpty()
+                    val name =
+                        cursor
+                            .getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME))
+                            .orEmpty()
                     Pair(id, name)
                 } else {
                     null
@@ -400,9 +407,11 @@ class MainActivity : ComponentActivity() {
                     "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID}=?",
                     arrayOf(contactId),
                     null,
-                )?.use { cursor ->
+                )
+                ?.use { cursor ->
                     if (cursor.moveToFirst()) cursor.getString(0) else ""
-                }.orEmpty()
+                }
+                .orEmpty()
 
         return if (number.isNotBlank()) Pair(number, displayName) else null
     }
