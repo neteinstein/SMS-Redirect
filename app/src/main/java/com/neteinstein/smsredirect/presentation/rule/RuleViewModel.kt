@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 enum class NameSource { NONE, CONTACT, MANUAL }
-
 enum class NameField { SENDER, TARGET }
 
 data class RuleUiState(
@@ -70,7 +69,7 @@ class RuleViewModel(
             it.copy(
                 name = value,
                 nameSource = if (value.isNotBlank()) NameSource.MANUAL else NameSource.NONE,
-                error = null,
+                error = null
             )
         }
     }
@@ -98,10 +97,7 @@ class RuleViewModel(
         }
     }
 
-    fun onSenderContactPicked(
-        number: String,
-        contactName: String,
-    ) {
+    fun onSenderContactPicked(number: String, contactName: String) {
         contactLookupJob?.cancel()
         _uiState.update {
             it.copy(
@@ -109,15 +105,12 @@ class RuleViewModel(
                 name = contactName,
                 nameSource = NameSource.CONTACT,
                 nameLinkedField = NameField.SENDER,
-                error = null,
+                error = null
             )
         }
     }
 
-    fun onTargetContactPicked(
-        number: String,
-        contactName: String,
-    ) {
+    fun onTargetContactPicked(number: String, contactName: String) {
         contactLookupJob?.cancel()
         val filtered = number.filter { it.isDigit() || it in "+- ()" }
         _uiState.update {
@@ -126,7 +119,7 @@ class RuleViewModel(
                 name = contactName,
                 nameSource = NameSource.CONTACT,
                 nameLinkedField = NameField.TARGET,
-                error = null,
+                error = null
             )
         }
     }
@@ -134,36 +127,31 @@ class RuleViewModel(
     private fun applyNameClearingOnNumberChange(
         state: RuleUiState,
         changedField: NameField,
-        previousValue: String,
+        previousValue: String
     ): RuleUiState {
         // Only apply clearing logic when a number is actually changing (not initial fill)
         if (previousValue.isBlank()) return state
 
         return when {
             // Manual name + any number change → clear
-            state.nameSource == NameSource.MANUAL ->
-                state.copy(
-                    name = "",
-                    nameSource = NameSource.NONE,
-                    nameLinkedField = null,
-                )
+            state.nameSource == NameSource.MANUAL -> state.copy(
+                name = "",
+                nameSource = NameSource.NONE,
+                nameLinkedField = null
+            )
             // Contact name + linked field change → clear
-            state.nameSource == NameSource.CONTACT && state.nameLinkedField == changedField ->
-                state.copy(
-                    name = "",
-                    nameSource = NameSource.NONE,
-                    nameLinkedField = null,
-                )
+            state.nameSource == NameSource.CONTACT && state.nameLinkedField == changedField -> state.copy(
+                name = "",
+                nameSource = NameSource.NONE,
+                nameLinkedField = null
+            )
             // Name from NONE with non-empty name (loaded from DB) and unlinked → keep
             // Contact name from different field → keep
             else -> state
         }
     }
 
-    private fun scheduleLookup(
-        phoneNumber: String,
-        field: NameField,
-    ) {
+    private fun scheduleLookup(phoneNumber: String, field: NameField) {
         if (contactNameResolver == null) return
         contactLookupJob?.cancel()
         contactLookupJob = viewModelScope.launch {
@@ -182,7 +170,7 @@ class RuleViewModel(
                         state.copy(
                             name = contactName,
                             nameSource = NameSource.CONTACT,
-                            nameLinkedField = field,
+                            nameLinkedField = field
                         )
                     } else {
                         state
