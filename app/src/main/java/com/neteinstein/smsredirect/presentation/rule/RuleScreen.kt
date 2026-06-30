@@ -85,6 +85,10 @@ fun RuleScreen(
                     onValueChange = onSenderChanged,
                     modifier = Modifier.weight(1f),
                     label = { Text(stringResource(R.string.rule_label_sender)) },
+                    supportingText =
+                        uiState.senderContactName?.let { name ->
+                            { Text(name) }
+                        },
                 )
                 IconButton(onClick = onPickSenderContact) {
                     Icon(
@@ -102,6 +106,10 @@ fun RuleScreen(
                     modifier = Modifier.weight(1f),
                     label = { Text(stringResource(R.string.rule_label_target_number)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    supportingText =
+                        uiState.targetContactName?.let { name ->
+                            { Text(name) }
+                        },
                 )
                 IconButton(onClick = onPickTargetContact) {
                     Icon(

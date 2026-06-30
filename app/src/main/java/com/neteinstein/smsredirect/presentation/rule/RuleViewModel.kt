@@ -18,17 +18,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class NameSource { NONE, CONTACT, MANUAL }
-
-enum class NameField { SENDER, TARGET }
-
 data class RuleUiState(
     val id: Long = 0,
     val name: String = "",
-    val nameSource: NameSource = NameSource.NONE,
-    val nameLinkedField: NameField? = null,
     val senderText: String = "",
+    val senderContactName: String? = null,
     val targetNumber: String = "",
+    val targetContactName: String? = null,
     val error: String? = null,
     val saved: Boolean = false,
 )
@@ -45,7 +41,8 @@ class RuleViewModel(
     private val _uiState = MutableStateFlow(RuleUiState())
     val uiState: StateFlow<RuleUiState> = _uiState.asStateFlow()
 
-    private var contactLookupJob: Job? = null
+    private var senderLookupJob: Job? = null
+    private var targetLookupJob: Job? = null
 
     fun loadRule(ruleId: Long) {
         if (ruleId <= 0) return
@@ -56,59 +53,46 @@ class RuleViewModel(
                 it.copy(
                     id = rule.id,
                     name = rule.name,
-                    nameSource = NameSource.NONE,
-                    nameLinkedField = null,
                     senderText = sender,
                     targetNumber = rule.targetNumber,
                 )
+            }
+            // Resolve contact names for loaded numbers
+            lookupContactName(sender) { name ->
+                _uiState.update { it.copy(senderContactName = name) }
+            }
+            lookupContactName(rule.targetNumber) { name ->
+                _uiState.update { it.copy(targetContactName = name) }
             }
         }
     }
 
     fun onNameChanged(value: String) {
         _uiState.update {
-            it.copy(
-                name = value,
-                nameSource = if (value.isNotBlank()) NameSource.MANUAL else NameSource.NONE,
-                error = null,
-            )
+            it.copy(name = value, error = null)
         }
     }
 
     fun onSenderChanged(value: String) {
-        val previousValue = _uiState.value.senderText
-        _uiState.update { state ->
-            val newState = state.copy(senderText = value, error = null)
-            applyNameClearingOnNumberChange(newState, NameField.SENDER, previousValue)
-        }
-        if (previousValue.isNotBlank() || value.isNotBlank()) {
-            scheduleLookup(value, NameField.SENDER)
-        }
+        _uiState.update { it.copy(senderText = value, senderContactName = null, error = null) }
+        scheduleSenderLookup(value)
     }
 
     fun onTargetChanged(value: String) {
         val filtered = value.filter { it.isDigit() || it in "+- ()" }
-        val previousValue = _uiState.value.targetNumber
-        _uiState.update { state ->
-            val newState = state.copy(targetNumber = filtered, error = null)
-            applyNameClearingOnNumberChange(newState, NameField.TARGET, previousValue)
-        }
-        if (previousValue.isNotBlank() || filtered.isNotBlank()) {
-            scheduleLookup(filtered, NameField.TARGET)
-        }
+        _uiState.update { it.copy(targetNumber = filtered, targetContactName = null, error = null) }
+        scheduleTargetLookup(filtered)
     }
 
     fun onSenderContactPicked(
         number: String,
         contactName: String,
     ) {
-        contactLookupJob?.cancel()
+        senderLookupJob?.cancel()
         _uiState.update {
             it.copy(
                 senderText = number,
-                name = contactName,
-                nameSource = NameSource.CONTACT,
-                nameLinkedField = NameField.SENDER,
+                senderContactName = contactName,
                 error = null,
             )
         }
@@ -118,79 +102,48 @@ class RuleViewModel(
         number: String,
         contactName: String,
     ) {
-        contactLookupJob?.cancel()
+        targetLookupJob?.cancel()
         val filtered = number.filter { it.isDigit() || it in "+- ()" }
         _uiState.update {
             it.copy(
                 targetNumber = filtered,
-                name = contactName,
-                nameSource = NameSource.CONTACT,
-                nameLinkedField = NameField.TARGET,
+                targetContactName = contactName,
                 error = null,
             )
         }
     }
 
-    private fun applyNameClearingOnNumberChange(
-        state: RuleUiState,
-        changedField: NameField,
-        previousValue: String,
-    ): RuleUiState {
-        // Only apply clearing logic when a number is actually changing (not initial fill)
-        if (previousValue.isBlank()) return state
-
-        return when {
-            // Manual name + any number change → clear
-            state.nameSource == NameSource.MANUAL ->
-                state.copy(
-                    name = "",
-                    nameSource = NameSource.NONE,
-                    nameLinkedField = null,
-                )
-            // Contact name + linked field change → clear
-            state.nameSource == NameSource.CONTACT && state.nameLinkedField == changedField ->
-                state.copy(
-                    name = "",
-                    nameSource = NameSource.NONE,
-                    nameLinkedField = null,
-                )
-            // Name from NONE with non-empty name (loaded from DB) and unlinked → keep
-            // Contact name from different field → keep
-            else -> state
-        }
-    }
-
-    private fun scheduleLookup(
-        phoneNumber: String,
-        field: NameField,
-    ) {
+    private fun scheduleSenderLookup(phoneNumber: String) {
         if (contactNameResolver == null) return
-        contactLookupJob?.cancel()
-        contactLookupJob =
+        senderLookupJob?.cancel()
+        senderLookupJob =
             viewModelScope.launch {
                 delay(LOOKUP_DEBOUNCE_MS)
-                val currentState = _uiState.value
-                // Only look up if name is currently empty or would benefit from contact info
-                if (currentState.nameSource == NameSource.MANUAL) return@launch
-                if (currentState.name.isNotBlank() && currentState.nameLinkedField != field) return@launch
-
                 val contactName = contactNameResolver.lookupNameByNumber(phoneNumber)
-                if (contactName != null) {
-                    _uiState.update { state ->
-                        if (state.nameSource != NameSource.MANUAL &&
-                            (state.name.isBlank() || state.nameLinkedField == field)
-                        ) {
-                            state.copy(
-                                name = contactName,
-                                nameSource = NameSource.CONTACT,
-                                nameLinkedField = field,
-                            )
-                        } else {
-                            state
-                        }
-                    }
-                }
+                _uiState.update { it.copy(senderContactName = contactName) }
             }
+    }
+
+    private fun scheduleTargetLookup(phoneNumber: String) {
+        if (contactNameResolver == null) return
+        targetLookupJob?.cancel()
+        targetLookupJob =
+            viewModelScope.launch {
+                delay(LOOKUP_DEBOUNCE_MS)
+                val contactName = contactNameResolver.lookupNameByNumber(phoneNumber)
+                _uiState.update { it.copy(targetContactName = contactName) }
+            }
+    }
+
+    private fun lookupContactName(
+        phoneNumber: String,
+        onResult: (String?) -> Unit,
+    ) {
+        if (contactNameResolver == null || phoneNumber.isBlank()) return
+        viewModelScope.launch {
+            val name = contactNameResolver.lookupNameByNumber(phoneNumber)
+            onResult(name)
+        }
     }
 
     fun saveRule(

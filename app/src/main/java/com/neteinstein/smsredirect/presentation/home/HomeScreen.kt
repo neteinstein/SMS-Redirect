@@ -55,6 +55,7 @@ import kotlin.math.roundToInt
 @Composable
 fun HomeScreen(
     rules: List<Rule>,
+    contactNames: Map<String, String>,
     missingPermissions: List<String>,
     onAddRule: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -178,6 +179,8 @@ fun HomeScreen(
 
                         RuleCard(
                             rule = rule,
+                            senderContactName = contactNames[rule.senderText],
+                            targetContactName = contactNames[rule.targetNumber],
                             onEditRule = onEditRule,
                             onDeleteRule = { ruleToDelete = it },
                             modifier =
@@ -229,6 +232,8 @@ fun HomeScreen(
 @Composable
 private fun RuleCard(
     rule: Rule,
+    senderContactName: String?,
+    targetContactName: String?,
     onEditRule: (Long) -> Unit,
     onDeleteRule: (Rule) -> Unit,
     modifier: Modifier = Modifier,
@@ -262,17 +267,13 @@ private fun RuleCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
+                val senderDisplay = buildSenderTargetDisplay(rule.senderText, senderContactName)
                 Text(
-                    stringResource(
-                        R.string.home_sender_format,
-                        rule.senderText.ifBlank { "-" },
-                    ),
+                    stringResource(R.string.home_sender_format, senderDisplay),
                 )
+                val targetDisplay = buildSenderTargetDisplay(rule.targetNumber, targetContactName)
                 Text(
-                    stringResource(
-                        R.string.home_target_format,
-                        rule.targetNumber.ifBlank { "-" },
-                    ),
+                    stringResource(R.string.home_target_format, targetDisplay),
                 )
             }
             IconButton(onClick = { onDeleteRule(rule) }) {
@@ -283,4 +284,12 @@ private fun RuleCard(
             }
         }
     }
+}
+
+private fun buildSenderTargetDisplay(
+    number: String,
+    contactName: String?,
+): String {
+    if (number.isBlank()) return "-"
+    return if (contactName != null) "$contactName ($number)" else number
 }
