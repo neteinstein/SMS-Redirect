@@ -2,10 +2,12 @@ package com.neteinstein.smsredirect
 
 import android.app.Application
 import androidx.room.Room
+import com.neteinstein.smsredirect.data.contacts.AndroidContactNameResolver
 import com.neteinstein.smsredirect.data.local.AppDatabase
 import com.neteinstein.smsredirect.data.repository.ForwardHistoryRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.RuleRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.SettingsRepositoryImpl
+import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
 import com.neteinstein.smsredirect.domain.repository.ForwardHistoryRepository
 import com.neteinstein.smsredirect.domain.repository.RuleRepository
 import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
@@ -49,10 +51,12 @@ class SmsRedirectApplication : Application() {
         val getKeepHistoryNowUseCase = GetKeepHistoryNowUseCase(settingsRepository)
         val getForwardPrefixNowUseCase = GetForwardPrefixNowUseCase(settingsRepository)
         val recordForwardHistoryUseCase = RecordForwardHistoryUseCase(forwardHistoryRepository)
+        val contactNameResolver = AndroidContactNameResolver(contentResolver)
         appContainer =
             AppContainer(
                 ruleRepository = repository,
                 forwardHistoryRepository = forwardHistoryRepository,
+                contactNameResolver = contactNameResolver,
                 getRulesUseCase = GetRulesUseCase(repository),
                 getRuleUseCase = GetRuleUseCase(repository),
                 addRuleUseCase = AddRuleUseCase(repository),
@@ -86,6 +90,7 @@ class SmsRedirectApplication : Application() {
 data class AppContainer(
     val ruleRepository: RuleRepository,
     val forwardHistoryRepository: ForwardHistoryRepository,
+    val contactNameResolver: ContactNameResolver,
     val getRulesUseCase: GetRulesUseCase,
     val getRuleUseCase: GetRuleUseCase,
     val addRuleUseCase: AddRuleUseCase,

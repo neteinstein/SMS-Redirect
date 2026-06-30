@@ -3,21 +3,30 @@ package com.neteinstein.smsredirect.presentation.rule
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
 import com.neteinstein.smsredirect.domain.model.Rule
 import com.neteinstein.smsredirect.domain.repository.RuleRepository
 import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+enum class NameSource { NONE, CONTACT, MANUAL }
+
+enum class NameField { SENDER, TARGET }
+
 data class RuleUiState(
     val id: Long = 0,
     val name: String = "",
+    val nameSource: NameSource = NameSource.NONE,
+    val nameLinkedField: NameField? = null,
     val senderText: String = "",
     val targetNumber: String = "",
     val error: String? = null,
@@ -30,10 +39,13 @@ class RuleViewModel(
     private val updateRuleUseCase: UpdateRuleUseCase,
     private val ruleRepository: RuleRepository,
     private val getDefaultPrefixNowUseCase: GetDefaultPrefixNowUseCase,
+    private val contactNameResolver: ContactNameResolver? = null,
     private val defaultRuleNameProvider: (Int) -> String = { "Rule #$it" },
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(RuleUiState())
     val uiState: StateFlow<RuleUiState> = _uiState.asStateFlow()
+
+    private var contactLookupJob: Job? = null
 
     fun loadRule(ruleId: Long) {
         if (ruleId <= 0) return
@@ -44,6 +56,8 @@ class RuleViewModel(
                 it.copy(
                     id = rule.id,
                     name = rule.name,
+                    nameSource = NameSource.NONE,
+                    nameLinkedField = null,
                     senderText = sender,
                     targetNumber = rule.targetNumber,
                 )
@@ -52,16 +66,131 @@ class RuleViewModel(
     }
 
     fun onNameChanged(value: String) {
-        _uiState.update { it.copy(name = value, error = null) }
+        _uiState.update {
+            it.copy(
+                name = value,
+                nameSource = if (value.isNotBlank()) NameSource.MANUAL else NameSource.NONE,
+                error = null,
+            )
+        }
     }
 
     fun onSenderChanged(value: String) {
-        _uiState.update { it.copy(senderText = value, error = null) }
+        val previousValue = _uiState.value.senderText
+        _uiState.update { state ->
+            val newState = state.copy(senderText = value, error = null)
+            applyNameClearingOnNumberChange(newState, NameField.SENDER, previousValue)
+        }
+        if (previousValue.isNotBlank() || value.isNotBlank()) {
+            scheduleLookup(value, NameField.SENDER)
+        }
     }
 
     fun onTargetChanged(value: String) {
         val filtered = value.filter { it.isDigit() || it in "+- ()" }
-        _uiState.update { it.copy(targetNumber = filtered, error = null) }
+        val previousValue = _uiState.value.targetNumber
+        _uiState.update { state ->
+            val newState = state.copy(targetNumber = filtered, error = null)
+            applyNameClearingOnNumberChange(newState, NameField.TARGET, previousValue)
+        }
+        if (previousValue.isNotBlank() || filtered.isNotBlank()) {
+            scheduleLookup(filtered, NameField.TARGET)
+        }
+    }
+
+    fun onSenderContactPicked(
+        number: String,
+        contactName: String,
+    ) {
+        contactLookupJob?.cancel()
+        _uiState.update {
+            it.copy(
+                senderText = number,
+                name = contactName,
+                nameSource = NameSource.CONTACT,
+                nameLinkedField = NameField.SENDER,
+                error = null,
+            )
+        }
+    }
+
+    fun onTargetContactPicked(
+        number: String,
+        contactName: String,
+    ) {
+        contactLookupJob?.cancel()
+        val filtered = number.filter { it.isDigit() || it in "+- ()" }
+        _uiState.update {
+            it.copy(
+                targetNumber = filtered,
+                name = contactName,
+                nameSource = NameSource.CONTACT,
+                nameLinkedField = NameField.TARGET,
+                error = null,
+            )
+        }
+    }
+
+    private fun applyNameClearingOnNumberChange(
+        state: RuleUiState,
+        changedField: NameField,
+        previousValue: String,
+    ): RuleUiState {
+        // Only apply clearing logic when a number is actually changing (not initial fill)
+        if (previousValue.isBlank()) return state
+
+        return when {
+            // Manual name + any number change → clear
+            state.nameSource == NameSource.MANUAL ->
+                state.copy(
+                    name = "",
+                    nameSource = NameSource.NONE,
+                    nameLinkedField = null,
+                )
+            // Contact name + linked field change → clear
+            state.nameSource == NameSource.CONTACT && state.nameLinkedField == changedField ->
+                state.copy(
+                    name = "",
+                    nameSource = NameSource.NONE,
+                    nameLinkedField = null,
+                )
+            // Name from NONE with non-empty name (loaded from DB) and unlinked → keep
+            // Contact name from different field → keep
+            else -> state
+        }
+    }
+
+    private fun scheduleLookup(
+        phoneNumber: String,
+        field: NameField,
+    ) {
+        if (contactNameResolver == null) return
+        contactLookupJob?.cancel()
+        contactLookupJob =
+            viewModelScope.launch {
+                delay(LOOKUP_DEBOUNCE_MS)
+                val currentState = _uiState.value
+                // Only look up if name is currently empty or would benefit from contact info
+                if (currentState.nameSource == NameSource.MANUAL) return@launch
+                if (currentState.name.isNotBlank() && currentState.nameLinkedField != field) return@launch
+
+                val contactName = contactNameResolver.lookupNameByNumber(phoneNumber)
+                if (contactName != null) {
+                    _uiState.update { state ->
+                        if (state.nameSource != NameSource.MANUAL &&
+                            (state.name.isBlank() || state.nameLinkedField == field)
+                        ) {
+                            state.copy(
+                                name = contactName,
+                                nameSource = NameSource.CONTACT,
+                                nameLinkedField = field,
+                            )
+                        } else {
+                            state
+                        }
+                    }
+                }
+            }
     }
 
     fun saveRule(
@@ -117,6 +246,8 @@ class RuleViewModel(
     }
 
     companion object {
+        internal const val LOOKUP_DEBOUNCE_MS = 300L
+
         /**
          * If the value looks like a phone number (digits only, optionally starting with 0)
          * but has no country code prefix (+), prepend the configured prefix.
@@ -173,6 +304,7 @@ class RuleViewModelFactory(
     private val updateRuleUseCase: UpdateRuleUseCase,
     private val ruleRepository: RuleRepository,
     private val getDefaultPrefixNowUseCase: GetDefaultPrefixNowUseCase,
+    private val contactNameResolver: ContactNameResolver? = null,
     private val defaultRuleNameProvider: (Int) -> String = { "Rule #$it" },
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -183,6 +315,7 @@ class RuleViewModelFactory(
             updateRuleUseCase = updateRuleUseCase,
             ruleRepository = ruleRepository,
             getDefaultPrefixNowUseCase = getDefaultPrefixNowUseCase,
+            contactNameResolver = contactNameResolver,
             defaultRuleNameProvider = defaultRuleNameProvider,
         ) as T
     }
