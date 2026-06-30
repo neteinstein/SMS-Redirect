@@ -163,9 +163,11 @@ class MainActivity : ComponentActivity() {
                                         appContainer.getRulesUseCase,
                                         appContainer.deleteRuleUseCase,
                                         appContainer.reorderRulesUseCase,
+                                        appContainer.contactNameResolver,
                                     ),
                             )
                         val rules by homeViewModel.rules.collectAsState()
+                        val contactNames by homeViewModel.contactNames.collectAsState()
                         val lifecycleOwner = LocalLifecycleOwner.current
                         var permissionCheckTick by remember { mutableIntStateOf(0) }
                         DisposableEffect(lifecycleOwner) {
@@ -183,6 +185,7 @@ class MainActivity : ComponentActivity() {
                         val missingPerms = remember(permissionCheckTick) { currentMissingPermissions() }
                         HomeScreen(
                             rules = rules,
+                            contactNames = contactNames,
                             missingPermissions = missingPerms,
                             onAddRule = { navController.navigate(Routes.ruleRoute()) },
                             onOpenSettings = { navController.navigate(Routes.Settings) },
