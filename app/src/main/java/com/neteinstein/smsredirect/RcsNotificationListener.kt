@@ -39,6 +39,25 @@ class RcsNotificationListener : NotificationListenerService() {
             return
         }
 
+        // Skip foreground service notifications (e.g. "Messages is doing work in the background")
+        if (notification.flags and Notification.FLAG_FOREGROUND_SERVICE != 0) {
+            Log.d(TAG, "Skipping foreground service notification from $packageName")
+            return
+        }
+
+        // Skip ongoing notifications (progress indicators, background tasks)
+        if (notification.flags and Notification.FLAG_ONGOING_EVENT != 0) {
+            Log.d(TAG, "Skipping ongoing notification from $packageName")
+            return
+        }
+
+        // Only process message-category notifications when category is set
+        val category = notification.category
+        if (category != null && category != Notification.CATEGORY_MESSAGE) {
+            Log.d(TAG, "Skipping non-message category '$category' notification from $packageName")
+            return
+        }
+
         // Try MessagingStyle first (used by Google Messages for RCS)
         val messagingResult = extractFromMessagingStyle(notification)
         if (messagingResult != null) {
