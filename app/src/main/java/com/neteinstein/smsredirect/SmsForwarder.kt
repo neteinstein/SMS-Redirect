@@ -7,6 +7,7 @@ import android.telephony.SmsManager
 import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
 import com.neteinstein.smsredirect.domain.usecase.CanForwardSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixNowUseCase
@@ -19,6 +20,7 @@ class SmsForwarder(
     private val getKeepHistoryNowUseCase: GetKeepHistoryNowUseCase,
     private val recordForwardHistoryUseCase: RecordForwardHistoryUseCase,
     private val getForwardPrefixNowUseCase: GetForwardPrefixNowUseCase,
+    private val contactNameResolver: ContactNameResolver,
 ) {
     companion object {
         private const val TAG = "SmsForwarder"
@@ -62,7 +64,8 @@ class SmsForwarder(
 
         try {
             val forwardPrefix = getForwardPrefixNowUseCase()
-            val prefixedBody = if (forwardPrefix.isNotBlank()) "$forwardPrefix $body" else body
+            val senderTag = buildSenderTag(sender)
+            val prefixedBody = buildForwardedMessage(forwardPrefix, senderTag, body)
 
             val smsManager = context.getSystemService(SmsManager::class.java)
             if (smsManager == null) {
@@ -103,5 +106,36 @@ class SmsForwarder(
             return false
         }
         return manager.isNetworkRoaming
+    }
+
+    private suspend fun buildSenderTag(sender: String?): String {
+        if (sender.isNullOrBlank()) return ""
+
+        return if (looksLikePhoneNumber(sender)) {
+            val contactName = contactNameResolver.lookupNameByNumber(sender)
+            if (contactName != null) {
+                "($contactName - $sender)"
+            } else {
+                "($sender)"
+            }
+        } else {
+            "($sender)"
+        }
+    }
+
+    private fun buildForwardedMessage(
+        prefix: String,
+        senderTag: String,
+        body: String,
+    ): String =
+        buildString {
+            if (prefix.isNotBlank()) append(prefix).append(" ")
+            if (senderTag.isNotBlank()) append(senderTag).append(" - ")
+            append(body)
+        }
+
+    private fun looksLikePhoneNumber(value: String): Boolean {
+        val stripped = value.replace(Regex("[\\s\\-().+]"), "")
+        return stripped.length >= 4 && stripped.all { it.isDigit() }
     }
 }
