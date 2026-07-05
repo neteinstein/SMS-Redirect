@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -39,6 +40,34 @@ class ForwardingUseCasesTest {
 
             assertNotNull(result)
             assertEquals("999", result?.targetNumber)
+        }
+
+    @Test
+    fun `string sender rule does not match other text-only senders`() =
+        runTest {
+            val repository =
+                FakeRuleRepository(
+                    listOf(Rule(id = 1, senderText = "Amazon", phoneNumber = "Amazon", targetNumber = "555")),
+                )
+            val useCase = FindMatchingRuleUseCase(repository)
+
+            // Should match the exact sender
+            assertNotNull(useCase("Amazon"))
+            // Should NOT match a different text sender
+            assertNull(useCase("Google"))
+            assertNull(useCase("MyBank"))
+        }
+
+    @Test
+    fun `string sender rule with no digits does not match digit-only senders`() =
+        runTest {
+            val repository =
+                FakeRuleRepository(
+                    listOf(Rule(id = 1, senderText = "Amazon", phoneNumber = "Amazon", targetNumber = "555")),
+                )
+            val useCase = FindMatchingRuleUseCase(repository)
+
+            assertNull(useCase("15551234567"))
         }
 
     @Test
