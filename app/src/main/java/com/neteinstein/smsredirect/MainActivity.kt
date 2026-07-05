@@ -57,6 +57,7 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.READ_CONTACTS,
             Manifest.permission.SEND_SMS,
             Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.POST_NOTIFICATIONS,
         )
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
