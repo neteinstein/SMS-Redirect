@@ -26,10 +26,12 @@ class FindMatchingRuleUseCase(
 
             val matchesText =
                 rule.senderText.isNotBlank() &&
-                    normalizedSender.contains(rule.senderText.trim(), ignoreCase = true)
+                    normalizedSender.equals(rule.senderText.trim(), ignoreCase = true)
+            val ruleDigits = rule.phoneNumber.filter(Char::isDigit)
             val matchesNumber =
-                rule.phoneNumber.isNotBlank() &&
-                    normalizedSenderDigits == rule.phoneNumber.filter(Char::isDigit)
+                ruleDigits.isNotEmpty() &&
+                    normalizedSenderDigits.isNotEmpty() &&
+                    normalizedSenderDigits == ruleDigits
 
             Log.d(
                 TAG,
