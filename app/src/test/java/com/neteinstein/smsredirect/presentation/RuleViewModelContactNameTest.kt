@@ -242,7 +242,15 @@ class RuleViewModelContactNameTest {
         runTest {
             val repository =
                 FakeRuleRepository(
-                    listOf(Rule(id = 1, name = "My Rule", senderText = "+351912345678", phoneNumber = "+351912345678", targetNumber = "+351999888777")),
+                    listOf(
+                        Rule(
+                            id = 1,
+                            name = "My Rule",
+                            senderText = "+351912345678",
+                            phoneNumber = "+351912345678",
+                            targetNumber = "+351999888777",
+                        ),
+                    ),
                 )
             val vm = createViewModel(repository = repository, contacts = mapOf("+351912345678" to "John", "+351999888777" to "Mom"))
 
