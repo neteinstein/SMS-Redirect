@@ -82,6 +82,7 @@ class SmsRedirectApplication : Application() {
                         getKeepHistoryNowUseCase = getKeepHistoryNowUseCase,
                         recordForwardHistoryUseCase = recordForwardHistoryUseCase,
                         getForwardPrefixNowUseCase = getForwardPrefixNowUseCase,
+                        contactNameResolver = contactNameResolver,
                     ),
             )
     }
