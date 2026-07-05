@@ -57,6 +57,7 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.READ_CONTACTS,
             Manifest.permission.SEND_SMS,
             Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.POST_NOTIFICATIONS,
         )
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
@@ -210,6 +211,8 @@ class MainActivity : ComponentActivity() {
                                         appContainer.getForwardPrefixUseCase,
                                         appContainer.setForwardPrefixUseCase,
                                         appContainer.getForwardHistoryUseCase,
+                                        appContainer.getShowNotificationsUseCase,
+                                        appContainer.setShowNotificationsUseCase,
                                         appContainer.contactNameResolver,
                                     ),
                             )
@@ -230,6 +233,7 @@ class MainActivity : ComponentActivity() {
                         val missingPerms = remember(permissionCheckTick) { currentMissingPermissions() }
                         val sendWhileRoaming by settingsViewModel.sendWhileRoaming.collectAsState()
                         val keepHistory by settingsViewModel.keepHistory.collectAsState()
+                        val showNotifications by settingsViewModel.showNotifications.collectAsState()
                         val defaultPrefix by settingsViewModel.defaultPrefix.collectAsState()
                         val forwardPrefix by settingsViewModel.forwardPrefix.collectAsState()
                         val forwardHistory by settingsViewModel.forwardHistory.collectAsState()
@@ -238,12 +242,14 @@ class MainActivity : ComponentActivity() {
                             missingPermissions = missingPerms,
                             sendWhileRoaming = sendWhileRoaming,
                             keepHistory = keepHistory,
+                            showNotifications = showNotifications,
                             forwardPrefix = forwardPrefix,
                             defaultPrefix = defaultPrefix,
                             forwardHistory = forwardHistory,
                             contactNames = contactNames,
                             onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming,
                             onKeepHistoryChanged = settingsViewModel::setKeepHistory,
+                            onShowNotificationsChanged = settingsViewModel::setShowNotifications,
                             onForwardPrefixSaved = settingsViewModel::setForwardPrefix,
                             onDefaultPrefixChanged = settingsViewModel::setDefaultPrefix,
                             onBack = { navController.popBackStack() },

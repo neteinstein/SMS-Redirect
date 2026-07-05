@@ -11,6 +11,7 @@ class FakeSettingsRepository(
     private val keepHistoryState = MutableStateFlow(true)
     private val defaultPrefixState = MutableStateFlow("+351")
     private val forwardPrefixState = MutableStateFlow("SMS Redirect:")
+    private val showNotificationsState = MutableStateFlow(true)
 
     override fun observeSendWhileRoaming(): Flow<Boolean> = sendWhileRoamingState
 
@@ -42,5 +43,13 @@ class FakeSettingsRepository(
 
     override suspend fun setForwardPrefix(prefix: String) {
         forwardPrefixState.value = prefix
+    }
+
+    override fun observeShowNotifications(): Flow<Boolean> = showNotificationsState
+
+    override suspend fun getShowNotifications(): Boolean = showNotificationsState.value
+
+    override suspend fun setShowNotifications(enabled: Boolean) {
+        showNotificationsState.value = enabled
     }
 }

@@ -1,17 +1,21 @@
 package com.neteinstein.smsredirect
 
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.telephony.SmsManager
 import android.telephony.TelephonyManager
 import android.util.Log
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
 import com.neteinstein.smsredirect.domain.usecase.CanForwardSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryNowUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.RecordForwardHistoryUseCase
 
 class SmsForwarder(
@@ -21,9 +25,12 @@ class SmsForwarder(
     private val recordForwardHistoryUseCase: RecordForwardHistoryUseCase,
     private val getForwardPrefixNowUseCase: GetForwardPrefixNowUseCase,
     private val contactNameResolver: ContactNameResolver,
+    private val getShowNotificationsNowUseCase: GetShowNotificationsNowUseCase,
 ) {
     companion object {
         private const val TAG = "SmsForwarder"
+        private const val CHANNEL_ID = "sms_redirect_channel"
+        private var notificationId = 0
     }
 
     suspend fun forward(
@@ -82,6 +89,10 @@ class SmsForwarder(
             }
             Log.i(TAG, "SMS forwarded successfully to '${rule.targetNumber}'")
 
+            if (getShowNotificationsNowUseCase()) {
+                showForwardNotification(context, rule.targetNumber, rule.name)
+            }
+
             val keepHistory = getKeepHistoryNowUseCase()
             if (keepHistory) {
                 recordForwardHistoryUseCase(
@@ -106,6 +117,55 @@ class SmsForwarder(
             return false
         }
         return manager.isNetworkRoaming
+    }
+
+    private suspend fun showForwardNotification(
+        context: Context,
+        targetNumber: String,
+        ruleName: String,
+    ) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.d(TAG, "POST_NOTIFICATIONS permission not granted, skipping notification")
+            return
+        }
+
+        val contactDisplay = buildContactDisplay(targetNumber)
+
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        val channel =
+            NotificationChannel(
+                CHANNEL_ID,
+                "SMS Redirect",
+                NotificationManager.IMPORTANCE_DEFAULT,
+            ).apply {
+                description = "Notifications for redirected SMS messages"
+            }
+        notificationManager.createNotificationChannel(channel)
+
+        val notification =
+            NotificationCompat
+                .Builder(context, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_dialog_email)
+                .setContentTitle("SMS Redirected")
+                .setContentText("Redirect message to $contactDisplay from Rule: $ruleName")
+                .setAutoCancel(true)
+                .build()
+
+        notificationManager.notify(notificationId++, notification)
+        Log.d(TAG, "Notification shown for redirect to $contactDisplay via rule '$ruleName'")
+    }
+
+    private suspend fun buildContactDisplay(targetNumber: String): String {
+        val name = contactNameResolver.lookupNameByNumber(targetNumber)
+        return if (name != null) {
+            "$name ($targetNumber)"
+        } else {
+            targetNumber
+        }
     }
 
     private suspend fun buildSenderTag(sender: String?): String {

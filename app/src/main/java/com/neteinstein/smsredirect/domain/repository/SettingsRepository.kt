@@ -26,4 +26,10 @@ interface SettingsRepository {
     suspend fun getForwardPrefix(): String
 
     suspend fun setForwardPrefix(prefix: String)
+
+    fun observeShowNotifications(): Flow<Boolean>
+
+    suspend fun getShowNotifications(): Boolean
+
+    suspend fun setShowNotifications(enabled: Boolean)
 }

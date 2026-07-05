@@ -50,12 +50,14 @@ fun SettingsScreen(
     missingPermissions: List<String>,
     sendWhileRoaming: Boolean,
     keepHistory: Boolean,
+    showNotifications: Boolean,
     forwardPrefix: String,
     defaultPrefix: String,
     forwardHistory: List<ForwardHistory>,
     contactNames: Map<String, String>,
     onSendWhileRoamingChanged: (Boolean) -> Unit,
     onKeepHistoryChanged: (Boolean) -> Unit,
+    onShowNotificationsChanged: (Boolean) -> Unit,
     onForwardPrefixSaved: (String) -> Unit,
     onDefaultPrefixChanged: (String) -> Unit,
     onBack: () -> Unit,
@@ -124,6 +126,12 @@ fun SettingsScreen(
                 title = stringResource(R.string.settings_keep_history),
                 checked = keepHistory,
                 onCheckedChange = onKeepHistoryChanged,
+            )
+
+            SettingSwitchRow(
+                title = stringResource(R.string.settings_show_notifications),
+                checked = showNotifications,
+                onCheckedChange = onShowNotificationsChanged,
             )
 
             ForwardPrefixRow(

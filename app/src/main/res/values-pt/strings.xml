@@ -44,6 +44,7 @@
     <string name="settings_title">Definições</string>
     <string name="settings_send_while_roaming">Enviar em roaming</string>
     <string name="settings_keep_history">Manter histórico</string>
+    <string name="settings_show_notifications">Mostrar notificações</string>
     <string name="settings_default_prefix_label">Prefixo padrão</string>
     <string name="settings_forward_prefix_label">Prefixo da mensagem reencaminhada</string>
     <string name="settings_forward_prefix_save">Guardar prefixo</string>
