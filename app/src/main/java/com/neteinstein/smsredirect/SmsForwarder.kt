@@ -15,6 +15,7 @@ import com.neteinstein.smsredirect.domain.usecase.CanForwardSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryNowUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.RecordForwardHistoryUseCase
 
 class SmsForwarder(
@@ -24,6 +25,7 @@ class SmsForwarder(
     private val recordForwardHistoryUseCase: RecordForwardHistoryUseCase,
     private val getForwardPrefixNowUseCase: GetForwardPrefixNowUseCase,
     private val contactNameResolver: ContactNameResolver,
+    private val getShowNotificationsNowUseCase: GetShowNotificationsNowUseCase,
 ) {
     companion object {
         private const val TAG = "SmsForwarder"
@@ -87,7 +89,9 @@ class SmsForwarder(
             }
             Log.i(TAG, "SMS forwarded successfully to '${rule.targetNumber}'")
 
-            showForwardNotification(context, rule.targetNumber, rule.name)
+            if (getShowNotificationsNowUseCase()) {
+                showForwardNotification(context, rule.targetNumber, rule.name)
+            }
 
             val keepHistory = getKeepHistoryNowUseCase()
             if (keepHistory) {

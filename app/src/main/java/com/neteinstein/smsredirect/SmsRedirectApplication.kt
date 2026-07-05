@@ -24,12 +24,15 @@ import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsNowUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.RecordForwardHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.ReorderRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
 
 class SmsRedirectApplication : Application() {
@@ -50,6 +53,7 @@ class SmsRedirectApplication : Application() {
         val canForwardSmsUseCase = CanForwardSmsUseCase(settingsRepository)
         val getKeepHistoryNowUseCase = GetKeepHistoryNowUseCase(settingsRepository)
         val getForwardPrefixNowUseCase = GetForwardPrefixNowUseCase(settingsRepository)
+        val getShowNotificationsNowUseCase = GetShowNotificationsNowUseCase(settingsRepository)
         val recordForwardHistoryUseCase = RecordForwardHistoryUseCase(forwardHistoryRepository)
         val contactNameResolver = AndroidContactNameResolver(contentResolver)
         appContainer =
@@ -73,6 +77,8 @@ class SmsRedirectApplication : Application() {
                 getForwardPrefixUseCase = GetForwardPrefixUseCase(settingsRepository),
                 setForwardPrefixUseCase = SetForwardPrefixUseCase(settingsRepository),
                 getForwardHistoryUseCase = GetForwardHistoryUseCase(forwardHistoryRepository),
+                getShowNotificationsUseCase = GetShowNotificationsUseCase(settingsRepository),
+                setShowNotificationsUseCase = SetShowNotificationsUseCase(settingsRepository),
                 findMatchingRuleUseCase = findMatchingRuleUseCase,
                 canForwardSmsUseCase = canForwardSmsUseCase,
                 smsForwarder =
@@ -83,6 +89,7 @@ class SmsRedirectApplication : Application() {
                         recordForwardHistoryUseCase = recordForwardHistoryUseCase,
                         getForwardPrefixNowUseCase = getForwardPrefixNowUseCase,
                         contactNameResolver = contactNameResolver,
+                        getShowNotificationsNowUseCase = getShowNotificationsNowUseCase,
                     ),
             )
     }
@@ -108,6 +115,8 @@ data class AppContainer(
     val getForwardPrefixUseCase: GetForwardPrefixUseCase,
     val setForwardPrefixUseCase: SetForwardPrefixUseCase,
     val getForwardHistoryUseCase: GetForwardHistoryUseCase,
+    val getShowNotificationsUseCase: GetShowNotificationsUseCase,
+    val setShowNotificationsUseCase: SetShowNotificationsUseCase,
     val findMatchingRuleUseCase: FindMatchingRuleUseCase,
     val canForwardSmsUseCase: CanForwardSmsUseCase,
     val smsForwarder: SmsForwarder,

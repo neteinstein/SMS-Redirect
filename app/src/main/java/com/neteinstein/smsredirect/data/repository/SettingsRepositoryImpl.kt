@@ -44,4 +44,13 @@ class SettingsRepositoryImpl(
         val current = dao.getSettings() ?: AppSettingsEntity()
         dao.upsert(current.copy(forwardPrefix = prefix))
     }
+
+    override fun observeShowNotifications(): Flow<Boolean> = dao.observeSettings().map { it?.showNotifications ?: true }
+
+    override suspend fun getShowNotifications(): Boolean = dao.getSettings()?.showNotifications ?: true
+
+    override suspend fun setShowNotifications(enabled: Boolean) {
+        val current = dao.getSettings() ?: AppSettingsEntity()
+        dao.upsert(current.copy(showNotifications = enabled))
+    }
 }

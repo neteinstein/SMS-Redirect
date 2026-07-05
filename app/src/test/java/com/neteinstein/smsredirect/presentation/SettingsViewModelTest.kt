@@ -7,10 +7,12 @@ import com.neteinstein.smsredirect.domain.usecase.GetForwardHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
 import com.neteinstein.smsredirect.presentation.settings.SettingsViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -52,6 +54,8 @@ class SettingsViewModelTest {
             getForwardPrefixUseCase = GetForwardPrefixUseCase(settingsRepository),
             setForwardPrefixUseCase = SetForwardPrefixUseCase(settingsRepository),
             getForwardHistoryUseCase = GetForwardHistoryUseCase(historyRepository),
+            getShowNotificationsUseCase = GetShowNotificationsUseCase(settingsRepository),
+            setShowNotificationsUseCase = SetShowNotificationsUseCase(settingsRepository),
         )
 
     @Test
@@ -152,5 +156,25 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             assertEquals("Forwarded SMS:", vm.forwardPrefix.value)
+        }
+
+    @Test
+    fun `init observes showNotifications defaults to true`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+            assertTrue(vm.showNotifications.value)
+        }
+
+    @Test
+    fun `setShowNotifications updates state`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.setShowNotifications(false)
+            advanceUntilIdle()
+
+            assertFalse(vm.showNotifications.value)
         }
 }

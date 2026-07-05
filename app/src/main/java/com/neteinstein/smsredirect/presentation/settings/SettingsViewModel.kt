@@ -10,10 +10,12 @@ import com.neteinstein.smsredirect.domain.usecase.GetForwardHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,6 +33,8 @@ class SettingsViewModel(
     getForwardPrefixUseCase: GetForwardPrefixUseCase,
     private val setForwardPrefixUseCase: SetForwardPrefixUseCase,
     getForwardHistoryUseCase: GetForwardHistoryUseCase,
+    getShowNotificationsUseCase: GetShowNotificationsUseCase,
+    private val setShowNotificationsUseCase: SetShowNotificationsUseCase,
     private val contactNameResolver: ContactNameResolver? = null,
 ) : ViewModel() {
     private val _sendWhileRoaming = MutableStateFlow(false)
@@ -45,6 +49,8 @@ class SettingsViewModel(
     val forwardHistory: StateFlow<List<ForwardHistory>> = _forwardHistory.asStateFlow()
     private val _contactNames = MutableStateFlow<Map<String, String>>(emptyMap())
     val contactNames: StateFlow<Map<String, String>> = _contactNames.asStateFlow()
+    private val _showNotifications = MutableStateFlow(true)
+    val showNotifications: StateFlow<Boolean> = _showNotifications.asStateFlow()
 
     init {
         getSendWhileRoamingUseCase()
@@ -64,6 +70,9 @@ class SettingsViewModel(
                 _forwardHistory.value = history
                 resolveContactNames(history)
             }.launchIn(viewModelScope)
+        getShowNotificationsUseCase()
+            .onEach { _showNotifications.value = it }
+            .launchIn(viewModelScope)
     }
 
     private fun resolveContactNames(history: List<ForwardHistory>) {
@@ -98,6 +107,12 @@ class SettingsViewModel(
         }
     }
 
+    fun setShowNotifications(enabled: Boolean) {
+        viewModelScope.launch {
+            setShowNotificationsUseCase(enabled)
+        }
+    }
+
     fun setDefaultPrefix(prefix: String) {
         viewModelScope.launch {
             setDefaultPrefixUseCase(prefix)
@@ -121,6 +136,8 @@ class SettingsViewModelFactory(
     private val getForwardPrefixUseCase: GetForwardPrefixUseCase,
     private val setForwardPrefixUseCase: SetForwardPrefixUseCase,
     private val getForwardHistoryUseCase: GetForwardHistoryUseCase,
+    private val getShowNotificationsUseCase: GetShowNotificationsUseCase,
+    private val setShowNotificationsUseCase: SetShowNotificationsUseCase,
     private val contactNameResolver: ContactNameResolver? = null,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -135,6 +152,8 @@ class SettingsViewModelFactory(
             getForwardPrefixUseCase = getForwardPrefixUseCase,
             setForwardPrefixUseCase = setForwardPrefixUseCase,
             getForwardHistoryUseCase = getForwardHistoryUseCase,
+            getShowNotificationsUseCase = getShowNotificationsUseCase,
+            setShowNotificationsUseCase = setShowNotificationsUseCase,
             contactNameResolver = contactNameResolver,
         ) as T
     }

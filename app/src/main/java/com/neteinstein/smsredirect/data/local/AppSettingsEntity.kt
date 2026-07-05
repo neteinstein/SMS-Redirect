@@ -11,4 +11,5 @@ data class AppSettingsEntity(
     @ColumnInfo(defaultValue = "1") val keepHistory: Boolean = true,
     @ColumnInfo(defaultValue = "+351") val defaultPrefix: String = "+351",
     @ColumnInfo(defaultValue = "SMS Redirect:") val forwardPrefix: String = "SMS Redirect:",
+    @ColumnInfo(defaultValue = "1") val showNotifications: Boolean = true,
 )

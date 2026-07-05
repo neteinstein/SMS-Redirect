@@ -112,4 +112,44 @@ class SettingsUseCasesTest {
             repository.setDefaultPrefix("")
             assertEquals("", useCase())
         }
+
+    // --- ShowNotifications ---
+
+    @Test
+    fun `setShowNotifications persists enabled state`() =
+        runTest {
+            val useCase = SetShowNotificationsUseCase(repository)
+            useCase(false)
+            useCase(true)
+            assertTrue(repository.getShowNotifications())
+        }
+
+    @Test
+    fun `setShowNotifications persists disabled state`() =
+        runTest {
+            val useCase = SetShowNotificationsUseCase(repository)
+            useCase(false)
+            assertFalse(repository.getShowNotifications())
+        }
+
+    @Test
+    fun `getShowNotifications observes state changes`() =
+        runTest {
+            val useCase = GetShowNotificationsUseCase(repository)
+            useCase().test {
+                assertTrue(awaitItem()) // default is true
+                repository.setShowNotifications(false)
+                assertFalse(awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `getShowNotificationsNow returns current value`() =
+        runTest {
+            val useCase = GetShowNotificationsNowUseCase(repository)
+            assertTrue(useCase())
+            repository.setShowNotifications(false)
+            assertFalse(useCase())
+        }
 }
