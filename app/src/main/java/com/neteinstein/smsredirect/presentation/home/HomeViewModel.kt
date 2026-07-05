@@ -28,16 +28,18 @@ class HomeViewModel(
     val contactNames: StateFlow<Map<String, String>> = _contactNames.asStateFlow()
 
     init {
-        getRulesUseCase().onEach { rules ->
-            _rules.value = rules
-            resolveContactNames(rules)
-        }.launchIn(viewModelScope)
+        getRulesUseCase()
+            .onEach { rules ->
+                _rules.value = rules
+                resolveContactNames(rules)
+            }.launchIn(viewModelScope)
     }
 
     private fun resolveContactNames(rules: List<Rule>) {
         if (contactNameResolver == null) return
         val numbers =
-            rules.flatMap { listOf(it.senderText, it.targetNumber) }
+            rules
+                .flatMap { listOf(it.senderText, it.targetNumber) }
                 .filter { it.isNotBlank() }
                 .distinct()
 
