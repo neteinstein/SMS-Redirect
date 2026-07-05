@@ -53,6 +53,7 @@ fun SettingsScreen(
     forwardPrefix: String,
     defaultPrefix: String,
     forwardHistory: List<ForwardHistory>,
+    contactNames: Map<String, String>,
     onSendWhileRoamingChanged: (Boolean) -> Unit,
     onKeepHistoryChanged: (Boolean) -> Unit,
     onForwardPrefixSaved: (String) -> Unit,
@@ -158,7 +159,10 @@ fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(forwardHistory, key = { it.id }) { item ->
-                            ForwardHistoryCard(item)
+                            ForwardHistoryCard(
+                                item = item,
+                                senderContactName = contactNames[item.sender],
+                            )
                         }
                     }
                 }
@@ -275,14 +279,25 @@ private fun SettingSwitchRow(
 }
 
 @Composable
-private fun ForwardHistoryCard(item: ForwardHistory) {
+private fun ForwardHistoryCard(
+    item: ForwardHistory,
+    senderContactName: String?,
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
+            val senderDisplay =
+                if (item.sender.isBlank()) {
+                    stringResource(R.string.settings_history_unknown_sender)
+                } else if (senderContactName != null) {
+                    "$senderContactName (${item.sender})"
+                } else {
+                    item.sender
+                }
             Text(
                 text =
                     stringResource(
                         R.string.settings_history_sender_target_format,
-                        item.sender.ifBlank { stringResource(R.string.settings_history_unknown_sender) },
+                        senderDisplay,
                         item.targetNumber,
                     ),
                 style = MaterialTheme.typography.titleSmall,

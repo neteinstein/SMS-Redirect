@@ -210,6 +210,7 @@ class MainActivity : ComponentActivity() {
                                         appContainer.getForwardPrefixUseCase,
                                         appContainer.setForwardPrefixUseCase,
                                         appContainer.getForwardHistoryUseCase,
+                                        appContainer.contactNameResolver,
                                     ),
                             )
                         val lifecycleOwner = LocalLifecycleOwner.current
@@ -232,6 +233,7 @@ class MainActivity : ComponentActivity() {
                         val defaultPrefix by settingsViewModel.defaultPrefix.collectAsState()
                         val forwardPrefix by settingsViewModel.forwardPrefix.collectAsState()
                         val forwardHistory by settingsViewModel.forwardHistory.collectAsState()
+                        val contactNames by settingsViewModel.contactNames.collectAsState()
                         SettingsScreen(
                             missingPermissions = missingPerms,
                             sendWhileRoaming = sendWhileRoaming,
@@ -239,6 +241,7 @@ class MainActivity : ComponentActivity() {
                             forwardPrefix = forwardPrefix,
                             defaultPrefix = defaultPrefix,
                             forwardHistory = forwardHistory,
+                            contactNames = contactNames,
                             onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming,
                             onKeepHistoryChanged = settingsViewModel::setKeepHistory,
                             onForwardPrefixSaved = settingsViewModel::setForwardPrefix,
