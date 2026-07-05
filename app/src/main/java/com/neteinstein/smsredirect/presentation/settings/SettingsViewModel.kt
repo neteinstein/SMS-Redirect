@@ -63,14 +63,14 @@ class SettingsViewModel(
             .onEach { history ->
                 _forwardHistory.value = history
                 resolveContactNames(history)
-            }
-            .launchIn(viewModelScope)
+            }.launchIn(viewModelScope)
     }
 
     private fun resolveContactNames(history: List<ForwardHistory>) {
         if (contactNameResolver == null) return
         val numbers =
-            history.map { it.sender }
+            history
+                .map { it.sender }
                 .filter { it.isNotBlank() }
                 .distinct()
 

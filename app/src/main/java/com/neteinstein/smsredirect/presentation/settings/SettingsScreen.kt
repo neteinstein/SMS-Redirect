@@ -285,13 +285,14 @@ private fun ForwardHistoryCard(
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
-            val senderDisplay = if (item.sender.isBlank()) {
-                stringResource(R.string.settings_history_unknown_sender)
-            } else if (senderContactName != null) {
-                "$senderContactName (${item.sender})"
-            } else {
-                item.sender
-            }
+            val senderDisplay =
+                if (item.sender.isBlank()) {
+                    stringResource(R.string.settings_history_unknown_sender)
+                } else if (senderContactName != null) {
+                    "$senderContactName (${item.sender})"
+                } else {
+                    item.sender
+                }
             Text(
                 text =
                     stringResource(
