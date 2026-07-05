@@ -13,7 +13,7 @@ import org.junit.Test
 
 class ForwardingUseCasesTest {
     @Test
-    fun `find matching rule by sender text`() =
+    fun `find matching rule by sender text - case insensitive exact match`() =
         runTest {
             val repository =
                 FakeRuleRepository(
@@ -21,10 +21,13 @@ class ForwardingUseCasesTest {
                 )
             val useCase = FindMatchingRuleUseCase(repository)
 
-            val result = useCase("BANK-ALERT")
-
-            assertNotNull(result)
-            assertEquals("555", result?.targetNumber)
+            // Exact match (case insensitive)
+            assertNotNull(useCase("BANK"))
+            assertNotNull(useCase("bank"))
+            assertNotNull(useCase("Bank"))
+            // Substring should NOT match
+            assertNull(useCase("BANK-ALERT"))
+            assertNull(useCase("MY-BANK"))
         }
 
     @Test
@@ -51,11 +54,30 @@ class ForwardingUseCasesTest {
                 )
             val useCase = FindMatchingRuleUseCase(repository)
 
-            // Should match the exact sender
+            // Case insensitive exact match
             assertNotNull(useCase("Amazon"))
-            // Should NOT match a different text sender
+            assertNotNull(useCase("AMAZON"))
+            assertNotNull(useCase("amazon"))
+            // Different senders should NOT match
             assertNull(useCase("Google"))
             assertNull(useCase("MyBank"))
+            // Substrings should NOT match
+            assertNull(useCase("Amazon X"))
+            assertNull(useCase("NotAmazon"))
+        }
+
+    @Test
+    fun `sender with leading or trailing spaces matches trimmed rule`() =
+        runTest {
+            val repository =
+                FakeRuleRepository(
+                    listOf(Rule(id = 1, senderText = "  Amazon  ", phoneNumber = "Amazon", targetNumber = "555")),
+                )
+            val useCase = FindMatchingRuleUseCase(repository)
+
+            // Sender with spaces should still match after trimming
+            assertNotNull(useCase("Amazon"))
+            assertNotNull(useCase("  Amazon  "))
         }
 
     @Test
