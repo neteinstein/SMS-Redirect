@@ -167,12 +167,14 @@ class SmsForwarder(
             }
         notificationManager.createNotificationChannel(channel)
 
+        val contentText = "Redirect message to $contactDisplay from Rule: $ruleName"
         val notification =
             NotificationCompat
                 .Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_dialog_email)
                 .setContentTitle("SMS Redirected")
-                .setContentText("Redirect message to $contactDisplay from Rule: $ruleName")
+                .setContentText(contentText)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(contentText))
                 .setAutoCancel(true)
                 .build()
 
