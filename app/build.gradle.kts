@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "com.neteinstein.smsredirect"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.neteinstein.smsredirect"
         minSdk = 35
-        targetSdk = 35
+        targetSdk = 37
         versionCode = (project.findProperty("VERSION_CODE") as String?)?.toInt() ?: 1
         versionName = "0.2.0"
 
