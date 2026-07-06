@@ -24,5 +24,9 @@ class FakeForwardHistoryRepository : ForwardHistoryRepository {
                 .take(limit)
     }
 
+    override suspend fun deleteAll() {
+        entries.value = emptyList()
+    }
+
     fun getAll(): List<ForwardHistory> = entries.value
 }
