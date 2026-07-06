@@ -42,12 +42,10 @@ import com.neteinstein.smsredirect.R
 fun SettingsScreen(
     missingPermissions: List<String>,
     sendWhileRoaming: Boolean,
-    keepHistory: Boolean,
     showNotifications: Boolean,
     forwardPrefix: String,
     defaultPrefix: String,
     onSendWhileRoamingChanged: (Boolean) -> Unit,
-    onKeepHistoryChanged: (Boolean) -> Unit,
     onShowNotificationsChanged: (Boolean) -> Unit,
     onForwardPrefixSaved: (String) -> Unit,
     onDefaultPrefixChanged: (String) -> Unit,
@@ -111,12 +109,6 @@ fun SettingsScreen(
                 title = stringResource(R.string.settings_send_while_roaming),
                 checked = sendWhileRoaming,
                 onCheckedChange = onSendWhileRoamingChanged,
-            )
-
-            SettingSwitchRow(
-                title = stringResource(R.string.settings_keep_history),
-                checked = keepHistory,
-                onCheckedChange = onKeepHistoryChanged,
             )
 
             SettingSwitchRow(

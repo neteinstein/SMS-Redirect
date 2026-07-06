@@ -1,8 +1,11 @@
 package com.neteinstein.smsredirect.presentation
 
 import com.neteinstein.smsredirect.FakeForwardHistoryRepository
+import com.neteinstein.smsredirect.FakeSettingsRepository
 import com.neteinstein.smsredirect.domain.model.ForwardHistory
 import com.neteinstein.smsredirect.domain.usecase.GetForwardHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetKeepHistoryUseCase
 import com.neteinstein.smsredirect.presentation.history.HistoryViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -12,6 +15,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -19,6 +24,7 @@ import org.junit.Test
 class HistoryViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val historyRepository = FakeForwardHistoryRepository()
+    private val settingsRepository = FakeSettingsRepository()
 
     @Before
     fun setUp() {
@@ -33,6 +39,8 @@ class HistoryViewModelTest {
     private fun createViewModel(): HistoryViewModel =
         HistoryViewModel(
             getForwardHistoryUseCase = GetForwardHistoryUseCase(historyRepository),
+            getKeepHistoryUseCase = GetKeepHistoryUseCase(settingsRepository),
+            setKeepHistoryUseCase = SetKeepHistoryUseCase(settingsRepository),
         )
 
     @Test
@@ -67,5 +75,25 @@ class HistoryViewModelTest {
                     .first()
                     .sender,
             )
+        }
+
+    @Test
+    fun `init observes keepHistory`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+            assertTrue(vm.keepHistory.value)
+        }
+
+    @Test
+    fun `setKeepHistory updates state`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.setKeepHistory(false)
+            advanceUntilIdle()
+
+            assertFalse(vm.keepHistory.value)
         }
 }

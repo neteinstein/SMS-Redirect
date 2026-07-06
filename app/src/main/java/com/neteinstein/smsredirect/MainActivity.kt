@@ -231,8 +231,6 @@ class MainActivity : ComponentActivity() {
                                     SettingsViewModelFactory(
                                         appContainer.getSendWhileRoamingUseCase,
                                         appContainer.setSendWhileRoamingUseCase,
-                                        appContainer.getKeepHistoryUseCase,
-                                        appContainer.setKeepHistoryUseCase,
                                         appContainer.getDefaultPrefixUseCase,
                                         appContainer.setDefaultPrefixUseCase,
                                         appContainer.getForwardPrefixUseCase,
@@ -257,19 +255,16 @@ class MainActivity : ComponentActivity() {
                         }
                         val missingPerms = remember(permissionCheckTick) { currentMissingPermissions() }
                         val sendWhileRoaming by settingsViewModel.sendWhileRoaming.collectAsState()
-                        val keepHistory by settingsViewModel.keepHistory.collectAsState()
                         val showNotifications by settingsViewModel.showNotifications.collectAsState()
                         val defaultPrefix by settingsViewModel.defaultPrefix.collectAsState()
                         val forwardPrefix by settingsViewModel.forwardPrefix.collectAsState()
                         SettingsScreen(
                             missingPermissions = missingPerms,
                             sendWhileRoaming = sendWhileRoaming,
-                            keepHistory = keepHistory,
                             showNotifications = showNotifications,
                             forwardPrefix = forwardPrefix,
                             defaultPrefix = defaultPrefix,
                             onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming,
-                            onKeepHistoryChanged = settingsViewModel::setKeepHistory,
                             onShowNotificationsChanged = settingsViewModel::setShowNotifications,
                             onForwardPrefixSaved = settingsViewModel::setForwardPrefix,
                             onDefaultPrefixChanged = settingsViewModel::setDefaultPrefix,
@@ -285,14 +280,19 @@ class MainActivity : ComponentActivity() {
                                 factory =
                                     HistoryViewModelFactory(
                                         appContainer.getForwardHistoryUseCase,
+                                        appContainer.getKeepHistoryUseCase,
+                                        appContainer.setKeepHistoryUseCase,
                                         appContainer.contactNameResolver,
                                     ),
                             )
                         val forwardHistory by historyViewModel.forwardHistory.collectAsState()
                         val contactNames by historyViewModel.contactNames.collectAsState()
+                        val keepHistory by historyViewModel.keepHistory.collectAsState()
                         HistoryScreen(
                             forwardHistory = forwardHistory,
                             contactNames = contactNames,
+                            keepHistory = keepHistory,
+                            onKeepHistoryChanged = historyViewModel::setKeepHistory,
                             onBack = { navController.popBackStack() },
                         )
                     }
