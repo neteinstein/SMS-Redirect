@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
 import com.neteinstein.smsredirect.domain.model.ForwardHistory
+import com.neteinstein.smsredirect.domain.usecase.DeleteAllHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetKeepHistoryUseCase
@@ -19,6 +20,7 @@ class HistoryViewModel(
     getForwardHistoryUseCase: GetForwardHistoryUseCase,
     getKeepHistoryUseCase: GetKeepHistoryUseCase,
     private val setKeepHistoryUseCase: SetKeepHistoryUseCase,
+    private val deleteAllHistoryUseCase: DeleteAllHistoryUseCase,
     private val contactNameResolver: ContactNameResolver? = null,
 ) : ViewModel() {
     private val _forwardHistory = MutableStateFlow<List<ForwardHistory>>(emptyList())
@@ -29,6 +31,9 @@ class HistoryViewModel(
 
     private val _keepHistory = MutableStateFlow(true)
     val keepHistory: StateFlow<Boolean> = _keepHistory.asStateFlow()
+
+    private val _showDisableConfirmation = MutableStateFlow(false)
+    val showDisableConfirmation: StateFlow<Boolean> = _showDisableConfirmation.asStateFlow()
 
     init {
         getForwardHistoryUseCase(limit = 50)
@@ -41,10 +46,26 @@ class HistoryViewModel(
             .launchIn(viewModelScope)
     }
 
-    fun setKeepHistory(enabled: Boolean) {
-        viewModelScope.launch {
-            setKeepHistoryUseCase(enabled)
+    fun onKeepHistoryToggled(enabled: Boolean) {
+        if (!enabled && _forwardHistory.value.isNotEmpty()) {
+            _showDisableConfirmation.value = true
+        } else {
+            viewModelScope.launch {
+                setKeepHistoryUseCase(enabled)
+            }
         }
+    }
+
+    fun confirmDisableHistory() {
+        _showDisableConfirmation.value = false
+        viewModelScope.launch {
+            setKeepHistoryUseCase(false)
+            deleteAllHistoryUseCase()
+        }
+    }
+
+    fun dismissDisableConfirmation() {
+        _showDisableConfirmation.value = false
     }
 
     private fun resolveContactNames(history: List<ForwardHistory>) {
@@ -72,6 +93,7 @@ class HistoryViewModelFactory(
     private val getForwardHistoryUseCase: GetForwardHistoryUseCase,
     private val getKeepHistoryUseCase: GetKeepHistoryUseCase,
     private val setKeepHistoryUseCase: SetKeepHistoryUseCase,
+    private val deleteAllHistoryUseCase: DeleteAllHistoryUseCase,
     private val contactNameResolver: ContactNameResolver? = null,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -80,6 +102,7 @@ class HistoryViewModelFactory(
             getForwardHistoryUseCase = getForwardHistoryUseCase,
             getKeepHistoryUseCase = getKeepHistoryUseCase,
             setKeepHistoryUseCase = setKeepHistoryUseCase,
+            deleteAllHistoryUseCase = deleteAllHistoryUseCase,
             contactNameResolver = contactNameResolver,
         ) as T
     }

@@ -282,17 +282,22 @@ class MainActivity : ComponentActivity() {
                                         appContainer.getForwardHistoryUseCase,
                                         appContainer.getKeepHistoryUseCase,
                                         appContainer.setKeepHistoryUseCase,
+                                        appContainer.deleteAllHistoryUseCase,
                                         appContainer.contactNameResolver,
                                     ),
                             )
                         val forwardHistory by historyViewModel.forwardHistory.collectAsState()
                         val contactNames by historyViewModel.contactNames.collectAsState()
                         val keepHistory by historyViewModel.keepHistory.collectAsState()
+                        val showDisableConfirmation by historyViewModel.showDisableConfirmation.collectAsState()
                         HistoryScreen(
                             forwardHistory = forwardHistory,
                             contactNames = contactNames,
                             keepHistory = keepHistory,
-                            onKeepHistoryChanged = historyViewModel::setKeepHistory,
+                            showDisableConfirmation = showDisableConfirmation,
+                            onKeepHistoryChanged = historyViewModel::onKeepHistoryToggled,
+                            onConfirmDisable = historyViewModel::confirmDisableHistory,
+                            onDismissDisable = historyViewModel::dismissDisableConfirmation,
                             onBack = { navController.popBackStack() },
                         )
                     }

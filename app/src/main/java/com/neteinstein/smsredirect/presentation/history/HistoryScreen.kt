@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -18,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -36,9 +38,30 @@ fun HistoryScreen(
     forwardHistory: List<ForwardHistory>,
     contactNames: Map<String, String>,
     keepHistory: Boolean,
+    showDisableConfirmation: Boolean,
     onKeepHistoryChanged: (Boolean) -> Unit,
+    onConfirmDisable: () -> Unit,
+    onDismissDisable: () -> Unit,
     onBack: () -> Unit,
 ) {
+    if (showDisableConfirmation) {
+        AlertDialog(
+            onDismissRequest = onDismissDisable,
+            title = { Text(stringResource(R.string.history_disable_confirm_title)) },
+            text = { Text(stringResource(R.string.history_disable_confirm_message)) },
+            confirmButton = {
+                TextButton(onClick = onConfirmDisable) {
+                    Text(stringResource(R.string.history_disable_confirm_yes))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismissDisable) {
+                    Text(stringResource(R.string.history_disable_confirm_no))
+                }
+            },
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
