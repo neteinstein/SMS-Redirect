@@ -12,10 +12,10 @@ val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(keystorePropertiesFile.inputStream())
 }
-val releaseKeystoreFilePath = (
-    System.getenv("KEYSTORE_FILE")
-        ?: keystoreProperties.getProperty("storeFile")
-    )?.takeIf { it.isNotBlank() }
+val releaseKeystoreFilePath =
+    (System.getenv("KEYSTORE_FILE")
+        ?: keystoreProperties.getProperty("storeFile"))
+        ?.takeIf { it.isNotBlank() }
 
 android {
     namespace = "com.neteinstein.smsredirect"
