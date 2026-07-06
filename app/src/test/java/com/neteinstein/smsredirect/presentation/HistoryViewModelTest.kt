@@ -61,6 +61,11 @@ class HistoryViewModelTest {
             advanceUntilIdle()
 
             assertEquals(1, vm.forwardHistory.value.size)
-            assertEquals(item.sender, vm.forwardHistory.value.first().sender)
+            assertEquals(
+                item.sender,
+                vm.forwardHistory.value
+                    .first()
+                    .sender,
+            )
         }
 }
