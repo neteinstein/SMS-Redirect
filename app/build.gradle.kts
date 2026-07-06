@@ -13,8 +13,10 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(keystorePropertiesFile.inputStream())
 }
 val releaseKeystoreFilePath =
-    (System.getenv("KEYSTORE_FILE")
-        ?: keystoreProperties.getProperty("storeFile"))
+    (
+        System.getenv("KEYSTORE_FILE")
+            ?: keystoreProperties.getProperty("storeFile")
+        )
         ?.takeIf { it.isNotBlank() }
 
 android {
