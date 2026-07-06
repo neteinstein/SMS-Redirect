@@ -16,8 +16,7 @@ val releaseKeystoreFilePath =
     (
         System.getenv("KEYSTORE_FILE")
             ?: keystoreProperties.getProperty("storeFile")
-        )
-        ?.takeIf { it.isNotBlank() }
+    )?.takeIf { it.isNotBlank() }
 
 android {
     namespace = "com.neteinstein.smsredirect"
