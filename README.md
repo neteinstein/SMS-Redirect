@@ -26,6 +26,7 @@ Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean archit
 ### Settings
 - Send while roaming toggle (default: off)
 - Keep history toggle (default: on)
+- Show notifications toggle (default: on) — posts a system notification after each successful forward
 - Forward prefix text field (default: `SMS Redirect:`)
 - Default country prefix dropdown (None / +351 Portugal)
 - Forward history viewer (last 50 forwarded messages with sender, target, rule, timestamp, and body)
@@ -36,6 +37,9 @@ Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean archit
 - Permission status banner on Home and Settings screens showing missing permissions
 - Battery optimization exemption prompt at startup
 - Notification Access prompt for RCS capture
+- Deep link support (`smsredirect://app` URI scheme)
+- Contact name resolution for forwarded-message notifications
+- Message deduplication (30-second window prevents double-forwards)
 - Dark mode support (Material3 dynamic colors)
 - Android 15+ support (min/target SDK 35)
 

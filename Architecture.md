@@ -39,11 +39,14 @@ SMS Redirect is an Android app that intercepts incoming SMS and RCS messages mat
 #### 4. SmsForwarder
 - Core forwarding logic (pure domain, no Android framework coupling beyond SmsManager)
 - Checks SEND_SMS permission
-- Checks roaming status vs user preference
+- Checks roaming status vs user preference via `CanForwardSmsUseCase`
+- Deduplicates messages within a 30-second window (prevents double-forward when both SmsReceiver and RcsNotificationListener fire)
 - Finds matching rule via `FindMatchingRuleUseCase`
+- Resolves contact names via `ContactNameResolver`
 - Prepends configurable forward prefix to message body
 - Sends via `SmsManager` (single or multipart)
 - Records history if enabled
+- Posts a notification if "Show Notifications" is enabled
 
 ## Rule Matching
 
@@ -92,6 +95,7 @@ First matching rule wins. If no rule matches, the message is not forwarded.
 | `keepHistory` | `true` | Record forwarded messages |
 | `defaultPrefix` | `+351` | Country code prepended to local numbers |
 | `forwardPrefix` | `SMS Redirect:` | Text prepended to forwarded message body |
+| `showNotifications` | `true` | Show a notification after each successful forward |
 
 ## Permissions
 
@@ -113,7 +117,10 @@ Uses Jetpack Compose with a simple NavHost:
 
 - **SplashScreen** → **HomeScreen** (rule list with drag-to-reorder)
 - **HomeScreen** → **RuleScreen** (create/edit rule)
-- **HomeScreen** → **SettingsScreen** (toggles, prefix config, forward history)
+- **HomeScreen** → **SettingsScreen** (toggles, prefix config)
+- **SettingsScreen** → **HistoryScreen** (last 50 forwarded messages)
+
+Deep links are supported via `smsredirect://app` URI scheme.
 
 ### Duplicate Rule Prevention
 
@@ -121,4 +128,8 @@ When saving a rule, the ViewModel checks all existing rules (post-normalization)
 
 ## Dependency Wiring
 
-Manual DI via `AppContainer` (created in `SmsRedirectApplication.onCreate()`). No framework — just constructor injection through a single data class holding all use cases and the `SmsForwarder` instance.
+Manual DI via `AppContainer` (created in `SmsRedirectApplication.onCreate()`). No framework — just constructor injection through a single data class holding all use cases, the `SmsForwarder` instance, and cross-cutting services like `ContactNameResolver`.
+
+## Contact Resolution
+
+The `ContactNameResolver` interface (in `domain/contacts/`) resolves phone numbers to display names from the device contacts. The Android implementation (`AndroidContactNameResolver` in `data/contacts/`) queries the system `ContentResolver`. This is used by `SmsForwarder` to enrich forwarded-message notifications with readable sender names.
