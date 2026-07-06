@@ -461,17 +461,23 @@ class MainActivity : ComponentActivity() {
             ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         } && isNotificationListenerEnabled()
 
+    private fun hasSmsPermissions(): Boolean {
+        val hasReceiveSmsPermission =
+            ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) ==
+                PackageManager.PERMISSION_GRANTED
+        val hasReadSmsPermission =
+            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) ==
+                PackageManager.PERMISSION_GRANTED
+        return hasReceiveSmsPermission && hasReadSmsPermission
+    }
+
     private fun buildPermissionItems(): List<PermissionItem> =
         listOf(
             PermissionItem(
                 id = Manifest.permission.RECEIVE_SMS,
                 label = getString(R.string.permission_sms_label),
                 description = getString(R.string.permission_sms_description),
-                isGranted =
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) ==
-                        PackageManager.PERMISSION_GRANTED &&
-                        ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) ==
-                        PackageManager.PERMISSION_GRANTED,
+                isGranted = hasSmsPermissions(),
             ),
             PermissionItem(
                 id = Manifest.permission.SEND_SMS,
