@@ -30,8 +30,16 @@ class SmsForwarder(
     companion object {
         private const val TAG = "SmsForwarder"
         private const val CHANNEL_ID = "sms_redirect_channel"
+        private const val DEDUP_WINDOW_MS = 30_000L
         private var notificationId = 0
     }
+
+    /**
+     * Simple deduplication cache: maps (targetNumber + body hash) to the timestamp
+     * of the last forward. Prevents the same message being forwarded twice when
+     * both SmsReceiver and RcsNotificationListener fire for the same SMS.
+     */
+    private val recentForwards = mutableMapOf<String, Long>()
 
     suspend fun forward(
         context: Context,
@@ -68,6 +76,19 @@ class SmsForwarder(
         }
 
         Log.i(TAG, "Matched rule id=${rule.id} name='${rule.name}' — forwarding to '${rule.targetNumber}'")
+
+        val dedupKey = "${rule.targetNumber}:${body.hashCode()}"
+        val now = System.currentTimeMillis()
+        synchronized(recentForwards) {
+            val lastForwardTime = recentForwards[dedupKey]
+            if (lastForwardTime != null && (now - lastForwardTime) < DEDUP_WINDOW_MS) {
+                Log.i(TAG, "Skipping: duplicate message already forwarded ${now - lastForwardTime}ms ago")
+                return
+            }
+            // Evict old entries
+            recentForwards.entries.removeAll { (now - it.value) >= DEDUP_WINDOW_MS }
+            recentForwards[dedupKey] = now
+        }
 
         try {
             val forwardPrefix = getForwardPrefixNowUseCase()
