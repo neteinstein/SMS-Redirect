@@ -44,6 +44,8 @@ import com.neteinstein.smsredirect.presentation.home.HomeScreen
 import com.neteinstein.smsredirect.presentation.home.HomeViewModel
 import com.neteinstein.smsredirect.presentation.home.HomeViewModelFactory
 import com.neteinstein.smsredirect.presentation.navigation.Routes
+import com.neteinstein.smsredirect.presentation.permissions.PermissionItem
+import com.neteinstein.smsredirect.presentation.permissions.PermissionsScreen
 import com.neteinstein.smsredirect.presentation.rule.RuleScreen
 import com.neteinstein.smsredirect.presentation.rule.RuleViewModel
 import com.neteinstein.smsredirect.presentation.rule.RuleViewModelFactory
@@ -73,14 +75,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         dismissAllNotifications()
-
-        val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {}
-        if (requiredPermissions.any {
-                ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-            }
-        ) {
-            permissionLauncher.launch(requiredPermissions)
-        }
 
         setContent {
             SmsRedirectTheme {
@@ -142,44 +136,70 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                val showNotificationAccessDialog =
-                    remember {
-                        mutableStateOf(!isNotificationListenerEnabled())
-                    }
-
-                if (showNotificationAccessDialog.value) {
-                    AlertDialog(
-                        onDismissRequest = { showNotificationAccessDialog.value = false },
-                        title = { Text(stringResource(R.string.notification_access_title)) },
-                        text = { Text(stringResource(R.string.notification_access_message)) },
-                        dismissButton = {
-                            TextButton(onClick = { showNotificationAccessDialog.value = false }) {
-                                Text(stringResource(R.string.action_cancel))
-                            }
-                        },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                showNotificationAccessDialog.value = false
-                                openNotificationListenerSettings()
-                            }) {
-                                Text(stringResource(R.string.action_open_screen))
-                            }
-                        },
-                    )
-                }
-
                 NavHost(navController = navController, startDestination = Routes.Splash) {
                     composable(Routes.Splash) {
                         SplashScreen()
                         LaunchedEffect(Unit) {
                             delay(1200)
-                            navController.navigate(Routes.Home) {
+                            val destination =
+                                if (allPermissionsGranted()) Routes.Home else Routes.Permissions
+                            navController.navigate(destination) {
                                 popUpTo(Routes.Splash) { inclusive = true }
                             }
-                            if (isHistoryDeepLink(intent)) {
+                            if (destination == Routes.Home && isHistoryDeepLink(intent)) {
                                 navController.navigate(Routes.History)
                             }
                         }
+                    }
+
+                    composable(Routes.Permissions) {
+                        val lifecycleOwner = LocalLifecycleOwner.current
+                        var permissionCheckTick by remember { mutableIntStateOf(0) }
+                        DisposableEffect(lifecycleOwner) {
+                            val observer =
+                                LifecycleEventObserver { _, event ->
+                                    if (event == Lifecycle.Event.ON_RESUME) {
+                                        permissionCheckTick++
+                                    }
+                                }
+                            lifecycleOwner.lifecycle.addObserver(observer)
+                            onDispose {
+                                lifecycleOwner.lifecycle.removeObserver(observer)
+                            }
+                        }
+
+                        val permissionItems = remember(permissionCheckTick) { buildPermissionItems() }
+
+                        val permissionLauncher =
+                            rememberLauncherForActivityResult(
+                                ActivityResultContracts.RequestMultiplePermissions(),
+                            ) { permissionCheckTick++ }
+
+                        LaunchedEffect(permissionItems) {
+                            if (permissionItems.all { it.isGranted }) {
+                                navController.navigate(Routes.Home) {
+                                    popUpTo(Routes.Permissions) { inclusive = true }
+                                }
+                            }
+                        }
+
+                        PermissionsScreen(
+                            permissions = permissionItems,
+                            onRequestPermission = { permissionId ->
+                                if (permissionId == NOTIFICATION_ACCESS_ID) {
+                                    openNotificationListenerSettings()
+                                } else if (permissionId == Manifest.permission.RECEIVE_SMS) {
+                                    permissionLauncher.launch(
+                                        arrayOf(
+                                            Manifest.permission.RECEIVE_SMS,
+                                            Manifest.permission.READ_SMS,
+                                        ),
+                                    )
+                                } else {
+                                    permissionLauncher.launch(arrayOf(permissionId))
+                                }
+                            },
+                        )
                     }
 
                     composable(Routes.Home) {
@@ -195,25 +215,9 @@ class MainActivity : ComponentActivity() {
                             )
                         val rules by homeViewModel.rules.collectAsState()
                         val contactNames by homeViewModel.contactNames.collectAsState()
-                        val lifecycleOwner = LocalLifecycleOwner.current
-                        var permissionCheckTick by remember { mutableIntStateOf(0) }
-                        DisposableEffect(lifecycleOwner) {
-                            val observer =
-                                LifecycleEventObserver { _, event ->
-                                    if (event == Lifecycle.Event.ON_RESUME) {
-                                        permissionCheckTick++
-                                    }
-                                }
-                            lifecycleOwner.lifecycle.addObserver(observer)
-                            onDispose {
-                                lifecycleOwner.lifecycle.removeObserver(observer)
-                            }
-                        }
-                        val missingPerms = remember(permissionCheckTick) { currentMissingPermissions() }
                         HomeScreen(
                             rules = rules,
                             contactNames = contactNames,
-                            missingPermissions = missingPerms,
                             onAddRule = { navController.navigate(Routes.ruleRoute()) },
                             onOpenHistory = { navController.navigate(Routes.History) },
                             onOpenSettings = { navController.navigate(Routes.Settings) },
@@ -241,28 +245,12 @@ class MainActivity : ComponentActivity() {
                                         appContainer.setShowNotificationsUseCase,
                                     ),
                             )
-                        val lifecycleOwner = LocalLifecycleOwner.current
-                        var permissionCheckTick by remember { mutableIntStateOf(0) }
-                        DisposableEffect(lifecycleOwner) {
-                            val observer =
-                                LifecycleEventObserver { _, event ->
-                                    if (event == Lifecycle.Event.ON_RESUME) {
-                                        permissionCheckTick++
-                                    }
-                                }
-                            lifecycleOwner.lifecycle.addObserver(observer)
-                            onDispose {
-                                lifecycleOwner.lifecycle.removeObserver(observer)
-                            }
-                        }
-                        val missingPerms = remember(permissionCheckTick) { currentMissingPermissions() }
                         val sendWhileRoaming by settingsViewModel.sendWhileRoaming.collectAsState()
                         val keepHistory by settingsViewModel.keepHistory.collectAsState()
                         val showNotifications by settingsViewModel.showNotifications.collectAsState()
                         val defaultPrefix by settingsViewModel.defaultPrefix.collectAsState()
                         val forwardPrefix by settingsViewModel.forwardPrefix.collectAsState()
                         SettingsScreen(
-                            missingPermissions = missingPerms,
                             sendWhileRoaming = sendWhileRoaming,
                             keepHistory = keepHistory,
                             showNotifications = showNotifications,
@@ -468,6 +456,63 @@ class MainActivity : ComponentActivity() {
         return if (number.isNotBlank()) Pair(number, displayName) else null
     }
 
+    private fun allPermissionsGranted(): Boolean =
+        requiredPermissions.all {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+        } && isNotificationListenerEnabled()
+
+    private fun buildPermissionItems(): List<PermissionItem> =
+        listOf(
+            PermissionItem(
+                id = Manifest.permission.RECEIVE_SMS,
+                label = getString(R.string.permission_sms_label),
+                description = getString(R.string.permission_sms_description),
+                isGranted =
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) ==
+                        PackageManager.PERMISSION_GRANTED &&
+                        ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) ==
+                        PackageManager.PERMISSION_GRANTED,
+            ),
+            PermissionItem(
+                id = Manifest.permission.SEND_SMS,
+                label = getString(R.string.permission_send_sms_label),
+                description = getString(R.string.permission_send_sms_description),
+                isGranted =
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) ==
+                        PackageManager.PERMISSION_GRANTED,
+            ),
+            PermissionItem(
+                id = Manifest.permission.READ_CONTACTS,
+                label = getString(R.string.permission_contacts_label),
+                description = getString(R.string.permission_contacts_description),
+                isGranted =
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) ==
+                        PackageManager.PERMISSION_GRANTED,
+            ),
+            PermissionItem(
+                id = Manifest.permission.READ_PHONE_STATE,
+                label = getString(R.string.permission_phone_state_label),
+                description = getString(R.string.permission_phone_state_description),
+                isGranted =
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) ==
+                        PackageManager.PERMISSION_GRANTED,
+            ),
+            PermissionItem(
+                id = Manifest.permission.POST_NOTIFICATIONS,
+                label = getString(R.string.permission_notifications_label),
+                description = getString(R.string.permission_notifications_description),
+                isGranted =
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+                        PackageManager.PERMISSION_GRANTED,
+            ),
+            PermissionItem(
+                id = NOTIFICATION_ACCESS_ID,
+                label = getString(R.string.permission_notification_access_label),
+                description = getString(R.string.permission_notification_access_description),
+                isGranted = isNotificationListenerEnabled(),
+            ),
+        )
+
     private fun currentMissingPermissions(): List<String> {
         val missing =
             requiredPermissions
@@ -555,5 +600,6 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val PREFS_NAME = "sms_redirect_prefs"
         private const val KEY_SIDELOAD_DISMISSED = "sideload_warning_dismissed"
+        private const val NOTIFICATION_ACCESS_ID = "notification_access"
     }
 }
