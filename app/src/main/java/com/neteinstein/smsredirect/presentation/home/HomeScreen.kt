@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
@@ -58,6 +59,7 @@ fun HomeScreen(
     contactNames: Map<String, String>,
     missingPermissions: List<String>,
     onAddRule: () -> Unit,
+    onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
     onEditRule: (Long) -> Unit,
     onDeleteRule: (Rule) -> Unit,
@@ -92,6 +94,12 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.home_title_rules)) },
                 actions = {
+                    IconButton(onClick = onOpenHistory) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = stringResource(R.string.home_cd_history),
+                        )
+                    }
                     IconButton(onClick = onOpenSettings) {
                         Icon(
                             imageVector = Icons.Default.Settings,

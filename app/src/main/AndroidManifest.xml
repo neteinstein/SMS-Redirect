@@ -24,11 +24,17 @@
         android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar">
         <activity
             android:name=".MainActivity"
+            android:launchMode="singleTop"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="smsredirect" android:host="app" />
             </intent-filter>
         </activity>
         <receiver
