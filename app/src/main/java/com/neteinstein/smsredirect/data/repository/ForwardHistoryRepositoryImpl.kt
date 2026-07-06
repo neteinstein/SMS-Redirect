@@ -18,4 +18,8 @@ class ForwardHistoryRepositoryImpl(
     override suspend fun trimToLatest(limit: Int) {
         dao.trimToLatest(limit)
     }
+
+    override suspend fun deleteAll() {
+        dao.deleteAll()
+    }
 }

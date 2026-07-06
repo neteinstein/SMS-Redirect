@@ -3,12 +3,10 @@ package com.neteinstein.smsredirect.presentation
 import com.neteinstein.smsredirect.FakeSettingsRepository
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
-import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
-import com.neteinstein.smsredirect.domain.usecase.SetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
 import com.neteinstein.smsredirect.presentation.settings.SettingsViewModel
@@ -44,8 +42,6 @@ class SettingsViewModelTest {
         SettingsViewModel(
             getSendWhileRoamingUseCase = GetSendWhileRoamingUseCase(settingsRepository),
             setSendWhileRoamingUseCase = SetSendWhileRoamingUseCase(settingsRepository),
-            getKeepHistoryUseCase = GetKeepHistoryUseCase(settingsRepository),
-            setKeepHistoryUseCase = SetKeepHistoryUseCase(settingsRepository),
             getDefaultPrefixUseCase = GetDefaultPrefixUseCase(settingsRepository),
             setDefaultPrefixUseCase = SetDefaultPrefixUseCase(settingsRepository),
             getForwardPrefixUseCase = GetForwardPrefixUseCase(settingsRepository),
@@ -60,14 +56,6 @@ class SettingsViewModelTest {
             val vm = createViewModel()
             advanceUntilIdle()
             assertFalse(vm.sendWhileRoaming.value)
-        }
-
-    @Test
-    fun `init observes keepHistory`() =
-        runTest {
-            val vm = createViewModel()
-            advanceUntilIdle()
-            assertTrue(vm.keepHistory.value)
         }
 
     @Test
@@ -96,18 +84,6 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             assertTrue(vm.sendWhileRoaming.value)
-        }
-
-    @Test
-    fun `setKeepHistory updates state`() =
-        runTest {
-            val vm = createViewModel()
-            advanceUntilIdle()
-
-            vm.setKeepHistory(false)
-            advanceUntilIdle()
-
-            assertFalse(vm.keepHistory.value)
         }
 
     @Test
