@@ -54,6 +54,10 @@
     <string name="settings_history_title">Histórico de reencaminhamento (últimos 50)</string>
     <string name="history_title">Histórico de Redirecionamentos</string>
     <string name="settings_no_forwarded_sms">Ainda não há SMS reencaminhados</string>
+    <string name="history_disable_confirm_title">Desativar histórico</string>
+    <string name="history_disable_confirm_message">Tem a certeza que pretende desativar e apagar o histórico atual?</string>
+    <string name="history_disable_confirm_yes">Sim</string>
+    <string name="history_disable_confirm_no">Não</string>
     <string name="settings_history_sender_target_format">%1$s → %2$s</string>
     <string name="settings_history_rule_format">Regra: %1$s</string>
     <string name="settings_history_unknown_sender">Remetente desconhecido</string>

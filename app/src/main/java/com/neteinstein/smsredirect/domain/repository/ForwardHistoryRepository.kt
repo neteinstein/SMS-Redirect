@@ -9,4 +9,6 @@ interface ForwardHistoryRepository {
     suspend fun insert(entry: ForwardHistory)
 
     suspend fun trimToLatest(limit: Int = 50)
+
+    suspend fun deleteAll()
 }

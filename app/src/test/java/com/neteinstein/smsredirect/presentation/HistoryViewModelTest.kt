@@ -1,8 +1,12 @@
 package com.neteinstein.smsredirect.presentation
 
 import com.neteinstein.smsredirect.FakeForwardHistoryRepository
+import com.neteinstein.smsredirect.FakeSettingsRepository
 import com.neteinstein.smsredirect.domain.model.ForwardHistory
+import com.neteinstein.smsredirect.domain.usecase.DeleteAllHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetKeepHistoryUseCase
 import com.neteinstein.smsredirect.presentation.history.HistoryViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -12,6 +16,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -19,6 +25,7 @@ import org.junit.Test
 class HistoryViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val historyRepository = FakeForwardHistoryRepository()
+    private val settingsRepository = FakeSettingsRepository()
 
     @Before
     fun setUp() {
@@ -33,6 +40,9 @@ class HistoryViewModelTest {
     private fun createViewModel(): HistoryViewModel =
         HistoryViewModel(
             getForwardHistoryUseCase = GetForwardHistoryUseCase(historyRepository),
+            getKeepHistoryUseCase = GetKeepHistoryUseCase(settingsRepository),
+            setKeepHistoryUseCase = SetKeepHistoryUseCase(settingsRepository),
+            deleteAllHistoryUseCase = DeleteAllHistoryUseCase(historyRepository),
         )
 
     @Test
@@ -67,5 +77,100 @@ class HistoryViewModelTest {
                     .first()
                     .sender,
             )
+        }
+
+    @Test
+    fun `init observes keepHistory`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+            assertTrue(vm.keepHistory.value)
+        }
+
+    @Test
+    fun `onKeepHistoryToggled false with history shows confirmation`() =
+        runTest {
+            val item =
+                ForwardHistory(
+                    id = 1L,
+                    sender = "+351912345678",
+                    targetNumber = "+351987654321",
+                    messageBody = "Hello",
+                    ruleName = "Test Rule",
+                    forwardedAtEpochMs = 1000L,
+                )
+            historyRepository.insert(item)
+
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.onKeepHistoryToggled(false)
+
+            assertTrue(vm.showDisableConfirmation.value)
+            assertTrue(vm.keepHistory.value)
+        }
+
+    @Test
+    fun `onKeepHistoryToggled false with empty history disables directly`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.onKeepHistoryToggled(false)
+            advanceUntilIdle()
+
+            assertFalse(vm.showDisableConfirmation.value)
+            assertFalse(vm.keepHistory.value)
+        }
+
+    @Test
+    fun `confirmDisableHistory deletes history and disables`() =
+        runTest {
+            val item =
+                ForwardHistory(
+                    id = 1L,
+                    sender = "+351912345678",
+                    targetNumber = "+351987654321",
+                    messageBody = "Hello",
+                    ruleName = "Test Rule",
+                    forwardedAtEpochMs = 1000L,
+                )
+            historyRepository.insert(item)
+
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.onKeepHistoryToggled(false)
+            vm.confirmDisableHistory()
+            advanceUntilIdle()
+
+            assertFalse(vm.showDisableConfirmation.value)
+            assertFalse(vm.keepHistory.value)
+            assertTrue(vm.forwardHistory.value.isEmpty())
+        }
+
+    @Test
+    fun `dismissDisableConfirmation hides dialog without changes`() =
+        runTest {
+            val item =
+                ForwardHistory(
+                    id = 1L,
+                    sender = "+351912345678",
+                    targetNumber = "+351987654321",
+                    messageBody = "Hello",
+                    ruleName = "Test Rule",
+                    forwardedAtEpochMs = 1000L,
+                )
+            historyRepository.insert(item)
+
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.onKeepHistoryToggled(false)
+            vm.dismissDisableConfirmation()
+
+            assertFalse(vm.showDisableConfirmation.value)
+            assertTrue(vm.keepHistory.value)
+            assertEquals(1, vm.forwardHistory.value.size)
         }
 }
