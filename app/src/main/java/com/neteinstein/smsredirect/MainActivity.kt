@@ -1,7 +1,9 @@
 package com.neteinstein.smsredirect
 
 import android.Manifest
+import android.app.NotificationManager
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -35,6 +37,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.neteinstein.smsredirect.presentation.history.HistoryScreen
+import com.neteinstein.smsredirect.presentation.history.HistoryViewModel
+import com.neteinstein.smsredirect.presentation.history.HistoryViewModelFactory
 import com.neteinstein.smsredirect.presentation.home.HomeScreen
 import com.neteinstein.smsredirect.presentation.home.HomeViewModel
 import com.neteinstein.smsredirect.presentation.home.HomeViewModelFactory
@@ -48,6 +53,8 @@ import com.neteinstein.smsredirect.presentation.settings.SettingsViewModelFactor
 import com.neteinstein.smsredirect.presentation.splash.SplashScreen
 import com.neteinstein.smsredirect.presentation.theme.SmsRedirectTheme
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
 
 class MainActivity : ComponentActivity() {
     private val requiredPermissions =
@@ -60,8 +67,12 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.POST_NOTIFICATIONS,
         )
 
+    private val newIntentFlow = MutableStateFlow<Intent?>(null)
+
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
+
+        dismissAllNotifications()
 
         val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {}
         if (requiredPermissions.any {
@@ -75,6 +86,18 @@ class MainActivity : ComponentActivity() {
             SmsRedirectTheme {
                 val appContainer = (application as SmsRedirectApplication).appContainer
                 val navController = rememberNavController()
+
+                LaunchedEffect(Unit) {
+                    newIntentFlow.collectLatest { intent ->
+                        if (intent != null && isHistoryDeepLink(intent)) {
+                            navController.navigate(Routes.History) {
+                                popUpTo(Routes.Home) { inclusive = false }
+                            }
+                            newIntentFlow.value = null
+                        }
+                    }
+                }
+
                 val showBatteryDialog = remember { mutableStateOf(shouldShowBatteryOptimizationDialog()) }
                 val showSideloadDialog = remember { mutableStateOf(shouldShowSideloadWarning()) }
 
@@ -153,6 +176,9 @@ class MainActivity : ComponentActivity() {
                             navController.navigate(Routes.Home) {
                                 popUpTo(Routes.Splash) { inclusive = true }
                             }
+                            if (isHistoryDeepLink(intent)) {
+                                navController.navigate(Routes.History)
+                            }
                         }
                     }
 
@@ -189,6 +215,7 @@ class MainActivity : ComponentActivity() {
                             contactNames = contactNames,
                             missingPermissions = missingPerms,
                             onAddRule = { navController.navigate(Routes.ruleRoute()) },
+                            onOpenHistory = { navController.navigate(Routes.History) },
                             onOpenSettings = { navController.navigate(Routes.Settings) },
                             onEditRule = { navController.navigate(Routes.ruleRoute(it)) },
                             onDeleteRule = homeViewModel::deleteRule,
@@ -210,10 +237,8 @@ class MainActivity : ComponentActivity() {
                                         appContainer.setDefaultPrefixUseCase,
                                         appContainer.getForwardPrefixUseCase,
                                         appContainer.setForwardPrefixUseCase,
-                                        appContainer.getForwardHistoryUseCase,
                                         appContainer.getShowNotificationsUseCase,
                                         appContainer.setShowNotificationsUseCase,
-                                        appContainer.contactNameResolver,
                                     ),
                             )
                         val lifecycleOwner = LocalLifecycleOwner.current
@@ -236,8 +261,6 @@ class MainActivity : ComponentActivity() {
                         val showNotifications by settingsViewModel.showNotifications.collectAsState()
                         val defaultPrefix by settingsViewModel.defaultPrefix.collectAsState()
                         val forwardPrefix by settingsViewModel.forwardPrefix.collectAsState()
-                        val forwardHistory by settingsViewModel.forwardHistory.collectAsState()
-                        val contactNames by settingsViewModel.contactNames.collectAsState()
                         SettingsScreen(
                             missingPermissions = missingPerms,
                             sendWhileRoaming = sendWhileRoaming,
@@ -245,13 +268,31 @@ class MainActivity : ComponentActivity() {
                             showNotifications = showNotifications,
                             forwardPrefix = forwardPrefix,
                             defaultPrefix = defaultPrefix,
-                            forwardHistory = forwardHistory,
-                            contactNames = contactNames,
                             onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming,
                             onKeepHistoryChanged = settingsViewModel::setKeepHistory,
                             onShowNotificationsChanged = settingsViewModel::setShowNotifications,
                             onForwardPrefixSaved = settingsViewModel::setForwardPrefix,
                             onDefaultPrefixChanged = settingsViewModel::setDefaultPrefix,
+                            onBack = { navController.popBackStack() },
+                        )
+                    }
+
+                    composable(
+                        route = Routes.History,
+                    ) {
+                        val historyViewModel: HistoryViewModel =
+                            viewModel(
+                                factory =
+                                    HistoryViewModelFactory(
+                                        appContainer.getForwardHistoryUseCase,
+                                        appContainer.contactNameResolver,
+                                    ),
+                            )
+                        val forwardHistory by historyViewModel.forwardHistory.collectAsState()
+                        val contactNames by historyViewModel.contactNames.collectAsState()
+                        HistoryScreen(
+                            forwardHistory = forwardHistory,
+                            contactNames = contactNames,
                             onBack = { navController.popBackStack() },
                         )
                     }
@@ -491,6 +532,24 @@ class MainActivity : ComponentActivity() {
     private fun openNotificationListenerSettings() {
         val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
         runCatching { startActivity(intent) }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        dismissAllNotifications()
+        newIntentFlow.value = intent
+    }
+
+    private fun dismissAllNotifications() {
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancelAll()
+    }
+
+    private fun isHistoryDeepLink(intent: Intent?): Boolean {
+        val uri = intent?.data ?: return false
+        return uri.scheme == "smsredirect" && uri.host == "app" && uri.path == "/${Routes.History}"
     }
 
     companion object {

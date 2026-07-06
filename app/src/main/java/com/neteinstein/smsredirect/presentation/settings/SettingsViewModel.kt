@@ -3,10 +3,7 @@ package com.neteinstein.smsredirect.presentation.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
-import com.neteinstein.smsredirect.domain.model.ForwardHistory
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
-import com.neteinstein.smsredirect.domain.usecase.GetForwardHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
@@ -32,10 +29,8 @@ class SettingsViewModel(
     private val setDefaultPrefixUseCase: SetDefaultPrefixUseCase,
     getForwardPrefixUseCase: GetForwardPrefixUseCase,
     private val setForwardPrefixUseCase: SetForwardPrefixUseCase,
-    getForwardHistoryUseCase: GetForwardHistoryUseCase,
     getShowNotificationsUseCase: GetShowNotificationsUseCase,
     private val setShowNotificationsUseCase: SetShowNotificationsUseCase,
-    private val contactNameResolver: ContactNameResolver? = null,
 ) : ViewModel() {
     private val _sendWhileRoaming = MutableStateFlow(false)
     val sendWhileRoaming: StateFlow<Boolean> = _sendWhileRoaming.asStateFlow()
@@ -45,10 +40,6 @@ class SettingsViewModel(
     val defaultPrefix: StateFlow<String> = _defaultPrefix.asStateFlow()
     private val _forwardPrefix = MutableStateFlow("SMS Redirect:")
     val forwardPrefix: StateFlow<String> = _forwardPrefix.asStateFlow()
-    private val _forwardHistory = MutableStateFlow<List<ForwardHistory>>(emptyList())
-    val forwardHistory: StateFlow<List<ForwardHistory>> = _forwardHistory.asStateFlow()
-    private val _contactNames = MutableStateFlow<Map<String, String>>(emptyMap())
-    val contactNames: StateFlow<Map<String, String>> = _contactNames.asStateFlow()
     private val _showNotifications = MutableStateFlow(true)
     val showNotifications: StateFlow<Boolean> = _showNotifications.asStateFlow()
 
@@ -65,34 +56,9 @@ class SettingsViewModel(
         getForwardPrefixUseCase()
             .onEach { _forwardPrefix.value = it }
             .launchIn(viewModelScope)
-        getForwardHistoryUseCase(limit = 50)
-            .onEach { history ->
-                _forwardHistory.value = history
-                resolveContactNames(history)
-            }.launchIn(viewModelScope)
         getShowNotificationsUseCase()
             .onEach { _showNotifications.value = it }
             .launchIn(viewModelScope)
-    }
-
-    private fun resolveContactNames(history: List<ForwardHistory>) {
-        if (contactNameResolver == null) return
-        val numbers =
-            history
-                .map { it.sender }
-                .filter { it.isNotBlank() }
-                .distinct()
-
-        viewModelScope.launch {
-            val resolved = mutableMapOf<String, String>()
-            for (number in numbers) {
-                val name = contactNameResolver.lookupNameByNumber(number)
-                if (name != null) {
-                    resolved[number] = name
-                }
-            }
-            _contactNames.value = resolved
-        }
     }
 
     fun setSendWhileRoaming(enabled: Boolean) {
@@ -135,10 +101,8 @@ class SettingsViewModelFactory(
     private val setDefaultPrefixUseCase: SetDefaultPrefixUseCase,
     private val getForwardPrefixUseCase: GetForwardPrefixUseCase,
     private val setForwardPrefixUseCase: SetForwardPrefixUseCase,
-    private val getForwardHistoryUseCase: GetForwardHistoryUseCase,
     private val getShowNotificationsUseCase: GetShowNotificationsUseCase,
     private val setShowNotificationsUseCase: SetShowNotificationsUseCase,
-    private val contactNameResolver: ContactNameResolver? = null,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
@@ -151,10 +115,8 @@ class SettingsViewModelFactory(
             setDefaultPrefixUseCase = setDefaultPrefixUseCase,
             getForwardPrefixUseCase = getForwardPrefixUseCase,
             setForwardPrefixUseCase = setForwardPrefixUseCase,
-            getForwardHistoryUseCase = getForwardHistoryUseCase,
             getShowNotificationsUseCase = getShowNotificationsUseCase,
             setShowNotificationsUseCase = setShowNotificationsUseCase,
-            contactNameResolver = contactNameResolver,
         ) as T
     }
 }

@@ -1,9 +1,7 @@
 package com.neteinstein.smsredirect.presentation
 
-import com.neteinstein.smsredirect.FakeForwardHistoryRepository
 import com.neteinstein.smsredirect.FakeSettingsRepository
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
-import com.neteinstein.smsredirect.domain.usecase.GetForwardHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
@@ -31,7 +29,6 @@ import org.junit.Test
 class SettingsViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val settingsRepository = FakeSettingsRepository()
-    private val historyRepository = FakeForwardHistoryRepository()
 
     @Before
     fun setUp() {
@@ -53,7 +50,6 @@ class SettingsViewModelTest {
             setDefaultPrefixUseCase = SetDefaultPrefixUseCase(settingsRepository),
             getForwardPrefixUseCase = GetForwardPrefixUseCase(settingsRepository),
             setForwardPrefixUseCase = SetForwardPrefixUseCase(settingsRepository),
-            getForwardHistoryUseCase = GetForwardHistoryUseCase(historyRepository),
             getShowNotificationsUseCase = GetShowNotificationsUseCase(settingsRepository),
             setShowNotificationsUseCase = SetShowNotificationsUseCase(settingsRepository),
         )
@@ -80,14 +76,6 @@ class SettingsViewModelTest {
             val vm = createViewModel()
             advanceUntilIdle()
             assertEquals("+351", vm.defaultPrefix.value)
-        }
-
-    @Test
-    fun `init observes forwardHistory`() =
-        runTest {
-            val vm = createViewModel()
-            advanceUntilIdle()
-            assertEquals(emptyList<Any>(), vm.forwardHistory.value)
         }
 
     @Test

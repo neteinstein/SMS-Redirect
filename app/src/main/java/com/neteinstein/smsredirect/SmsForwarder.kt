@@ -3,8 +3,11 @@ package com.neteinstein.smsredirect
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.telephony.SmsManager
 import android.telephony.TelephonyManager
 import android.util.Log
@@ -17,6 +20,7 @@ import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.RecordForwardHistoryUseCase
+import com.neteinstein.smsredirect.presentation.navigation.Routes
 
 class SmsForwarder(
     private val findMatchingRuleUseCase: FindMatchingRuleUseCase,
@@ -146,6 +150,24 @@ class SmsForwarder(
             }
         notificationManager.createNotificationChannel(channel)
 
+        val deepLinkIntent =
+            Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("${Routes.DEEP_LINK_URI}/${Routes.History}"),
+                context,
+                MainActivity::class.java,
+            ).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+
+        val pendingIntent =
+            PendingIntent.getActivity(
+                context,
+                0,
+                deepLinkIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+
         val notification =
             NotificationCompat
                 .Builder(context, CHANNEL_ID)
@@ -153,6 +175,7 @@ class SmsForwarder(
                 .setContentTitle("SMS Redirected")
                 .setContentText("Redirect message to $contactDisplay from Rule: $ruleName")
                 .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
                 .build()
 
         notificationManager.notify(notificationId++, notification)
