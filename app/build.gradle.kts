@@ -12,6 +12,10 @@ val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(keystorePropertiesFile.inputStream())
 }
+val releaseKeystoreFilePath = (
+    System.getenv("KEYSTORE_FILE")
+        ?: keystoreProperties.getProperty("storeFile")
+    )?.takeIf { it.isNotBlank() }
 
 android {
     namespace = "com.neteinstein.smsredirect"
@@ -29,10 +33,8 @@ android {
 
     signingConfigs {
         create("release") {
-            val keystoreFilePath = System.getenv("KEYSTORE_FILE")
-                ?: keystoreProperties.getProperty("storeFile")
-            if (keystoreFilePath != null) {
-                storeFile = file(keystoreFilePath)
+            if (releaseKeystoreFilePath != null) {
+                storeFile = file(releaseKeystoreFilePath)
                 storePassword = System.getenv("KEYSTORE_PASSWORD")
                     ?: keystoreProperties.getProperty("storePassword")
                 keyAlias = System.getenv("KEY_ALIAS")
@@ -50,9 +52,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            val releaseSigningConfig = signingConfigs.findByName("release")
-            if (releaseSigningConfig?.storeFile != null) {
-                signingConfig = releaseSigningConfig
+            if (releaseKeystoreFilePath != null) {
+                signingConfig = signingConfigs.getByName("release")
             }
         }
     }
