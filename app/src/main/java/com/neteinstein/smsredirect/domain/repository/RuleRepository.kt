@@ -12,6 +12,8 @@ interface RuleRepository {
 
     suspend fun getRuleCount(): Int
 
+    fun getCategories(): Flow<List<String>>
+
     suspend fun insert(rule: Rule)
 
     suspend fun update(rule: Rule)

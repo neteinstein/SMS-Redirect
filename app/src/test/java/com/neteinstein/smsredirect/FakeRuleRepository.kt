@@ -4,6 +4,7 @@ import com.neteinstein.smsredirect.domain.model.Rule
 import com.neteinstein.smsredirect.domain.repository.RuleRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 
 class FakeRuleRepository(
@@ -18,6 +19,10 @@ class FakeRuleRepository(
     override suspend fun getRulesSnapshot(): List<Rule> = rules.value
 
     override suspend fun getRuleCount(): Int = rules.value.size
+
+    override fun getCategories(): Flow<List<String>> = rules.map { list ->
+        list.map { it.category }.filter { it.isNotBlank() }.distinct().sorted()
+    }
 
     override suspend fun insert(rule: Rule) {
         val nextId = (rules.value.maxOfOrNull { it.id } ?: 0L) + 1L

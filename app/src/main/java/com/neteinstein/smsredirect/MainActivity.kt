@@ -379,6 +379,7 @@ class MainActivity : ComponentActivity() {
                                         appContainer.updateRuleUseCase,
                                         appContainer.ruleRepository,
                                         appContainer.getDefaultPrefixNowUseCase,
+                                        appContainer.getCategoriesUseCase,
                                         appContainer.contactNameResolver,
                                         defaultRuleNameProvider = { index ->
                                             getString(R.string.rule_default_name_format, index)
@@ -444,6 +445,7 @@ class MainActivity : ComponentActivity() {
                         RuleScreen(
                             uiState = uiState,
                             onNameChanged = ruleViewModel::onNameChanged,
+                            onCategoryChanged = ruleViewModel::onCategoryChanged,
                             onSenderChanged = ruleViewModel::onSenderChanged,
                             onTargetChanged = ruleViewModel::onTargetChanged,
                             onPickSenderContact = {

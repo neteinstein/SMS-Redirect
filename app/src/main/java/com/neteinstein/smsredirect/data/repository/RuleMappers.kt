@@ -11,6 +11,7 @@ internal fun RuleEntity.toDomain(): Rule =
         phoneNumber = phoneNumber,
         targetNumber = targetNumber,
         sortOrder = sortOrder,
+        category = category,
     )
 
 internal fun Rule.toEntity(): RuleEntity =
@@ -21,4 +22,5 @@ internal fun Rule.toEntity(): RuleEntity =
         phoneNumber = phoneNumber,
         targetNumber = targetNumber,
         sortOrder = sortOrder,
+        category = category,
     )

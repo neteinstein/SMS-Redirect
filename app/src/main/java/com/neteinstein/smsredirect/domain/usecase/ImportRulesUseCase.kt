@@ -21,6 +21,7 @@ class ImportRulesUseCase(
                     phoneNumber = obj.optString("phoneNumber", ""),
                     targetNumber = obj.optString("targetNumber", ""),
                     sortOrder = obj.optInt("sortOrder", 0),
+                    category = obj.optString("category", ""),
                 )
 
             val isDuplicate =

@@ -7,6 +7,7 @@ import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
 import com.neteinstein.smsredirect.domain.model.Rule
 import com.neteinstein.smsredirect.domain.repository.RuleRepository
 import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetCategoriesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
@@ -15,6 +16,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -25,6 +28,8 @@ data class RuleUiState(
     val senderContactName: String? = null,
     val targetNumber: String = "",
     val targetContactName: String? = null,
+    val category: String = "",
+    val existingCategories: List<String> = emptyList(),
     val error: String? = null,
     val saved: Boolean = false,
 )
@@ -35,6 +40,7 @@ class RuleViewModel(
     private val updateRuleUseCase: UpdateRuleUseCase,
     private val ruleRepository: RuleRepository,
     private val getDefaultPrefixNowUseCase: GetDefaultPrefixNowUseCase,
+    private val getCategoriesUseCase: GetCategoriesUseCase,
     private val contactNameResolver: ContactNameResolver? = null,
     private val defaultRuleNameProvider: (Int) -> String = { "Rule #$it" },
 ) : ViewModel() {
@@ -43,6 +49,13 @@ class RuleViewModel(
 
     private var senderLookupJob: Job? = null
     private var targetLookupJob: Job? = null
+
+    init {
+        getCategoriesUseCase()
+            .onEach { categories ->
+                _uiState.update { it.copy(existingCategories = categories) }
+            }.launchIn(viewModelScope)
+    }
 
     fun loadRule(ruleId: Long) {
         if (ruleId <= 0) return
@@ -55,6 +68,7 @@ class RuleViewModel(
                     name = rule.name,
                     senderText = sender,
                     targetNumber = rule.targetNumber,
+                    category = rule.category,
                 )
             }
             // Resolve contact names for loaded numbers
@@ -70,6 +84,12 @@ class RuleViewModel(
     fun onNameChanged(value: String) {
         _uiState.update {
             it.copy(name = value, error = null)
+        }
+    }
+
+    fun onCategoryChanged(value: String) {
+        _uiState.update {
+            it.copy(category = value, error = null)
         }
     }
 
@@ -184,6 +204,7 @@ class RuleViewModel(
                     senderText = senderValue,
                     phoneNumber = senderValue,
                     targetNumber = targetValue,
+                    category = current.category.trim(),
                 )
             val result = if (rule.id == 0L) addRuleUseCase(rule) else updateRuleUseCase(rule)
             if (result.isSuccess) {
@@ -257,6 +278,7 @@ class RuleViewModelFactory(
     private val updateRuleUseCase: UpdateRuleUseCase,
     private val ruleRepository: RuleRepository,
     private val getDefaultPrefixNowUseCase: GetDefaultPrefixNowUseCase,
+    private val getCategoriesUseCase: GetCategoriesUseCase,
     private val contactNameResolver: ContactNameResolver? = null,
     private val defaultRuleNameProvider: (Int) -> String = { "Rule #$it" },
 ) : ViewModelProvider.Factory {
@@ -268,6 +290,7 @@ class RuleViewModelFactory(
             updateRuleUseCase = updateRuleUseCase,
             ruleRepository = ruleRepository,
             getDefaultPrefixNowUseCase = getDefaultPrefixNowUseCase,
+            getCategoriesUseCase = getCategoriesUseCase,
             contactNameResolver = contactNameResolver,
             defaultRuleNameProvider = defaultRuleNameProvider,
         ) as T
