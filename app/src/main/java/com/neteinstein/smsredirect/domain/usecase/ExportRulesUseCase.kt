@@ -17,6 +17,7 @@ class ExportRulesUseCase(
             obj.put("phoneNumber", rule.phoneNumber)
             obj.put("targetNumber", rule.targetNumber)
             obj.put("sortOrder", rule.sortOrder)
+            obj.put("category", rule.category)
             jsonArray.put(obj)
         }
         return jsonArray.toString(2)

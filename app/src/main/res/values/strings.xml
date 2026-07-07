@@ -39,6 +39,10 @@
     <string name="home_sender_format">Sender: %1$s</string>
     <string name="home_target_format">Target: %1$s</string>
     <string name="home_cd_delete_rule">Delete</string>
+    <string name="home_category_uncategorized">Uncategorized</string>
+    <string name="home_category_rule_count">%1$d rules</string>
+    <string name="home_cd_collapse_category">Collapse category</string>
+    <string name="home_cd_expand_category">Expand category</string>
 
     <string name="delete_rule_dialog_title">Delete rule</string>
     <string name="delete_rule_dialog_message">Are you sure you want to delete \"%1$s\"?</string>
@@ -53,6 +57,8 @@
     <string name="rule_placeholder_name_optional">Optional - auto-generated if empty</string>
     <string name="rule_label_sender">Sender</string>
     <string name="rule_label_target_number">Target Number</string>
+    <string name="rule_label_category">Category</string>
+    <string name="rule_placeholder_category">Optional - type or select existing</string>
     <string name="rule_cd_pick_sender_contact">Pick sender from contacts</string>
     <string name="rule_cd_pick_target_contact">Pick target from contacts</string>
     <string name="rule_error_invalid_target">Target must be a valid phone number (digits, +, spaces, dashes allowed)</string>
