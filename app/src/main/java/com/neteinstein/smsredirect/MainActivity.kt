@@ -269,13 +269,13 @@ class MainActivity : ComponentActivity() {
                                             settingsViewModel.importRules(json)
                                         }
                                     } catch (_: Exception) {
-                                        Toast
-                                            .makeText(
+                                        val toast =
+                                            Toast.makeText(
                                                 context,
                                                 context.getString(R.string.settings_import_error),
                                                 Toast.LENGTH_SHORT,
                                             )
-                                            .show()
+                                        toast.show()
                                     }
                                 }
                             }
@@ -304,13 +304,13 @@ class MainActivity : ComponentActivity() {
 
                         LaunchedEffect(Unit) {
                             settingsViewModel.importResult.collectLatest { count ->
-                                Toast
-                                    .makeText(
+                                val toast =
+                                    Toast.makeText(
                                         context,
                                         context.getString(R.string.settings_import_success, count),
                                         Toast.LENGTH_SHORT,
                                     )
-                                    .show()
+                                toast.show()
                             }
                         }
 
