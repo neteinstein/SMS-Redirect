@@ -22,7 +22,8 @@ class FakeRuleRepository(
 
     override fun getCategories(): Flow<List<String>> =
         rules.map { list ->
-            list.map { it.category }
+            list
+                .map { it.category }
                 .filter { it.isNotBlank() }
                 .distinct()
                 .sorted()
