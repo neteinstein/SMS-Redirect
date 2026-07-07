@@ -17,6 +17,8 @@ class RuleRepositoryImpl(
 
     override suspend fun getRuleCount(): Int = dao.getRuleCount()
 
+    override fun getCategories(): Flow<List<String>> = dao.getCategories()
+
     override suspend fun insert(rule: Rule) {
         dao.insert(rule.toEntity())
     }

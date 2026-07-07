@@ -4,6 +4,7 @@ import com.neteinstein.smsredirect.FakeRuleRepository
 import com.neteinstein.smsredirect.FakeSettingsRepository
 import com.neteinstein.smsredirect.domain.model.Rule
 import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetCategoriesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
@@ -50,6 +51,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.loadRule(1)
@@ -70,6 +72,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.saveRule()
@@ -92,6 +95,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.loadRule(2)
@@ -112,6 +116,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.onSenderChanged("SHOP")
@@ -133,6 +138,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.onSenderChanged("TEST")
@@ -156,6 +162,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.onNameChanged("My Custom Rule")
@@ -206,6 +213,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.onSenderChanged("BANK")
@@ -229,6 +237,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.onSenderChanged("BANK")
@@ -251,6 +260,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.onSenderChanged("BANK")
@@ -273,6 +283,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.onSenderChanged("BANK")
@@ -295,6 +306,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.onSenderChanged("BANK")
@@ -318,6 +330,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.onSenderChanged("BANK")
@@ -343,6 +356,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.onSenderChanged("BANK")
@@ -365,6 +379,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.onSenderChanged("BANK")
@@ -387,6 +402,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.onSenderChanged("BANK")
@@ -412,6 +428,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.onSenderChanged("912111222")
@@ -439,6 +456,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.onSenderChanged("BANK")
@@ -465,6 +483,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.onSenderChanged("BANK")
@@ -490,6 +509,7 @@ class RuleViewModelTest {
                     UpdateRuleUseCase(repository),
                     repository,
                     getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
                 )
 
             vm.loadRule(5)

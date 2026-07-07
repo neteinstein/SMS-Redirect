@@ -15,13 +15,14 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -145,6 +146,16 @@ fun HomeScreen(
                     )
                 }
             } else {
+                val groupedRules =
+                    remember(rules) {
+                        rules.groupBy { it.category.ifBlank { "" } }
+                    }
+                val sortedCategories =
+                    remember(groupedRules) {
+                        groupedRules.keys.sorted()
+                    }
+                var collapsedCategories by remember { mutableStateOf(emptySet<String>()) }
+
                 val listState = rememberLazyListState()
                 var draggedIndex by remember { mutableIntStateOf(-1) }
                 var dragOffsetY by remember { mutableFloatStateOf(0f) }
@@ -157,62 +168,138 @@ fun HomeScreen(
                             .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    itemsIndexed(rules, key = { _, rule -> rule.id }) { index, rule ->
-                        val isDragging = draggedIndex == index
-                        val elevation by animateDpAsState(
-                            targetValue = if (isDragging) 8.dp else 0.dp,
-                            label = "drag_elevation",
-                        )
+                    sortedCategories.forEach { category ->
+                        val categoryRules = groupedRules[category] ?: emptyList()
+                        val isExpanded = category !in collapsedCategories
 
-                        RuleCard(
-                            rule = rule,
-                            senderContactName = contactNames[rule.senderText],
-                            targetContactName = contactNames[rule.targetNumber],
-                            onEditRule = onEditRule,
-                            onDeleteRule = { ruleToDelete = it },
-                            modifier =
-                                Modifier
-                                    .zIndex(if (isDragging) 1f else 0f)
-                                    .offset { IntOffset(0, if (isDragging) dragOffsetY.roundToInt() else 0) }
-                                    .pointerInput(Unit) {
-                                        detectDragGesturesAfterLongPress(
-                                            onDragStart = {
-                                                draggedIndex = index
-                                                dragOffsetY = 0f
-                                            },
-                                            onDrag = { change, dragAmount ->
-                                                change.consume()
-                                                dragOffsetY += dragAmount.y
-
-                                                val itemHeight = size.height + 8.dp.toPx()
-                                                val offset = (dragOffsetY / itemHeight).roundToInt()
-                                                val targetIndex =
-                                                    (draggedIndex + offset)
-                                                        .coerceIn(0, rules.size - 1)
-
-                                                if (targetIndex != draggedIndex) {
-                                                    onMoveRule(draggedIndex, targetIndex)
-                                                    dragOffsetY -= (targetIndex - draggedIndex) * itemHeight
-                                                    draggedIndex = targetIndex
-                                                }
-                                            },
-                                            onDragEnd = {
-                                                draggedIndex = -1
-                                                dragOffsetY = 0f
-                                                onDragEnd()
-                                            },
-                                            onDragCancel = {
-                                                draggedIndex = -1
-                                                dragOffsetY = 0f
-                                            },
-                                        )
+                        item(key = "category_header_$category") {
+                            CategoryHeader(
+                                title =
+                                    if (category.isBlank()) {
+                                        stringResource(R.string.home_category_uncategorized)
+                                    } else {
+                                        category
                                     },
-                            elevation = elevation,
-                        )
+                                ruleCount = categoryRules.size,
+                                isExpanded = isExpanded,
+                                onToggle = {
+                                    collapsedCategories =
+                                        if (isExpanded) {
+                                            collapsedCategories + category
+                                        } else {
+                                            collapsedCategories - category
+                                        }
+                                },
+                            )
+                        }
+
+                        if (isExpanded) {
+                            items(
+                                count = categoryRules.size,
+                                key = { categoryRules[it].id },
+                            ) { index ->
+                                val rule = categoryRules[index]
+                                val globalIndex = rules.indexOf(rule)
+                                val isDragging = draggedIndex == globalIndex
+                                val elevation by animateDpAsState(
+                                    targetValue = if (isDragging) 8.dp else 0.dp,
+                                    label = "drag_elevation",
+                                )
+
+                                RuleCard(
+                                    rule = rule,
+                                    senderContactName = contactNames[rule.senderText],
+                                    targetContactName = contactNames[rule.targetNumber],
+                                    onEditRule = onEditRule,
+                                    onDeleteRule = { ruleToDelete = it },
+                                    modifier =
+                                        Modifier
+                                            .zIndex(if (isDragging) 1f else 0f)
+                                            .offset { IntOffset(0, if (isDragging) dragOffsetY.roundToInt() else 0) }
+                                            .pointerInput(Unit) {
+                                                detectDragGesturesAfterLongPress(
+                                                    onDragStart = {
+                                                        draggedIndex = globalIndex
+                                                        dragOffsetY = 0f
+                                                    },
+                                                    onDrag = { change, dragAmount ->
+                                                        change.consume()
+                                                        dragOffsetY += dragAmount.y
+
+                                                        val itemHeight = size.height + 8.dp.toPx()
+                                                        val offset = (dragOffsetY / itemHeight).roundToInt()
+                                                        val targetIndex =
+                                                            (draggedIndex + offset)
+                                                                .coerceIn(0, rules.size - 1)
+
+                                                        if (targetIndex != draggedIndex) {
+                                                            onMoveRule(draggedIndex, targetIndex)
+                                                            dragOffsetY -= (targetIndex - draggedIndex) * itemHeight
+                                                            draggedIndex = targetIndex
+                                                        }
+                                                    },
+                                                    onDragEnd = {
+                                                        draggedIndex = -1
+                                                        dragOffsetY = 0f
+                                                        onDragEnd()
+                                                    },
+                                                    onDragCancel = {
+                                                        draggedIndex = -1
+                                                        dragOffsetY = 0f
+                                                    },
+                                                )
+                                            },
+                                    elevation = elevation,
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CategoryHeader(
+    title: String,
+    ruleCount: Int,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { onToggle() }
+                .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.primary,
+        )
+        if (!isExpanded) {
+            Text(
+                text = stringResource(R.string.home_category_rule_count, ruleCount),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(end = 4.dp),
+            )
+        }
+        Icon(
+            imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+            contentDescription =
+                if (isExpanded) {
+                    stringResource(R.string.home_cd_collapse_category)
+                } else {
+                    stringResource(R.string.home_cd_expand_category)
+                },
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

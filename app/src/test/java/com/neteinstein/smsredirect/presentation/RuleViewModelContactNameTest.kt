@@ -5,6 +5,7 @@ import com.neteinstein.smsredirect.FakeRuleRepository
 import com.neteinstein.smsredirect.FakeSettingsRepository
 import com.neteinstein.smsredirect.domain.model.Rule
 import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetCategoriesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
@@ -48,6 +49,7 @@ class RuleViewModelContactNameTest {
             updateRuleUseCase = UpdateRuleUseCase(repository),
             ruleRepository = repository,
             getDefaultPrefixNowUseCase = getDefaultPrefixNowUseCase,
+            getCategoriesUseCase = GetCategoriesUseCase(repository),
             contactNameResolver = FakeContactNameResolver(contacts),
         )
 

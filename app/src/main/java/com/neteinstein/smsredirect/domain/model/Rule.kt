@@ -7,6 +7,7 @@ data class Rule(
     val phoneNumber: String = "",
     val targetNumber: String = "",
     val sortOrder: Int = 0,
+    val category: String = "",
 ) {
     fun isValid(): Boolean = targetNumber.isNotBlank() && (senderText.isNotBlank() || phoneNumber.isNotBlank())
 }

@@ -12,4 +12,5 @@ data class RuleEntity(
     val phoneNumber: String,
     val targetNumber: String,
     @ColumnInfo(defaultValue = "0") val sortOrder: Int = 0,
+    @ColumnInfo(defaultValue = "") val category: String = "",
 )

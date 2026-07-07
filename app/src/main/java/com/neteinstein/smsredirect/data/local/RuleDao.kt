@@ -22,6 +22,9 @@ interface RuleDao {
     @Query("SELECT COUNT(*) FROM rules")
     suspend fun getRuleCount(): Int
 
+    @Query("SELECT DISTINCT category FROM rules WHERE category != '' ORDER BY category ASC")
+    fun getCategories(): Flow<List<String>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(rule: RuleEntity)
 
