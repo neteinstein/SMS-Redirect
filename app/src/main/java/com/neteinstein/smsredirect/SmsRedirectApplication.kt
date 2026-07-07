@@ -47,7 +47,7 @@ class SmsRedirectApplication : Application() {
         val database =
             Room
                 .databaseBuilder(this, AppDatabase::class.java, "sms_redirect.db")
-                .fallbackToDestructiveMigration(dropAllTables = true)
+                .fallbackToDestructiveMigration()
                 .build()
         val repository = RuleRepositoryImpl(database.ruleDao())
         val settingsRepository = SettingsRepositoryImpl(database.appSettingsDao())
