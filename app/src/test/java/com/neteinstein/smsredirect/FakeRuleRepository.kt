@@ -20,9 +20,13 @@ class FakeRuleRepository(
 
     override suspend fun getRuleCount(): Int = rules.value.size
 
-    override fun getCategories(): Flow<List<String>> = rules.map { list ->
-        list.map { it.category }.filter { it.isNotBlank() }.distinct().sorted()
-    }
+    override fun getCategories(): Flow<List<String>> =
+        rules.map { list ->
+            list.map { it.category }
+                .filter { it.isNotBlank() }
+                .distinct()
+                .sorted()
+        }
 
     override suspend fun insert(rule: Rule) {
         val nextId = (rules.value.maxOfOrNull { it.id } ?: 0L) + 1L
