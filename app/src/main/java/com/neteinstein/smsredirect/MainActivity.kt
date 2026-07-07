@@ -464,7 +464,8 @@ class MainActivity : ComponentActivity() {
     private fun allPermissionsGranted(): Boolean =
         requiredPermissions.all {
             ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
-        } && isNotificationListenerEnabled()
+        } &&
+            isNotificationListenerEnabled()
 
     private fun hasSmsPermissions(): Boolean {
         val hasReceiveSmsPermission =
