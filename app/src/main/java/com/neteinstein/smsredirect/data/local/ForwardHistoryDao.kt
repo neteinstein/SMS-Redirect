@@ -21,4 +21,7 @@ interface ForwardHistoryDao {
             ")",
     )
     suspend fun trimToLatest(limit: Int)
+
+    @Query("DELETE FROM forward_history")
+    suspend fun deleteAll()
 }

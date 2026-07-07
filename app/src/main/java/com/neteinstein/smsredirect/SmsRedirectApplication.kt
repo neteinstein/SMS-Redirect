@@ -12,6 +12,7 @@ import com.neteinstein.smsredirect.domain.repository.ForwardHistoryRepository
 import com.neteinstein.smsredirect.domain.repository.RuleRepository
 import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.CanForwardSmsUseCase
+import com.neteinstein.smsredirect.domain.usecase.DeleteAllHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixNowUseCase
@@ -77,6 +78,7 @@ class SmsRedirectApplication : Application() {
                 getForwardPrefixUseCase = GetForwardPrefixUseCase(settingsRepository),
                 setForwardPrefixUseCase = SetForwardPrefixUseCase(settingsRepository),
                 getForwardHistoryUseCase = GetForwardHistoryUseCase(forwardHistoryRepository),
+                deleteAllHistoryUseCase = DeleteAllHistoryUseCase(forwardHistoryRepository),
                 getShowNotificationsUseCase = GetShowNotificationsUseCase(settingsRepository),
                 setShowNotificationsUseCase = SetShowNotificationsUseCase(settingsRepository),
                 findMatchingRuleUseCase = findMatchingRuleUseCase,
@@ -115,6 +117,7 @@ data class AppContainer(
     val getForwardPrefixUseCase: GetForwardPrefixUseCase,
     val setForwardPrefixUseCase: SetForwardPrefixUseCase,
     val getForwardHistoryUseCase: GetForwardHistoryUseCase,
+    val deleteAllHistoryUseCase: DeleteAllHistoryUseCase,
     val getShowNotificationsUseCase: GetShowNotificationsUseCase,
     val setShowNotificationsUseCase: SetShowNotificationsUseCase,
     val findMatchingRuleUseCase: FindMatchingRuleUseCase,

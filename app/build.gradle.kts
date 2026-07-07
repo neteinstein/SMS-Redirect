@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("com.google.devtools.ksp")
@@ -7,6 +9,17 @@ plugins {
 kotlin {
     jvmToolchain(17)
 }
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(keystorePropertiesFile.inputStream())
+}
+val releaseKeystoreFilePath =
+    (
+        System.getenv("KEYSTORE_FILE")
+            ?: keystoreProperties.getProperty("storeFile")
+    )?.takeIf { it.isNotBlank() }
 
 android {
     namespace = "com.neteinstein.smsredirect"
@@ -24,12 +37,14 @@ android {
 
     signingConfigs {
         create("release") {
-            val keystoreFilePath = System.getenv("KEYSTORE_FILE")
-            if (keystoreFilePath != null) {
-                storeFile = file(keystoreFilePath)
+            if (releaseKeystoreFilePath != null) {
+                storeFile = file(releaseKeystoreFilePath)
                 storePassword = System.getenv("KEYSTORE_PASSWORD")
+                    ?: keystoreProperties.getProperty("storePassword")
                 keyAlias = System.getenv("KEY_ALIAS")
+                    ?: keystoreProperties.getProperty("keyAlias")
                 keyPassword = System.getenv("KEY_PASSWORD")
+                    ?: keystoreProperties.getProperty("keyPassword")
             }
         }
     }
@@ -41,9 +56,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            val releaseSigningConfig = signingConfigs.findByName("release")
-            if (releaseSigningConfig?.storeFile != null) {
-                signingConfig = releaseSigningConfig
+            if (releaseKeystoreFilePath != null) {
+                signingConfig = signingConfigs.getByName("release")
             }
         }
     }
