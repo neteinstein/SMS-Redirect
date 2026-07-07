@@ -260,17 +260,22 @@ class MainActivity : ComponentActivity() {
                             ) { uri: Uri? ->
                                 uri?.let {
                                     try {
-                                        val json = context.contentResolver.openInputStream(it)
-                                            ?.bufferedReader()?.use { reader -> reader.readText() }
+                                        val json =
+                                            context.contentResolver
+                                                .openInputStream(it)
+                                                ?.bufferedReader()
+                                                ?.use { reader -> reader.readText() }
                                         if (json != null) {
                                             settingsViewModel.importRules(json)
                                         }
                                     } catch (_: Exception) {
-                                        Toast.makeText(
-                                            context,
-                                            context.getString(R.string.settings_import_error),
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
+                                        Toast
+                                            .makeText(
+                                                context,
+                                                context.getString(R.string.settings_import_error),
+                                                Toast.LENGTH_SHORT,
+                                            )
+                                            .show()
                                     }
                                 }
                             }
@@ -279,16 +284,18 @@ class MainActivity : ComponentActivity() {
                             settingsViewModel.exportEvent.collectLatest { json ->
                                 val file = File(context.cacheDir, "export-rules.json")
                                 file.writeText(json)
-                                val uri = androidx.core.content.FileProvider.getUriForFile(
-                                    context,
-                                    "${context.packageName}.fileprovider",
-                                    file,
-                                )
-                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "application/json"
-                                    putExtra(Intent.EXTRA_STREAM, uri)
-                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
+                                val uri =
+                                    androidx.core.content.FileProvider.getUriForFile(
+                                        context,
+                                        "${context.packageName}.fileprovider",
+                                        file,
+                                    )
+                                val shareIntent =
+                                    Intent(Intent.ACTION_SEND).apply {
+                                        type = "application/json"
+                                        putExtra(Intent.EXTRA_STREAM, uri)
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
                                 context.startActivity(
                                     Intent.createChooser(shareIntent, null),
                                 )
@@ -297,11 +304,13 @@ class MainActivity : ComponentActivity() {
 
                         LaunchedEffect(Unit) {
                             settingsViewModel.importResult.collectLatest { count ->
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.settings_import_success, count),
-                                    Toast.LENGTH_SHORT,
-                                ).show()
+                                Toast
+                                    .makeText(
+                                        context,
+                                        context.getString(R.string.settings_import_success, count),
+                                        Toast.LENGTH_SHORT,
+                                    )
+                                    .show()
                             }
                         }
 

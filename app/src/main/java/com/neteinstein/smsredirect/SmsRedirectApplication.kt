@@ -23,12 +23,12 @@ import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
-import com.neteinstein.smsredirect.domain.usecase.ImportRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsUseCase
+import com.neteinstein.smsredirect.domain.usecase.ImportRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.RecordForwardHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.ReorderRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
