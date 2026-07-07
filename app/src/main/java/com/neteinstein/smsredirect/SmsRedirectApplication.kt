@@ -14,6 +14,7 @@ import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.CanForwardSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteAllHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteRuleUseCase
+import com.neteinstein.smsredirect.domain.usecase.ExportRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
@@ -22,6 +23,7 @@ import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.ImportRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
@@ -68,6 +70,8 @@ class SmsRedirectApplication : Application() {
                 updateRuleUseCase = UpdateRuleUseCase(repository),
                 deleteRuleUseCase = DeleteRuleUseCase(repository),
                 reorderRulesUseCase = ReorderRulesUseCase(repository),
+                exportRulesUseCase = ExportRulesUseCase(repository),
+                importRulesUseCase = ImportRulesUseCase(repository),
                 getSendWhileRoamingUseCase = GetSendWhileRoamingUseCase(settingsRepository),
                 setSendWhileRoamingUseCase = SetSendWhileRoamingUseCase(settingsRepository),
                 getKeepHistoryUseCase = GetKeepHistoryUseCase(settingsRepository),
@@ -107,6 +111,8 @@ data class AppContainer(
     val updateRuleUseCase: UpdateRuleUseCase,
     val deleteRuleUseCase: DeleteRuleUseCase,
     val reorderRulesUseCase: ReorderRulesUseCase,
+    val exportRulesUseCase: ExportRulesUseCase,
+    val importRulesUseCase: ImportRulesUseCase,
     val getSendWhileRoamingUseCase: GetSendWhileRoamingUseCase,
     val setSendWhileRoamingUseCase: SetSendWhileRoamingUseCase,
     val getKeepHistoryUseCase: GetKeepHistoryUseCase,

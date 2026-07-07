@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.PowerManager
 import android.provider.ContactsContract
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -57,6 +58,7 @@ import com.neteinstein.smsredirect.presentation.theme.SmsRedirectTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     private val requiredPermissions =
@@ -241,12 +243,68 @@ class MainActivity : ComponentActivity() {
                                         appContainer.setForwardPrefixUseCase,
                                         appContainer.getShowNotificationsUseCase,
                                         appContainer.setShowNotificationsUseCase,
+                                        appContainer.exportRulesUseCase,
+                                        appContainer.importRulesUseCase,
                                     ),
                             )
                         val sendWhileRoaming by settingsViewModel.sendWhileRoaming.collectAsState()
                         val showNotifications by settingsViewModel.showNotifications.collectAsState()
                         val defaultPrefix by settingsViewModel.defaultPrefix.collectAsState()
                         val forwardPrefix by settingsViewModel.forwardPrefix.collectAsState()
+
+                        val context = this@MainActivity
+
+                        val importLauncher =
+                            rememberLauncherForActivityResult(
+                                contract = ActivityResultContracts.GetContent(),
+                            ) { uri: Uri? ->
+                                uri?.let {
+                                    try {
+                                        val json = context.contentResolver.openInputStream(it)
+                                            ?.bufferedReader()?.use { reader -> reader.readText() }
+                                        if (json != null) {
+                                            settingsViewModel.importRules(json)
+                                        }
+                                    } catch (_: Exception) {
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.settings_import_error),
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                    }
+                                }
+                            }
+
+                        LaunchedEffect(Unit) {
+                            settingsViewModel.exportEvent.collectLatest { json ->
+                                val file = File(context.cacheDir, "export-rules.json")
+                                file.writeText(json)
+                                val uri = androidx.core.content.FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.fileprovider",
+                                    file,
+                                )
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "application/json"
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(
+                                    Intent.createChooser(shareIntent, null),
+                                )
+                            }
+                        }
+
+                        LaunchedEffect(Unit) {
+                            settingsViewModel.importResult.collectLatest { count ->
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.settings_import_success, count),
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            }
+                        }
+
                         SettingsScreen(
                             sendWhileRoaming = sendWhileRoaming,
                             showNotifications = showNotifications,
@@ -256,6 +314,8 @@ class MainActivity : ComponentActivity() {
                             onShowNotificationsChanged = settingsViewModel::setShowNotifications,
                             onForwardPrefixSaved = settingsViewModel::setForwardPrefix,
                             onDefaultPrefixChanged = settingsViewModel::setDefaultPrefix,
+                            onExportRules = settingsViewModel::exportRules,
+                            onImportRules = { importLauncher.launch("application/json") },
                             onBack = { navController.popBackStack() },
                         )
                     }
