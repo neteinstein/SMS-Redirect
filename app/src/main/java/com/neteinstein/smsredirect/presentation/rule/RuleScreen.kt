@@ -170,11 +170,12 @@ private fun CategoryField(
             },
         )
         if (existingCategories.isNotEmpty()) {
-            val filtered = if (category.isBlank()) {
-                existingCategories
-            } else {
-                existingCategories.filter { it.contains(category, ignoreCase = true) }
-            }
+            val filtered =
+                if (category.isBlank()) {
+                    existingCategories
+                } else {
+                    existingCategories.filter { it.contains(category, ignoreCase = true) }
+                }
             if (filtered.isNotEmpty()) {
                 ExposedDropdownMenu(
                     expanded = expanded,

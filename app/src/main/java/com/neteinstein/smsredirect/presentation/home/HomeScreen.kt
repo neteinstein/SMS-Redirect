@@ -146,12 +146,14 @@ fun HomeScreen(
                     )
                 }
             } else {
-                val groupedRules = remember(rules) {
-                    rules.groupBy { it.category.ifBlank { "" } }
-                }
-                val sortedCategories = remember(groupedRules) {
-                    groupedRules.keys.sorted()
-                }
+                val groupedRules =
+                    remember(rules) {
+                        rules.groupBy { it.category.ifBlank { "" } }
+                    }
+                val sortedCategories =
+                    remember(groupedRules) {
+                        groupedRules.keys.sorted()
+                    }
                 var collapsedCategories by remember { mutableStateOf(emptySet<String>()) }
 
                 val listState = rememberLazyListState()
@@ -172,19 +174,21 @@ fun HomeScreen(
 
                         item(key = "category_header_$category") {
                             CategoryHeader(
-                                title = if (category.isBlank()) {
-                                    stringResource(R.string.home_category_uncategorized)
-                                } else {
-                                    category
-                                },
+                                title =
+                                    if (category.isBlank()) {
+                                        stringResource(R.string.home_category_uncategorized)
+                                    } else {
+                                        category
+                                    },
                                 ruleCount = categoryRules.size,
                                 isExpanded = isExpanded,
                                 onToggle = {
-                                    collapsedCategories = if (isExpanded) {
-                                        collapsedCategories + category
-                                    } else {
-                                        collapsedCategories - category
-                                    }
+                                    collapsedCategories =
+                                        if (isExpanded) {
+                                            collapsedCategories + category
+                                        } else {
+                                            collapsedCategories - category
+                                        }
                                 },
                             )
                         }
@@ -288,11 +292,12 @@ private fun CategoryHeader(
         }
         Icon(
             imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-            contentDescription = if (isExpanded) {
-                stringResource(R.string.home_cd_collapse_category)
-            } else {
-                stringResource(R.string.home_cd_expand_category)
-            },
+            contentDescription =
+                if (isExpanded) {
+                    stringResource(R.string.home_cd_collapse_category)
+                } else {
+                    stringResource(R.string.home_cd_expand_category)
+                },
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
