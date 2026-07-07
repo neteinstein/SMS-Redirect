@@ -2,6 +2,7 @@ package com.neteinstein.smsredirect.presentation.navigation
 
 object Routes {
     const val Splash = "splash"
+    const val Permissions = "permissions"
     const val Home = "home"
     const val Settings = "settings"
     const val History = "history"
