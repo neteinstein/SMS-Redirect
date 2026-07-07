@@ -24,12 +24,12 @@ val releaseKeystoreFilePath =
 
 android {
     namespace = "com.neteinstein.smsredirect"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.neteinstein.smsredirect"
         minSdk = 35
-        targetSdk = 36
+        targetSdk = 37
         versionCode = (project.findProperty("VERSION_CODE") as String?)?.toInt() ?: 1
         versionName = "0.3.0"
 
