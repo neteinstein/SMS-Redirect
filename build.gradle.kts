@@ -1,12 +1,6 @@
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-    dependencies {
-        classpath("com.android.tools.build:gradle:8.5.2")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24")
-        classpath("org.jlleitschuh.gradle:ktlint-gradle:12.1.1")
-    }
+plugins {
+    id("com.android.application") version "9.1.0" apply false
+    id("org.jetbrains.kotlin.plugin.compose") version "2.3.21" apply false
+    id("com.google.devtools.ksp") version "2.3.9" apply false
+    id("org.jlleitschuh.gradle.ktlint") version "14.2.0" apply false
 }
