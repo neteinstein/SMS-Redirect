@@ -1,10 +1,13 @@
 package com.neteinstein.smsredirect.presentation
 
+import com.neteinstein.smsredirect.FakeRuleRepository
 import com.neteinstein.smsredirect.FakeSettingsRepository
+import com.neteinstein.smsredirect.domain.usecase.ExportRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsUseCase
+import com.neteinstein.smsredirect.domain.usecase.ImportRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
@@ -27,6 +30,7 @@ import org.junit.Test
 class SettingsViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val settingsRepository = FakeSettingsRepository()
+    private val ruleRepository = FakeRuleRepository()
 
     @Before
     fun setUp() {
@@ -48,6 +52,8 @@ class SettingsViewModelTest {
             setForwardPrefixUseCase = SetForwardPrefixUseCase(settingsRepository),
             getShowNotificationsUseCase = GetShowNotificationsUseCase(settingsRepository),
             setShowNotificationsUseCase = SetShowNotificationsUseCase(settingsRepository),
+            exportRulesUseCase = ExportRulesUseCase(ruleRepository),
+            importRulesUseCase = ImportRulesUseCase(ruleRepository),
         )
 
     @Test
