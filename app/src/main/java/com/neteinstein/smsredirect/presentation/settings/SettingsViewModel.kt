@@ -3,16 +3,21 @@ package com.neteinstein.smsredirect.presentation.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.neteinstein.smsredirect.domain.usecase.ExportRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsUseCase
+import com.neteinstein.smsredirect.domain.usecase.ImportRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -27,6 +32,8 @@ class SettingsViewModel(
     private val setForwardPrefixUseCase: SetForwardPrefixUseCase,
     getShowNotificationsUseCase: GetShowNotificationsUseCase,
     private val setShowNotificationsUseCase: SetShowNotificationsUseCase,
+    private val exportRulesUseCase: ExportRulesUseCase,
+    private val importRulesUseCase: ImportRulesUseCase,
 ) : ViewModel() {
     private val _sendWhileRoaming = MutableStateFlow(false)
     val sendWhileRoaming: StateFlow<Boolean> = _sendWhileRoaming.asStateFlow()
@@ -75,6 +82,26 @@ class SettingsViewModel(
             setForwardPrefixUseCase(prefix)
         }
     }
+
+    private val _exportEvent = MutableSharedFlow<String>()
+    val exportEvent: SharedFlow<String> = _exportEvent.asSharedFlow()
+
+    private val _importResult = MutableSharedFlow<Int>()
+    val importResult: SharedFlow<Int> = _importResult.asSharedFlow()
+
+    fun exportRules() {
+        viewModelScope.launch {
+            val json = exportRulesUseCase()
+            _exportEvent.emit(json)
+        }
+    }
+
+    fun importRules(json: String) {
+        viewModelScope.launch {
+            val count = importRulesUseCase(json)
+            _importResult.emit(count)
+        }
+    }
 }
 
 class SettingsViewModelFactory(
@@ -86,6 +113,8 @@ class SettingsViewModelFactory(
     private val setForwardPrefixUseCase: SetForwardPrefixUseCase,
     private val getShowNotificationsUseCase: GetShowNotificationsUseCase,
     private val setShowNotificationsUseCase: SetShowNotificationsUseCase,
+    private val exportRulesUseCase: ExportRulesUseCase,
+    private val importRulesUseCase: ImportRulesUseCase,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
@@ -98,6 +127,8 @@ class SettingsViewModelFactory(
             setForwardPrefixUseCase = setForwardPrefixUseCase,
             getShowNotificationsUseCase = getShowNotificationsUseCase,
             setShowNotificationsUseCase = setShowNotificationsUseCase,
+            exportRulesUseCase = exportRulesUseCase,
+            importRulesUseCase = importRulesUseCase,
         ) as T
     }
 }
