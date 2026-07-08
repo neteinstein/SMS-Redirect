@@ -42,6 +42,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -206,6 +207,9 @@ fun HomeScreen(
                                     label = "drag_elevation",
                                 )
 
+                                val currentCategoryRules by rememberUpdatedState(categoryRules)
+                                val currentRules by rememberUpdatedState(rules)
+
                                 RuleCard(
                                     rule = rule,
                                     senderContactName = contactNames[rule.senderText],
@@ -228,14 +232,20 @@ fun HomeScreen(
 
                                                         val itemHeight = size.height + 8.dp.toPx()
                                                         val offset = (dragOffsetY / itemHeight).roundToInt()
-                                                        val targetIndex =
-                                                            (draggedIndex + offset)
-                                                                .coerceIn(0, rules.size - 1)
+                                                        val catRules = currentCategoryRules
+                                                        val allRules = currentRules
+                                                        val currentLocalIndex =
+                                                            catRules.indexOfFirst { allRules.indexOf(it) == draggedIndex }
+                                                        if (currentLocalIndex < 0) return@detectDragGesturesAfterLongPress
+                                                        val targetLocalIndex =
+                                                            (currentLocalIndex + offset)
+                                                                .coerceIn(0, catRules.size - 1)
+                                                        val targetGlobalIndex = allRules.indexOf(catRules[targetLocalIndex])
 
-                                                        if (targetIndex != draggedIndex) {
-                                                            onMoveRule(draggedIndex, targetIndex)
-                                                            dragOffsetY -= (targetIndex - draggedIndex) * itemHeight
-                                                            draggedIndex = targetIndex
+                                                        if (targetGlobalIndex != draggedIndex && targetGlobalIndex >= 0) {
+                                                            onMoveRule(draggedIndex, targetGlobalIndex)
+                                                            dragOffsetY -= (targetLocalIndex - currentLocalIndex) * itemHeight
+                                                            draggedIndex = targetGlobalIndex
                                                         }
                                                     },
                                                     onDragEnd = {
