@@ -31,7 +31,7 @@ android {
         minSdk = 35
         targetSdk = 37
         versionCode = (project.findProperty("VERSION_CODE") as String?)?.toInt() ?: 1
-        versionName = "0.3.0"
+        versionName = "0.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -84,7 +84,7 @@ android {
 }
 
 ktlint {
-    version.set("1.6.0")
+    version.set("1.8.0")
 }
 
 dependencies {
@@ -99,7 +99,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
-    implementation("androidx.navigation:navigation-compose:2.9.2")
+    implementation("androidx.navigation:navigation-compose:2.9.8")
 
     implementation("androidx.room:room-runtime:2.8.4")
     implementation("androidx.room:room-ktx:2.8.4")
@@ -108,8 +108,8 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.10.0")
 
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
-    testImplementation("app.cash.turbine:turbine:1.2.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+    testImplementation("app.cash.turbine:turbine:1.2.1")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
