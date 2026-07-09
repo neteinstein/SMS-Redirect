@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -20,6 +21,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -99,6 +101,15 @@ private fun PermissionRow(
         Button(
             onClick = onRequest,
             enabled = !permission.isGranted,
+            colors =
+                if (permission.isGranted) {
+                    ButtonDefaults.buttonColors(
+                        disabledContainerColor = Color(0xFF2E7D32),
+                        disabledContentColor = Color.White,
+                    )
+                } else {
+                    ButtonDefaults.buttonColors()
+                },
         ) {
             Text(
                 text =
