@@ -10,6 +10,8 @@ import android.net.Uri
 import android.os.PowerManager
 import android.provider.ContactsContract
 import android.provider.Settings
+import android.service.notification.NotificationListenerService
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -161,6 +163,7 @@ class MainActivity : ComponentActivity() {
                             val observer =
                                 LifecycleEventObserver { _, event ->
                                     if (event == Lifecycle.Event.ON_RESUME) {
+                                        maybeRequestNotificationListenerRebind()
                                         permissionCheckTick++
                                     }
                                 }
@@ -654,12 +657,37 @@ class MainActivity : ComponentActivity() {
     private fun isNotificationListenerEnabled(): Boolean {
         val componentName = ComponentName(this, RcsNotificationListener::class.java)
         val enabledListeners = NotificationManagerCompat.getEnabledListenerPackages(this)
-        return packageName in enabledListeners
+        val enabled = packageName in enabledListeners
+        Log.d(TAG, "Notification listener enabled=$enabled for $componentName")
+        return enabled
     }
 
     private fun openNotificationListenerSettings() {
         val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
         runCatching { startActivity(intent) }
+    }
+
+    /**
+     * Self-healing for the known Pixel/OEM bug where Notification Access shows as granted in
+     * Settings but the system never actually binds [RcsNotificationListener] (e.g. after the
+     * permission was toggled off/on, or after an app update). We only request a rebind when
+     * access is granted yet [RcsNotificationListener.onListenerConnected] has never recorded a
+     * successful bind, so this is a no-op — and doesn't fight the system — once things are
+     * working normally.
+     */
+    private fun maybeRequestNotificationListenerRebind() {
+        if (!isNotificationListenerEnabled()) return
+
+        val diagnostics = getSharedPreferences(RcsNotificationListener.PREFS_NAME, MODE_PRIVATE)
+        val everConnected = diagnostics.getLong(RcsNotificationListener.KEY_LAST_CONNECTED_AT, 0L) > 0L
+        if (everConnected) return
+
+        Log.w(TAG, "Notification access is granted but the listener has never connected — requesting rebind")
+        runCatching {
+            NotificationListenerService.requestRebind(ComponentName(this, RcsNotificationListener::class.java))
+        }.onFailure { e ->
+            Log.e(TAG, "requestRebind failed", e)
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -681,6 +709,7 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
+        private const val TAG = "MainActivity"
         private const val PREFS_NAME = "sms_redirect_prefs"
         private const val KEY_SIDELOAD_DISMISSED = "sideload_warning_dismissed"
         private const val NOTIFICATION_ACCESS_ID = "notification_access"
