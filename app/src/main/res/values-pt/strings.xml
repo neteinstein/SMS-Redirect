@@ -1,5 +1,6 @@
 <resources>
-    <string name="app_name">Redirecionador SMS</string>
+    <string name="app_name">Redirecionador e Agendador SMS</string>
+    <string name="splash_subtitle">Redirecione e agende as suas mensagens SMS</string>
     <string name="battery_optimization_title">Desativar otimização de bateria</string>
     <string name="battery_optimization_message">Para manter o redirecionamento de SMS confiável, desative a otimização de bateria para esta app.</string>
     <string name="notification_access_title">Ativar acesso a notificações</string>
@@ -61,4 +62,61 @@
     <string name="settings_history_sender_target_format">%1$s → %2$s</string>
     <string name="settings_history_rule_format">Regra: %1$s</string>
     <string name="settings_history_unknown_sender">Remetente desconhecido</string>
+
+    <string name="main_tab_redirect">Redirecionar</string>
+    <string name="main_tab_schedule">Agendar</string>
+
+    <string name="repeat_type_none">Nenhuma</string>
+    <string name="repeat_type_daily">Diariamente</string>
+    <string name="repeat_type_work_week_days">Dias úteis</string>
+    <string name="repeat_type_biweekly">Quinzenalmente</string>
+    <string name="repeat_type_monthly">Mensalmente</string>
+    <string name="repeat_type_yearly">Anualmente</string>
+
+    <string name="schedule_title_list">Regras de SMS Agendados</string>
+    <string name="schedule_cd_history">Histórico</string>
+    <string name="schedule_cd_settings">Definições</string>
+    <string name="schedule_cd_add">Adicionar SMS agendado</string>
+    <string name="schedule_no_items">Ainda não existem SMS agendados</string>
+    <string name="schedule_no_items_illustration_cd">Ilustração de agendamento de SMS</string>
+    <string name="schedule_category_uncategorized">Sem categoria</string>
+    <string name="schedule_category_item_count">%1$d itens</string>
+    <string name="schedule_delete_dialog_title">Apagar SMS agendado</string>
+    <string name="schedule_delete_dialog_message">Tem a certeza que deseja apagar \"%1$s\"?</string>
+    <string name="schedule_default_name_format">SMS Agendado #%1$d</string>
+    <string name="schedule_contact_format">Contacto: %1$s</string>
+    <string name="schedule_next_send_format">Próximo envio: %1$s</string>
+    <string name="schedule_repeat_format">Repetição: %1$s</string>
+    <string name="schedule_cd_delete">Apagar</string>
+
+    <string name="schedule_form_title_create">Criar SMS Agendado</string>
+    <string name="schedule_form_title_edit">Editar SMS Agendado</string>
+    <string name="schedule_form_label_name">Nome do SMS Agendado</string>
+    <string name="schedule_form_placeholder_name_optional">Opcional - gerado automaticamente se vazio</string>
+    <string name="schedule_form_label_category">Categoria</string>
+    <string name="schedule_form_placeholder_category">Opcional - escreva ou selecione uma existente</string>
+    <string name="schedule_form_label_contact">Contacto</string>
+    <string name="schedule_form_cd_pick_contact">Escolher contacto dos contactos</string>
+    <string name="schedule_form_label_message">Mensagem</string>
+    <string name="schedule_form_placeholder_message">Escreva a mensagem SMS a enviar</string>
+    <string name="schedule_form_label_date">Data</string>
+    <string name="schedule_form_date_placeholder">Escolher uma data</string>
+    <string name="schedule_form_label_time">Hora</string>
+    <string name="schedule_form_time_placeholder">Escolher uma hora</string>
+    <string name="schedule_form_pick_time_title">Selecionar hora</string>
+    <string name="schedule_form_label_repeat">Repetição</string>
+    <string name="schedule_form_label_stop_at">Terminar em</string>
+    <string name="schedule_form_stop_at_placeholder">Escolher data de término</string>
+    <string name="schedule_form_cd_clear_stop_at">Limpar data de término</string>
+    <string name="schedule_form_action_save">Guardar SMS Agendado</string>
+    <string name="schedule_error_invalid_contact">O contacto deve ser um número de telefone válido (dígitos, +, espaços e hífens permitidos)</string>
+    <string name="schedule_error_missing_message">A mensagem é obrigatória</string>
+    <string name="schedule_error_missing_date">A data é obrigatória</string>
+
+    <string name="schedule_history_title">Histórico de SMS Agendados</string>
+    <string name="schedule_history_keep_history">Manter histórico de agendamentos</string>
+    <string name="schedule_history_no_items">Ainda não há SMS agendados enviados</string>
+    <string name="schedule_history_contact_format">Para: %1$s</string>
+    <string name="schedule_history_name_format">Agendamento: %1$s</string>
+    <string name="schedule_history_unknown_contact">Contacto desconhecido</string>
 </resources>
