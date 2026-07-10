@@ -68,6 +68,8 @@
     <string name="rule_default_name_format">Rule #%1$d</string>
 
     <string name="settings_title">Settings</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system_default">System default</string>
     <string name="settings_send_while_roaming">Send while roaming</string>
     <string name="settings_keep_history">Keep history</string>
     <string name="settings_show_notifications">Show notifications</string>
