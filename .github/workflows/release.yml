@@ -48,13 +48,31 @@ jobs:
         run: |
           mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/SMS-Redirect_v${{ steps.version.outputs.version }}.apk
 
+      - name: Generate release notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # softprops/action-gh-release's `generate_release_notes` only fills in the body
+          # when it's empty. On a re-run for the same tag (e.g. a second merge before a
+          # version bump), it re-appends freshly generated notes onto the *existing*
+          # release body instead of replacing it, so the description grows with
+          # duplicated content every time. Generating the notes ourselves and passing
+          # them as an explicit body ensures the release body is always fully replaced.
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            "repos/${{ github.repository }}/releases/generate-notes" \
+            -f tag_name="v${{ steps.version.outputs.version }}" \
+            -f target_commitish="${{ github.sha }}" \
+            --jq '.body' > release_notes.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Release v${{ steps.version.outputs.version }}
           files: app/build/outputs/apk/release/SMS-Redirect_v${{ steps.version.outputs.version }}.apk
-          generate_release_notes: true
+          body_path: release_notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
