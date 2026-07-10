@@ -1,6 +1,7 @@
 package com.neteinstein.smsredirect
 
 import android.Manifest
+import android.app.LocaleManager
 import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
@@ -254,6 +255,23 @@ class MainActivity : ComponentActivity() {
 
                         val context = this@MainActivity
 
+                        val lifecycleOwner = LocalLifecycleOwner.current
+                        var languageCheckTick by remember { mutableIntStateOf(0) }
+                        DisposableEffect(lifecycleOwner) {
+                            val observer =
+                                LifecycleEventObserver { _, event ->
+                                    if (event == Lifecycle.Event.ON_RESUME) {
+                                        languageCheckTick++
+                                    }
+                                }
+                            lifecycleOwner.lifecycle.addObserver(observer)
+                            onDispose {
+                                lifecycleOwner.lifecycle.removeObserver(observer)
+                            }
+                        }
+                        val currentLanguageLabel =
+                            remember(languageCheckTick) { currentAppLanguageLabel() }
+
                         val importLauncher =
                             rememberLauncherForActivityResult(
                                 contract = ActivityResultContracts.GetContent(),
@@ -319,12 +337,14 @@ class MainActivity : ComponentActivity() {
                             showNotifications = showNotifications,
                             forwardPrefix = forwardPrefix,
                             defaultPrefix = defaultPrefix,
+                            currentLanguageLabel = currentLanguageLabel,
                             onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming,
                             onShowNotificationsChanged = settingsViewModel::setShowNotifications,
                             onForwardPrefixSaved = settingsViewModel::setForwardPrefix,
                             onDefaultPrefixChanged = settingsViewModel::setDefaultPrefix,
                             onExportRules = settingsViewModel::exportRules,
                             onImportRules = { importLauncher.launch("application/json") },
+                            onOpenLanguageSettings = { openAppLocaleSettings() },
                             onBack = { navController.popBackStack() },
                         )
                     }
@@ -649,6 +669,20 @@ class MainActivity : ComponentActivity() {
                 data = Uri.parse("package:$packageName")
             }
         runCatching { startActivity(intent) }
+    }
+
+    private fun openAppLocaleSettings() {
+        val intent =
+            Intent(Settings.ACTION_APP_LOCALE_SETTINGS).apply {
+                data = Uri.parse("package:$packageName")
+            }
+        runCatching { startActivity(intent) }
+    }
+
+    private fun currentAppLanguageLabel(): String {
+        val locales = getSystemService(LocaleManager::class.java)?.applicationLocales
+        val locale = locales?.takeIf { !it.isEmpty }?.get(0)
+        return locale?.displayName ?: getString(R.string.settings_language_system_default)
     }
 
     private fun isNotificationListenerEnabled(): Boolean {
