@@ -84,6 +84,7 @@
     <string name="settings_history_title">Forward history (last 50)</string>
     <string name="history_title">Redirect History</string>
     <string name="settings_no_forwarded_sms">No forwarded SMS yet</string>
+    <string name="history_no_scheduled_sms_illustration_cd">Scheduled SMS illustration</string>
     <string name="history_disable_confirm_title">Disable history</string>
     <string name="history_disable_confirm_message">Are you sure you want to disable and delete current history?</string>
     <string name="history_disable_confirm_yes">Yes</string>
