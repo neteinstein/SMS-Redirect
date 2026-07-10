@@ -1,5 +1,6 @@
 package com.neteinstein.smsredirect.presentation.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -18,6 +21,7 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -42,12 +46,14 @@ fun SettingsScreen(
     showNotifications: Boolean,
     forwardPrefix: String,
     defaultPrefix: String,
+    currentLanguageLabel: String,
     onSendWhileRoamingChanged: (Boolean) -> Unit,
     onShowNotificationsChanged: (Boolean) -> Unit,
     onForwardPrefixSaved: (String) -> Unit,
     onDefaultPrefixChanged: (String) -> Unit,
     onExportRules: () -> Unit,
     onImportRules: () -> Unit,
+    onOpenLanguageSettings: () -> Unit,
     onBack: () -> Unit,
 ) {
     Scaffold(
@@ -71,6 +77,13 @@ fun SettingsScreen(
                     .fillMaxSize()
                     .padding(padding),
         ) {
+            LanguageRow(
+                currentLanguageLabel = currentLanguageLabel,
+                onClick = onOpenLanguageSettings,
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
             SettingSwitchRow(
                 title = stringResource(R.string.settings_send_while_roaming),
                 checked = sendWhileRoaming,
@@ -201,6 +214,44 @@ private fun DefaultPrefixDropdown(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun LanguageRow(
+    currentLanguageLabel: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Default.Language,
+                contentDescription = null,
+            )
+            Column(modifier = Modifier.padding(start = 16.dp)) {
+                Text(
+                    text = stringResource(R.string.settings_language),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = currentLanguageLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = stringResource(R.string.action_open_screen),
+        )
     }
 }
 
