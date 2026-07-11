@@ -6,14 +6,23 @@ import com.neteinstein.smsredirect.data.contacts.AndroidContactNameResolver
 import com.neteinstein.smsredirect.data.local.AppDatabase
 import com.neteinstein.smsredirect.data.repository.ForwardHistoryRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.RuleRepositoryImpl
+import com.neteinstein.smsredirect.data.repository.ScheduledSmsHistoryRepositoryImpl
+import com.neteinstein.smsredirect.data.repository.ScheduledSmsRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.SettingsRepositoryImpl
+import com.neteinstein.smsredirect.data.scheduling.WorkManagerScheduledSmsScheduler
 import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
 import com.neteinstein.smsredirect.domain.repository.ForwardHistoryRepository
 import com.neteinstein.smsredirect.domain.repository.RuleRepository
+import com.neteinstein.smsredirect.domain.repository.ScheduledSmsHistoryRepository
+import com.neteinstein.smsredirect.domain.repository.ScheduledSmsRepository
+import com.neteinstein.smsredirect.domain.scheduling.ScheduledSmsScheduler
 import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
+import com.neteinstein.smsredirect.domain.usecase.AddScheduledSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.CanForwardSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteAllHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.DeleteAllScheduledSmsHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteRuleUseCase
+import com.neteinstein.smsredirect.domain.usecase.DeleteScheduledSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ExportRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetCategoriesUseCase
@@ -24,20 +33,30 @@ import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetKeepScheduleHistoryNowUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetKeepScheduleHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRulesUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetScheduledSmsCategoriesUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetScheduledSmsHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetScheduledSmsListUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetScheduledSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ImportRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.RecordForwardHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.RecordScheduledSmsHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.ReorderRulesUseCase
+import com.neteinstein.smsredirect.domain.usecase.ReorderScheduledSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetKeepHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetKeepScheduleHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
+import com.neteinstein.smsredirect.domain.usecase.UpdateScheduledSmsUseCase
 
 class SmsRedirectApplication : Application() {
     lateinit var appContainer: AppContainer
@@ -53,18 +72,27 @@ class SmsRedirectApplication : Application() {
         val repository = RuleRepositoryImpl(database.ruleDao())
         val settingsRepository = SettingsRepositoryImpl(database.appSettingsDao())
         val forwardHistoryRepository = ForwardHistoryRepositoryImpl(database.forwardHistoryDao())
+        val scheduledSmsRepository = ScheduledSmsRepositoryImpl(database.scheduledSmsDao())
+        val scheduledSmsHistoryRepository = ScheduledSmsHistoryRepositoryImpl(database.scheduledSmsHistoryDao())
         val findMatchingRuleUseCase = FindMatchingRuleUseCase(repository)
         val canForwardSmsUseCase = CanForwardSmsUseCase(settingsRepository)
         val getKeepHistoryNowUseCase = GetKeepHistoryNowUseCase(settingsRepository)
         val getForwardPrefixNowUseCase = GetForwardPrefixNowUseCase(settingsRepository)
         val getShowNotificationsNowUseCase = GetShowNotificationsNowUseCase(settingsRepository)
         val recordForwardHistoryUseCase = RecordForwardHistoryUseCase(forwardHistoryRepository)
+        val getKeepScheduleHistoryNowUseCase = GetKeepScheduleHistoryNowUseCase(settingsRepository)
+        val recordScheduledSmsHistoryUseCase = RecordScheduledSmsHistoryUseCase(scheduledSmsHistoryRepository)
         val contactNameResolver = AndroidContactNameResolver(contentResolver)
+        val scheduledSmsScheduler = WorkManagerScheduledSmsScheduler(this)
+        val getScheduledSmsUseCase = GetScheduledSmsUseCase(scheduledSmsRepository)
         appContainer =
             AppContainer(
                 ruleRepository = repository,
                 forwardHistoryRepository = forwardHistoryRepository,
+                scheduledSmsRepository = scheduledSmsRepository,
+                scheduledSmsHistoryRepository = scheduledSmsHistoryRepository,
                 contactNameResolver = contactNameResolver,
+                scheduledSmsScheduler = scheduledSmsScheduler,
                 getRulesUseCase = GetRulesUseCase(repository),
                 getCategoriesUseCase = GetCategoriesUseCase(repository),
                 getRuleUseCase = GetRuleUseCase(repository),
@@ -99,6 +127,26 @@ class SmsRedirectApplication : Application() {
                         contactNameResolver = contactNameResolver,
                         getShowNotificationsNowUseCase = getShowNotificationsNowUseCase,
                     ),
+                getScheduledSmsListUseCase = GetScheduledSmsListUseCase(scheduledSmsRepository),
+                getScheduledSmsCategoriesUseCase = GetScheduledSmsCategoriesUseCase(scheduledSmsRepository),
+                getScheduledSmsUseCase = getScheduledSmsUseCase,
+                addScheduledSmsUseCase = AddScheduledSmsUseCase(scheduledSmsRepository, scheduledSmsScheduler),
+                updateScheduledSmsUseCase = UpdateScheduledSmsUseCase(scheduledSmsRepository, scheduledSmsScheduler),
+                deleteScheduledSmsUseCase = DeleteScheduledSmsUseCase(scheduledSmsRepository, scheduledSmsScheduler),
+                reorderScheduledSmsUseCase = ReorderScheduledSmsUseCase(scheduledSmsRepository),
+                getScheduledSmsHistoryUseCase = GetScheduledSmsHistoryUseCase(scheduledSmsHistoryRepository),
+                deleteAllScheduledSmsHistoryUseCase = DeleteAllScheduledSmsHistoryUseCase(scheduledSmsHistoryRepository),
+                getKeepScheduleHistoryUseCase = GetKeepScheduleHistoryUseCase(settingsRepository),
+                setKeepScheduleHistoryUseCase = SetKeepScheduleHistoryUseCase(settingsRepository),
+                scheduledSmsSender =
+                    ScheduledSmsSender(
+                        getScheduledSmsUseCase = getScheduledSmsUseCase,
+                        recordScheduledSmsHistoryUseCase = recordScheduledSmsHistoryUseCase,
+                        getKeepScheduleHistoryNowUseCase = getKeepScheduleHistoryNowUseCase,
+                        getShowNotificationsNowUseCase = getShowNotificationsNowUseCase,
+                        contactNameResolver = contactNameResolver,
+                        scheduler = scheduledSmsScheduler,
+                    ),
             )
     }
 }
@@ -106,7 +154,10 @@ class SmsRedirectApplication : Application() {
 data class AppContainer(
     val ruleRepository: RuleRepository,
     val forwardHistoryRepository: ForwardHistoryRepository,
+    val scheduledSmsRepository: ScheduledSmsRepository,
+    val scheduledSmsHistoryRepository: ScheduledSmsHistoryRepository,
     val contactNameResolver: ContactNameResolver,
+    val scheduledSmsScheduler: ScheduledSmsScheduler,
     val getRulesUseCase: GetRulesUseCase,
     val getCategoriesUseCase: GetCategoriesUseCase,
     val getRuleUseCase: GetRuleUseCase,
@@ -132,4 +183,16 @@ data class AppContainer(
     val findMatchingRuleUseCase: FindMatchingRuleUseCase,
     val canForwardSmsUseCase: CanForwardSmsUseCase,
     val smsForwarder: SmsForwarder,
+    val getScheduledSmsListUseCase: GetScheduledSmsListUseCase,
+    val getScheduledSmsCategoriesUseCase: GetScheduledSmsCategoriesUseCase,
+    val getScheduledSmsUseCase: GetScheduledSmsUseCase,
+    val addScheduledSmsUseCase: AddScheduledSmsUseCase,
+    val updateScheduledSmsUseCase: UpdateScheduledSmsUseCase,
+    val deleteScheduledSmsUseCase: DeleteScheduledSmsUseCase,
+    val reorderScheduledSmsUseCase: ReorderScheduledSmsUseCase,
+    val getScheduledSmsHistoryUseCase: GetScheduledSmsHistoryUseCase,
+    val deleteAllScheduledSmsHistoryUseCase: DeleteAllScheduledSmsHistoryUseCase,
+    val getKeepScheduleHistoryUseCase: GetKeepScheduleHistoryUseCase,
+    val setKeepScheduleHistoryUseCase: SetKeepScheduleHistoryUseCase,
+    val scheduledSmsSender: ScheduledSmsSender,
 )

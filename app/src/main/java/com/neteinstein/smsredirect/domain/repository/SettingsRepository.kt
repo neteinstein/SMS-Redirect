@@ -32,4 +32,10 @@ interface SettingsRepository {
     suspend fun getShowNotifications(): Boolean
 
     suspend fun setShowNotifications(enabled: Boolean)
+
+    fun observeKeepScheduleHistory(): Flow<Boolean>
+
+    suspend fun getKeepScheduleHistory(): Boolean
+
+    suspend fun setKeepScheduleHistory(enabled: Boolean)
 }
