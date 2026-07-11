@@ -11,9 +11,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -21,7 +25,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -78,47 +81,56 @@ private fun PermissionRow(
     permission: PermissionItem,
     onRequest: () -> Unit,
 ) {
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = permission.label,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = permission.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Spacer(modifier = Modifier.width(8.dp))
-        Button(
-            onClick = onRequest,
-            enabled = !permission.isGranted,
-            colors =
-                if (permission.isGranted) {
-                    ButtonDefaults.buttonColors(
-                        disabledContainerColor = Color(0xFF2E7D32),
-                        disabledContentColor = Color.White,
-                    )
-                } else {
-                    ButtonDefaults.buttonColors()
-                },
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text =
+            Icon(
+                imageVector =
                     if (permission.isGranted) {
-                        stringResource(R.string.permissions_granted)
+                        Icons.Default.CheckCircle
                     } else {
-                        stringResource(R.string.permissions_request)
+                        Icons.Default.RadioButtonUnchecked
                     },
+                contentDescription = null,
+                tint =
+                    if (permission.isGranted) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                modifier = Modifier.padding(end = 12.dp),
             )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = permission.label,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = permission.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = onRequest,
+                enabled = !permission.isGranted,
+            ) {
+                Text(
+                    text =
+                        if (permission.isGranted) {
+                            stringResource(R.string.permissions_granted)
+                        } else {
+                            stringResource(R.string.permissions_request)
+                        },
+                )
+            }
         }
     }
 }
