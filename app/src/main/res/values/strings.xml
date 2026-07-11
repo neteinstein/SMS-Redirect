@@ -35,6 +35,7 @@
     <string name="home_cd_add_rule">Add rule</string>
     <string name="home_no_rules">No rules added yet</string>
     <string name="home_no_rules_illustration_cd">SMS forwarding illustration</string>
+    <string name="home_add_first_rule">Add your first rule</string>
     <string name="home_cd_drag_to_reorder">Drag to reorder</string>
     <string name="home_sender_format">Sender: %1$s</string>
     <string name="home_target_format">Target: %1$s</string>

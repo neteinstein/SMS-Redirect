@@ -1,30 +1,38 @@
 package com.neteinstein.smsredirect.presentation.home
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,6 +54,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -55,6 +66,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.neteinstein.smsredirect.R
 import com.neteinstein.smsredirect.domain.model.Rule
+import com.neteinstein.smsredirect.presentation.theme.CategoryAccentColors
+import com.neteinstein.smsredirect.presentation.theme.Dimens
+import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -130,21 +144,34 @@ fun HomeScreen(
         ) {
             if (rules.isEmpty()) {
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = Dimens.SpaceLarge),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_sms_forward_illustration),
                         contentDescription = stringResource(R.string.home_no_rules_illustration_cd),
-                        modifier = Modifier.size(200.dp),
+                        modifier = Modifier.size(Dimens.IllustrationSize),
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(Dimens.SpaceDefault))
                     Text(
                         text = stringResource(R.string.home_no_rules),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    Spacer(modifier = Modifier.height(Dimens.SpaceLarge))
+                    Button(onClick = onAddRule) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(Dimens.SpaceSmall))
+                        Text(stringResource(R.string.home_add_first_rule))
+                    }
                 }
             } else {
                 val groupedRules =
@@ -183,6 +210,7 @@ fun HomeScreen(
                                     },
                                 ruleCount = categoryRules.size,
                                 isExpanded = isExpanded,
+                                accentColor = categoryAccentColor(category),
                                 onToggle = {
                                     collapsedCategories =
                                         if (isExpanded) {
@@ -214,6 +242,7 @@ fun HomeScreen(
                                     rule = rule,
                                     senderContactName = contactNames[rule.senderText],
                                     targetContactName = contactNames[rule.targetNumber],
+                                    accentColor = categoryAccentColor(category),
                                     onEditRule = onEditRule,
                                     onDeleteRule = { ruleToDelete = it },
                                     modifier =
@@ -275,22 +304,38 @@ private fun CategoryHeader(
     title: String,
     ruleCount: Int,
     isExpanded: Boolean,
+    accentColor: Color,
     onToggle: () -> Unit,
 ) {
+    val rotation by animateFloatAsState(
+        targetValue = if (isExpanded) 180f else 0f,
+        label = "category_chevron_rotation",
+    )
+
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
+                .clip(RoundedCornerShape(Dimens.CardCornerRadius))
+                .background(accentColor.copy(alpha = 0.1f))
                 .clickable { onToggle() }
-                .padding(vertical = 8.dp),
+                .padding(horizontal = Dimens.SpaceMedium, vertical = Dimens.SpaceSmall),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        Box(
+            modifier =
+                Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(accentColor),
+        )
+        Spacer(modifier = Modifier.width(Dimens.SpaceSmall))
         Text(
             text = title,
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(1f),
-            color = MaterialTheme.colorScheme.primary,
+            color = accentColor,
         )
         if (!isExpanded) {
             Text(
@@ -301,7 +346,7 @@ private fun CategoryHeader(
             )
         }
         Icon(
-            imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+            imageVector = Icons.Default.KeyboardArrowDown,
             contentDescription =
                 if (isExpanded) {
                     stringResource(R.string.home_cd_collapse_category)
@@ -309,8 +354,14 @@ private fun CategoryHeader(
                     stringResource(R.string.home_cd_expand_category)
                 },
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.rotate(rotation),
         )
     }
+}
+
+private fun categoryAccentColor(category: String): Color {
+    val index = category.hashCode().absoluteValue % CategoryAccentColors.size
+    return CategoryAccentColors[index]
 }
 
 @Composable
@@ -318,6 +369,7 @@ private fun RuleCard(
     rule: Rule,
     senderContactName: String?,
     targetContactName: String?,
+    accentColor: Color,
     onEditRule: (Long) -> Unit,
     onDeleteRule: (Rule) -> Unit,
     modifier: Modifier = Modifier,
@@ -331,40 +383,60 @@ private fun RuleCard(
         elevation = CardDefaults.cardElevation(defaultElevation = elevation),
     ) {
         Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            Icon(
-                imageVector = Icons.Default.DragHandle,
-                contentDescription = stringResource(R.string.home_cd_drag_to_reorder),
-                modifier = Modifier.padding(end = 12.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            Box(
+                modifier =
+                    Modifier
+                        .width(Dimens.CategoryAccentWidth)
+                        .fillMaxHeight()
+                        .background(accentColor),
             )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    rule.name.ifBlank {
-                        stringResource(R.string.rule_default_name_format, rule.id)
-                    },
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-                val senderDisplay = buildSenderTargetDisplay(rule.senderText, senderContactName)
-                Text(
-                    stringResource(R.string.home_sender_format, senderDisplay),
-                )
-                val targetDisplay = buildSenderTargetDisplay(rule.targetNumber, targetContactName)
-                Text(
-                    stringResource(R.string.home_target_format, targetDisplay),
-                )
-            }
-            IconButton(onClick = { onDeleteRule(rule) }) {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.home_cd_delete_rule),
+                    imageVector = Icons.Default.Folder,
+                    contentDescription = null,
+                    modifier =
+                        Modifier
+                            .padding(end = 12.dp)
+                            .size(28.dp),
+                    tint = accentColor,
                 )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        rule.name.ifBlank {
+                            stringResource(R.string.rule_default_name_format, rule.id)
+                        },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    val senderDisplay = buildSenderTargetDisplay(rule.senderText, senderContactName)
+                    Text(
+                        stringResource(R.string.home_sender_format, senderDisplay),
+                    )
+                    val targetDisplay = buildSenderTargetDisplay(rule.targetNumber, targetContactName)
+                    Text(
+                        stringResource(R.string.home_target_format, targetDisplay),
+                    )
+                }
+                Icon(
+                    imageVector = Icons.Default.DragHandle,
+                    contentDescription = stringResource(R.string.home_cd_drag_to_reorder),
+                    modifier = Modifier.padding(start = 4.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                IconButton(onClick = { onDeleteRule(rule) }) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.home_cd_delete_rule),
+                    )
+                }
             }
         }
     }

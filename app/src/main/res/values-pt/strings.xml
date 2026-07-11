@@ -17,6 +17,7 @@
     <string name="home_cd_history">Histórico</string>
     <string name="home_cd_add_rule">Adicionar regra</string>
     <string name="home_no_rules">Ainda não existem regras. Adicione uma para começar.</string>
+    <string name="home_add_first_rule">Adicionar a primeira regra</string>
     <string name="home_cd_drag_to_reorder">Arrastar para reordenar</string>
     <string name="home_sender_format">Remetente: %1$s</string>
     <string name="home_target_format">Destino: %1$s</string>
