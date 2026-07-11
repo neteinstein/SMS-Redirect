@@ -7,11 +7,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.SignalCellularAlt
+import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.neteinstein.smsredirect.R
@@ -85,12 +92,14 @@ fun SettingsScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             SettingSwitchRow(
+                icon = Icons.Default.SignalCellularAlt,
                 title = stringResource(R.string.settings_send_while_roaming),
                 checked = sendWhileRoaming,
                 onCheckedChange = onSendWhileRoamingChanged,
             )
 
             SettingSwitchRow(
+                icon = Icons.Default.NotificationsActive,
                 title = stringResource(R.string.settings_show_notifications),
                 checked = showNotifications,
                 onCheckedChange = onShowNotificationsChanged,
@@ -119,13 +128,29 @@ fun SettingsScreen(
                     onClick = onExportRules,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text(stringResource(R.string.settings_export_rules))
+                    Icon(
+                        imageVector = Icons.Default.CloudUpload,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_export_rules),
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
                 }
                 Button(
                     onClick = onImportRules,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text(stringResource(R.string.settings_import_rules))
+                    Icon(
+                        imageVector = Icons.Default.CloudDownload,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_import_rules),
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
                 }
             }
         }
@@ -152,6 +177,9 @@ private fun ForwardPrefixRow(
             value = text,
             onValueChange = { text = it },
             label = { Text(stringResource(R.string.settings_forward_prefix_label)) },
+            leadingIcon = {
+                Icon(imageVector = Icons.Default.Tag, contentDescription = null)
+            },
             singleLine = true,
             modifier = Modifier.weight(1f),
         )
@@ -257,6 +285,7 @@ private fun LanguageRow(
 
 @Composable
 private fun SettingSwitchRow(
+    icon: ImageVector,
     title: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
@@ -269,7 +298,17 @@ private fun SettingSwitchRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = title,
+                modifier = Modifier.padding(start = 16.dp),
+            )
+        }
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,

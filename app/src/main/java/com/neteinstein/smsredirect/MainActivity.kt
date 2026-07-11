@@ -18,6 +18,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -154,7 +157,14 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                NavHost(navController = navController, startDestination = Routes.Splash) {
+                NavHost(
+                    navController = navController,
+                    startDestination = Routes.Splash,
+                    enterTransition = { fadeIn(animationSpec = tween(220)) },
+                    exitTransition = { fadeOut(animationSpec = tween(220)) },
+                    popEnterTransition = { fadeIn(animationSpec = tween(220)) },
+                    popExitTransition = { fadeOut(animationSpec = tween(220)) },
+                ) {
                     composable(Routes.Splash) {
                         SplashScreen()
                         LaunchedEffect(Unit) {
