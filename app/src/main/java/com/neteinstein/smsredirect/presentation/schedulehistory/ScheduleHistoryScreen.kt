@@ -3,13 +3,18 @@ package com.neteinstein.smsredirect.presentation.schedulehistory
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -106,7 +111,17 @@ fun ScheduleHistoryScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Text(stringResource(R.string.schedule_history_no_items))
+                    Icon(
+                        imageVector = Icons.Default.History,
+                        contentDescription = null,
+                        modifier = Modifier.size(56.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(R.string.schedule_history_no_items),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             } else {
                 LazyColumn(
@@ -134,35 +149,45 @@ private fun ScheduledSmsHistoryCard(
     contactName: String?,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            val contactDisplay =
-                if (item.contactNumber.isBlank()) {
-                    stringResource(R.string.schedule_history_unknown_contact)
-                } else if (contactName != null) {
-                    "$contactName (${item.contactNumber})"
-                } else {
-                    item.contactNumber
-                }
-            Text(
-                text = stringResource(R.string.schedule_history_contact_format, contactDisplay),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
+        Row(modifier = Modifier.padding(12.dp)) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.Send,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(end = 12.dp),
             )
-            Text(
-                text = DateFormat.getDateTimeInstance().format(Date(item.sentAtEpochMs)),
-                style = MaterialTheme.typography.bodySmall,
-            )
-            if (item.scheduledSmsName.isNotBlank()) {
+            Column(modifier = Modifier.weight(1f)) {
+                val contactDisplay =
+                    if (item.contactNumber.isBlank()) {
+                        stringResource(R.string.schedule_history_unknown_contact)
+                    } else if (contactName != null) {
+                        "$contactName (${item.contactNumber})"
+                    } else {
+                        item.contactNumber
+                    }
                 Text(
-                    text = stringResource(R.string.schedule_history_name_format, item.scheduledSmsName),
+                    text = stringResource(R.string.schedule_history_contact_format, contactDisplay),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = DateFormat.getDateTimeInstance().format(Date(item.sentAtEpochMs)),
                     style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (item.scheduledSmsName.isNotBlank()) {
+                    Text(
+                        text = stringResource(R.string.schedule_history_name_format, item.scheduledSmsName),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Text(
+                    text = item.messageBody,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
-            Text(
-                text = item.messageBody,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 4.dp),
-            )
         }
     }
 }

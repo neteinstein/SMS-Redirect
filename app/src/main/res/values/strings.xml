@@ -109,6 +109,7 @@
     <string name="schedule_cd_settings">Settings</string>
     <string name="schedule_cd_add">Add scheduled SMS</string>
     <string name="schedule_no_items">No scheduled SMS added yet</string>
+    <string name="schedule_add_first_item">Add your first scheduled SMS</string>
     <string name="schedule_no_items_illustration_cd">SMS scheduling illustration</string>
     <string name="schedule_category_uncategorized">Uncategorized</string>
     <string name="schedule_category_item_count">%1$d items</string>
