@@ -69,6 +69,7 @@ fun HomeScreen(
     onDeleteRule: (Rule) -> Unit,
     onMoveRule: (Int, Int) -> Unit,
     onDragEnd: () -> Unit,
+    bottomBar: @Composable () -> Unit = {},
 ) {
     var ruleToDelete by remember { mutableStateOf<Rule?>(null) }
 
@@ -121,6 +122,7 @@ fun HomeScreen(
                 )
             }
         },
+        bottomBar = bottomBar,
     ) { padding ->
         Column(
             modifier =
