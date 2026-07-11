@@ -1,5 +1,6 @@
 <resources>
-    <string name="app_name">SMS Redirect</string>
+    <string name="app_name">SMS Redirect &amp; Schedule</string>
+    <string name="splash_subtitle">Redirect and schedule your SMS messages</string>
     <string name="battery_optimization_title">Disable battery optimization</string>
     <string name="battery_optimization_message">To keep SMS forwarding reliable, disable battery optimization for this app.</string>
     <string name="notification_access_title">Enable notification access</string>
@@ -92,4 +93,61 @@
     <string name="settings_history_sender_target_format">%1$s → %2$s</string>
     <string name="settings_history_rule_format">Rule: %1$s</string>
     <string name="settings_history_unknown_sender">Unknown sender</string>
+
+    <string name="main_tab_redirect">Redirect</string>
+    <string name="main_tab_schedule">Schedule</string>
+
+    <string name="repeat_type_none">None</string>
+    <string name="repeat_type_daily">Daily</string>
+    <string name="repeat_type_work_week_days">Work week days</string>
+    <string name="repeat_type_biweekly">Bi-weekly</string>
+    <string name="repeat_type_monthly">Monthly</string>
+    <string name="repeat_type_yearly">Yearly</string>
+
+    <string name="schedule_title_list">Scheduled SMS Rules</string>
+    <string name="schedule_cd_history">History</string>
+    <string name="schedule_cd_settings">Settings</string>
+    <string name="schedule_cd_add">Add scheduled SMS</string>
+    <string name="schedule_no_items">No scheduled SMS added yet</string>
+    <string name="schedule_no_items_illustration_cd">SMS scheduling illustration</string>
+    <string name="schedule_category_uncategorized">Uncategorized</string>
+    <string name="schedule_category_item_count">%1$d items</string>
+    <string name="schedule_delete_dialog_title">Delete scheduled SMS</string>
+    <string name="schedule_delete_dialog_message">Are you sure you want to delete \"%1$s\"?</string>
+    <string name="schedule_default_name_format">Scheduled SMS #%1$d</string>
+    <string name="schedule_contact_format">Contact: %1$s</string>
+    <string name="schedule_next_send_format">Next send: %1$s</string>
+    <string name="schedule_repeat_format">Repeat: %1$s</string>
+    <string name="schedule_cd_delete">Delete</string>
+
+    <string name="schedule_form_title_create">Create Schedule SMS</string>
+    <string name="schedule_form_title_edit">Edit Schedule SMS</string>
+    <string name="schedule_form_label_name">Scheduled SMS Name</string>
+    <string name="schedule_form_placeholder_name_optional">Optional - auto-generated if empty</string>
+    <string name="schedule_form_label_category">Category</string>
+    <string name="schedule_form_placeholder_category">Optional - type or select existing</string>
+    <string name="schedule_form_label_contact">Contact</string>
+    <string name="schedule_form_cd_pick_contact">Pick contact from contacts</string>
+    <string name="schedule_form_label_message">Message</string>
+    <string name="schedule_form_placeholder_message">Type the SMS message to send</string>
+    <string name="schedule_form_label_date">Date</string>
+    <string name="schedule_form_date_placeholder">Pick a date</string>
+    <string name="schedule_form_label_time">Time</string>
+    <string name="schedule_form_time_placeholder">Pick a time</string>
+    <string name="schedule_form_pick_time_title">Select time</string>
+    <string name="schedule_form_label_repeat">Repeat</string>
+    <string name="schedule_form_label_stop_at">Stop at</string>
+    <string name="schedule_form_stop_at_placeholder">Pick a stop date</string>
+    <string name="schedule_form_cd_clear_stop_at">Clear stop date</string>
+    <string name="schedule_form_action_save">Save Scheduled SMS</string>
+    <string name="schedule_error_invalid_contact">Contact must be a valid phone number (digits, +, spaces, dashes allowed)</string>
+    <string name="schedule_error_missing_message">Message is required</string>
+    <string name="schedule_error_missing_date">Date is required</string>
+
+    <string name="schedule_history_title">Scheduled SMS History</string>
+    <string name="schedule_history_keep_history">Keep schedule history</string>
+    <string name="schedule_history_no_items">No scheduled SMS sent yet</string>
+    <string name="schedule_history_contact_format">To: %1$s</string>
+    <string name="schedule_history_name_format">Schedule: %1$s</string>
+    <string name="schedule_history_unknown_contact">Unknown contact</string>
 </resources>

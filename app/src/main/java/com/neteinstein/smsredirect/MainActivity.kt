@@ -24,6 +24,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -50,12 +51,23 @@ import com.neteinstein.smsredirect.presentation.history.HistoryViewModelFactory
 import com.neteinstein.smsredirect.presentation.home.HomeScreen
 import com.neteinstein.smsredirect.presentation.home.HomeViewModel
 import com.neteinstein.smsredirect.presentation.home.HomeViewModelFactory
+import com.neteinstein.smsredirect.presentation.navigation.MainBottomBar
+import com.neteinstein.smsredirect.presentation.navigation.MainTab
 import com.neteinstein.smsredirect.presentation.navigation.Routes
 import com.neteinstein.smsredirect.presentation.permissions.PermissionItem
 import com.neteinstein.smsredirect.presentation.permissions.PermissionsScreen
 import com.neteinstein.smsredirect.presentation.rule.RuleScreen
 import com.neteinstein.smsredirect.presentation.rule.RuleViewModel
 import com.neteinstein.smsredirect.presentation.rule.RuleViewModelFactory
+import com.neteinstein.smsredirect.presentation.schedule.ScheduleFormScreen
+import com.neteinstein.smsredirect.presentation.schedule.ScheduleFormViewModel
+import com.neteinstein.smsredirect.presentation.schedule.ScheduleFormViewModelFactory
+import com.neteinstein.smsredirect.presentation.schedule.ScheduleListScreen
+import com.neteinstein.smsredirect.presentation.schedule.ScheduleListViewModel
+import com.neteinstein.smsredirect.presentation.schedule.ScheduleListViewModelFactory
+import com.neteinstein.smsredirect.presentation.schedulehistory.ScheduleHistoryScreen
+import com.neteinstein.smsredirect.presentation.schedulehistory.ScheduleHistoryViewModel
+import com.neteinstein.smsredirect.presentation.schedulehistory.ScheduleHistoryViewModelFactory
 import com.neteinstein.smsredirect.presentation.settings.SettingsScreen
 import com.neteinstein.smsredirect.presentation.settings.SettingsViewModel
 import com.neteinstein.smsredirect.presentation.settings.SettingsViewModelFactory
@@ -91,8 +103,9 @@ class MainActivity : ComponentActivity() {
 
                 LaunchedEffect(Unit) {
                     newIntentFlow.collectLatest { intent ->
-                        if (intent != null && isHistoryDeepLink(intent)) {
-                            navController.navigate(Routes.History) {
+                        val deepLinkRoute = resolveDeepLinkRoute(intent)
+                        if (deepLinkRoute != null) {
+                            navController.navigate(deepLinkRoute) {
                                 popUpTo(Routes.Home) { inclusive = false }
                             }
                             newIntentFlow.value = null
@@ -161,8 +174,8 @@ class MainActivity : ComponentActivity() {
                             navController.navigate(destination) {
                                 popUpTo(Routes.Splash) { inclusive = true }
                             }
-                            if (destination == Routes.Home && isHistoryDeepLink(intent)) {
-                                navController.navigate(Routes.History)
+                            if (destination == Routes.Home) {
+                                resolveDeepLinkRoute(intent)?.let { navController.navigate(it) }
                             }
                         }
                     }
@@ -219,29 +232,69 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable(Routes.Home) {
-                        val homeViewModel: HomeViewModel =
-                            viewModel(
-                                factory =
-                                    HomeViewModelFactory(
-                                        appContainer.getRulesUseCase,
-                                        appContainer.deleteRuleUseCase,
-                                        appContainer.reorderRulesUseCase,
-                                        appContainer.contactNameResolver,
-                                    ),
+                        var selectedTab by remember { mutableStateOf(MainTab.REDIRECT) }
+                        val bottomBar: @Composable () -> Unit = {
+                            MainBottomBar(
+                                selectedTab = selectedTab,
+                                onTabSelected = { selectedTab = it },
                             )
-                        val rules by homeViewModel.rules.collectAsState()
-                        val contactNames by homeViewModel.contactNames.collectAsState()
-                        HomeScreen(
-                            rules = rules,
-                            contactNames = contactNames,
-                            onAddRule = { navController.navigate(Routes.ruleRoute()) },
-                            onOpenHistory = { navController.navigate(Routes.History) },
-                            onOpenSettings = { navController.navigate(Routes.Settings) },
-                            onEditRule = { navController.navigate(Routes.ruleRoute(it)) },
-                            onDeleteRule = homeViewModel::deleteRule,
-                            onMoveRule = homeViewModel::moveRule,
-                            onDragEnd = homeViewModel::commitReorder,
-                        )
+                        }
+
+                        when (selectedTab) {
+                            MainTab.REDIRECT -> {
+                                val homeViewModel: HomeViewModel =
+                                    viewModel(
+                                        factory =
+                                            HomeViewModelFactory(
+                                                appContainer.getRulesUseCase,
+                                                appContainer.deleteRuleUseCase,
+                                                appContainer.reorderRulesUseCase,
+                                                appContainer.contactNameResolver,
+                                            ),
+                                    )
+                                val rules by homeViewModel.rules.collectAsState()
+                                val contactNames by homeViewModel.contactNames.collectAsState()
+                                HomeScreen(
+                                    rules = rules,
+                                    contactNames = contactNames,
+                                    onAddRule = { navController.navigate(Routes.ruleRoute()) },
+                                    onOpenHistory = { navController.navigate(Routes.History) },
+                                    onOpenSettings = { navController.navigate(Routes.Settings) },
+                                    onEditRule = { navController.navigate(Routes.ruleRoute(it)) },
+                                    onDeleteRule = homeViewModel::deleteRule,
+                                    onMoveRule = homeViewModel::moveRule,
+                                    onDragEnd = homeViewModel::commitReorder,
+                                    bottomBar = bottomBar,
+                                )
+                            }
+
+                            MainTab.SCHEDULE -> {
+                                val scheduleListViewModel: ScheduleListViewModel =
+                                    viewModel(
+                                        factory =
+                                            ScheduleListViewModelFactory(
+                                                appContainer.getScheduledSmsListUseCase,
+                                                appContainer.deleteScheduledSmsUseCase,
+                                                appContainer.reorderScheduledSmsUseCase,
+                                                appContainer.contactNameResolver,
+                                            ),
+                                    )
+                                val scheduledSmsList by scheduleListViewModel.scheduledSmsList.collectAsState()
+                                val contactNames by scheduleListViewModel.contactNames.collectAsState()
+                                ScheduleListScreen(
+                                    scheduledSmsList = scheduledSmsList,
+                                    contactNames = contactNames,
+                                    onAddScheduledSms = { navController.navigate(Routes.scheduleRoute()) },
+                                    onOpenHistory = { navController.navigate(Routes.ScheduleHistory) },
+                                    onOpenSettings = { navController.navigate(Routes.Settings) },
+                                    onEditScheduledSms = { navController.navigate(Routes.scheduleRoute(it)) },
+                                    onDeleteScheduledSms = scheduleListViewModel::deleteScheduledSms,
+                                    onMoveScheduledSms = scheduleListViewModel::moveScheduledSms,
+                                    onDragEnd = scheduleListViewModel::commitReorder,
+                                    bottomBar = bottomBar,
+                                )
+                            }
+                        }
                     }
 
                     composable(Routes.Settings) {
@@ -393,6 +446,36 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable(
+                        route = Routes.ScheduleHistory,
+                    ) {
+                        val scheduleHistoryViewModel: ScheduleHistoryViewModel =
+                            viewModel(
+                                factory =
+                                    ScheduleHistoryViewModelFactory(
+                                        appContainer.getScheduledSmsHistoryUseCase,
+                                        appContainer.getKeepScheduleHistoryUseCase,
+                                        appContainer.setKeepScheduleHistoryUseCase,
+                                        appContainer.deleteAllScheduledSmsHistoryUseCase,
+                                        appContainer.contactNameResolver,
+                                    ),
+                            )
+                        val scheduledSmsHistory by scheduleHistoryViewModel.scheduledSmsHistory.collectAsState()
+                        val contactNames by scheduleHistoryViewModel.contactNames.collectAsState()
+                        val keepScheduleHistory by scheduleHistoryViewModel.keepScheduleHistory.collectAsState()
+                        val showDisableConfirmation by scheduleHistoryViewModel.showDisableConfirmation.collectAsState()
+                        ScheduleHistoryScreen(
+                            scheduledSmsHistory = scheduledSmsHistory,
+                            contactNames = contactNames,
+                            keepScheduleHistory = keepScheduleHistory,
+                            showDisableConfirmation = showDisableConfirmation,
+                            onKeepScheduleHistoryChanged = scheduleHistoryViewModel::onKeepScheduleHistoryToggled,
+                            onConfirmDisable = scheduleHistoryViewModel::confirmDisableHistory,
+                            onDismissDisable = scheduleHistoryViewModel::dismissDisableConfirmation,
+                            onBack = { navController.popBackStack() },
+                        )
+                    }
+
+                    composable(
                         route = Routes.RuleWithArg,
                         arguments =
                             listOf(
@@ -507,6 +590,99 @@ class MainActivity : ComponentActivity() {
                                 ruleViewModel.saveRule(
                                     invalidTargetError = getString(R.string.rule_error_invalid_target),
                                     duplicateRuleError = getString(R.string.rule_error_duplicate),
+                                )
+                            },
+                            onBack = { navController.popBackStack() },
+                        )
+                    }
+
+                    composable(
+                        route = Routes.ScheduleWithArg,
+                        arguments =
+                            listOf(
+                                navArgument(Routes.ScheduleIdArg) {
+                                    type = NavType.LongType
+                                    defaultValue = 0L
+                                },
+                            ),
+                    ) { backStackEntry ->
+                        val scheduleId = backStackEntry.arguments?.getLong(Routes.ScheduleIdArg) ?: 0L
+                        val scheduleFormViewModel: ScheduleFormViewModel =
+                            viewModel(
+                                factory =
+                                    ScheduleFormViewModelFactory(
+                                        appContainer.getScheduledSmsUseCase,
+                                        appContainer.addScheduledSmsUseCase,
+                                        appContainer.updateScheduledSmsUseCase,
+                                        appContainer.getScheduledSmsCategoriesUseCase,
+                                        appContainer.scheduledSmsRepository,
+                                        appContainer.getDefaultPrefixNowUseCase,
+                                        appContainer.contactNameResolver,
+                                        defaultScheduledSmsNameProvider = { index ->
+                                            getString(R.string.schedule_default_name_format, index)
+                                        },
+                                    ),
+                            )
+
+                        val uiState by scheduleFormViewModel.uiState.collectAsState()
+
+                        val pickContactLauncher =
+                            rememberLauncherForActivityResult(
+                                contract = ActivityResultContracts.PickContact(),
+                            ) { uri ->
+                                if (uri != null) {
+                                    val contact = resolveContact(uri)
+                                    if (contact != null && contact.first.isNotBlank()) {
+                                        scheduleFormViewModel.onContactPicked(contact.first, contact.second)
+                                    }
+                                }
+                            }
+
+                        val requestContactsPermissionLauncher =
+                            rememberLauncherForActivityResult(
+                                contract = ActivityResultContracts.RequestPermission(),
+                            ) { granted ->
+                                if (granted) {
+                                    pickContactLauncher.launch(null)
+                                }
+                            }
+
+                        LaunchedEffect(scheduleId) {
+                            scheduleFormViewModel.loadScheduledSms(scheduleId)
+                        }
+
+                        LaunchedEffect(uiState.saved) {
+                            if (uiState.saved) {
+                                scheduleFormViewModel.clearSavedFlag()
+                                navController.popBackStack()
+                            }
+                        }
+
+                        ScheduleFormScreen(
+                            uiState = uiState,
+                            onNameChanged = scheduleFormViewModel::onNameChanged,
+                            onCategoryChanged = scheduleFormViewModel::onCategoryChanged,
+                            onContactChanged = scheduleFormViewModel::onContactChanged,
+                            onPickContact = {
+                                if (ContextCompat.checkSelfPermission(
+                                        this@MainActivity,
+                                        Manifest.permission.READ_CONTACTS,
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                ) {
+                                    pickContactLauncher.launch(null)
+                                } else {
+                                    requestContactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                                }
+                            },
+                            onMessageChanged = scheduleFormViewModel::onMessageChanged,
+                            onDateSelected = scheduleFormViewModel::onDateSelected,
+                            onRepeatTypeChanged = scheduleFormViewModel::onRepeatTypeChanged,
+                            onStopAtSelected = scheduleFormViewModel::onStopAtSelected,
+                            onSave = {
+                                scheduleFormViewModel.saveScheduledSms(
+                                    invalidContactError = getString(R.string.schedule_error_invalid_contact),
+                                    missingMessageError = getString(R.string.schedule_error_missing_message),
+                                    missingDateError = getString(R.string.schedule_error_missing_date),
                                 )
                             },
                             onBack = { navController.popBackStack() },
@@ -747,9 +923,14 @@ class MainActivity : ComponentActivity() {
         notificationManager.cancelAll()
     }
 
-    private fun isHistoryDeepLink(intent: Intent?): Boolean {
-        val uri = intent?.data ?: return false
-        return uri.scheme == "smsredirect" && uri.host == "app" && uri.path == "/${Routes.History}"
+    private fun resolveDeepLinkRoute(intent: Intent?): String? {
+        val uri = intent?.data ?: return null
+        if (uri.scheme != "smsredirect" || uri.host != "app") return null
+        return when (uri.path) {
+            "/${Routes.History}" -> Routes.History
+            "/${Routes.ScheduleHistory}" -> Routes.ScheduleHistory
+            else -> null
+        }
     }
 
     companion object {
