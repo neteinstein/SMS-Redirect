@@ -11,26 +11,26 @@
 
     <!-- Left phone screen -->
     <path
-        android:fillColor="#BBDEFB"
+        android:fillColor="#D3E3FD"
         android:pathData="M27,25 L63,25 L63,90 L27,90 Z" />
 
     <!-- Left phone SMS icon -->
     <path
-        android:fillColor="#1976D2"
+        android:fillColor="#1A73E8"
         android:pathData="M35,45 L55,45 C56.5,45 58,46.5 58,48 L58,62 C58,63.5 56.5,65 55,65 L35,65 C33.5,65 32,63.5 32,62 L32,48 C32,46.5 33.5,45 35,45 Z" />
     <!-- SMS envelope flap -->
     <path
-        android:fillColor="#1565C0"
+        android:fillColor="#185ABC"
         android:pathData="M32,48 L45,56 L58,48" />
 
     <!-- Arrow -->
     <path
-        android:fillColor="#4CAF50"
+        android:fillColor="#34A853"
         android:pathData="M80,58 L115,58"
         android:strokeWidth="3"
-        android:strokeColor="#4CAF50" />
+        android:strokeColor="#34A853" />
     <path
-        android:fillColor="#4CAF50"
+        android:fillColor="#34A853"
         android:pathData="M110,52 L118,58 L110,64 Z" />
 
     <!-- Right phone body -->
@@ -40,16 +40,16 @@
 
     <!-- Right phone screen -->
     <path
-        android:fillColor="#C8E6C9"
+        android:fillColor="#CEEAD6"
         android:pathData="M137,25 L173,25 L173,90 L137,90 Z" />
 
     <!-- Right phone SMS icon -->
     <path
-        android:fillColor="#388E3C"
+        android:fillColor="#34A853"
         android:pathData="M145,45 L165,45 C166.5,45 168,46.5 168,48 L168,62 C168,63.5 166.5,65 165,65 L145,65 C143.5,65 142,63.5 142,62 L142,48 C142,46.5 143.5,45 145,45 Z" />
     <!-- SMS envelope flap -->
     <path
-        android:fillColor="#2E7D32"
+        android:fillColor="#188038"
         android:pathData="M142,48 L155,56 L168,48" />
 
 </vector>
