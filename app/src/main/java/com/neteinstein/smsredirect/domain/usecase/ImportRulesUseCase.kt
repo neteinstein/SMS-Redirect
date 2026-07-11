@@ -1,11 +1,15 @@
 package com.neteinstein.smsredirect.domain.usecase
 
+import com.neteinstein.smsredirect.domain.analytics.AnalyticsEvents
+import com.neteinstein.smsredirect.domain.analytics.AnalyticsTracker
+import com.neteinstein.smsredirect.domain.analytics.NoOpAnalyticsTracker
 import com.neteinstein.smsredirect.domain.model.Rule
 import com.neteinstein.smsredirect.domain.repository.RuleRepository
 import org.json.JSONArray
 
 class ImportRulesUseCase(
     private val repository: RuleRepository,
+    private val analyticsTracker: AnalyticsTracker = NoOpAnalyticsTracker,
 ) {
     suspend operator fun invoke(json: String): Int {
         val jsonArray = JSONArray(json)
@@ -38,6 +42,10 @@ class ImportRulesUseCase(
             }
         }
 
+        analyticsTracker.logEvent(
+            AnalyticsEvents.RULES_IMPORTED,
+            mapOf(AnalyticsEvents.Param.RULE_COUNT to importedCount),
+        )
         return importedCount
     }
 }

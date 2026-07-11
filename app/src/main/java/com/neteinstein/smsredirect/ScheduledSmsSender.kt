@@ -12,6 +12,11 @@ import android.telephony.SmsManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.neteinstein.smsredirect.domain.analytics.AnalyticsEvents
+import com.neteinstein.smsredirect.domain.analytics.AnalyticsTracker
+import com.neteinstein.smsredirect.domain.analytics.CrashReporter
+import com.neteinstein.smsredirect.domain.analytics.NoOpAnalyticsTracker
+import com.neteinstein.smsredirect.domain.analytics.NoOpCrashReporter
 import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
 import com.neteinstein.smsredirect.domain.model.RepeatType
 import com.neteinstein.smsredirect.domain.model.ScheduledSms
@@ -30,6 +35,8 @@ class ScheduledSmsSender(
     private val getShowNotificationsNowUseCase: GetShowNotificationsNowUseCase,
     private val contactNameResolver: ContactNameResolver,
     private val scheduler: ScheduledSmsScheduler,
+    private val analyticsTracker: AnalyticsTracker = NoOpAnalyticsTracker,
+    private val crashReporter: CrashReporter = NoOpCrashReporter,
 ) {
     companion object {
         private const val TAG = "ScheduledSmsSender"
@@ -74,6 +81,13 @@ class ScheduledSmsSender(
                 smsManager.sendMultipartTextMessage(scheduledSms.contactNumber, null, parts, null, null)
             }
             Log.i(TAG, "Scheduled SMS sent successfully to '${scheduledSms.contactNumber}'")
+            analyticsTracker.logEvent(
+                AnalyticsEvents.SCHEDULED_SMS_SENT,
+                mapOf(
+                    AnalyticsEvents.Param.SUCCESS to true,
+                    AnalyticsEvents.Param.REPEAT_TYPE to scheduledSms.repeatType.name,
+                ),
+            )
 
             val contactDisplay = buildContactDisplay(scheduledSms.contactNumber)
 
@@ -94,6 +108,14 @@ class ScheduledSmsSender(
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to send scheduled SMS to '${scheduledSms.contactNumber}'", e)
+            crashReporter.recordException(e)
+            analyticsTracker.logEvent(
+                AnalyticsEvents.SCHEDULED_SMS_SENT,
+                mapOf(
+                    AnalyticsEvents.Param.SUCCESS to false,
+                    AnalyticsEvents.Param.REPEAT_TYPE to scheduledSms.repeatType.name,
+                ),
+            )
         }
 
         scheduleNextIfNeeded(scheduledSms)

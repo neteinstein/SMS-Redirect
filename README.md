@@ -174,6 +174,38 @@ sms send 5551234 "This is a test message"
 ./gradlew test
 ```
 
+## Firebase (Crashlytics, Analytics & Performance)
+
+The app integrates [Firebase](https://firebase.google.com/) for:
+
+- **Crashlytics** — automatic crash reporting, plus non-fatal exception
+  reporting for forwarding/sending failures.
+- **Analytics** — anonymous, aggregate usage events for relevant app actions
+  (e.g. a rule was created/updated/deleted, an SMS was forwarded, a scheduled
+  SMS was sent, a setting was toggled). **No personal data is ever logged**
+  (no phone numbers, contact names, or message contents) — see
+  `domain/analytics/AnalyticsEvents.kt` for the full event catalog.
+- **Performance Monitoring** — automatic app-start/rendering traces provided
+  out of the box by the Firebase Performance SDK.
+
+### Setup
+
+The repository ships with a placeholder `app/google-services.json` so the
+project builds out of the box, but it does **not** point at a real Firebase
+project — Crashlytics/Analytics/Performance data won't be delivered anywhere
+useful until you replace it:
+
+1. Create a Firebase project at the [Firebase console](https://console.firebase.google.com/).
+2. Add an Android app with package name `com.neteinstein.smsredirect`.
+3. Download the generated `google-services.json` and replace
+   `app/google-services.json` with it.
+4. Rebuild the app — Crashlytics, Analytics and Performance start reporting
+   automatically.
+
+The analytics/crash abstractions (`domain/analytics/AnalyticsTracker.kt` and
+`domain/analytics/CrashReporter.kt`) decouple the rest of the app from
+Firebase, so the backend could be swapped without touching call sites.
+
 ## Architecture
 
 See [Architecture.md](Architecture.md) for detailed system design documentation including the message capture pipeline, rule matching logic, data layer, and dependency wiring.
@@ -186,6 +218,7 @@ See [Architecture.md](Architecture.md) for detailed system design documentation 
 - **Navigation:** Jetpack Navigation Compose
 - **Database:** Room (SQLite)
 - **Background work:** WorkManager (expedited)
+- **Analytics/Crash reporting/Performance:** Firebase (Analytics, Crashlytics, Performance Monitoring)
 - **Architecture:** MVVM + Clean Architecture (Use Cases / Repository pattern)
 - **DI:** Manual (AppContainer)
 - **Min SDK:** 35 (Android 15)
