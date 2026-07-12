@@ -23,7 +23,7 @@ import com.neteinstein.smsredirect.domain.usecase.DeleteAllHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteAllScheduledSmsHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteScheduledSmsUseCase
-import com.neteinstein.smsredirect.domain.usecase.ExportRulesUseCase
+import com.neteinstein.smsredirect.domain.usecase.ExportBackupUseCase
 import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetCategoriesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixNowUseCase
@@ -44,7 +44,7 @@ import com.neteinstein.smsredirect.domain.usecase.GetScheduledSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsUseCase
-import com.neteinstein.smsredirect.domain.usecase.ImportRulesUseCase
+import com.neteinstein.smsredirect.domain.usecase.ImportBackupUseCase
 import com.neteinstein.smsredirect.domain.usecase.RecordForwardHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.RecordScheduledSmsHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.ReorderRulesUseCase
@@ -100,8 +100,9 @@ class SmsRedirectApplication : Application() {
                 updateRuleUseCase = UpdateRuleUseCase(repository),
                 deleteRuleUseCase = DeleteRuleUseCase(repository),
                 reorderRulesUseCase = ReorderRulesUseCase(repository),
-                exportRulesUseCase = ExportRulesUseCase(repository),
-                importRulesUseCase = ImportRulesUseCase(repository),
+                exportBackupUseCase = ExportBackupUseCase(repository, scheduledSmsRepository, settingsRepository),
+                importBackupUseCase =
+                    ImportBackupUseCase(repository, scheduledSmsRepository, settingsRepository, scheduledSmsScheduler),
                 getSendWhileRoamingUseCase = GetSendWhileRoamingUseCase(settingsRepository),
                 setSendWhileRoamingUseCase = SetSendWhileRoamingUseCase(settingsRepository),
                 getKeepHistoryUseCase = GetKeepHistoryUseCase(settingsRepository),
@@ -165,8 +166,8 @@ data class AppContainer(
     val updateRuleUseCase: UpdateRuleUseCase,
     val deleteRuleUseCase: DeleteRuleUseCase,
     val reorderRulesUseCase: ReorderRulesUseCase,
-    val exportRulesUseCase: ExportRulesUseCase,
-    val importRulesUseCase: ImportRulesUseCase,
+    val exportBackupUseCase: ExportBackupUseCase,
+    val importBackupUseCase: ImportBackupUseCase,
     val getSendWhileRoamingUseCase: GetSendWhileRoamingUseCase,
     val setSendWhileRoamingUseCase: SetSendWhileRoamingUseCase,
     val getKeepHistoryUseCase: GetKeepHistoryUseCase,
