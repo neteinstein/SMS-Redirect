@@ -53,4 +53,13 @@ class SettingsRepositoryImpl(
         val current = dao.getSettings() ?: AppSettingsEntity()
         dao.upsert(current.copy(showNotifications = enabled))
     }
+
+    override fun observeKeepScheduleHistory(): Flow<Boolean> = dao.observeSettings().map { it?.keepScheduleHistory ?: true }
+
+    override suspend fun getKeepScheduleHistory(): Boolean = dao.getSettings()?.keepScheduleHistory ?: true
+
+    override suspend fun setKeepScheduleHistory(enabled: Boolean) {
+        val current = dao.getSettings() ?: AppSettingsEntity()
+        dao.upsert(current.copy(keepScheduleHistory = enabled))
+    }
 }

@@ -9,6 +9,7 @@ class FakeSettingsRepository(
 ) : SettingsRepository {
     private val sendWhileRoamingState = MutableStateFlow(initial)
     private val keepHistoryState = MutableStateFlow(true)
+    private val keepScheduleHistoryState = MutableStateFlow(true)
     private val defaultPrefixState = MutableStateFlow("+351")
     private val forwardPrefixState = MutableStateFlow("SMS Redirect:")
     private val showNotificationsState = MutableStateFlow(true)
@@ -27,6 +28,14 @@ class FakeSettingsRepository(
 
     override suspend fun setKeepHistory(enabled: Boolean) {
         keepHistoryState.value = enabled
+    }
+
+    override fun observeKeepScheduleHistory(): Flow<Boolean> = keepScheduleHistoryState
+
+    override suspend fun getKeepScheduleHistory(): Boolean = keepScheduleHistoryState.value
+
+    override suspend fun setKeepScheduleHistory(enabled: Boolean) {
+        keepScheduleHistoryState.value = enabled
     }
 
     override fun observeDefaultPrefix(): Flow<String> = defaultPrefixState

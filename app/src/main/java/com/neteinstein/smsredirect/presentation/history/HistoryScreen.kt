@@ -1,6 +1,5 @@
 package com.neteinstein.smsredirect.presentation.history
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +13,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Forward
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,7 +29,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -111,13 +111,17 @@ fun HistoryScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_sms_scheduler_illustration),
-                        contentDescription = stringResource(R.string.history_no_scheduled_sms_illustration_cd),
-                        modifier = Modifier.size(200.dp),
+                    Icon(
+                        imageVector = Icons.Default.History,
+                        contentDescription = null,
+                        modifier = Modifier.size(56.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(stringResource(R.string.settings_no_forwarded_sms))
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(R.string.settings_no_forwarded_sms),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             } else {
                 LazyColumn(
@@ -145,40 +149,50 @@ private fun ForwardHistoryCard(
     senderContactName: String?,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            val senderDisplay =
-                if (item.sender.isBlank()) {
-                    stringResource(R.string.settings_history_unknown_sender)
-                } else if (senderContactName != null) {
-                    "$senderContactName (${item.sender})"
-                } else {
-                    item.sender
-                }
-            Text(
-                text =
-                    stringResource(
-                        R.string.settings_history_sender_target_format,
-                        senderDisplay,
-                        item.targetNumber,
-                    ),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
+        Row(modifier = Modifier.padding(12.dp)) {
+            Icon(
+                imageVector = Icons.Default.Forward,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(end = 12.dp),
             )
-            Text(
-                text = DateFormat.getDateTimeInstance().format(Date(item.forwardedAtEpochMs)),
-                style = MaterialTheme.typography.bodySmall,
-            )
-            if (item.ruleName.isNotBlank()) {
+            Column(modifier = Modifier.weight(1f)) {
+                val senderDisplay =
+                    if (item.sender.isBlank()) {
+                        stringResource(R.string.settings_history_unknown_sender)
+                    } else if (senderContactName != null) {
+                        "$senderContactName (${item.sender})"
+                    } else {
+                        item.sender
+                    }
                 Text(
-                    text = stringResource(R.string.settings_history_rule_format, item.ruleName),
+                    text =
+                        stringResource(
+                            R.string.settings_history_sender_target_format,
+                            senderDisplay,
+                            item.targetNumber,
+                        ),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = DateFormat.getDateTimeInstance().format(Date(item.forwardedAtEpochMs)),
                     style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (item.ruleName.isNotBlank()) {
+                    Text(
+                        text = stringResource(R.string.settings_history_rule_format, item.ruleName),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Text(
+                    text = item.messageBody,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
-            Text(
-                text = item.messageBody,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 4.dp),
-            )
         }
     }
 }
