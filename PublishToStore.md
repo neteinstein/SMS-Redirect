@@ -61,7 +61,7 @@ Before the automated workflow can publish updates, you must:
 
 The **Publish to Play Store** workflow runs in two ways:
 
-- **Automatically on merge to `main`** — every push to `main` runs `ktlintCheck` and `test` first; if both pass, the app is built and published to the **internal** track. If either check fails, nothing is published.
+- **Automatically after a GitHub release** — on merge to `main`, the **Build & Release APK** workflow runs first (`ktlintCheck` and `test` have already passed as part of PR checks before the merge). Once that workflow successfully creates the GitHub Release, it triggers **Publish to Play Store**, which builds the AAB and publishes it to the **internal** track. If the release workflow fails, nothing is published to the Play Store.
 - **Manually, for other tracks** — to publish to `alpha`, `beta`, or `production`, trigger it by hand:
   1. Go to the repository's **Actions** tab on GitHub.
   2. Select the **Publish to Play Store** workflow.
@@ -71,7 +71,7 @@ The **Publish to Play Store** workflow runs in two ways:
      - `alpha` — Closed testing
      - `beta` — Open testing
      - `production` — Public release
-  5. Click **Run workflow** to start the publish process. Manual runs also run `ktlintCheck` and `test` first and only publish if both pass.
+  5. Click **Run workflow** to start the publish process.
 
 ## Troubleshooting
 
@@ -79,7 +79,7 @@ The **Publish to Play Store** workflow runs in two ways:
 - **APK/AAB not found** — Ensure the build step completes successfully before the upload step.
 - **Version code already exists** — Version codes are derived from the GitHub Actions run number, which always increases, so this should only happen if a version was also uploaded manually or from another source. Increment `versionCode` in `app/build.gradle.kts` if needed.
 - **First upload error** — Google requires the very first upload to be done manually through the Play Console.
-- **Publish job skipped** — The `ktlint` or `unit-tests` job failed on the merge to `main`. Check the workflow run logs for the failing check; nothing is published to the Play Store until both pass.
+- **Publish job skipped** — The **Build & Release APK** workflow failed (or hasn't finished yet) for that push to `main`, so **Publish to Play Store** was never triggered. Check the **Build & Release APK** run logs; nothing is published to the Play Store until it succeeds.
 
 ## Security Notes
 
