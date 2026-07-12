@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """Generates the Play Store icon, feature graphic, and screenshot mockups
-for SMS Redirect & Schedule.
+for SMS Redirect & Schedule — phone, plus 7-inch and 10-inch tablet ("large
+screens") variants.
 
 These are concept/marketing graphics built from the app's real brand colors
 (app/src/main/java/.../presentation/theme/Color.kt) and real UI strings
 (app/src/main/res/values/strings.xml) — not raw device screenshots. They are
 a strong starting point for the Play Store listing; swap the screenshots for
 real device captures (Android Studio "Take Screenshot" or `adb exec-out
-screencap`) whenever convenient for pixel-perfect fidelity.
+screencap`) whenever convenient for pixel-perfect fidelity. The tablet
+screenshots reuse the exact same rendered phone screens (the app has no
+distinct tablet layout), recomposed into a landscape 16:9 promotional frame
+instead of stretching the phone UI to fill a much larger canvas.
 
 Usage:
     pip install pillow
@@ -27,6 +31,8 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parent.parent
 GRAPHICS_DIR = ROOT / "graphics"
 SCREENSHOTS_DIR = ROOT / "screenshots" / "phone"
+SEVEN_INCH_DIR = ROOT / "screenshots" / "sevenInchTablet"
+TEN_INCH_DIR = ROOT / "screenshots" / "tenInchTablet"
 
 # ---------------------------------------------------------------------------
 # Brand palette — copied from presentation/theme/Color.kt so assets stay
@@ -380,7 +386,7 @@ def draw_card(
     return y + height + 20
 
 
-def screenshot_redirect_home() -> None:
+def screenshot_redirect_home() -> Image.Image:
     img, draw, screen_box = new_screenshot_canvas(["Forward SMS & RCS", "by simple rules"])
     x0, y0, x1, y1 = screen_box
     draw_status_bar(draw, screen_box)
@@ -399,6 +405,7 @@ def screenshot_redirect_home() -> None:
     SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
     img.save(SCREENSHOTS_DIR / "01-redirect-rules.png", "PNG")
     print("Wrote screenshots/phone/01-redirect-rules.png")
+    return img
 
 
 def draw_form_field(draw: ImageDraw.ImageDraw, x0: int, x1: int, y: int, label: str, value: str, with_icon: bool = False) -> int:
@@ -415,7 +422,7 @@ def draw_form_field(draw: ImageDraw.ImageDraw, x0: int, x1: int, y: int, label: 
     return y + 130
 
 
-def screenshot_create_rule() -> None:
+def screenshot_create_rule() -> Image.Image:
     img, draw, screen_box = new_screenshot_canvas(["Pick a sender,", "pick a target"])
     x0, y0, x1, y1 = screen_box
     draw_status_bar(draw, screen_box)
@@ -434,9 +441,10 @@ def screenshot_create_rule() -> None:
 
     img.save(SCREENSHOTS_DIR / "02-create-rule.png", "PNG")
     print("Wrote screenshots/phone/02-create-rule.png")
+    return img
 
 
-def screenshot_schedule_list() -> None:
+def screenshot_schedule_list() -> Image.Image:
     img, draw, screen_box = new_screenshot_canvas(["Schedule texts", "to send later"])
     x0, y0, x1, y1 = screen_box
     draw_status_bar(draw, screen_box)
@@ -454,9 +462,10 @@ def screenshot_schedule_list() -> None:
     draw_fab(draw, screen_box, nav_top)
     img.save(SCREENSHOTS_DIR / "03-schedule-list.png", "PNG")
     print("Wrote screenshots/phone/03-schedule-list.png")
+    return img
 
 
-def screenshot_schedule_form() -> None:
+def screenshot_schedule_form() -> Image.Image:
     img, draw, screen_box = new_screenshot_canvas(["Repeats daily, weekly,", "monthly or yearly"])
     x0, y0, x1, y1 = screen_box
     draw_status_bar(draw, screen_box)
@@ -475,6 +484,7 @@ def screenshot_schedule_form() -> None:
 
     img.save(SCREENSHOTS_DIR / "04-schedule-form.png", "PNG")
     print("Wrote screenshots/phone/04-schedule-form.png")
+    return img
 
 
 def draw_toggle_row(draw: ImageDraw.ImageDraw, x0: int, x1: int, y: int, label: str, on: bool) -> int:
@@ -489,7 +499,7 @@ def draw_toggle_row(draw: ImageDraw.ImageDraw, x0: int, x1: int, y: int, label: 
     return y + 100
 
 
-def screenshot_settings() -> None:
+def screenshot_settings() -> Image.Image:
     img, draw, screen_box = new_screenshot_canvas(["Your data stays", "on your device"])
     x0, y0, x1, y1 = screen_box
     draw_status_bar(draw, screen_box)
@@ -512,9 +522,10 @@ def screenshot_settings() -> None:
 
     img.save(SCREENSHOTS_DIR / "05-settings.png", "PNG")
     print("Wrote screenshots/phone/05-settings.png")
+    return img
 
 
-def screenshot_history() -> None:
+def screenshot_history() -> Image.Image:
     img, draw, screen_box = new_screenshot_canvas(["Full history of every", "forwarded message"])
     x0, y0, x1, y1 = screen_box
     draw_status_bar(draw, screen_box)
@@ -539,17 +550,109 @@ def screenshot_history() -> None:
 
     img.save(SCREENSHOTS_DIR / "06-history.png", "PNG")
     print("Wrote screenshots/phone/06-history.png")
+    return img
+
+
+# ---------------------------------------------------------------------------
+# Tablet screenshots (7-inch & 10-inch "large screens" listings).
+#
+# The app has no dedicated tablet layout, so rather than stretching the phone
+# UI to fill a huge canvas (which would misrepresent the app), each tablet
+# image reuses the *real* rendered phone screen — cropped out of the already
+# generated phone mockup — and recomposes it into a landscape 16:9 graphic
+# with a large headline, echoing the feature graphic's layout. This stays
+# honest about what the UI looks like while meeting Play's current "Large
+# screens" guidance (16:9 landscape / 9:16 portrait, minimum 4 screenshots,
+# each dimension between 1080 and 7680px).
+# ---------------------------------------------------------------------------
+PHONE_DEVICE_CROP = (PHONE_MARGIN_X, PHONE_TOP, CANVAS_W - PHONE_MARGIN_X, PHONE_BOTTOM)
+
+TABLET_PROFILES = [
+    (SEVEN_INCH_DIR, "sevenInchTablet", 1920, 1080),
+    (TEN_INCH_DIR, "tenInchTablet", 2560, 1440),
+]
+
+
+def generate_tablet_screenshot(
+    out_dir: Path,
+    out_w: int,
+    out_h: int,
+    filename: str,
+    phone_img: Image.Image,
+    caption_lines: list[str],
+) -> None:
+    img = Image.new("RGB", (out_w, out_h), BRAND_PRIMARY)
+    draw = ImageDraw.Draw(img)
+
+    for y in range(out_h):
+        t = y / out_h
+        r = int(BRAND_PRIMARY[0] * (1 - t) + BRAND_PRIMARY_DARK[0] * t)
+        g = int(BRAND_PRIMARY[1] * (1 - t) + BRAND_PRIMARY_DARK[1] * t)
+        b = int(BRAND_PRIMARY[2] * (1 - t) + BRAND_PRIMARY_DARK[2] * t)
+        draw.line([(0, y), (out_w, y)], fill=(r, g, b))
+
+    # Decorative category-accent dots, top-right — echoes the feature graphic.
+    dot_r = max(6, int(out_h * 0.011))
+    dot_gap = dot_r * 3.4
+    for i, color in enumerate(CATEGORY_ACCENTS):
+        cx = out_w - out_h * 0.05 - (len(CATEGORY_ACCENTS) - i - 1) * dot_gap
+        cy = out_h * 0.06
+        draw.ellipse((cx - dot_r, cy - dot_r, cx + dot_r, cy + dot_r), fill=color)
+
+    # Real phone screen, cropped out of the phone mockup (drops the caption
+    # band, keeps the bezel + a light "card" margin from its background).
+    device = phone_img.crop(PHONE_DEVICE_CROP)
+    device_h = int(out_h * 0.88)
+    device_w = int(device.width * device_h / device.height)
+    device = device.resize((device_w, device_h), Image.LANCZOS)
+    device_x = out_w - device_w - int(out_w * 0.06)
+    device_y = (out_h - device_h) // 2
+    img.paste(device, (device_x, device_y))
+
+    # Headline, left-aligned, sized to the available width before the device.
+    text_x = int(out_w * 0.06)
+    max_text_w = device_x - text_x - int(out_w * 0.03)
+    title_font = bold(int(out_h * 0.09))
+    line_h = int(out_h * 0.11)
+    total_h = len(caption_lines) * line_h
+    title_y = out_h / 2 - total_h / 2
+    for line in caption_lines:
+        for wrapped in wrap_text(draw, line, title_font, max_text_w):
+            draw.text((text_x, title_y), wrapped, font=title_font, fill=WHITE)
+            title_y += line_h
+
+    # Small brand lockup, bottom-left.
+    tagline_font = regular(int(out_h * 0.035))
+    draw.text(
+        (text_x, out_h * 0.86),
+        "SMS Redirect & Schedule",
+        font=tagline_font,
+        fill=BRAND_PRIMARY_CONTAINER,
+    )
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    img.save(out_dir / filename, "PNG")
+    print(f"Wrote screenshots/{out_dir.name}/{filename}")
+
+
+def generate_tablet_screenshots(phone_shots: list[tuple[str, list[str], Image.Image]]) -> None:
+    for out_dir, _label, out_w, out_h in TABLET_PROFILES:
+        for filename, caption_lines, phone_img in phone_shots:
+            generate_tablet_screenshot(out_dir, out_w, out_h, filename, phone_img, caption_lines)
 
 
 def main() -> None:
     generate_icon()
     generate_feature_graphic()
-    screenshot_redirect_home()
-    screenshot_create_rule()
-    screenshot_schedule_list()
-    screenshot_schedule_form()
-    screenshot_settings()
-    screenshot_history()
+    phone_shots = [
+        ("01-redirect-rules.png", ["Forward SMS & RCS", "by simple rules"], screenshot_redirect_home()),
+        ("02-create-rule.png", ["Pick a sender,", "pick a target"], screenshot_create_rule()),
+        ("03-schedule-list.png", ["Schedule texts", "to send later"], screenshot_schedule_list()),
+        ("04-schedule-form.png", ["Repeats daily, weekly,", "monthly or yearly"], screenshot_schedule_form()),
+        ("05-settings.png", ["Your data stays", "on your device"], screenshot_settings()),
+        ("06-history.png", ["Full history of every", "forwarded message"], screenshot_history()),
+    ]
+    generate_tablet_screenshots(phone_shots)
 
 
 if __name__ == "__main__":

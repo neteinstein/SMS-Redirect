@@ -14,7 +14,10 @@ store-listing/
 ├── graphics/
 │   ├── icon-512.png                  512x512 hi-res icon
 │   └── feature-graphic-1024x500.png  1024x500 feature graphic
-├── screenshots/phone/                6 captioned 1080x1920 screenshots
+├── screenshots/
+│   ├── phone/                        6 captioned 1080x1920 screenshots
+│   ├── sevenInchTablet/              same 6 moments, 1920x1080 "large screen" layout
+│   └── tenInchTablet/                same 6 moments, 2560x1440 "large screen" layout
 ├── scripts/generate_assets.py        regenerates everything under graphics/ + screenshots/
 └── data-safety.md                    cheat-sheet for the Data safety questionnaire
 ```
@@ -76,7 +79,27 @@ adb exec-out screencap -p > screenshot.png
 then recreate the same 6 moments, optionally reusing the caption banners from
 `scripts/generate_assets.py` (`new_screenshot_canvas`) as an overlay.
 
-To tweak colors/copy and regenerate every graphic:
+### Tablet ("large screens") screenshots
+
+`screenshots/sevenInchTablet/*.png` (1920x1080) and `screenshots/tenInchTablet/*.png`
+(2560x1440) cover Play Console's **7-inch tablet** and **10-inch tablet**
+upload slots (grouped under "Large screens" in the current Console UI, which
+also covers Chromebooks). The app has no dedicated tablet layout, so instead
+of stretching the phone UI across a much bigger canvas, each image reuses the
+*same rendered phone screen* from `screenshots/phone/`, recomposed into a
+landscape 16:9 promotional frame with a large headline — the same visual
+language as the feature graphic, and an honest representation of what the UI
+actually looks like on a bigger screen.
+
+They meet Play's current requirements for large-screen screenshots: 16:9
+landscape, both dimensions between 1080 and 7680px, 24-bit PNG with no alpha,
+and 6 images each (Play recommends a minimum of 4, allows up to 8). Uploading
+them is optional — Play only requires phone screenshots to publish — but
+recommended if the app is listed as tablet-compatible, since it isn't
+restricted to phones (no `<supports-screens>` or `<compatible-screens>`
+restriction in `AndroidManifest.xml`).
+
+To tweak colors/copy and regenerate every graphic (phone + both tablet sizes):
 
 ```bash
 pip install pillow
