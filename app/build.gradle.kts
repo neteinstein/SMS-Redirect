@@ -30,7 +30,7 @@ android {
 
     defaultConfig {
         applicationId = "com.neteinstein.smsredirect"
-        minSdk = 35
+        minSdk = 33
         targetSdk = 37
         versionCode = (project.findProperty("VERSION_CODE") as String?)?.toInt() ?: 1
         versionName = "0.9.0"
