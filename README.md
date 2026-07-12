@@ -174,6 +174,46 @@ sms send 5551234 "This is a test message"
 ./gradlew test
 ```
 
+## Firebase (Crashlytics & Analytics)
+
+The app integrates [Firebase](https://firebase.google.com/) for:
+
+- **Crashlytics** — automatic crash reporting, plus non-fatal exception
+  reporting for forwarding/sending failures.
+- **Analytics** — anonymous, aggregate usage events for relevant app actions
+  (e.g. a rule was created/updated/deleted, an SMS was forwarded, a scheduled
+  SMS was sent, a setting was toggled). **No personal data is ever logged**
+  (no phone numbers, contact names, or message contents) — see
+  `domain/analytics/AnalyticsEvents.kt` for the full event catalog.
+
+> **Performance Monitoring is temporarily disabled.** The
+> `com.google.firebase.firebase-perf` Gradle plugin doesn't yet support
+> Android Gradle Plugin 9 (it relies on the removed legacy `Transform` API —
+> see [firebase-android-sdk#7293](https://github.com/firebase/firebase-android-sdk/issues/7293)).
+> The plugin and the `firebase-perf` dependency have been removed until
+> Firebase ships a compatible release; re-add both to `build.gradle.kts` and
+> `app/build.gradle.kts` at that point to restore automatic app-start/
+> rendering traces.
+
+### Setup
+
+The repository ships with `app/google-services.json` wired to the
+`sms-redirect-schedule` Firebase project (package name
+`com.neteinstein.smsredirect`), so Crashlytics/Analytics report out of the
+box after building the app.
+
+To point the app at a different Firebase project instead:
+
+1. Create a Firebase project at the [Firebase console](https://console.firebase.google.com/).
+2. Add an Android app with package name `com.neteinstein.smsredirect`.
+3. Download the generated `google-services.json` and replace
+   `app/google-services.json` with it.
+4. Rebuild the app — Crashlytics and Analytics start reporting automatically.
+
+The analytics/crash abstractions (`domain/analytics/AnalyticsTracker.kt` and
+`domain/analytics/CrashReporter.kt`) decouple the rest of the app from
+Firebase, so the backend could be swapped without touching call sites.
+
 ## Architecture
 
 See [Architecture.md](Architecture.md) for detailed system design documentation including the message capture pipeline, rule matching logic, data layer, and dependency wiring.
@@ -186,6 +226,7 @@ See [Architecture.md](Architecture.md) for detailed system design documentation 
 - **Navigation:** Jetpack Navigation Compose
 - **Database:** Room (SQLite)
 - **Background work:** WorkManager (expedited)
+- **Analytics/Crash reporting:** Firebase (Analytics, Crashlytics)
 - **Architecture:** MVVM + Clean Architecture (Use Cases / Repository pattern)
 - **DI:** Manual (AppContainer)
 - **Min SDK:** 35 (Android 15)

@@ -1,5 +1,8 @@
 package com.neteinstein.smsredirect.domain.usecase
 
+import com.neteinstein.smsredirect.domain.analytics.AnalyticsEvents
+import com.neteinstein.smsredirect.domain.analytics.AnalyticsTracker
+import com.neteinstein.smsredirect.domain.analytics.NoOpAnalyticsTracker
 import com.neteinstein.smsredirect.domain.model.RepeatType
 import com.neteinstein.smsredirect.domain.model.Rule
 import com.neteinstein.smsredirect.domain.model.ScheduledSms
@@ -26,13 +29,19 @@ class ImportBackupUseCase(
     private val scheduledSmsRepository: ScheduledSmsRepository,
     private val settingsRepository: SettingsRepository,
     private val scheduledSmsScheduler: ScheduledSmsScheduler,
+    private val analyticsTracker: AnalyticsTracker = NoOpAnalyticsTracker,
 ) {
     suspend operator fun invoke(json: String): BackupImportResult {
         val trimmed = json.trim()
         if (trimmed.startsWith("[")) {
             // Legacy export format: a bare JSON array of rules.
+            val importedRules = importRules(JSONArray(trimmed))
+            analyticsTracker.logEvent(
+                AnalyticsEvents.RULES_IMPORTED,
+                mapOf(AnalyticsEvents.Param.RULE_COUNT to importedRules),
+            )
             return BackupImportResult(
-                importedRules = importRules(JSONArray(trimmed)),
+                importedRules = importedRules,
                 importedScheduledSms = 0,
             )
         }
@@ -44,6 +53,10 @@ class ImportBackupUseCase(
         if (root.has("settings")) {
             importSettings(root.getJSONObject("settings"))
         }
+        analyticsTracker.logEvent(
+            AnalyticsEvents.RULES_IMPORTED,
+            mapOf(AnalyticsEvents.Param.RULE_COUNT to importedRules),
+        )
         return BackupImportResult(importedRules, importedScheduledSms)
     }
 

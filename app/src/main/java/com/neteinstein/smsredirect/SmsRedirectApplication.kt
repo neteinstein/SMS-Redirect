@@ -2,6 +2,9 @@ package com.neteinstein.smsredirect
 
 import android.app.Application
 import androidx.room.Room
+import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.neteinstein.smsredirect.data.analytics.FirebaseAnalyticsTracker
+import com.neteinstein.smsredirect.data.analytics.FirebaseCrashReporter
 import com.neteinstein.smsredirect.data.contacts.AndroidContactNameResolver
 import com.neteinstein.smsredirect.data.local.AppDatabase
 import com.neteinstein.smsredirect.data.repository.ForwardHistoryRepositoryImpl
@@ -10,6 +13,8 @@ import com.neteinstein.smsredirect.data.repository.ScheduledSmsHistoryRepository
 import com.neteinstein.smsredirect.data.repository.ScheduledSmsRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.SettingsRepositoryImpl
 import com.neteinstein.smsredirect.data.scheduling.WorkManagerScheduledSmsScheduler
+import com.neteinstein.smsredirect.domain.analytics.AnalyticsTracker
+import com.neteinstein.smsredirect.domain.analytics.CrashReporter
 import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
 import com.neteinstein.smsredirect.domain.repository.ForwardHistoryRepository
 import com.neteinstein.smsredirect.domain.repository.RuleRepository
@@ -64,6 +69,9 @@ class SmsRedirectApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG)
+        val analyticsTracker: AnalyticsTracker = FirebaseAnalyticsTracker(this)
+        val crashReporter: CrashReporter = FirebaseCrashReporter()
         val database =
             Room
                 .databaseBuilder(this, AppDatabase::class.java, "sms_redirect.db")
@@ -93,20 +101,29 @@ class SmsRedirectApplication : Application() {
                 scheduledSmsHistoryRepository = scheduledSmsHistoryRepository,
                 contactNameResolver = contactNameResolver,
                 scheduledSmsScheduler = scheduledSmsScheduler,
+                analyticsTracker = analyticsTracker,
+                crashReporter = crashReporter,
                 getRulesUseCase = GetRulesUseCase(repository),
                 getCategoriesUseCase = GetCategoriesUseCase(repository),
                 getRuleUseCase = GetRuleUseCase(repository),
-                addRuleUseCase = AddRuleUseCase(repository),
-                updateRuleUseCase = UpdateRuleUseCase(repository),
-                deleteRuleUseCase = DeleteRuleUseCase(repository),
-                reorderRulesUseCase = ReorderRulesUseCase(repository),
-                exportBackupUseCase = ExportBackupUseCase(repository, scheduledSmsRepository, settingsRepository),
+                addRuleUseCase = AddRuleUseCase(repository, analyticsTracker),
+                updateRuleUseCase = UpdateRuleUseCase(repository, analyticsTracker),
+                deleteRuleUseCase = DeleteRuleUseCase(repository, analyticsTracker),
+                reorderRulesUseCase = ReorderRulesUseCase(repository, analyticsTracker),
+                exportBackupUseCase =
+                    ExportBackupUseCase(repository, scheduledSmsRepository, settingsRepository, analyticsTracker),
                 importBackupUseCase =
-                    ImportBackupUseCase(repository, scheduledSmsRepository, settingsRepository, scheduledSmsScheduler),
+                    ImportBackupUseCase(
+                        repository,
+                        scheduledSmsRepository,
+                        settingsRepository,
+                        scheduledSmsScheduler,
+                        analyticsTracker,
+                    ),
                 getSendWhileRoamingUseCase = GetSendWhileRoamingUseCase(settingsRepository),
-                setSendWhileRoamingUseCase = SetSendWhileRoamingUseCase(settingsRepository),
+                setSendWhileRoamingUseCase = SetSendWhileRoamingUseCase(settingsRepository, analyticsTracker),
                 getKeepHistoryUseCase = GetKeepHistoryUseCase(settingsRepository),
-                setKeepHistoryUseCase = SetKeepHistoryUseCase(settingsRepository),
+                setKeepHistoryUseCase = SetKeepHistoryUseCase(settingsRepository, analyticsTracker),
                 getDefaultPrefixUseCase = GetDefaultPrefixUseCase(settingsRepository),
                 setDefaultPrefixUseCase = SetDefaultPrefixUseCase(settingsRepository),
                 getDefaultPrefixNowUseCase = GetDefaultPrefixNowUseCase(settingsRepository),
@@ -115,7 +132,7 @@ class SmsRedirectApplication : Application() {
                 getForwardHistoryUseCase = GetForwardHistoryUseCase(forwardHistoryRepository),
                 deleteAllHistoryUseCase = DeleteAllHistoryUseCase(forwardHistoryRepository),
                 getShowNotificationsUseCase = GetShowNotificationsUseCase(settingsRepository),
-                setShowNotificationsUseCase = SetShowNotificationsUseCase(settingsRepository),
+                setShowNotificationsUseCase = SetShowNotificationsUseCase(settingsRepository, analyticsTracker),
                 findMatchingRuleUseCase = findMatchingRuleUseCase,
                 canForwardSmsUseCase = canForwardSmsUseCase,
                 smsForwarder =
@@ -127,18 +144,23 @@ class SmsRedirectApplication : Application() {
                         getForwardPrefixNowUseCase = getForwardPrefixNowUseCase,
                         contactNameResolver = contactNameResolver,
                         getShowNotificationsNowUseCase = getShowNotificationsNowUseCase,
+                        analyticsTracker = analyticsTracker,
+                        crashReporter = crashReporter,
                     ),
                 getScheduledSmsListUseCase = GetScheduledSmsListUseCase(scheduledSmsRepository),
                 getScheduledSmsCategoriesUseCase = GetScheduledSmsCategoriesUseCase(scheduledSmsRepository),
                 getScheduledSmsUseCase = getScheduledSmsUseCase,
-                addScheduledSmsUseCase = AddScheduledSmsUseCase(scheduledSmsRepository, scheduledSmsScheduler),
-                updateScheduledSmsUseCase = UpdateScheduledSmsUseCase(scheduledSmsRepository, scheduledSmsScheduler),
-                deleteScheduledSmsUseCase = DeleteScheduledSmsUseCase(scheduledSmsRepository, scheduledSmsScheduler),
+                addScheduledSmsUseCase =
+                    AddScheduledSmsUseCase(scheduledSmsRepository, scheduledSmsScheduler, analyticsTracker),
+                updateScheduledSmsUseCase =
+                    UpdateScheduledSmsUseCase(scheduledSmsRepository, scheduledSmsScheduler, analyticsTracker),
+                deleteScheduledSmsUseCase =
+                    DeleteScheduledSmsUseCase(scheduledSmsRepository, scheduledSmsScheduler, analyticsTracker),
                 reorderScheduledSmsUseCase = ReorderScheduledSmsUseCase(scheduledSmsRepository),
                 getScheduledSmsHistoryUseCase = GetScheduledSmsHistoryUseCase(scheduledSmsHistoryRepository),
                 deleteAllScheduledSmsHistoryUseCase = DeleteAllScheduledSmsHistoryUseCase(scheduledSmsHistoryRepository),
                 getKeepScheduleHistoryUseCase = GetKeepScheduleHistoryUseCase(settingsRepository),
-                setKeepScheduleHistoryUseCase = SetKeepScheduleHistoryUseCase(settingsRepository),
+                setKeepScheduleHistoryUseCase = SetKeepScheduleHistoryUseCase(settingsRepository, analyticsTracker),
                 scheduledSmsSender =
                     ScheduledSmsSender(
                         getScheduledSmsUseCase = getScheduledSmsUseCase,
@@ -147,6 +169,8 @@ class SmsRedirectApplication : Application() {
                         getShowNotificationsNowUseCase = getShowNotificationsNowUseCase,
                         contactNameResolver = contactNameResolver,
                         scheduler = scheduledSmsScheduler,
+                        analyticsTracker = analyticsTracker,
+                        crashReporter = crashReporter,
                     ),
             )
     }
@@ -159,6 +183,8 @@ data class AppContainer(
     val scheduledSmsHistoryRepository: ScheduledSmsHistoryRepository,
     val contactNameResolver: ContactNameResolver,
     val scheduledSmsScheduler: ScheduledSmsScheduler,
+    val analyticsTracker: AnalyticsTracker,
+    val crashReporter: CrashReporter,
     val getRulesUseCase: GetRulesUseCase,
     val getCategoriesUseCase: GetCategoriesUseCase,
     val getRuleUseCase: GetRuleUseCase,

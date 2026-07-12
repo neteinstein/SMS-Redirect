@@ -13,6 +13,11 @@ import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.neteinstein.smsredirect.domain.analytics.AnalyticsEvents
+import com.neteinstein.smsredirect.domain.analytics.AnalyticsTracker
+import com.neteinstein.smsredirect.domain.analytics.CrashReporter
+import com.neteinstein.smsredirect.domain.analytics.NoOpAnalyticsTracker
+import com.neteinstein.smsredirect.domain.analytics.NoOpCrashReporter
 import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
 import com.neteinstein.smsredirect.domain.usecase.CanForwardSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
@@ -30,6 +35,8 @@ class SmsForwarder(
     private val getForwardPrefixNowUseCase: GetForwardPrefixNowUseCase,
     private val contactNameResolver: ContactNameResolver,
     private val getShowNotificationsNowUseCase: GetShowNotificationsNowUseCase,
+    private val analyticsTracker: AnalyticsTracker = NoOpAnalyticsTracker,
+    private val crashReporter: CrashReporter = NoOpCrashReporter,
 ) {
     companion object {
         private const val TAG = "SmsForwarder"
@@ -113,6 +120,10 @@ class SmsForwarder(
                 smsManager.sendMultipartTextMessage(rule.targetNumber, null, parts, null, null)
             }
             Log.i(TAG, "SMS forwarded successfully to '${rule.targetNumber}'")
+            analyticsTracker.logEvent(
+                AnalyticsEvents.SMS_FORWARDED,
+                mapOf(AnalyticsEvents.Param.SUCCESS to true),
+            )
 
             if (getShowNotificationsNowUseCase()) {
                 showForwardNotification(context, rule.targetNumber, rule.name)
@@ -132,6 +143,11 @@ class SmsForwarder(
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to send SMS to '${rule.targetNumber}'", e)
+            crashReporter.recordException(e)
+            analyticsTracker.logEvent(
+                AnalyticsEvents.SMS_FORWARDED,
+                mapOf(AnalyticsEvents.Param.SUCCESS to false),
+            )
         }
     }
 

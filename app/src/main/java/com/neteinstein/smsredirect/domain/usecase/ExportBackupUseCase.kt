@@ -1,5 +1,8 @@
 package com.neteinstein.smsredirect.domain.usecase
 
+import com.neteinstein.smsredirect.domain.analytics.AnalyticsEvents
+import com.neteinstein.smsredirect.domain.analytics.AnalyticsTracker
+import com.neteinstein.smsredirect.domain.analytics.NoOpAnalyticsTracker
 import com.neteinstein.smsredirect.domain.repository.RuleRepository
 import com.neteinstein.smsredirect.domain.repository.ScheduledSmsRepository
 import com.neteinstein.smsredirect.domain.repository.SettingsRepository
@@ -15,13 +18,19 @@ class ExportBackupUseCase(
     private val ruleRepository: RuleRepository,
     private val scheduledSmsRepository: ScheduledSmsRepository,
     private val settingsRepository: SettingsRepository,
+    private val analyticsTracker: AnalyticsTracker = NoOpAnalyticsTracker,
 ) {
     suspend operator fun invoke(): String {
         val root = JSONObject()
         root.put("version", BACKUP_VERSION)
-        root.put("rules", buildRulesJson())
+        val rulesJson = buildRulesJson()
+        root.put("rules", rulesJson)
         root.put("scheduledSms", buildScheduledSmsJson())
         root.put("settings", buildSettingsJson())
+        analyticsTracker.logEvent(
+            AnalyticsEvents.RULES_EXPORTED,
+            mapOf(AnalyticsEvents.Param.RULE_COUNT to rulesJson.length()),
+        )
         return root.toString(2)
     }
 

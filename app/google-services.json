@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "967302411916",
+    "project_id": "sms-redirect-schedule",
+    "storage_bucket": "sms-redirect-schedule.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:967302411916:android:9c54a3473ed3f9b7222da9",
+        "android_client_info": {
+          "package_name": "com.neteinstein.smsredirect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDeCm4eyJs3gs218u8x33vsLIKI0gT-daE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
