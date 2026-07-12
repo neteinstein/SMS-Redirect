@@ -174,7 +174,7 @@ sms send 5551234 "This is a test message"
 ./gradlew test
 ```
 
-## Firebase (Crashlytics, Analytics & Performance)
+## Firebase (Crashlytics & Analytics)
 
 The app integrates [Firebase](https://firebase.google.com/) for:
 
@@ -185,15 +185,22 @@ The app integrates [Firebase](https://firebase.google.com/) for:
   SMS was sent, a setting was toggled). **No personal data is ever logged**
   (no phone numbers, contact names, or message contents) — see
   `domain/analytics/AnalyticsEvents.kt` for the full event catalog.
-- **Performance Monitoring** — automatic app-start/rendering traces provided
-  out of the box by the Firebase Performance SDK.
+
+> **Performance Monitoring is temporarily disabled.** The
+> `com.google.firebase.firebase-perf` Gradle plugin doesn't yet support
+> Android Gradle Plugin 9 (it relies on the removed legacy `Transform` API —
+> see [firebase-android-sdk#7293](https://github.com/firebase/firebase-android-sdk/issues/7293)).
+> The plugin and the `firebase-perf` dependency have been removed until
+> Firebase ships a compatible release; re-add both to `build.gradle.kts` and
+> `app/build.gradle.kts` at that point to restore automatic app-start/
+> rendering traces.
 
 ### Setup
 
 The repository ships with `app/google-services.json` wired to the
 `sms-redirect-schedule` Firebase project (package name
-`com.neteinstein.smsredirect`), so Crashlytics/Analytics/Performance report
-out of the box after building the app.
+`com.neteinstein.smsredirect`), so Crashlytics/Analytics report out of the
+box after building the app.
 
 To point the app at a different Firebase project instead:
 
@@ -201,8 +208,7 @@ To point the app at a different Firebase project instead:
 2. Add an Android app with package name `com.neteinstein.smsredirect`.
 3. Download the generated `google-services.json` and replace
    `app/google-services.json` with it.
-4. Rebuild the app — Crashlytics, Analytics and Performance start reporting
-   automatically.
+4. Rebuild the app — Crashlytics and Analytics start reporting automatically.
 
 The analytics/crash abstractions (`domain/analytics/AnalyticsTracker.kt` and
 `domain/analytics/CrashReporter.kt`) decouple the rest of the app from
@@ -220,7 +226,7 @@ See [Architecture.md](Architecture.md) for detailed system design documentation 
 - **Navigation:** Jetpack Navigation Compose
 - **Database:** Room (SQLite)
 - **Background work:** WorkManager (expedited)
-- **Analytics/Crash reporting/Performance:** Firebase (Analytics, Crashlytics, Performance Monitoring)
+- **Analytics/Crash reporting:** Firebase (Analytics, Crashlytics)
 - **Architecture:** MVVM + Clean Architecture (Use Cases / Repository pattern)
 - **DI:** Manual (AppContainer)
 - **Min SDK:** 35 (Android 15)
