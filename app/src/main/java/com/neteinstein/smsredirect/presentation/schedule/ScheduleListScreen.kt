@@ -371,7 +371,7 @@ private fun ScheduleCategoryHeader(
 }
 
 private fun categoryAccentColor(category: String): Color {
-    val index = category.hashCode().absoluteValue % CategoryAccentColors.size
+    val index = Math.floorMod(category.hashCode(), CategoryAccentColors.size)
     return CategoryAccentColors[index]
 }
 
