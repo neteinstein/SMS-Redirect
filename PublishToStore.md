@@ -51,7 +51,7 @@ Before the automated workflow can publish updates, you must:
 
 1. Build a signed AAB (Android App Bundle) locally.
 2. Upload it manually via the Google Play Console.
-3. Complete all store listing requirements (description, screenshots, content rating, etc.).
+3. Complete all store listing requirements (description, screenshots, content rating, etc.). For the required **Privacy Policy URL**, use the raw GitHub link to [PrivacyPolicy.md](PrivacyPolicy.md), e.g. `https://github.com/neteinstein/SMS-Redirect/blob/main/PrivacyPolicy.md`.
 4. Publish at least once to any track (internal testing is sufficient).
 
 ### 5. Running the Workflow

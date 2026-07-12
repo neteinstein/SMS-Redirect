@@ -218,6 +218,10 @@ Firebase, so the backend could be swapped without touching call sites.
 
 See [Architecture.md](Architecture.md) for detailed system design documentation including the message capture pipeline, rule matching logic, data layer, and dependency wiring.
 
+## Privacy
+
+See [PrivacyPolicy.md](PrivacyPolicy.md) for the app's privacy policy — all rules, schedules, and history stay on-device; only anonymous Firebase crash/analytics data ever leaves it.
+
 ## Tech Stack
 
 - **Language:** Kotlin
