@@ -1,0 +1,1 @@
+First release: create SMS/RCS forwarding rules with drag-to-reorder and category grouping, schedule text messages with recurring options (daily, work-week days, bi-weekly, monthly, yearly), forwarding & schedule history, backup/restore, light & dark mode, and English/Portuguese support.

@@ -1,0 +1,116 @@
+# Play Store listing assets
+
+Everything needed to fill in the **Main store listing** (and get a head start on
+**App content > Data safety**) for `com.neteinstein.smsredirect` in the
+[Google Play Console](https://play.google.com/console) lives in this folder.
+
+## What's here
+
+```
+store-listing/
+├── text/
+│   ├── en-US/   title.txt, short_description.txt, full_description.txt, release_notes.txt
+│   └── pt-PT/   same four files, in European Portuguese
+├── graphics/
+│   ├── icon-512.png                  512x512 hi-res icon
+│   └── feature-graphic-1024x500.png  1024x500 feature graphic
+├── screenshots/phone/                6 captioned 1080x1920 screenshots
+├── scripts/generate_assets.py        regenerates everything under graphics/ + screenshots/
+└── data-safety.md                    cheat-sheet for the Data safety questionnaire
+```
+
+## Copy-pasting the text fields
+
+| Play Console field | File | Limit | Current length |
+|---|---|---|---|
+| App name | `text/<locale>/title.txt` | 30 chars | 23 (en-US) / 30 (pt-PT) |
+| Short description | `text/<locale>/short_description.txt` | 80 chars | 65 (en-US) / 74 (pt-PT) |
+| Full description | `text/<locale>/full_description.txt` | 4000 chars | 3070 (en-US) / 3593 (pt-PT) |
+| What's new (this release) | `text/<locale>/release_notes.txt` | 500 chars | 287 (en-US) / 322 (pt-PT) |
+
+Paste each file's contents verbatim into the matching field for that locale.
+`pt-PT` matches the tone/wording already used in `app/src/main/res/values-pt/strings.xml`
+(European Portuguese — "ecrã", "definições", not Brazilian Portuguese).
+
+Re-check lengths after editing:
+
+```bash
+python3 -c "
+import pathlib
+limits = {'title.txt': 30, 'short_description.txt': 80, 'full_description.txt': 4000, 'release_notes.txt': 500}
+for d in sorted(pathlib.Path('text').iterdir()):
+    for name, limit in limits.items():
+        n = len((d / name).read_text(encoding='utf-8').rstrip('\n'))
+        print(f'{d.name}/{name}: {n}/{limit}', 'OK' if n <= limit else 'OVER!')
+"
+```
+
+## Graphics & screenshots
+
+`graphics/icon-512.png` and `graphics/feature-graphic-1024x500.png` are ready
+to upload as-is — the icon is a faithful high-res recreation of the real
+launcher icon (`app/src/main/res/drawable/ic_launcher_*.xml`: brand blue
+background, white chat bubble, forward chevrons), and the feature graphic
+reuses it with the app name and tagline.
+
+`screenshots/phone/*.png` are **concept mockups**, not raw device captures —
+generated from the app's real brand colors and strings (not from a running
+emulator, since none was available in this environment) to give the listing
+a strong, on-brand starting point:
+
+1. `01-redirect-rules.png` — Redirect rule list, grouped by category
+2. `02-create-rule.png` — Create Rule form
+3. `03-schedule-list.png` — Scheduled SMS list
+4. `04-schedule-form.png` — Create Schedule SMS form
+5. `05-settings.png` — Settings (privacy-forward toggles + backup)
+6. `06-history.png` — Redirect history
+
+They already satisfy Play's technical requirements (1080x1920, 24-bit PNG, no
+alpha) and can be uploaded as-is. For pixel-perfect real captures instead,
+run the app on a device/emulator and use Android Studio's **Take Screenshot**
+action or:
+
+```bash
+adb exec-out screencap -p > screenshot.png
+```
+then recreate the same 6 moments, optionally reusing the caption banners from
+`scripts/generate_assets.py` (`new_screenshot_canvas`) as an overlay.
+
+To tweak colors/copy and regenerate every graphic:
+
+```bash
+pip install pillow
+python3 store-listing/scripts/generate_assets.py
+```
+
+## Suggested Play Console fields not covered by a file
+
+- **App category:** Tools (Communication is a reasonable alternate)
+- **Tags:** SMS, forwarding, automation, RCS, productivity
+- **Content rating:** Everyone (run the questionnaire — no user-generated
+  content, no ads, no unrestricted web access)
+- **Contact email:** `play-store-neteinstein@googlegroups.com` (from
+  [PrivacyPolicy.md](../PrivacyPolicy.md))
+- **Privacy Policy URL:**
+  `https://github.com/neteinstein/SMS-Redirect/blob/main/PrivacyPolicy.md`
+  (already documented in [PublishToStore.md](../PublishToStore.md))
+- **Website:** `https://github.com/neteinstein/SMS-Redirect`
+
+## ⚠️ Before this can go live: the SMS permissions declaration
+
+This app requests `READ_SMS` / `RECEIVE_SMS` / `SEND_SMS`. Play Console will
+block publishing until you complete **App content > Permissions declaration
+form** and justify these under one of Google's allowed core-use categories
+(this app fits **"connected messaging/dialer" / default-handler-adjacent
+forwarding utility** — pick the closest match Google offers at submission
+time; policy wording shifts occasionally, so re-read it in-console). The
+`tools:ignore="SmsAndCallLogPolicy"` lint suppressions in `AndroidManifest.xml`
+are a reminder that this review exists — they silence the lint warning, not
+the Play Console policy review itself. Budget time for this before your first
+production release; it's a manual review on Google's side and can take days.
+
+## Data safety
+
+See [`data-safety.md`](data-safety.md) for a field-by-field mapping of the
+**App content > Data safety** questionnaire, derived from
+[PrivacyPolicy.md](../PrivacyPolicy.md).

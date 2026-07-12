@@ -1,0 +1,41 @@
+SMS Redirect & Schedule automatically forwards the text messages you choose to another phone number, and lets you schedule your own messages to send later — all without an account, a server, or your data ever leaving your device.
+
+WHY SMS REDIRECT & SCHEDULE?
+Cover a work phone, monitor a second SIM, forward one-time codes to a shared family number, or just make sure a message goes out while you're busy. The app runs quietly in the background and handles it for you, reliably, 100% on-device.
+
+REDIRECT — Forward messages by rule
+• Create simple rules: match a sender (by text or contact) and pick a target number
+• Works for standard SMS, and for RCS/chat messages from Google Messages, Samsung Messages, and other messaging apps
+• First matching rule wins — drag to reorder your rules
+• Optional custom prefix added to every forwarded message (e.g. "SMS Redirect:")
+• Choose whether forwarding is allowed while roaming
+• History of the last 50 forwarded messages, with sender, target, and matched rule
+• Get a notification every time a message is forwarded
+
+SCHEDULE — Send texts automatically, later
+• Compose a message once, pick a contact, a date, and a time — the app sends it for you
+• Repeat daily, on work-week days, bi-weekly, monthly, or yearly, with an optional stop date
+• Organize scheduled messages into categories
+• History of every scheduled message that was sent
+
+PRIVATE BY DESIGN
+• No account, no login, no backend server
+• Rules, schedules, contacts, and history are stored only on your device
+• Forwarded and scheduled messages are sent directly through your own carrier's SMS network — never through a server of ours, because we don't have one
+• Only anonymous crash and usage data is collected to help fix bugs — never phone numbers, contact names, or message content
+• The full source code is public, so every claim here can be verified: github.com/neteinstein/SMS-Redirect
+
+ALSO INCLUDES
+• Contact picker for senders and targets
+• Drag-and-drop reordering and category grouping for both rules and schedules
+• Light & dark mode with Material You dynamic color
+• Export and import your rules and schedules as a backup file, anytime
+• Available in English and Portuguese
+
+A NOTE ON RCS
+Android gives apps no direct way to intercept RCS/chat messages, so Redirect reads Google Messages' notifications as a best-effort safety net — there is no guaranteed delivery channel for RCS on Android, for any app. It works well for everyday messages; note that newer Android versions redact one-time passcodes from notifications before any app, including this one, can see them, so treat OTP forwarding as best-effort.
+
+PERMISSIONS, EXPLAINED
+SMS Redirect & Schedule only asks for what it needs: SMS permissions (to detect and send messages), Contacts (to pick numbers by name), Phone State (to detect roaming), and Notification Access (for RCS capture). See exactly how each permission is used in the in-app Privacy Policy and in the public source code.
+
+Questions or feedback? Contact play-store-neteinstein@googlegroups.com or open an issue on GitHub.
