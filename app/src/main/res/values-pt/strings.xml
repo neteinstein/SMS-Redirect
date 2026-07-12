@@ -54,7 +54,6 @@
     <string name="settings_forward_prefix_label">Prefixo da mensagem reencaminhada</string>
     <string name="settings_forward_prefix_save">Guardar prefixo</string>
     <string name="settings_prefix_none">Nenhum</string>
-    <string name="settings_prefix_portugal">Portugal (+351)</string>
     <string name="settings_history_title">Histórico de reencaminhamento (últimos 50)</string>
     <string name="history_title">Histórico de Redirecionamentos</string>
     <string name="settings_no_forwarded_sms">Ainda não há SMS reencaminhados</string>
