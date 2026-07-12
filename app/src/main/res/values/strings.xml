@@ -78,7 +78,6 @@
     <string name="settings_forward_prefix_label">Forward message prefix</string>
     <string name="settings_forward_prefix_save">Save prefix</string>
     <string name="settings_prefix_none">None</string>
-    <string name="settings_prefix_portugal">Portugal (+351)</string>
     <string name="settings_export_rules">Export Backup</string>
     <string name="settings_import_rules">Import Backup</string>
     <string name="settings_import_success">Imported %1$d rules and %2$d scheduled messages</string>
