@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.core.app.NotificationManagerCompat
@@ -232,7 +233,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable(Routes.Home) {
-                        var selectedTab by remember { mutableStateOf(MainTab.REDIRECT) }
+                        var selectedTab by rememberSaveable { mutableStateOf(MainTab.REDIRECT) }
                         val bottomBar: @Composable () -> Unit = {
                             MainBottomBar(
                                 selectedTab = selectedTab,
@@ -310,8 +311,8 @@ class MainActivity : ComponentActivity() {
                                         appContainer.setForwardPrefixUseCase,
                                         appContainer.getShowNotificationsUseCase,
                                         appContainer.setShowNotificationsUseCase,
-                                        appContainer.exportRulesUseCase,
-                                        appContainer.importRulesUseCase,
+                                        appContainer.exportBackupUseCase,
+                                        appContainer.importBackupUseCase,
                                     ),
                             )
                         val sendWhileRoaming by settingsViewModel.sendWhileRoaming.collectAsState()
@@ -350,7 +351,7 @@ class MainActivity : ComponentActivity() {
                                                 ?.bufferedReader()
                                                 ?.use { reader -> reader.readText() }
                                         if (json != null) {
-                                            settingsViewModel.importRules(json)
+                                            settingsViewModel.importBackup(json)
                                         }
                                     } catch (_: Exception) {
                                         val toast =
@@ -366,7 +367,7 @@ class MainActivity : ComponentActivity() {
 
                         LaunchedEffect(Unit) {
                             settingsViewModel.exportEvent.collectLatest { json ->
-                                val file = File(context.cacheDir, "export-rules.json")
+                                val file = File(context.cacheDir, "sms-redirect-backup.json")
                                 file.writeText(json)
                                 val uri =
                                     androidx.core.content.FileProvider.getUriForFile(
@@ -387,11 +388,15 @@ class MainActivity : ComponentActivity() {
                         }
 
                         LaunchedEffect(Unit) {
-                            settingsViewModel.importResult.collectLatest { count ->
+                            settingsViewModel.importResult.collectLatest { result ->
                                 val toast =
                                     Toast.makeText(
                                         context,
-                                        context.getString(R.string.settings_import_success, count),
+                                        context.getString(
+                                            R.string.settings_import_success,
+                                            result.importedRules,
+                                            result.importedScheduledSms,
+                                        ),
                                         Toast.LENGTH_SHORT,
                                     )
                                 toast.show()
@@ -408,8 +413,8 @@ class MainActivity : ComponentActivity() {
                             onShowNotificationsChanged = settingsViewModel::setShowNotifications,
                             onForwardPrefixSaved = settingsViewModel::setForwardPrefix,
                             onDefaultPrefixChanged = settingsViewModel::setDefaultPrefix,
-                            onExportRules = settingsViewModel::exportRules,
-                            onImportRules = { importLauncher.launch("application/json") },
+                            onExportBackup = settingsViewModel::exportBackup,
+                            onImportBackup = { importLauncher.launch("application/json") },
                             onOpenLanguageSettings = { openAppLocaleSettings() },
                             onBack = { navController.popBackStack() },
                         )

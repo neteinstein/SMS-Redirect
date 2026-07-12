@@ -42,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.neteinstein.smsredirect.R
@@ -58,8 +59,8 @@ fun SettingsScreen(
     onShowNotificationsChanged: (Boolean) -> Unit,
     onForwardPrefixSaved: (String) -> Unit,
     onDefaultPrefixChanged: (String) -> Unit,
-    onExportRules: () -> Unit,
-    onImportRules: () -> Unit,
+    onExportBackup: () -> Unit,
+    onImportBackup: () -> Unit,
     onOpenLanguageSettings: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -125,7 +126,7 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Button(
-                    onClick = onExportRules,
+                    onClick = onExportBackup,
                     modifier = Modifier.weight(1f),
                 ) {
                     Icon(
@@ -139,7 +140,7 @@ fun SettingsScreen(
                     )
                 }
                 Button(
-                    onClick = onImportRules,
+                    onClick = onImportBackup,
                     modifier = Modifier.weight(1f),
                 ) {
                     Icon(
@@ -201,15 +202,16 @@ private fun DefaultPrefixDropdown(
     selectedPrefix: String,
     onPrefixSelected: (String) -> Unit,
 ) {
+    val locale = LocalConfiguration.current.locales[0]
+    val noneLabel = stringResource(R.string.settings_prefix_none)
     val options =
-        listOf(
-            "" to stringResource(R.string.settings_prefix_none),
-            "+351" to stringResource(R.string.settings_prefix_portugal),
-        )
+        remember(locale, noneLabel) {
+            listOf("" to noneLabel) + countryPrefixOptions(locale)
+        }
     var expanded by remember { mutableStateOf(false) }
     val selectedLabel =
         options.firstOrNull { it.first == selectedPrefix }?.second
-            ?: stringResource(R.string.settings_prefix_portugal)
+            ?: selectedPrefix
 
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
         ExposedDropdownMenuBox(

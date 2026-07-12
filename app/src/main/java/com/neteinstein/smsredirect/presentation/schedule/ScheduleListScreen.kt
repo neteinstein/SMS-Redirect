@@ -165,7 +165,7 @@ fun ScheduleListScreen(
                     verticalArrangement = Arrangement.Center,
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.ic_sms_forward_illustration),
+                        painter = painterResource(id = R.drawable.ic_sms_scheduler_illustration),
                         contentDescription = stringResource(R.string.schedule_no_items_illustration_cd),
                         modifier = Modifier.size(Dimens.IllustrationSize),
                     )
