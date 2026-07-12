@@ -72,12 +72,11 @@ fun SplashScreen() {
         Text(
             text = stringResource(R.string.splash_subtitle),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier =
                 Modifier
-                    .padding(top = 4.dp, start = 24.dp, end = 24.dp)
-                    .alpha(alpha),
+                    .alpha(alpha)
+                    .padding(top = 4.dp, start = 24.dp, end = 24.dp),
         )
     }
 }
