@@ -1,7 +1,6 @@
 package com.neteinstein.smsredirect.presentation.schedule
 
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
@@ -146,9 +145,10 @@ fun ScheduleListScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_sms_forward_illustration),
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_sms_scheduler_illustration),
                         contentDescription = stringResource(R.string.schedule_no_items_illustration_cd),
+                        tint = androidx.compose.ui.graphics.Color.Unspecified,
                         modifier = Modifier.size(200.dp),
                     )
                     Spacer(modifier = Modifier.height(16.dp))
