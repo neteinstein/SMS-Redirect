@@ -79,10 +79,10 @@
     <string name="settings_forward_prefix_save">Save prefix</string>
     <string name="settings_prefix_none">None</string>
     <string name="settings_prefix_portugal">Portugal (+351)</string>
-    <string name="settings_export_rules">Export Rules</string>
-    <string name="settings_import_rules">Import Rules</string>
-    <string name="settings_import_success">Imported %1$d rules</string>
-    <string name="settings_import_error">Failed to import rules</string>
+    <string name="settings_export_rules">Export Backup</string>
+    <string name="settings_import_rules">Import Backup</string>
+    <string name="settings_import_success">Imported %1$d rules and %2$d scheduled messages</string>
+    <string name="settings_import_error">Failed to import backup</string>
     <string name="settings_history_title">Forward history (last 50)</string>
     <string name="history_title">Redirect History</string>
     <string name="settings_no_forwarded_sms">No forwarded SMS yet</string>
