@@ -80,6 +80,7 @@
     <string name="schedule_cd_settings">Definições</string>
     <string name="schedule_cd_add">Adicionar SMS agendado</string>
     <string name="schedule_no_items">Ainda não existem SMS agendados</string>
+    <string name="schedule_add_first_item">Adicionar o primeiro SMS agendado</string>
     <string name="schedule_no_items_illustration_cd">Ilustração de agendamento de SMS</string>
     <string name="schedule_category_uncategorized">Sem categoria</string>
     <string name="schedule_category_item_count">%1$d itens</string>
