@@ -1,0 +1,41 @@
+O Redirecionador e Agendador SMS reencaminha automaticamente as mensagens que escolher para outro número de telefone, e permite agendar as suas próprias mensagens para envio automático mais tarde — tudo sem conta, sem servidor, e sem que os seus dados saiam do seu dispositivo.
+
+PORQUÊ ESTA APP?
+Cubra um telefone de trabalho, monitorize um segundo SIM, reencaminhe códigos de utilização única para um número partilhado em família, ou garanta que uma mensagem é enviada enquanto está ocupado. A app funciona discretamente em segundo plano e trata disso por si, de forma fiável e 100% no dispositivo.
+
+REDIRECIONAR — Reencaminhar mensagens por regra
+• Crie regras simples: associe um remetente (por texto ou contacto) a um número de destino
+• Funciona com SMS normal, e com mensagens RCS/chat do Google Mensagens, Samsung Mensagens e outras apps de mensagens
+• A primeira regra correspondente é aplicada — arraste para reordenar as suas regras
+• Prefixo personalizado opcional adicionado a cada mensagem reencaminhada (por exemplo, "SMS Redirect:")
+• Escolha se o reencaminhamento é permitido em roaming
+• Histórico das últimas 50 mensagens reencaminhadas, com remetente, destino e regra correspondente
+• Receba uma notificação sempre que uma mensagem é reencaminhada
+
+AGENDAR — Enviar mensagens automaticamente, mais tarde
+• Escreva uma mensagem uma vez, escolha um contacto, uma data e uma hora — a app envia-a por si
+• Repita diariamente, em dias úteis, quinzenalmente, mensalmente ou anualmente, com data de fim opcional
+• Organize as mensagens agendadas por categorias
+• Histórico de todas as mensagens agendadas já enviadas
+
+PRIVACIDADE POR DESIGN
+• Sem conta, sem login, sem servidor
+• Regras, agendamentos, contactos e histórico ficam guardados apenas no seu dispositivo
+• As mensagens reencaminhadas e agendadas são enviadas diretamente pela rede SMS da sua própria operadora — nunca por um servidor nosso, porque não temos nenhum
+• Apenas dados anónimos de falhas e utilização são recolhidos para ajudar a corrigir erros — nunca números de telefone, nomes de contactos ou conteúdo das mensagens
+• O código-fonte é público, para que cada afirmação aqui possa ser verificada: github.com/neteinstein/SMS-Redirect
+
+TAMBÉM INCLUI
+• Seletor de contactos para remetentes e destinos
+• Reordenação por arrastar e agrupamento por categorias, tanto nas regras como nos agendamentos
+• Modo claro e escuro, com cor dinâmica Material You
+• Exporte e importe as suas regras e agendamentos como ficheiro de backup, quando quiser
+• Disponível em português e inglês
+
+UMA NOTA SOBRE RCS
+O Android não dá a nenhuma app uma forma direta de intercetar mensagens RCS/chat, por isso o Redirecionador lê as notificações do Google Mensagens como rede de segurança de melhor esforço — não existe um canal de entrega garantido para RCS no Android, para nenhuma app. Funciona bem para mensagens do dia a dia; note que versões mais recentes do Android ocultam códigos de utilização única nas notificações antes de qualquer app, incluindo esta, os poder ler, por isso o reencaminhamento de códigos OTP deve ser considerado de melhor esforço.
+
+PERMISSÕES, EXPLICADAS
+O Redirecionador e Agendador SMS pede apenas o que precisa: permissões de SMS (para detetar e enviar mensagens), Contactos (para escolher números por nome), Estado do telefone (para detetar roaming) e Acesso a notificações (para captar RCS). Veja exatamente como cada permissão é usada na Política de Privacidade da app e no código-fonte público.
+
+Perguntas ou sugestões? Contacte play-store-neteinstein@googlegroups.com ou abra uma issue no GitHub.

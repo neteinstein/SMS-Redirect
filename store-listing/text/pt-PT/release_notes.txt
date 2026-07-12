@@ -1,0 +1,1 @@
+Primeira versão: crie regras de reencaminhamento de SMS/RCS com reordenação por arrastar e agrupamento por categorias, agende mensagens com opções de repetição (diária, dias úteis, quinzenal, mensal, anual), histórico de reencaminhos e agendamentos, backup/restauro, modo claro e escuro, e suporte para português e inglês.
