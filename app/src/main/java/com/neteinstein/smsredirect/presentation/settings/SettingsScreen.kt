@@ -59,8 +59,8 @@ fun SettingsScreen(
     onShowNotificationsChanged: (Boolean) -> Unit,
     onForwardPrefixSaved: (String) -> Unit,
     onDefaultPrefixChanged: (String) -> Unit,
-    onExportRules: () -> Unit,
-    onImportRules: () -> Unit,
+    onExportBackup: () -> Unit,
+    onImportBackup: () -> Unit,
     onOpenLanguageSettings: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -126,7 +126,7 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Button(
-                    onClick = onExportRules,
+                    onClick = onExportBackup,
                     modifier = Modifier.weight(1f),
                 ) {
                     Icon(
@@ -140,7 +140,7 @@ fun SettingsScreen(
                     )
                 }
                 Button(
-                    onClick = onImportRules,
+                    onClick = onImportBackup,
                     modifier = Modifier.weight(1f),
                 ) {
                     Icon(
