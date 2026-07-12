@@ -148,7 +148,7 @@ fun ScheduleListScreen(
                     Icon(
                         painter = painterResource(id = R.drawable.ic_sms_scheduler_illustration),
                         contentDescription = stringResource(R.string.schedule_no_items_illustration_cd),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = androidx.compose.ui.graphics.Color.Unspecified,
                         modifier = Modifier.size(200.dp),
                     )
                     Spacer(modifier = Modifier.height(16.dp))
