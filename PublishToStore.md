@@ -24,14 +24,17 @@ This document describes the configuration required to enable automated publishin
 
 ### 2. Grant Permissions in Google Play Console
 
-1. Open the [Google Play Console](https://play.google.com/console).
-2. Go to **Settings > API access**.
-3. Link the Google Cloud project if not already linked.
-4. Find your service account and click **Manage permissions**.
-5. Grant the following permissions:
+Google has moved this flow out of **API access**. Service account permissions are now granted from **Users and permissions**.
+
+1. In the [Google Cloud Console](https://console.cloud.google.com/), copy the service account's email address (**IAM & Admin > Service Accounts**).
+2. Open the [Google Play Console](https://play.google.com/console).
+3. (Optional check) Go to **Setup > API access** to confirm the Google Cloud project is linked to this Play Console account. Link it if it isn't yet — there's no "Manage permissions" button here anymore.
+4. Go to **Users and permissions** and click **Invite new users**.
+5. Paste the service account's email address as the user.
+6. Under the **App permissions** tab, click **Add app**, select `com.neteinstein.smsredirect`, and check:
    - **Release to production, exclude devices, and use Play App Signing**
    - **Manage store presence**
-6. Apply permissions to the app (`com.neteinstein.smsredirect`).
+7. Click **Apply**, then **Invite user**. Service accounts get access immediately — there's no invite email to accept.
 
 ### 3. Configure GitHub Repository Secrets
 
@@ -56,22 +59,27 @@ Before the automated workflow can publish updates, you must:
 
 ### 5. Running the Workflow
 
-1. Go to the repository's **Actions** tab on GitHub.
-2. Select the **Publish to Play Store** workflow.
-3. Click **Run workflow**.
-4. Select the desired release track:
-   - `internal` — Internal testing (default, recommended for initial testing)
-   - `alpha` — Closed testing
-   - `beta` — Open testing
-   - `production` — Public release
-5. Click **Run workflow** to start the publish process.
+The **Publish to Play Store** workflow runs in two ways:
+
+- **Automatically on merge to `main`** — every push to `main` runs `ktlintCheck` and `test` first; if both pass, the app is built and published to the **internal** track. If either check fails, nothing is published.
+- **Manually, for other tracks** — to publish to `alpha`, `beta`, or `production`, trigger it by hand:
+  1. Go to the repository's **Actions** tab on GitHub.
+  2. Select the **Publish to Play Store** workflow.
+  3. Click **Run workflow**.
+  4. Select the desired release track:
+     - `internal` — Internal testing (default, recommended for initial testing)
+     - `alpha` — Closed testing
+     - `beta` — Open testing
+     - `production` — Public release
+  5. Click **Run workflow** to start the publish process. Manual runs also run `ktlintCheck` and `test` first and only publish if both pass.
 
 ## Troubleshooting
 
 - **403 Forbidden** — The service account does not have sufficient permissions in the Play Console. Verify the permissions from Step 2.
 - **APK/AAB not found** — Ensure the build step completes successfully before the upload step.
-- **Version code already exists** — Increment `versionCode` in `app/build.gradle.kts` before publishing.
+- **Version code already exists** — Version codes are derived from the GitHub Actions run number, which always increases, so this should only happen if a version was also uploaded manually or from another source. Increment `versionCode` in `app/build.gradle.kts` if needed.
 - **First upload error** — Google requires the very first upload to be done manually through the Play Console.
+- **Publish job skipped** — The `ktlint` or `unit-tests` job failed on the merge to `main`. Check the workflow run logs for the failing check; nothing is published to the Play Store until both pass.
 
 ## Security Notes
 
