@@ -41,7 +41,7 @@ Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean archit
 - Contact name resolution for forwarded-message notifications
 - Message deduplication (30-second window prevents double-forwards)
 - Dark mode support (Material3 dynamic colors)
-- Android 15+ support (min/target SDK 35)
+- Android 13+ support (min SDK 33, target SDK 37)
 
 ## Testing on a device (sideloaded via ADB)
 
@@ -233,4 +233,4 @@ See [PrivacyPolicy.md](PrivacyPolicy.md) for the app's privacy policy — all ru
 - **Analytics/Crash reporting:** Firebase (Analytics, Crashlytics)
 - **Architecture:** MVVM + Clean Architecture (Use Cases / Repository pattern)
 - **DI:** Manual (AppContainer)
-- **Min SDK:** 35 (Android 15)
+- **Min SDK:** 33 (Android 13)
