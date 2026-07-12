@@ -190,10 +190,12 @@ The app integrates [Firebase](https://firebase.google.com/) for:
 
 ### Setup
 
-The repository ships with a placeholder `app/google-services.json` so the
-project builds out of the box, but it does **not** point at a real Firebase
-project — Crashlytics/Analytics/Performance data won't be delivered anywhere
-useful until you replace it:
+The repository ships with `app/google-services.json` wired to the
+`sms-redirect-schedule` Firebase project (package name
+`com.neteinstein.smsredirect`), so Crashlytics/Analytics/Performance report
+out of the box after building the app.
+
+To point the app at a different Firebase project instead:
 
 1. Create a Firebase project at the [Firebase console](https://console.firebase.google.com/).
 2. Add an Android app with package name `com.neteinstein.smsredirect`.
