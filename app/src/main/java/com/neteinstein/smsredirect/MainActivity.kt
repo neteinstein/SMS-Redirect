@@ -238,6 +238,17 @@ class MainActivity : ComponentActivity() {
                             MainBottomBar(
                                 selectedTab = selectedTab,
                                 onTabSelected = { selectedTab = it },
+                                onFabClick = {
+                                    when (selectedTab) {
+                                        MainTab.REDIRECT -> navController.navigate(Routes.ruleRoute())
+                                        MainTab.SCHEDULE -> navController.navigate(Routes.scheduleRoute())
+                                    }
+                                },
+                                fabContentDescription =
+                                    when (selectedTab) {
+                                        MainTab.REDIRECT -> stringResource(R.string.home_cd_add_rule)
+                                        MainTab.SCHEDULE -> stringResource(R.string.schedule_cd_add)
+                                    },
                             )
                         }
 

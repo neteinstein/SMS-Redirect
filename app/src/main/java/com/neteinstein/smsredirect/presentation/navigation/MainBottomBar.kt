@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Forward
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -31,39 +33,55 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.neteinstein.smsredirect.R
+import com.neteinstein.smsredirect.presentation.theme.Dimens
 
 @Composable
 fun MainBottomBar(
     selectedTab: MainTab,
     onTabSelected: (MainTab) -> Unit,
+    onFabClick: () -> Unit,
+    fabContentDescription: String,
 ) {
-    Surface(
+    Row(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.navigationBars)
-                .padding(horizontal = 32.dp, vertical = 12.dp),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shadowElevation = 6.dp,
-        tonalElevation = 3.dp,
+                .padding(horizontal = Dimens.SpaceLarge, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceMedium),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
+        Surface(
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shadowElevation = 6.dp,
+            tonalElevation = 3.dp,
         ) {
-            FloatingTabItem(
-                selected = selectedTab == MainTab.REDIRECT,
-                onClick = { onTabSelected(MainTab.REDIRECT) },
-                icon = Icons.AutoMirrored.Filled.Forward,
-                label = stringResource(R.string.main_tab_redirect),
-            )
-            FloatingTabItem(
-                selected = selectedTab == MainTab.SCHEDULE,
-                onClick = { onTabSelected(MainTab.SCHEDULE) },
-                icon = Icons.Default.Schedule,
-                label = stringResource(R.string.main_tab_schedule),
+            Row(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                FloatingTabItem(
+                    selected = selectedTab == MainTab.REDIRECT,
+                    onClick = { onTabSelected(MainTab.REDIRECT) },
+                    icon = Icons.AutoMirrored.Filled.Forward,
+                    label = stringResource(R.string.main_tab_redirect),
+                )
+                FloatingTabItem(
+                    selected = selectedTab == MainTab.SCHEDULE,
+                    onClick = { onTabSelected(MainTab.SCHEDULE) },
+                    icon = Icons.Default.Schedule,
+                    label = stringResource(R.string.main_tab_schedule),
+                )
+            }
+        }
+
+        FloatingActionButton(onClick = onFabClick) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = fabContentDescription,
             )
         }
     }
