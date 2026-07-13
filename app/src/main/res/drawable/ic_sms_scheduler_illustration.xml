@@ -22,15 +22,15 @@
 
     <path
         android:fillColor="#FFB300"
-        android:pathData="M38,27 A20,20 0 1,1 37.99,27 Z" />
+        android:pathData="M57,7 A20,20 0 1,1 56.99,7 Z" />
 
     <path
         android:fillColor="#FB8C00"
-        android:pathData="M57,27 A19,19 0 1,1 56.99,27 Z" />
+        android:pathData="M57,8 A19,19 0 1,1 56.99,8 Z" />
 
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M57,27 A17,17 0 1,1 56.99,27 Z" />
+        android:pathData="M57,10 A17,17 0 1,1 56.99,10 Z" />
 
     <path
         android:fillColor="#455A64"

@@ -97,6 +97,10 @@
     <string name="main_tab_schedule">Schedule</string>
 
     <string name="repeat_type_none">None</string>
+    <string name="repeat_type_minutely">Minutely</string>
+    <string name="repeat_type_quarter_hourly">Quarter-hourly</string>
+    <string name="repeat_type_half_hourly">Half-hourly</string>
+    <string name="repeat_type_hourly">Hourly</string>
     <string name="repeat_type_daily">Daily</string>
     <string name="repeat_type_work_week_days">Work week days</string>
     <string name="repeat_type_biweekly">Bi-weekly</string>
@@ -130,6 +134,7 @@
     <string name="schedule_form_cd_pick_contact">Pick contact from contacts</string>
     <string name="schedule_form_label_message">Message</string>
     <string name="schedule_form_placeholder_message">Type the SMS message to send</string>
+    <string name="schedule_form_berserk_mode_label">Berserk mode</string>
     <string name="schedule_form_label_date">Date</string>
     <string name="schedule_form_date_placeholder">Pick a date</string>
     <string name="schedule_form_label_time">Time</string>
