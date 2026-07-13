@@ -69,6 +69,10 @@
     <string name="main_tab_schedule">Agendar</string>
 
     <string name="repeat_type_none">Nenhuma</string>
+    <string name="repeat_type_minutely">A cada minuto</string>
+    <string name="repeat_type_quarter_hourly">A cada quarto de hora</string>
+    <string name="repeat_type_half_hourly">A cada meia hora</string>
+    <string name="repeat_type_hourly">A cada hora</string>
     <string name="repeat_type_daily">Diariamente</string>
     <string name="repeat_type_work_week_days">Dias úteis</string>
     <string name="repeat_type_biweekly">Quinzenalmente</string>
@@ -102,6 +106,7 @@
     <string name="schedule_form_cd_pick_contact">Escolher contacto dos contactos</string>
     <string name="schedule_form_label_message">Mensagem</string>
     <string name="schedule_form_placeholder_message">Escreva a mensagem SMS a enviar</string>
+    <string name="schedule_form_berserk_mode_label">Modo berserker</string>
     <string name="schedule_form_label_date">Data</string>
     <string name="schedule_form_date_placeholder">Escolher uma data</string>
     <string name="schedule_form_label_time">Hora</string>

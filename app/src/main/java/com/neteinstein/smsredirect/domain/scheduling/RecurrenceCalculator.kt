@@ -55,6 +55,10 @@ object RecurrenceCalculator {
     ): ZonedDateTime =
         when (repeatType) {
             RepeatType.NONE -> anchor
+            RepeatType.MINUTELY -> anchor.plusMinutes(count.toLong())
+            RepeatType.QUARTER_HOURLY -> anchor.plusMinutes(15L * count)
+            RepeatType.HALF_HOURLY -> anchor.plusMinutes(30L * count)
+            RepeatType.HOURLY -> anchor.plusHours(count.toLong())
             RepeatType.DAILY -> anchor.plusDays(count.toLong())
             RepeatType.WORK_WEEK_DAYS -> nthWorkDayAfter(anchor, count)
             RepeatType.BIWEEKLY -> anchor.plusWeeks(2L * count)

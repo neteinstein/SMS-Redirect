@@ -33,6 +33,81 @@ class RecurrenceCalculatorTest {
     }
 
     @Test
+    fun `MINUTELY advances by one minute`() {
+        val anchor = epoch(2023, 3, 10, 10, 0)
+
+        val result =
+            RecurrenceCalculator.nextOccurrence(
+                anchorEpochMs = anchor,
+                repeatType = RepeatType.MINUTELY,
+                afterEpochMs = anchor,
+                zoneId = ZoneOffset.UTC,
+            )
+
+        assertEquals(epoch(2023, 3, 10, 10, 1), result)
+    }
+
+    @Test
+    fun `QUARTER_HOURLY advances by fifteen minutes`() {
+        val anchor = epoch(2023, 3, 10, 10, 0)
+
+        val result =
+            RecurrenceCalculator.nextOccurrence(
+                anchorEpochMs = anchor,
+                repeatType = RepeatType.QUARTER_HOURLY,
+                afterEpochMs = anchor,
+                zoneId = ZoneOffset.UTC,
+            )
+
+        assertEquals(epoch(2023, 3, 10, 10, 15), result)
+    }
+
+    @Test
+    fun `HALF_HOURLY advances by thirty minutes`() {
+        val anchor = epoch(2023, 3, 10, 10, 0)
+
+        val result =
+            RecurrenceCalculator.nextOccurrence(
+                anchorEpochMs = anchor,
+                repeatType = RepeatType.HALF_HOURLY,
+                afterEpochMs = anchor,
+                zoneId = ZoneOffset.UTC,
+            )
+
+        assertEquals(epoch(2023, 3, 10, 10, 30), result)
+    }
+
+    @Test
+    fun `HOURLY advances by one hour`() {
+        val anchor = epoch(2023, 3, 10, 10, 0)
+
+        val result =
+            RecurrenceCalculator.nextOccurrence(
+                anchorEpochMs = anchor,
+                repeatType = RepeatType.HOURLY,
+                afterEpochMs = anchor,
+                zoneId = ZoneOffset.UTC,
+            )
+
+        assertEquals(epoch(2023, 3, 10, 11, 0), result)
+    }
+
+    @Test
+    fun `HOURLY skips ahead to the first hour strictly after the given instant`() {
+        val anchor = epoch(2023, 3, 10, 10, 0)
+
+        val result =
+            RecurrenceCalculator.nextOccurrence(
+                anchorEpochMs = anchor,
+                repeatType = RepeatType.HOURLY,
+                afterEpochMs = epoch(2023, 3, 10, 13, 30),
+                zoneId = ZoneOffset.UTC,
+            )
+
+        assertEquals(epoch(2023, 3, 10, 14, 0), result)
+    }
+
+    @Test
     fun `DAILY returns anchor plus one day when after equals anchor`() {
         val anchor = epoch(2023, 3, 10)
 

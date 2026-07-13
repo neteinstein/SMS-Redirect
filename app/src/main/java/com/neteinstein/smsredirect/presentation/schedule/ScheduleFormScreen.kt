@@ -2,6 +2,7 @@ package com.neteinstein.smsredirect.presentation.schedule
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,6 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -36,12 +38,14 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.neteinstein.smsredirect.R
@@ -52,6 +56,9 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.Calendar
 import java.util.Date
+
+/** Number of consecutive taps on the create-screen title needed to reveal the hidden "Berserk mode" toggle. */
+private const val BERSERK_MODE_UNLOCK_TAP_COUNT = 15
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,16 +75,40 @@ fun ScheduleFormScreen(
     onSave: () -> Unit,
     onBack: () -> Unit,
 ) {
+    val isCreating = uiState.id == 0L
+    // Hidden easter egg: tapping the create-screen title 15 times in a row reveals the "Berserk
+    // mode" toggle below. Neither the unlocked flag nor the toggle value is persisted anywhere -
+    // they live only in this composition and reset the next time the form is opened.
+    var titleTapCount by remember { mutableIntStateOf(0) }
+    var berserkModeUnlocked by remember { mutableStateOf(false) }
+    var berserkModeEnabled by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        if (uiState.id == 0L) {
-                            stringResource(R.string.schedule_form_title_create)
-                        } else {
-                            stringResource(R.string.schedule_form_title_edit)
-                        },
+                        text =
+                            if (isCreating) {
+                                stringResource(R.string.schedule_form_title_create)
+                            } else {
+                                stringResource(R.string.schedule_form_title_edit)
+                            },
+                        modifier =
+                            if (isCreating && !berserkModeUnlocked) {
+                                Modifier.pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onTap = {
+                                            titleTapCount++
+                                            if (titleTapCount >= BERSERK_MODE_UNLOCK_TAP_COUNT) {
+                                                berserkModeUnlocked = true
+                                            }
+                                        },
+                                    )
+                                }
+                            } else {
+                                Modifier
+                            },
                     )
                 },
                 navigationIcon = {
@@ -140,12 +171,19 @@ fun ScheduleFormScreen(
                 placeholder = { Text(stringResource(R.string.schedule_form_placeholder_message)) },
                 minLines = 5,
             )
+            if (berserkModeUnlocked) {
+                BerserkModeToggle(
+                    enabled = berserkModeEnabled,
+                    onEnabledChanged = { berserkModeEnabled = it },
+                )
+            }
             DateAndTimeRow(
                 dateEpochMs = uiState.dateEpochMs,
                 onSelected = onDateSelected,
             )
             RepeatTypeField(
                 selected = uiState.repeatType,
+                berserkModeEnabled = berserkModeEnabled,
                 onSelected = onRepeatTypeChanged,
             )
             if (uiState.repeatType != RepeatType.NONE) {
@@ -223,9 +261,14 @@ private fun ScheduleCategoryField(
 @Composable
 private fun RepeatTypeField(
     selected: RepeatType,
+    berserkModeEnabled: Boolean,
     onSelected: (RepeatType) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val options =
+        remember(berserkModeEnabled) {
+            RepeatType.entries.filter { berserkModeEnabled || it !in BERSERK_ONLY_REPEAT_TYPES }
+        }
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = it },
@@ -242,7 +285,7 @@ private fun RepeatTypeField(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {
-            RepeatType.entries.forEach { type ->
+            options.forEach { type ->
                 DropdownMenuItem(
                     text = { Text(repeatTypeLabel(type)) },
                     onClick = {
@@ -252,6 +295,25 @@ private fun RepeatTypeField(
                 )
             }
         }
+    }
+}
+
+/** Hidden toggle revealed only after tapping the create-screen title 15 times in a row; see [ScheduleFormScreen]. */
+@Composable
+private fun BerserkModeToggle(
+    enabled: Boolean,
+    onEnabledChanged: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(stringResource(R.string.schedule_form_berserk_mode_label))
+        Switch(
+            checked = enabled,
+            onCheckedChange = onEnabledChanged,
+        )
     }
 }
 

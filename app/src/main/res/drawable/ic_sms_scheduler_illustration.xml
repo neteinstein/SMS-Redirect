@@ -22,7 +22,7 @@
 
     <path
         android:fillColor="#FFB300"
-        android:pathData="M38,27 A20,20 0 1,1 37.99,27 Z" />
+        android:pathData="M57,27 A20,20 0 1,1 56.99,27 Z" />
 
     <path
         android:fillColor="#FB8C00"
