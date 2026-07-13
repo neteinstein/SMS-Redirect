@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Forward
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.AlertDialog
@@ -44,9 +45,13 @@ fun HistoryScreen(
     contactNames: Map<String, String>,
     keepHistory: Boolean,
     showDisableConfirmation: Boolean,
+    showClearConfirmation: Boolean,
     onKeepHistoryChanged: (Boolean) -> Unit,
     onConfirmDisable: () -> Unit,
     onDismissDisable: () -> Unit,
+    onClearHistoryClicked: () -> Unit,
+    onConfirmClear: () -> Unit,
+    onDismissClear: () -> Unit,
     onBack: () -> Unit,
 ) {
     if (showDisableConfirmation) {
@@ -67,6 +72,24 @@ fun HistoryScreen(
         )
     }
 
+    if (showClearConfirmation) {
+        AlertDialog(
+            onDismissRequest = onDismissClear,
+            title = { Text(stringResource(R.string.history_clear_confirm_title)) },
+            text = { Text(stringResource(R.string.history_clear_confirm_message)) },
+            confirmButton = {
+                TextButton(onClick = onConfirmClear) {
+                    Text(stringResource(R.string.history_clear_confirm_yes))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismissClear) {
+                    Text(stringResource(R.string.history_clear_confirm_no))
+                }
+            },
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -76,6 +99,17 @@ fun HistoryScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.action_back),
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = onClearHistoryClicked,
+                        enabled = forwardHistory.isNotEmpty(),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DeleteSweep,
+                            contentDescription = stringResource(R.string.action_clear_history),
                         )
                     }
                 },

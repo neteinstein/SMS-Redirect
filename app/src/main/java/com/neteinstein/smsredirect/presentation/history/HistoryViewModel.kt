@@ -35,6 +35,9 @@ class HistoryViewModel(
     private val _showDisableConfirmation = MutableStateFlow(false)
     val showDisableConfirmation: StateFlow<Boolean> = _showDisableConfirmation.asStateFlow()
 
+    private val _showClearConfirmation = MutableStateFlow(false)
+    val showClearConfirmation: StateFlow<Boolean> = _showClearConfirmation.asStateFlow()
+
     init {
         getForwardHistoryUseCase(limit = 50)
             .onEach { history ->
@@ -66,6 +69,21 @@ class HistoryViewModel(
 
     fun dismissDisableConfirmation() {
         _showDisableConfirmation.value = false
+    }
+
+    fun onClearHistoryClicked() {
+        _showClearConfirmation.value = true
+    }
+
+    fun confirmClearHistory() {
+        _showClearConfirmation.value = false
+        viewModelScope.launch {
+            deleteAllHistoryUseCase()
+        }
+    }
+
+    fun dismissClearConfirmation() {
+        _showClearConfirmation.value = false
     }
 
     private fun resolveContactNames(history: List<ForwardHistory>) {
