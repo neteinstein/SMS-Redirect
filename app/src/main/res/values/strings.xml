@@ -3,8 +3,6 @@
     <string name="splash_subtitle">Redirect and schedule your SMS messages</string>
     <string name="battery_optimization_title">Disable battery optimization</string>
     <string name="battery_optimization_message">To keep SMS forwarding reliable, disable battery optimization for this app.</string>
-    <string name="notification_access_title">Enable notification access</string>
-    <string name="notification_access_message">To capture RCS messages from Google Messages, this app needs notification access. This allows it to read incoming message notifications and forward them.</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_back">Back</string>
     <string name="action_ok">OK</string>
@@ -42,16 +40,16 @@
     <string name="home_target_format">Target: %1$s</string>
     <string name="home_cd_delete_rule">Delete</string>
     <string name="home_category_uncategorized">Uncategorized</string>
-    <string name="home_category_rule_count">%1$d rules</string>
+    <plurals name="home_category_rule_count">
+        <item quantity="one">%1$d rule</item>
+        <item quantity="other">%1$d rules</item>
+    </plurals>
     <string name="home_cd_collapse_category">Collapse category</string>
     <string name="home_cd_expand_category">Expand category</string>
 
     <string name="delete_rule_dialog_title">Delete rule</string>
     <string name="delete_rule_dialog_message">Are you sure you want to delete \"%1$s\"?</string>
     <string name="action_delete">Delete</string>
-
-    <string name="missing_permissions_banner_title">Missing permissions - SMS forwarding will not work:</string>
-    <string name="permission_item_format">• %1$s</string>
 
     <string name="rule_title_create">Create Rule</string>
     <string name="rule_title_edit">Edit Rule</string>
@@ -80,9 +78,16 @@
     <string name="settings_prefix_none">None</string>
     <string name="settings_export_rules">Export Backup</string>
     <string name="settings_import_rules">Import Backup</string>
-    <string name="settings_import_success">Imported %1$d rules and %2$d scheduled messages</string>
+    <string name="settings_import_success">Imported %1$s and %2$s</string>
+    <plurals name="settings_import_success_rules">
+        <item quantity="one">%1$d rule</item>
+        <item quantity="other">%1$d rules</item>
+    </plurals>
+    <plurals name="settings_import_success_messages">
+        <item quantity="one">%1$d scheduled message</item>
+        <item quantity="other">%1$d scheduled messages</item>
+    </plurals>
     <string name="settings_import_error">Failed to import backup</string>
-    <string name="settings_history_title">Forward history (last 50)</string>
     <string name="history_title">Redirect History</string>
     <string name="settings_no_forwarded_sms">No forwarded SMS yet</string>
     <string name="history_disable_confirm_title">Disable history</string>
@@ -120,7 +125,10 @@
     <string name="schedule_add_first_item">Add your first scheduled SMS</string>
     <string name="schedule_no_items_illustration_cd">SMS scheduling illustration</string>
     <string name="schedule_category_uncategorized">Uncategorized</string>
-    <string name="schedule_category_item_count">%1$d items</string>
+    <plurals name="schedule_category_item_count">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
     <string name="schedule_delete_dialog_title">Delete scheduled SMS</string>
     <string name="schedule_delete_dialog_message">Are you sure you want to delete \"%1$s\"?</string>
     <string name="schedule_default_name_format">Scheduled SMS #%1$d</string>

@@ -5,6 +5,7 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.edit
 
 /**
  * Listens for incoming notifications from messaging apps (primarily Google Messages)
@@ -205,10 +206,9 @@ class RcsNotificationListener : NotificationListenerService() {
     /** Best-effort write so MainActivity can tell "granted but never bound" apart from "working". */
     private fun recordDiagnosticTimestamp(key: String) {
         runCatching {
-            getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                .edit()
-                .putLong(key, System.currentTimeMillis())
-                .apply()
+            getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit {
+                putLong(key, System.currentTimeMillis())
+            }
         }
     }
 
