@@ -74,6 +74,25 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <!-- Disable androidx.profileinstaller's automatic App Startup initializer.
+             Some OEM builds report Build.VERSION.SDK_INT >= 33 without actually implementing
+             every API added in that release. ProfileVerifier calls the API-33-only
+             PackageManager.PackageInfoFlags.of(long) unconditionally on any device reporting
+             API 33+, which throws NoSuchMethodError on those builds and crashes the app
+             shortly after startup. Baseline/cloud profile installation is a background,
+             best-effort ART compilation optimization the app doesn't otherwise depend on, so
+             it's simplest and safest to stop it from running at all rather than try to guard
+             a crash that happens inside the library itself. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+                tools:node="remove" />
+        </provider>
+
     </application>
 
 </manifest>
