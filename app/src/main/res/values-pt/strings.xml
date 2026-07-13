@@ -3,8 +3,6 @@
     <string name="splash_subtitle">Redirecione e agende as suas mensagens SMS</string>
     <string name="battery_optimization_title">Desativar otimização de bateria</string>
     <string name="battery_optimization_message">Para manter o redirecionamento de SMS confiável, desative a otimização de bateria para esta app.</string>
-    <string name="notification_access_title">Ativar acesso a notificações</string>
-    <string name="notification_access_message">Para captar mensagens RCS do Google Mensagens, esta app precisa de acesso a notificações. Isto permite ler notificações de mensagens recebidas e reencaminhá-las.</string>
     <string name="action_cancel">Cancelar</string>
     <string name="action_back">Voltar</string>
     <string name="action_ok">OK</string>
@@ -13,23 +11,46 @@
     <string name="sideload_warning_title">Permitir definições restritas</string>
     <string name="sideload_warning_message">Esta app não foi instalada pela Play Store. É necessário um passo extra:\n\n1. Vá a Definições > Apps > Redirecionador SMS\n2. Toque no menu de três pontos (canto superior direito)\n3. Selecione \"Permitir definições restritas\"\n\nPrima OK para abrir o ecrã de definições da app.</string>
 
+    <string name="permissions_title">Permissões Necessárias</string>
+    <string name="permissions_subtitle">O Redirecionador SMS precisa destas permissões para funcionar corretamente. Por favor, conceda todas para continuar.</string>
+    <string name="permissions_request">Pedir Permissão</string>
+    <string name="permissions_granted">Concedida</string>
+    <string name="permission_sms_label">SMS</string>
+    <string name="permission_sms_description">Necessário para receber e reencaminhar mensagens SMS</string>
+    <string name="permission_send_sms_label">Enviar SMS</string>
+    <string name="permission_send_sms_description">Necessário para reencaminhar mensagens para o número de destino</string>
+    <string name="permission_contacts_label">Contactos</string>
+    <string name="permission_contacts_description">Necessário para escolher contactos para as regras</string>
+    <string name="permission_phone_state_label">Estado do Telefone</string>
+    <string name="permission_phone_state_description">Necessário para detetar o estado de roaming</string>
+    <string name="permission_notifications_label">Notificações</string>
+    <string name="permission_notifications_description">Necessário para mostrar notificações ao redirecionar</string>
+    <string name="permission_notification_access_label">Acesso a Notificações</string>
+    <string name="permission_notification_access_description">Necessário para captar mensagens RCS do Google Mensagens</string>
+
     <string name="home_title_rules">Regras de Redirecionamento SMS</string>
     <string name="home_cd_settings">Definições</string>
     <string name="home_cd_history">Histórico</string>
     <string name="home_cd_add_rule">Adicionar regra</string>
     <string name="home_no_rules">Ainda não existem regras. Adicione uma para começar.</string>
+    <string name="home_no_rules_illustration_cd">Ilustração de reencaminhamento de SMS</string>
     <string name="home_add_first_rule">Adicionar a primeira regra</string>
     <string name="home_cd_drag_to_reorder">Arrastar para reordenar</string>
     <string name="home_sender_format">Remetente: %1$s</string>
     <string name="home_target_format">Destino: %1$s</string>
     <string name="home_cd_delete_rule">Apagar</string>
+    <string name="home_category_uncategorized">Sem categoria</string>
+    <plurals name="home_category_rule_count">
+        <item quantity="one">%1$d regra</item>
+        <item quantity="many">%1$d de regras</item>
+        <item quantity="other">%1$d regras</item>
+    </plurals>
+    <string name="home_cd_collapse_category">Recolher categoria</string>
+    <string name="home_cd_expand_category">Expandir categoria</string>
 
     <string name="delete_rule_dialog_title">Apagar regra</string>
     <string name="delete_rule_dialog_message">Tem a certeza que deseja apagar \"%1$s\"?</string>
     <string name="action_delete">Apagar</string>
-
-    <string name="missing_permissions_banner_title">Permissões em falta - o redirecionamento de SMS não vai funcionar:</string>
-    <string name="permission_item_format">• %1$s</string>
 
     <string name="rule_title_create">Criar Regra</string>
     <string name="rule_title_edit">Editar Regra</string>
@@ -37,6 +58,8 @@
     <string name="rule_placeholder_name_optional">Opcional - gerado automaticamente se vazio</string>
     <string name="rule_label_sender">Remetente</string>
     <string name="rule_label_target_number">Número de Destino</string>
+    <string name="rule_label_category">Categoria</string>
+    <string name="rule_placeholder_category">Opcional - escreva ou selecione uma existente</string>
     <string name="rule_cd_pick_sender_contact">Escolher remetente dos contactos</string>
     <string name="rule_cd_pick_target_contact">Escolher destino dos contactos</string>
     <string name="rule_error_invalid_target">O destino deve ser um número de telefone válido (dígitos, +, espaços e hífens permitidos)</string>
@@ -54,7 +77,20 @@
     <string name="settings_forward_prefix_label">Prefixo da mensagem reencaminhada</string>
     <string name="settings_forward_prefix_save">Guardar prefixo</string>
     <string name="settings_prefix_none">Nenhum</string>
-    <string name="settings_history_title">Histórico de reencaminhamento (últimos 50)</string>
+    <string name="settings_export_rules">Exportar Cópia de Segurança</string>
+    <string name="settings_import_rules">Importar Cópia de Segurança</string>
+    <string name="settings_import_success">Importados %1$s e %2$s</string>
+    <plurals name="settings_import_success_rules">
+        <item quantity="one">%1$d regra</item>
+        <item quantity="many">%1$d de regras</item>
+        <item quantity="other">%1$d regras</item>
+    </plurals>
+    <plurals name="settings_import_success_messages">
+        <item quantity="one">%1$d mensagem agendada</item>
+        <item quantity="many">%1$d de mensagens agendadas</item>
+        <item quantity="other">%1$d mensagens agendadas</item>
+    </plurals>
+    <string name="settings_import_error">Falha ao importar cópia de segurança</string>
     <string name="history_title">Histórico de Redirecionamentos</string>
     <string name="settings_no_forwarded_sms">Ainda não há SMS reencaminhados</string>
     <string name="history_disable_confirm_title">Desativar histórico</string>
@@ -87,7 +123,11 @@
     <string name="schedule_add_first_item">Adicionar o primeiro SMS agendado</string>
     <string name="schedule_no_items_illustration_cd">Ilustração de agendamento de SMS</string>
     <string name="schedule_category_uncategorized">Sem categoria</string>
-    <string name="schedule_category_item_count">%1$d itens</string>
+    <plurals name="schedule_category_item_count">
+        <item quantity="one">%1$d item</item>
+        <item quantity="many">%1$d de itens</item>
+        <item quantity="other">%1$d itens</item>
+    </plurals>
     <string name="schedule_delete_dialog_title">Apagar SMS agendado</string>
     <string name="schedule_delete_dialog_message">Tem a certeza que deseja apagar \"%1$s\"?</string>
     <string name="schedule_default_name_format">SMS Agendado #%1$d</string>
