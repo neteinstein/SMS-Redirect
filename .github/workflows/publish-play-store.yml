@@ -32,7 +32,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          # release.yml pushes a version-bump commit to main *after* it starts, so
+          # head_sha (the commit that triggered it) no longer has the bumped
+          # versionName. Checking out main's tip picks up that bump commit, which
+          # is already pushed by the time this workflow_run fires.
+          ref: main
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
