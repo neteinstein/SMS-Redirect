@@ -22,6 +22,7 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
@@ -221,7 +222,7 @@ private fun ScheduleCategoryField(
                 onCategoryChanged(value)
                 expanded = true
             },
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
+            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
             label = { Text(stringResource(R.string.schedule_form_label_category)) },
             placeholder = { Text(stringResource(R.string.schedule_form_placeholder_category)) },
             trailingIcon = {
@@ -277,7 +278,7 @@ private fun RepeatTypeField(
             value = repeatTypeLabel(selected),
             onValueChange = {},
             readOnly = true,
-            modifier = Modifier.fillMaxWidth().menuAnchor(),
+            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
             label = { Text(stringResource(R.string.schedule_form_label_repeat)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
         )

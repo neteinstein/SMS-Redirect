@@ -7,11 +7,11 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.telephony.SmsManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import com.neteinstein.smsredirect.domain.analytics.AnalyticsEvents
 import com.neteinstein.smsredirect.domain.analytics.AnalyticsTracker
 import com.neteinstein.smsredirect.domain.analytics.CrashReporter
@@ -165,7 +165,7 @@ class ScheduledSmsSender(
         val deepLinkIntent =
             Intent(
                 Intent.ACTION_VIEW,
-                Uri.parse("${Routes.DEEP_LINK_URI}/${Routes.ScheduleHistory}"),
+                "${Routes.DEEP_LINK_URI}/${Routes.ScheduleHistory}".toUri(),
                 context,
                 MainActivity::class.java,
             ).apply {

@@ -1,6 +1,7 @@
 package com.neteinstein.smsredirect
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.LocaleManager
 import android.app.NotificationManager
 import android.content.ComponentName
@@ -37,6 +38,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -400,13 +403,25 @@ class MainActivity : ComponentActivity() {
 
                         LaunchedEffect(Unit) {
                             settingsViewModel.importResult.collectLatest { result ->
+                                val rulesText =
+                                    context.resources.getQuantityString(
+                                        R.plurals.settings_import_success_rules,
+                                        result.importedRules,
+                                        result.importedRules,
+                                    )
+                                val messagesText =
+                                    context.resources.getQuantityString(
+                                        R.plurals.settings_import_success_messages,
+                                        result.importedScheduledSms,
+                                        result.importedScheduledSms,
+                                    )
                                 val toast =
                                     Toast.makeText(
                                         context,
                                         context.getString(
                                             R.string.settings_import_success,
-                                            result.importedRules,
-                                            result.importedScheduledSms,
+                                            rulesText,
+                                            messagesText,
                                         ),
                                         Toast.LENGTH_SHORT,
                                     )
@@ -841,10 +856,18 @@ class MainActivity : ComponentActivity() {
         return !powerManager.isIgnoringBatteryOptimizations(packageName)
     }
 
+    /**
+     * Requests exemption from battery optimization so scheduled/incoming SMS forwarding keeps
+     * working while the device is in Doze or App Standby. This is a legitimate use of the
+     * BatteryLife-flagged API: the app's sole purpose is background SMS forwarding, which Play
+     * Store's content policy explicitly allows as an exception (messaging apps whose core
+     * function requires reliable background delivery).
+     */
+    @SuppressLint("BatteryLife")
     private fun openBatteryOptimizationSettings() {
         val intent =
             Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                data = Uri.parse("package:$packageName")
+                data = "package:$packageName".toUri()
             }
         runCatching { startActivity(intent) }
     }
@@ -862,16 +885,15 @@ class MainActivity : ComponentActivity() {
         }.getOrDefault(false)
 
     private fun dismissSideloadWarning() {
-        getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-            .edit()
-            .putBoolean(KEY_SIDELOAD_DISMISSED, true)
-            .apply()
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit {
+            putBoolean(KEY_SIDELOAD_DISMISSED, true)
+        }
     }
 
     private fun openAppSettings() {
         val intent =
             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = Uri.parse("package:$packageName")
+                data = "package:$packageName".toUri()
             }
         runCatching { startActivity(intent) }
     }
@@ -879,7 +901,7 @@ class MainActivity : ComponentActivity() {
     private fun openAppLocaleSettings() {
         val intent =
             Intent(Settings.ACTION_APP_LOCALE_SETTINGS).apply {
-                data = Uri.parse("package:$packageName")
+                data = "package:$packageName".toUri()
             }
         runCatching { startActivity(intent) }
     }
