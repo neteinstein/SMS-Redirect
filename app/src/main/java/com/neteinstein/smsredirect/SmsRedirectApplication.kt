@@ -72,6 +72,7 @@ class SmsRedirectApplication : Application() {
         FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG)
         val analyticsTracker: AnalyticsTracker = FirebaseAnalyticsTracker(this)
         val crashReporter: CrashReporter = FirebaseCrashReporter()
+        DeviceCompatibilityCrashHandler.install(crashReporter)
         val database =
             Room
                 .databaseBuilder(this, AppDatabase::class.java, "sms_redirect.db")
