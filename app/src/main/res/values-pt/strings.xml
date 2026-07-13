@@ -97,6 +97,11 @@
     <string name="history_disable_confirm_message">Tem a certeza que pretende desativar e apagar o histórico atual?</string>
     <string name="history_disable_confirm_yes">Sim</string>
     <string name="history_disable_confirm_no">Não</string>
+    <string name="action_clear_history">Limpar histórico</string>
+    <string name="history_clear_confirm_title">Limpar histórico</string>
+    <string name="history_clear_confirm_message">Tem a certeza que pretende apagar todo o histórico? Esta ação não pode ser anulada.</string>
+    <string name="history_clear_confirm_yes">Limpar</string>
+    <string name="history_clear_confirm_no">Cancelar</string>
     <string name="settings_history_sender_target_format">%1$s → %2$s</string>
     <string name="settings_history_rule_format">Regra: %1$s</string>
     <string name="settings_history_unknown_sender">Remetente desconhecido</string>

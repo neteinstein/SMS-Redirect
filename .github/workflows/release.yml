@@ -16,6 +16,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
+      - name: Bump patch version
+        id: bump
+        run: |
+          set -euo pipefail
+          CURRENT_VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+
+          sed -i "s/versionName = \"$CURRENT_VERSION\"/versionName = \"$NEW_VERSION\"/" app/build.gradle.kts
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add app/build.gradle.kts
+          git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
+          git push origin HEAD:main
+
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "new_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
@@ -38,15 +57,9 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease -PVERSION_CODE=${{ github.run_number }}
 
-      - name: Extract version name
-        id: version
-        run: |
-          VERSION_NAME=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts)
-          echo "version=$VERSION_NAME" >> "$GITHUB_OUTPUT"
-
       - name: Rename APK
         run: |
-          mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/SMS-Redirect_v${{ steps.version.outputs.version }}.apk
+          mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/SMS-Redirect_v${{ steps.bump.outputs.new_version }}.apk
 
       - name: Generate release notes
         env:
@@ -62,16 +75,17 @@ jobs:
             --method POST \
             -H "Accept: application/vnd.github+json" \
             "repos/${{ github.repository }}/releases/generate-notes" \
-            -f tag_name="v${{ steps.version.outputs.version }}" \
-            -f target_commitish="${{ github.sha }}" \
+            -f tag_name="v${{ steps.bump.outputs.new_version }}" \
+            -f target_commitish="${{ steps.bump.outputs.new_sha }}" \
             --jq '.body' > release_notes.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: Release v${{ steps.version.outputs.version }}
-          files: app/build/outputs/apk/release/SMS-Redirect_v${{ steps.version.outputs.version }}.apk
+          tag_name: v${{ steps.bump.outputs.new_version }}
+          target_commitish: ${{ steps.bump.outputs.new_sha }}
+          name: Release v${{ steps.bump.outputs.new_version }}
+          files: app/build/outputs/apk/release/SMS-Redirect_v${{ steps.bump.outputs.new_version }}.apk
           body_path: release_notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

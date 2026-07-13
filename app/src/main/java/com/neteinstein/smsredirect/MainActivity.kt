@@ -464,14 +464,19 @@ class MainActivity : ComponentActivity() {
                         val contactNames by historyViewModel.contactNames.collectAsState()
                         val keepHistory by historyViewModel.keepHistory.collectAsState()
                         val showDisableConfirmation by historyViewModel.showDisableConfirmation.collectAsState()
+                        val showClearConfirmation by historyViewModel.showClearConfirmation.collectAsState()
                         HistoryScreen(
                             forwardHistory = forwardHistory,
                             contactNames = contactNames,
                             keepHistory = keepHistory,
                             showDisableConfirmation = showDisableConfirmation,
+                            showClearConfirmation = showClearConfirmation,
                             onKeepHistoryChanged = historyViewModel::onKeepHistoryToggled,
                             onConfirmDisable = historyViewModel::confirmDisableHistory,
                             onDismissDisable = historyViewModel::dismissDisableConfirmation,
+                            onClearHistoryClicked = historyViewModel::onClearHistoryClicked,
+                            onConfirmClear = historyViewModel::confirmClearHistory,
+                            onDismissClear = historyViewModel::dismissClearConfirmation,
                             onBack = { navController.popBackStack() },
                         )
                     }
@@ -494,14 +499,19 @@ class MainActivity : ComponentActivity() {
                         val contactNames by scheduleHistoryViewModel.contactNames.collectAsState()
                         val keepScheduleHistory by scheduleHistoryViewModel.keepScheduleHistory.collectAsState()
                         val showDisableConfirmation by scheduleHistoryViewModel.showDisableConfirmation.collectAsState()
+                        val showClearConfirmation by scheduleHistoryViewModel.showClearConfirmation.collectAsState()
                         ScheduleHistoryScreen(
                             scheduledSmsHistory = scheduledSmsHistory,
                             contactNames = contactNames,
                             keepScheduleHistory = keepScheduleHistory,
                             showDisableConfirmation = showDisableConfirmation,
+                            showClearConfirmation = showClearConfirmation,
                             onKeepScheduleHistoryChanged = scheduleHistoryViewModel::onKeepScheduleHistoryToggled,
                             onConfirmDisable = scheduleHistoryViewModel::confirmDisableHistory,
                             onDismissDisable = scheduleHistoryViewModel::dismissDisableConfirmation,
+                            onClearHistoryClicked = scheduleHistoryViewModel::onClearHistoryClicked,
+                            onConfirmClear = scheduleHistoryViewModel::confirmClearHistory,
+                            onDismissClear = scheduleHistoryViewModel::dismissClearConfirmation,
                             onBack = { navController.popBackStack() },
                         )
                     }

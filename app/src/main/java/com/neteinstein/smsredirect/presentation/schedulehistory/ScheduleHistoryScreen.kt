@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -44,9 +45,13 @@ fun ScheduleHistoryScreen(
     contactNames: Map<String, String>,
     keepScheduleHistory: Boolean,
     showDisableConfirmation: Boolean,
+    showClearConfirmation: Boolean,
     onKeepScheduleHistoryChanged: (Boolean) -> Unit,
     onConfirmDisable: () -> Unit,
     onDismissDisable: () -> Unit,
+    onClearHistoryClicked: () -> Unit,
+    onConfirmClear: () -> Unit,
+    onDismissClear: () -> Unit,
     onBack: () -> Unit,
 ) {
     if (showDisableConfirmation) {
@@ -67,6 +72,24 @@ fun ScheduleHistoryScreen(
         )
     }
 
+    if (showClearConfirmation) {
+        AlertDialog(
+            onDismissRequest = onDismissClear,
+            title = { Text(stringResource(R.string.history_clear_confirm_title)) },
+            text = { Text(stringResource(R.string.history_clear_confirm_message)) },
+            confirmButton = {
+                TextButton(onClick = onConfirmClear) {
+                    Text(stringResource(R.string.history_clear_confirm_yes))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismissClear) {
+                    Text(stringResource(R.string.history_clear_confirm_no))
+                }
+            },
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -76,6 +99,17 @@ fun ScheduleHistoryScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.action_back),
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = onClearHistoryClicked,
+                        enabled = scheduledSmsHistory.isNotEmpty(),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DeleteSweep,
+                            contentDescription = stringResource(R.string.action_clear_history),
                         )
                     }
                 },
