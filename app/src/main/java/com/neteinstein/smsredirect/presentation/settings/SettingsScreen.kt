@@ -18,6 +18,8 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.SignalCellularAlt
 import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,10 +57,12 @@ fun SettingsScreen(
     forwardPrefix: String,
     defaultPrefix: String,
     currentLanguageLabel: String,
+    showValidatePermissions: Boolean,
     onSendWhileRoamingChanged: (Boolean) -> Unit,
     onShowNotificationsChanged: (Boolean) -> Unit,
     onForwardPrefixSaved: (String) -> Unit,
     onDefaultPrefixChanged: (String) -> Unit,
+    onValidatePermissions: () -> Unit,
     onExportBackup: () -> Unit,
     onImportBackup: () -> Unit,
     onOpenLanguageSettings: () -> Unit,
@@ -116,6 +120,11 @@ fun SettingsScreen(
                 onPrefixSelected = onDefaultPrefixChanged,
             )
 
+            if (showValidatePermissions) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                ValidatePermissionsRow(onClick = onValidatePermissions)
+            }
+
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             Row(
@@ -154,6 +163,43 @@ fun SettingsScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ValidatePermissionsRow(onClick: () -> Unit) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Button(
+            onClick = onClick,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(
+                imageVector = Icons.Default.VerifiedUser,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                text = stringResource(R.string.settings_validate_permissions),
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
+        Row(
+            modifier = Modifier.padding(top = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Default.WarningAmber,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(16.dp),
+            )
+            Text(
+                text = stringResource(R.string.permission_notification_access_warning),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(start = 8.dp),
+            )
         }
     }
 }

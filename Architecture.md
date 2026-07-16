@@ -193,9 +193,11 @@ The app requires the following permissions, requested in order:
 | 4 | `SEND_SMS` | Forward messages / send scheduled SMS |
 | 5 | `READ_PHONE_STATE` | Check roaming status |
 | 6 | Battery Optimization exemption | Prevent Doze from throttling |
-| 7 | **Notification Access** | Capture RCS messages (last, via system settings; see "RCS Capture: Constraints & Known Limitations" above — this permission is subject to restricted-settings blocking on sideloaded builds, just like the runtime permissions above) |
+| 7 | **Notification Access** (optional) | Capture RCS messages (last, via system settings; see "RCS Capture: Constraints & Known Limitations" above — this permission is subject to restricted-settings blocking on sideloaded builds, just like the runtime permissions above) |
 
 `POST_NOTIFICATIONS` (for both forward-sent and scheduled-sent notifications) and WorkManager's own scheduling permissions were already present for the Redirect feature — Schedule required no new manifest permissions.
+
+Notification Access (#7) is the only optional permission — the app is fully usable without it, but RCS messages won't be captured. On the Permissions screen its row carries an explicit "Optional" badge next to the label, and a warning line when ungranted; once granted, its "Granted" button renders in a distinct color (green, `secondaryContainer`) instead of the default disabled gray used by required permissions, so its enabled state is visually distinguishable at a glance. Onboarding auto-advances to Home once all other (non-optional) permissions are granted, regardless of its state. If it's ungranted, the Settings screen shows a "Validate Permissions" button (with the same warning) above Export/Import; tapping it reopens the Permissions screen in a standalone mode (back button instead of auto-advance) so the user can grant it without being routed away.
 
 ## Presentation Layer
 

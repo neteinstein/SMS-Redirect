@@ -184,7 +184,19 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    composable(Routes.Permissions) {
+                    composable(
+                        route = Routes.PermissionsWithArg,
+                        arguments =
+                            listOf(
+                                navArgument(Routes.PermissionsStandaloneArg) {
+                                    type = NavType.BoolType
+                                    defaultValue = false
+                                },
+                            ),
+                    ) { backStackEntry ->
+                        val standalone =
+                            backStackEntry.arguments?.getBoolean(Routes.PermissionsStandaloneArg) ?: false
+
                         val lifecycleOwner = LocalLifecycleOwner.current
                         var permissionCheckTick by remember { mutableIntStateOf(0) }
                         DisposableEffect(lifecycleOwner) {
@@ -208,10 +220,16 @@ class MainActivity : ComponentActivity() {
                                 ActivityResultContracts.RequestMultiplePermissions(),
                             ) { permissionCheckTick++ }
 
-                        LaunchedEffect(permissionItems) {
-                            if (permissionItems.all { it.isGranted }) {
-                                navController.navigate(Routes.Home) {
-                                    popUpTo(Routes.Permissions) { inclusive = true }
+                        // Notification Access is optional: once every required permission is
+                        // granted, onboarding proceeds to Home even if that one is still missing.
+                        // Skip this auto-advance when revisiting from Settings ("Validate
+                        // Permissions"), otherwise the screen would immediately bounce back.
+                        if (!standalone) {
+                            LaunchedEffect(permissionItems) {
+                                if (permissionItems.filterNot { it.isOptional }.all { it.isGranted }) {
+                                    navController.navigate(Routes.Home) {
+                                        popUpTo(Routes.Permissions) { inclusive = true }
+                                    }
                                 }
                             }
                         }
@@ -232,6 +250,12 @@ class MainActivity : ComponentActivity() {
                                     permissionLauncher.launch(arrayOf(permissionId))
                                 }
                             },
+                            onBack =
+                                if (standalone) {
+                                    { navController.popBackStack() }
+                                } else {
+                                    null
+                                },
                         )
                     }
 
@@ -337,12 +361,12 @@ class MainActivity : ComponentActivity() {
                         val context = this@MainActivity
 
                         val lifecycleOwner = LocalLifecycleOwner.current
-                        var languageCheckTick by remember { mutableIntStateOf(0) }
+                        var resumeTick by remember { mutableIntStateOf(0) }
                         DisposableEffect(lifecycleOwner) {
                             val observer =
                                 LifecycleEventObserver { _, event ->
                                     if (event == Lifecycle.Event.ON_RESUME) {
-                                        languageCheckTick++
+                                        resumeTick++
                                     }
                                 }
                             lifecycleOwner.lifecycle.addObserver(observer)
@@ -351,7 +375,9 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         val currentLanguageLabel =
-                            remember(languageCheckTick) { currentAppLanguageLabel() }
+                            remember(resumeTick) { currentAppLanguageLabel() }
+                        val notificationAccessGranted =
+                            remember(resumeTick) { isNotificationListenerEnabled() }
 
                         val importLauncher =
                             rememberLauncherForActivityResult(
@@ -435,10 +461,14 @@ class MainActivity : ComponentActivity() {
                             forwardPrefix = forwardPrefix,
                             defaultPrefix = defaultPrefix,
                             currentLanguageLabel = currentLanguageLabel,
+                            showValidatePermissions = !notificationAccessGranted,
                             onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming,
                             onShowNotificationsChanged = settingsViewModel::setShowNotifications,
                             onForwardPrefixSaved = settingsViewModel::setForwardPrefix,
                             onDefaultPrefixChanged = settingsViewModel::setDefaultPrefix,
+                            onValidatePermissions = {
+                                navController.navigate(Routes.permissionsRoute(standalone = true))
+                            },
                             onExportBackup = settingsViewModel::exportBackup,
                             onImportBackup = { importLauncher.launch("application/json") },
                             onOpenLanguageSettings = { openAppLocaleSettings() },
@@ -782,11 +812,15 @@ class MainActivity : ComponentActivity() {
         return if (number.isNotBlank()) Pair(number, displayName) else null
     }
 
+    /**
+     * Notification Access (RCS capture) is intentionally excluded here: it's optional, so the
+     * app is usable — and onboarding completes — once every runtime/manifest permission below
+     * is granted, regardless of whether Notification Access is granted.
+     */
     private fun allPermissionsGranted(): Boolean =
         requiredPermissions.all {
             ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
-        } &&
-            isNotificationListenerEnabled()
+        }
 
     private fun hasSmsPermissions(): Boolean {
         val hasReceiveSmsPermission =
@@ -843,6 +877,8 @@ class MainActivity : ComponentActivity() {
                 label = getString(R.string.permission_notification_access_label),
                 description = getString(R.string.permission_notification_access_description),
                 isGranted = isNotificationListenerEnabled(),
+                isOptional = true,
+                warningMessage = getString(R.string.permission_notification_access_warning),
             ),
         )
 
