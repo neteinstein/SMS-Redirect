@@ -23,7 +23,7 @@
         android:localeConfig="@xml/locales_config"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+        android:theme="@style/Theme.SmsRedirect">
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"

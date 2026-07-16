@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches BrandBackgroundDark in presentation/theme/Color.kt so the native window
+         background (visible briefly before Compose renders) matches the splash screen. -->
+    <color name="window_background">#111318</color>
+</resources>
