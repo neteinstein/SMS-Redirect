@@ -12,9 +12,10 @@
     <string name="sideload_warning_message">Esta app não foi instalada pela Play Store. É necessário um passo extra:\n\n1. Vá a Definições > Apps > Redirecionador SMS\n2. Toque no menu de três pontos (canto superior direito)\n3. Selecione \"Permitir definições restritas\"\n\nPrima OK para abrir o ecrã de definições da app.</string>
 
     <string name="permissions_title">Permissões Necessárias</string>
-    <string name="permissions_subtitle">O Redirecionador SMS precisa destas permissões para funcionar corretamente. Por favor, conceda todas para continuar.</string>
+    <string name="permissions_subtitle">O Redirecionador SMS precisa destas permissões para funcionar corretamente. Por favor, conceda todas as permissões obrigatórias para continuar; o Acesso a Notificações é opcional.</string>
     <string name="permissions_request">Pedir Permissão</string>
     <string name="permissions_granted">Concedida</string>
+    <string name="permission_optional_label">Opcional</string>
     <string name="permission_sms_label">SMS</string>
     <string name="permission_sms_description">Necessário para receber e reencaminhar mensagens SMS</string>
     <string name="permission_send_sms_label">Enviar SMS</string>
@@ -27,6 +28,7 @@
     <string name="permission_notifications_description">Necessário para mostrar notificações ao redirecionar</string>
     <string name="permission_notification_access_label">Acesso a Notificações</string>
     <string name="permission_notification_access_description">Necessário para captar mensagens RCS do Google Mensagens</string>
+    <string name="permission_notification_access_warning">As mensagens RCS não serão captadas se esta permissão não for concedida.</string>
 
     <string name="home_title_rules">Regras de Redirecionamento SMS</string>
     <string name="home_cd_settings">Definições</string>
@@ -77,6 +79,7 @@
     <string name="settings_forward_prefix_label">Prefixo da mensagem reencaminhada</string>
     <string name="settings_forward_prefix_save">Guardar prefixo</string>
     <string name="settings_prefix_none">Nenhum</string>
+    <string name="settings_validate_permissions">Validar Permissões</string>
     <string name="settings_export_rules">Exportar Cópia de Segurança</string>
     <string name="settings_import_rules">Importar Cópia de Segurança</string>
     <string name="settings_import_success">Importados %1$s e %2$s</string>
