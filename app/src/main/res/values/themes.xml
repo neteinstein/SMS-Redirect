@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Automatically switches between the light and dark variants below based on the
-         system dark theme setting (minSdk 33 &gt;= API 29, so DayNight is always available). -->
-    <style name="Theme.SmsRedirect" parent="android:Theme.DeviceDefault.DayNight.NoActionBar">
+    <!-- Light/dark window background is handled via values/colors.xml and
+         values-night/colors.xml resource qualifiers (works on all minSdk 33+ devices). -->
+    <style name="Theme.SmsRedirect" parent="android:Theme.DeviceDefault.NoActionBar">
         <item name="android:windowBackground">@color/window_background</item>
     </style>
 </resources>
