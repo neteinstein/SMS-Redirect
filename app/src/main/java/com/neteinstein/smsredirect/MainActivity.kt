@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.LocaleManager
 import android.app.NotificationManager
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -12,7 +11,6 @@ import android.net.Uri
 import android.os.PowerManager
 import android.provider.ContactsContract
 import android.provider.Settings
-import android.service.notification.NotificationListenerService
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -36,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
-import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.net.toUri
@@ -203,7 +200,6 @@ class MainActivity : ComponentActivity() {
                             val observer =
                                 LifecycleEventObserver { _, event ->
                                     if (event == Lifecycle.Event.ON_RESUME) {
-                                        maybeRequestNotificationListenerRebind()
                                         permissionCheckTick++
                                     }
                                 }
@@ -220,13 +216,11 @@ class MainActivity : ComponentActivity() {
                                 ActivityResultContracts.RequestMultiplePermissions(),
                             ) { permissionCheckTick++ }
 
-                        // Notification Access is optional: once every required permission is
-                        // granted, onboarding proceeds to Home even if that one is still missing.
-                        // Skip this auto-advance when revisiting from Settings ("Validate
-                        // Permissions"), otherwise the screen would immediately bounce back.
+                        // Skip this auto-advance when revisiting from Settings, otherwise the
+                        // screen would immediately bounce back.
                         if (!standalone) {
                             LaunchedEffect(permissionItems) {
-                                if (permissionItems.filterNot { it.isOptional }.all { it.isGranted }) {
+                                if (permissionItems.all { it.isGranted }) {
                                     navController.navigate(Routes.Home) {
                                         popUpTo(Routes.Permissions) { inclusive = true }
                                     }
@@ -237,9 +231,7 @@ class MainActivity : ComponentActivity() {
                         PermissionsScreen(
                             permissions = permissionItems,
                             onRequestPermission = { permissionId ->
-                                if (permissionId == NOTIFICATION_ACCESS_ID) {
-                                    openNotificationListenerSettings()
-                                } else if (permissionId == Manifest.permission.RECEIVE_SMS) {
+                                if (permissionId == Manifest.permission.RECEIVE_SMS) {
                                     permissionLauncher.launch(
                                         arrayOf(
                                             Manifest.permission.RECEIVE_SMS,
@@ -376,8 +368,6 @@ class MainActivity : ComponentActivity() {
                         }
                         val currentLanguageLabel =
                             remember(resumeTick) { currentAppLanguageLabel() }
-                        val notificationAccessGranted =
-                            remember(resumeTick) { isNotificationListenerEnabled() }
 
                         val importLauncher =
                             rememberLauncherForActivityResult(
@@ -461,14 +451,10 @@ class MainActivity : ComponentActivity() {
                             forwardPrefix = forwardPrefix,
                             defaultPrefix = defaultPrefix,
                             currentLanguageLabel = currentLanguageLabel,
-                            showValidatePermissions = !notificationAccessGranted,
                             onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming,
                             onShowNotificationsChanged = settingsViewModel::setShowNotifications,
                             onForwardPrefixSaved = settingsViewModel::setForwardPrefix,
                             onDefaultPrefixChanged = settingsViewModel::setDefaultPrefix,
-                            onValidatePermissions = {
-                                navController.navigate(Routes.permissionsRoute(standalone = true))
-                            },
                             onExportBackup = settingsViewModel::exportBackup,
                             onImportBackup = { importLauncher.launch("application/json") },
                             onOpenLanguageSettings = { openAppLocaleSettings() },
@@ -812,11 +798,6 @@ class MainActivity : ComponentActivity() {
         return if (number.isNotBlank()) Pair(number, displayName) else null
     }
 
-    /**
-     * Notification Access (RCS capture) is intentionally excluded here: it's optional, so the
-     * app is usable — and onboarding completes — once every runtime/manifest permission below
-     * is granted, regardless of whether Notification Access is granted.
-     */
     private fun allPermissionsGranted(): Boolean =
         requiredPermissions.all {
             ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
@@ -872,14 +853,6 @@ class MainActivity : ComponentActivity() {
                     ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
                         PackageManager.PERMISSION_GRANTED,
             ),
-            PermissionItem(
-                id = NOTIFICATION_ACCESS_ID,
-                label = getString(R.string.permission_notification_access_label),
-                description = getString(R.string.permission_notification_access_description),
-                isGranted = isNotificationListenerEnabled(),
-                isOptional = true,
-                warningMessage = getString(R.string.permission_notification_access_warning),
-            ),
         )
 
     private fun currentMissingPermissions(): List<String> {
@@ -889,11 +862,6 @@ class MainActivity : ComponentActivity() {
                     ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
                 }.map { it.removePrefix("android.permission.") }
                 .toMutableList()
-
-        if (!isNotificationListenerEnabled()) {
-            missing.add("NOTIFICATION_ACCESS")
-        }
-
         return missing
     }
 
@@ -958,42 +926,6 @@ class MainActivity : ComponentActivity() {
         return locale?.displayName ?: getString(R.string.settings_language_system_default)
     }
 
-    private fun isNotificationListenerEnabled(): Boolean {
-        val componentName = ComponentName(this, RcsNotificationListener::class.java)
-        val enabledListeners = NotificationManagerCompat.getEnabledListenerPackages(this)
-        val enabled = packageName in enabledListeners
-        Log.d(TAG, "Notification listener enabled=$enabled for $componentName")
-        return enabled
-    }
-
-    private fun openNotificationListenerSettings() {
-        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-        runCatching { startActivity(intent) }
-    }
-
-    /**
-     * Self-healing for the known Pixel/OEM bug where Notification Access shows as granted in
-     * Settings but the system never actually binds [RcsNotificationListener] (e.g. after the
-     * permission was toggled off/on, or after an app update). We only request a rebind when
-     * access is granted yet [RcsNotificationListener.onListenerConnected] has never recorded a
-     * successful bind, so this is a no-op — and doesn't fight the system — once things are
-     * working normally.
-     */
-    private fun maybeRequestNotificationListenerRebind() {
-        if (!isNotificationListenerEnabled()) return
-
-        val diagnostics = getSharedPreferences(RcsNotificationListener.PREFS_NAME, MODE_PRIVATE)
-        val everConnected = diagnostics.getLong(RcsNotificationListener.KEY_LAST_CONNECTED_AT, 0L) > 0L
-        if (everConnected) return
-
-        Log.w(TAG, "Notification access is granted but the listener has never connected — requesting rebind")
-        runCatching {
-            NotificationListenerService.requestRebind(ComponentName(this, RcsNotificationListener::class.java))
-        }.onFailure { e ->
-            Log.e(TAG, "requestRebind failed", e)
-        }
-    }
-
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -1021,6 +953,5 @@ class MainActivity : ComponentActivity() {
         private const val TAG = "MainActivity"
         private const val PREFS_NAME = "sms_redirect_prefs"
         private const val KEY_SIDELOAD_DISMISSED = "sideload_warning_dismissed"
-        private const val NOTIFICATION_ACCESS_ID = "notification_access"
     }
 }

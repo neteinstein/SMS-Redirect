@@ -55,22 +55,6 @@
             </intent-filter>
         </receiver>
 
-        <service
-            android:name=".RcsNotificationListener"
-            android:exported="true"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-            <!-- Explicitly request every notification bucket instead of relying on the
-                 platform default, so a future default change or OEM override can't silently
-                 stop RCS/message notifications (which post as "conversations") from reaching
-                 the listener. Users can still narrow this from Settings > Notification access. -->
-            <meta-data
-                android:name="android.service.notification.default_filter_types"
-                android:value="conversations|alerting|ongoing|silent" />
-        </service>
-
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
