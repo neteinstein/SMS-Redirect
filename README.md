@@ -2,6 +2,28 @@
 
 Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean architecture (domain use cases, repository, and Room database) for SMS and RCS redirect rules.
 
+## Quick start
+
+### Prerequisites
+
+- Android Studio (latest stable)
+- Android SDK for API 33+
+- JDK 17 (used by modern Android Gradle builds)
+
+### Build, test, and lint
+
+```bash
+./gradlew assembleDebug
+./gradlew test
+./gradlew lint
+```
+
+### Install on a connected device
+
+```bash
+./gradlew installDebug
+```
+
 ## Features
 
 ### Message Capture & Forwarding
