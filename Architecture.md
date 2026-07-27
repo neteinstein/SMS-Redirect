@@ -4,7 +4,7 @@
 
 SMS Redirect & Schedule is an Android app with two independent features, presented as bottom-navigation tabs on the home screen:
 
-- **Redirect** — intercepts incoming SMS and RCS messages matching user-defined rules and forwards them to a configured target phone number via SMS.
+- **Redirect** — intercepts incoming SMS messages matching user-defined rules and forwards them to a configured target phone number via SMS.
 - **Schedule** — lets the user compose a message once and have it sent automatically at a future date/time, optionally repeating on a recurring pattern.
 
 Both features share the same app shell (permissions flow, Settings screen, deep-link handling) but are otherwise independent end-to-end: separate domain models, separate Room tables, separate use cases, separate WorkManager jobs, and separate history logs.
@@ -14,12 +14,10 @@ Both features share the same app shell (permissions flow, Settings screen, deep-
 ```
 [ Incoming Message ]
  │
- ├─► (Standard SMS/MMS) ──► SmsReceiver ──────────┐
- │                                                 ▼
- └─► (RCS / Internet) ──► RcsNotificationListener ──► ForwardSmsWorker ──► SmsForwarder
-                                                        (Expedited)          │
-                                                                             ▼
-                                                                      Send SMS to target
+ └─► (Standard SMS/MMS) ──► SmsReceiver ──► ForwardSmsWorker ──► SmsForwarder
+                                    (Expedited)                 │
+                                                                 ▼
+                                                          Send SMS to target
 ```
 
 ### Components
@@ -29,49 +27,23 @@ Both features share the same app shell (permissions flow, Settings screen, deep-
 - Catches standard SMS, carrier fallback texts, and 2FA codes
 - Immediately enqueues a `ForwardSmsWorker` with sender + body data
 
-#### 2. RcsNotificationListener (NotificationListenerService)
-- Monitors notifications from Google Messages (`com.google.android.apps.messaging`), plus Samsung Messages and AOSP Messages as a bonus for non-Pixel devices
-- Extracts new messages from `MessagingStyle` (used by Google Messages for RCS chats) — tracks a per-conversation last-seen timestamp so it forwards *every* new message in a burst, not just the latest one, since the OS can coalesce several messages into one notification update before the next callback
-- Falls back to `EXTRA_BIG_TEXT`/`EXTRA_TEXT`/`EXTRA_TITLE` for notifications that aren't `MessagingStyle`
-- Acts as a safety net for RCS chats and internet-based messaging — see "RCS Capture: Constraints & Known Limitations" below for why this is the *only* viable approach and what can still make it unreliable
-- Logs `onListenerConnected`/`onListenerDisconnected` and writes diagnostic timestamps (`SharedPreferences`, not Room, to avoid `fallbackToDestructiveMigration()` wiping rules on schema change) so `MainActivity` can detect "granted but never bound" and self-heal via `NotificationListenerService.requestRebind()`
-- Requires user to grant **Notification Access** in system settings
-
-#### 3. ForwardSmsWorker (WorkManager CoroutineWorker)
+#### 2. ForwardSmsWorker (WorkManager CoroutineWorker)
 - Receives sender + body as input data
 - Uses **Expedited WorkRequest** (`OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST`) to ensure execution even in Doze mode
 - Retries on failure for reliability
 - Delegates actual forwarding to `SmsForwarder`
 
-#### 4. SmsForwarder
+#### 3. SmsForwarder
 - Core forwarding logic (pure domain, no Android framework coupling beyond SmsManager)
 - Checks SEND_SMS permission
 - Checks roaming status vs user preference via `CanForwardSmsUseCase`
-- Deduplicates messages within a 30-second window (prevents double-forward when both SmsReceiver and RcsNotificationListener fire)
+- Deduplicates messages within a 30-second window (prevents rapid duplicate forwards)
 - Finds matching rule via `FindMatchingRuleUseCase`
 - Resolves contact names via `ContactNameResolver`
 - Prepends configurable forward prefix to message body
 - Sends via `SmsManager` (single or multipart)
 - Records history if enabled
 - Posts a notification if "Show Notifications" is enabled
-
-### RCS Capture: Constraints & Known Limitations
-
-RCS has no OS-level interception point comparable to `SMS_RECEIVED`:
-
-- There is no `RCS_RECEIVED` (or equivalent) broadcast on Android. Google's RCS engine (Jibe, bundled into Google Messages) stores RCS chat data in its own private app database, not in the shared `content://sms`/`content://mms` provider.
-- `android.telephony.ims.RcsMessageStore` is the only public RCS API, but it requires **carrier privileges** — a signature-level trust relationship a sideloaded or Play Store app cannot obtain.
-- **Becoming the default SMS app is not a viable alternative.** Only the platform's default SMS app may host Google's RCS (Jibe) client; switching the default SMS app away from Google Messages disables RCS device-wide and falls back to plain SMS/MMS for everyone. This would make the exact symptom this app tries to fix (missed RCS messages) permanent and universal rather than fixing it.
-
-Given the above, `NotificationListenerService` reading Google Messages' notifications is the only realistic non-root interception method — but it comes with platform limitations that can look like app bugs:
-
-| Limitation | Detail |
-|---|---|
-| Restricted settings (Android 13+) | Sideloaded builds silently block "Notification access" the same way they block SMS permissions, independent of the SMS restricted-settings toggle. See README "Required setup after install". |
-| Listener granted but never bound | Known Pixel/OEM bug: the system can leave the service "enabled" in Settings without ever binding it. `RcsNotificationListener` now records a connect timestamp in `SharedPreferences`; `MainActivity` checks it on every resume and calls `NotificationListenerService.requestRebind()` when access is granted but the listener has never connected. |
-| Per-category filtering (Android 14+) | Settings > Notification access > app now exposes independent toggles for Conversations / Alerting / Silent / Ongoing. The manifest declares `android.service.notification.default_filter_types = conversations\|alerting\|ongoing\|silent` to request all of them, but a user or OEM tool can still narrow this per-app. |
-| OTP redaction (Android 15+) | The platform redacts one-time-passcode content from notifications before *any* `NotificationListenerService` — including this one — can read it. This is a platform anti-fraud measure with no opt-out for third-party apps; forwarding of RCS-delivered verification codes is inherently best-effort. |
-| Best-effort delivery | Even when fully connected and unfiltered, this is a notification-shade mirror, not a message-store subscription: if Google Messages ever posts a MessagingStyle update without a genuinely new message (e.g. a read-receipt-only refresh), `selectNewMessages` intentionally forwards nothing new — verified by unit tests in `RcsNotificationListenerTest`. |
 
 ## Rule Matching
 
@@ -193,11 +165,8 @@ The app requires the following permissions, requested in order:
 | 4 | `SEND_SMS` | Forward messages / send scheduled SMS |
 | 5 | `READ_PHONE_STATE` | Check roaming status |
 | 6 | Battery Optimization exemption | Prevent Doze from throttling |
-| 7 | **Notification Access** (optional) | Capture RCS messages (last, via system settings; see "RCS Capture: Constraints & Known Limitations" above — this permission is subject to restricted-settings blocking on sideloaded builds, just like the runtime permissions above) |
 
 `POST_NOTIFICATIONS` (for both forward-sent and scheduled-sent notifications) and WorkManager's own scheduling permissions were already present for the Redirect feature — Schedule required no new manifest permissions.
-
-Notification Access (#7) is the only optional permission — the app is fully usable without it, but RCS messages won't be captured. On the Permissions screen its row carries an explicit "Optional" badge next to the label, and a warning line when ungranted; once granted, its "Granted" button renders in a distinct color (green, `secondaryContainer`) instead of the default disabled gray used by required permissions, so its enabled state is visually distinguishable at a glance. Onboarding auto-advances to Home once all other (non-optional) permissions are granted, regardless of its state. If it's ungranted, the Settings screen shows a "Validate Permissions" button (with the same warning) above Export/Import; tapping it reopens the Permissions screen in a standalone mode (back button instead of auto-advance) so the user can grant it without being routed away.
 
 ## Presentation Layer
 

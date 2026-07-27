@@ -1,1 +1,1 @@
-Reencaminhe SMS e RCS por regra, e agende mensagens para envio automático.
+Reencaminhe SMS por regra, e agende mensagens para envio automático.

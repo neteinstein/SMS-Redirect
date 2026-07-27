@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-SMS Redirect is a native Android app (Kotlin) that intercepts incoming SMS/RCS messages matching user-defined rules and forwards them to a configured target phone number via SMS. See `Architecture.md` for the full system design.
+SMS Redirect is a native Android app (Kotlin) that intercepts incoming SMS messages matching user-defined rules and forwards them to a configured target phone number via SMS. See `Architecture.md` for the full system design.
 
 ## Tech Stack
 

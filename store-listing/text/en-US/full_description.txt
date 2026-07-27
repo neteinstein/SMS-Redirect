@@ -5,7 +5,7 @@ Cover a work phone, monitor a second SIM, forward one-time codes to a shared fam
 
 REDIRECT — Forward messages by rule
 • Create simple rules: match a sender (by text or contact) and pick a target number
-• Works for standard SMS, and for RCS/chat messages from Google Messages, Samsung Messages, and other messaging apps
+• Works for standard SMS messages
 • First matching rule wins — drag to reorder your rules
 • Optional custom prefix added to every forwarded message (e.g. "SMS Redirect:")
 • Choose whether forwarding is allowed while roaming
@@ -32,10 +32,7 @@ ALSO INCLUDES
 • Export and import your rules and schedules as a backup file, anytime
 • Available in English and Portuguese
 
-A NOTE ON RCS
-Android gives apps no direct way to intercept RCS/chat messages, so Redirect reads Google Messages' notifications as a best-effort safety net — there is no guaranteed delivery channel for RCS on Android, for any app. It works well for everyday messages; note that newer Android versions redact one-time passcodes from notifications before any app, including this one, can see them, so treat OTP forwarding as best-effort.
-
 PERMISSIONS, EXPLAINED
-SMS Redirect & Schedule only asks for what it needs: SMS permissions (to detect and send messages), Contacts (to pick numbers by name), Phone State (to detect roaming), and Notification Access (for RCS capture). See exactly how each permission is used in the in-app Privacy Policy and in the public source code.
+SMS Redirect & Schedule only asks for what it needs: SMS permissions (to detect and send messages), Contacts (to pick numbers by name), and Phone State (to detect roaming). See exactly how each permission is used in the in-app Privacy Policy and in the public source code.
 
 Questions or feedback? Contact play-store-neteinstein@googlegroups.com or open an issue on GitHub.

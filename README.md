@@ -1,12 +1,11 @@
 # SMS-Redirect
 
-Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean architecture (domain use cases, repository, and Room database) for SMS and RCS redirect rules.
+Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean architecture (domain use cases, repository, and Room database) for SMS redirect rules.
 
 ## Features
 
 ### Message Capture & Forwarding
 - Background SMS forwarding via BroadcastReceiver (high priority 999)
-- RCS/internet message capture via NotificationListenerService (Google Messages)
 - WorkManager-based forwarding with expedited execution and retry on failure
 - Roaming-aware forwarding (configurable "Send while roaming" setting)
 - Configurable forward prefix prepended to forwarded messages (default: `SMS Redirect:`)
@@ -36,7 +35,6 @@ Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean archit
 - Runtime permission handling for SMS, Contacts, and Phone State
 - Permission status banner on Home and Settings screens showing missing permissions
 - Battery optimization exemption prompt at startup
-- Notification Access prompt for RCS capture
 - Deep link support (`smsredirect://app` URI scheme)
 - Contact name resolution for forwarded-message notifications
 - Message deduplication (30-second window prevents double-forwards)
@@ -45,7 +43,7 @@ Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean archit
 
 ## Testing on a device (sideloaded via ADB)
 
-When deploying the app from Android Studio or ADB, it is considered **sideloaded**. On Android 13+, the system restricts SMS permissions **and Notification Access** for sideloaded apps by default — the permission toggle may be grayed out, or may appear to grant successfully but not actually take effect, in both cases.
+When deploying the app from Android Studio or ADB, it is considered **sideloaded**. On Android 13+, the system restricts SMS permissions for sideloaded apps by default — the permission toggle may be grayed out, or may appear to grant successfully but not actually take effect, in both cases.
 
 ### Required setup after install
 
@@ -54,14 +52,13 @@ When deploying the app from Android Studio or ADB, it is considered **sideloaded
 3. Select **"Allow restricted settings"**
 4. Go back to **Permissions** and grant all SMS permissions (RECEIVE_SMS, SEND_SMS, READ_SMS)
 5. Also grant **Contacts** permission if you want to use the contact picker
-6. For RCS forwarding, grant **Notification Access** *after* step 3 — if it was already toggled on before "Allow restricted settings" was applied, toggle it off and back on so it re-registers correctly
 
 ### Verifying the receiver works
 
 Filter logcat to the app's tags while sending a test SMS:
 
 ```bash
-adb logcat -s SmsReceiver ForwardSmsWorker SmsForwarder FindMatchingRule RcsNotificationListener
+adb logcat -s SmsReceiver ForwardSmsWorker SmsForwarder FindMatchingRule
 ```
 
 You should see output like:
@@ -79,35 +76,6 @@ SmsForwarder: SMS forwarded successfully to '...'
 SmsForwarder: Forward saved to history
 ```
 
-For RCS messages (via Google Messages notifications):
-
-```
-RcsNotificationListener: Listener connected — system has bound the service and will deliver notifications
-RcsNotificationListener: onNotificationPosted — package=com.google.android.apps.messaging, category=msg, flags=64, key=0|com.google.android.apps.messaging|...
-RcsNotificationListener: RCS MessagingStyle from 'Contact' via com.google.android.apps.messaging, bodyLength=15
-ForwardSmsWorker: Enqueued forwarding work for sender='Contact'
-```
-
-The `Listener connected` line only appears once per bind (right after Notification Access is granted, or after the app/device restarts). If you never see it, the system never bound the service at all — see "RCS is more fragile than SMS" below before assuming the app code is at fault.
-
-### RCS is more fragile than SMS — read this before debugging further
-
-There is **no `RCS_RECEIVED` broadcast** and no public content provider for RCS, unlike SMS/MMS:
-
-- RCS has no carrier-independent, OS-level broadcast. Google's RCS client (Jibe, bundled into Google Messages) stores chat messages in its own private app database, not in the shared `content://sms`/`content://mms` provider that SMS/MMS use.
-- The only public, non-root API surface for RCS content is `android.telephony.ims.RcsMessageStore`, which requires **carrier privileges** (signature-level trust from the carrier) — not something a sideloaded or Play Store app can obtain.
-- That leaves `NotificationListenerService` (reading Google Messages' notifications) as the only realistic interception point for a third-party app. It's a **best-effort safety net, not a guaranteed delivery channel** — the app can only forward what the OS chooses to hand it, when it chooses to hand it.
-
-Known platform-level limitations that look like app bugs but aren't:
-
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| No `RcsNotificationListener` log at all, ever — not even `onNotificationPosted` for unrelated apps | Notification Access toggle didn't actually take effect | Restricted settings also gate Notification Access on sideloaded builds — see "Required setup after install" above, step 6 |
-| `Listener connected` never appears, but Settings shows access as granted | Known Android/Pixel bug where the listener is enabled but never bound (e.g. after toggling permission, an app update, or firmware quirks) | The app now self-heals this: on every resume of the Permissions screen, if access is granted but the listener has never connected, it calls `NotificationListenerService.requestRebind()` automatically. If it's still stuck, manually toggle Notification Access off/on for the app, or reboot. |
-| `Listener connected` appears, but no `onNotificationPosted` lines for `com.google.android.apps.messaging` even show up | Per-category notification filtering (Android 14+) | Settings > Apps > Special app access > Notification access > SMS Redirect now exposes toggles for **Conversations / Alerting / Silent / Ongoing**. Confirm all are enabled — the app declares them all by default, but the user or device can still narrow them. |
-| `onNotificationPosted` fires but the forwarded message body is garbled/redacted (e.g. `••••••`) | **Android 15+ redacts one-time-passcode (OTP) content from notifications before any `NotificationListenerService` sees it** — a platform anti-fraud measure, not something this app can opt out of | Don't rely on this pipeline for 2FA/OTP codes; test with a plain conversational message first to confirm the pipeline itself works, then treat OTP forwarding as best-effort. |
-| No log at all, and regular SMS forwarding also silently stopped working recently | App was auto-revoked from "unused apps" permission reset, or force-stopped | Open the app at least once; re-grant Notification Access if it shows as off. |
-
 ### Troubleshooting
 
 | Symptom | Cause | Fix |
@@ -117,8 +85,6 @@ Known platform-level limitations that look like app bugs but aren't:
 | `Skipping: no matching rule found` | Rule sender doesn't match incoming SMS | Check rule sender text matches the originating address |
 | `Skipping: forwarding disabled while roaming` | Device is roaming and setting is off | Enable "Send while roaming" in app settings |
 | `Failed: SmsManager is null` | No default SIM/subscription | Ensure a SIM is active |
-| No `RcsNotificationListener` log | Notification Access not granted | Enable in Settings > Notifications > Notification access (see "RCS is more fragile than SMS" above if it still doesn't work) |
-| `Ignoring notification from ... with empty body` | Notification has no text content | Expected for non-message notifications |
 
 ### Test on the Emulator
 

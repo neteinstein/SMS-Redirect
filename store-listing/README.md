@@ -109,7 +109,7 @@ python3 store-listing/scripts/generate_assets.py
 ## Suggested Play Console fields not covered by a file
 
 - **App category:** Tools (Communication is a reasonable alternate)
-- **Tags:** SMS, forwarding, automation, RCS, productivity
+- **Tags:** SMS, forwarding, automation, productivity
 - **Content rating:** Everyone (run the questionnaire — no user-generated
   content, no ads, no unrestricted web access)
 - **Contact email:** `play-store-neteinstein@googlegroups.com` (from

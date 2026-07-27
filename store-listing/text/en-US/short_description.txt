@@ -1,1 +1,1 @@
-Auto-forward SMS & RCS by rule, and schedule texts to send later.
+Auto-forward SMS by rule, and schedule texts to send later.

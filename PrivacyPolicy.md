@@ -24,7 +24,6 @@ The App requests the following Android permissions. Each is used only for the st
 | `READ_CONTACTS` | Let you pick a contact when creating a rule or scheduled message, and show a contact's name instead of a raw number in notifications/history |
 | `READ_PHONE_STATE` | Detect roaming status, used only to honor your "Send while roaming" setting |
 | `POST_NOTIFICATIONS` | Show a notification after a message is forwarded or a scheduled message is sent |
-| Notification Access (`NotificationListenerService`) | Read notifications from Google Messages / Samsung Messages / AOSP Messages to detect RCS/internet messages, since Android provides no broadcast for RCS |
 | Battery optimization exemption | Prevent Android's Doze mode from delaying forwarding or scheduled sends |
 
 ## 2. Data You Create in the App
@@ -41,9 +40,7 @@ You can view, edit, or delete this data at any time from within the App, and rem
 
 ## 3. Message Content
 
-When an SMS or RCS message matches one of your rules, the App reads the sender and message text on-device and, using Android's `SmsManager`, sends it via **your mobile carrier** to the target number you configured, with your configured prefix prepended. Scheduled messages are sent the same way, via your carrier, at the time you chose. In both cases the message goes only to the phone number you specified, over your device's normal SMS channel — the App does not relay, copy, or store this content on any server we operate.
-
-RCS capture works by reading notification content posted by the Google Messages / Samsung Messages / AOSP Messages app, via Android's Notification Access API. That content is read only to detect and forward matching messages, and is not retained beyond the forward history described above (if you've enabled it).
+When an SMS message matches one of your rules, the App reads the sender and message text on-device and, using Android's `SmsManager`, sends it via **your mobile carrier** to the target number you configured, with your configured prefix prepended. Scheduled messages are sent the same way, via your carrier, at the time you chose. In both cases the message goes only to the phone number you specified, over your device's normal SMS channel — the App does not relay, copy, or store this content on any server we operate.
 
 ## 4. Backup and Restore
 
@@ -78,7 +75,6 @@ The App is not directed at children under 13, and we do not knowingly collect pe
 
 - Revoke any runtime permission at any time in Android Settings — the App shows a banner explaining which features are affected and degrades gracefully rather than crashing.
 - Turn off "Keep history" or "Keep schedule history" in Settings to stop local history logging.
-- Turn off Notification Access to stop RCS capture; standard SMS forwarding is unaffected.
 - Uninstall the App to remove all locally stored data from your device.
 - Depending on your local law (e.g., GDPR, CCPA), you may have rights to access, correct, export, or delete data. Since all rule/schedule/history data lives only on your device, you already have full access via the App itself; for questions about Firebase-processed diagnostic/analytics data, contact us using the details below.
 
