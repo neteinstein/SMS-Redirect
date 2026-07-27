@@ -15,16 +15,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
-import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -40,8 +37,6 @@ data class PermissionItem(
     val label: String,
     val description: String,
     val isGranted: Boolean,
-    val isOptional: Boolean = false,
-    val warningMessage: String? = null,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -127,27 +122,11 @@ private fun PermissionRow(
                     modifier = Modifier.padding(end = 12.dp),
                 )
                 Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = permission.label,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        if (permission.isOptional) {
-                            Surface(
-                                modifier = Modifier.padding(start = 8.dp),
-                                color = MaterialTheme.colorScheme.tertiaryContainer,
-                                shape = MaterialTheme.shapes.small,
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.permission_optional_label),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                )
-                            }
-                        }
-                    }
+                    Text(
+                        text = permission.label,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
                     Text(
                         text = permission.description,
                         style = MaterialTheme.typography.bodySmall,
@@ -155,22 +134,9 @@ private fun PermissionRow(
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                // Optional permissions get a distinct (green) "granted" color instead of the
-                // default disabled gray, so an enabled optional permission stands out from the
-                // required ones.
-                val buttonColors =
-                    if (permission.isOptional && permission.isGranted) {
-                        ButtonDefaults.buttonColors(
-                            disabledContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            disabledContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        )
-                    } else {
-                        ButtonDefaults.buttonColors()
-                    }
                 Button(
                     onClick = onRequest,
                     enabled = !permission.isGranted,
-                    colors = buttonColors,
                 ) {
                     Text(
                         text =
@@ -179,28 +145,6 @@ private fun PermissionRow(
                             } else {
                                 stringResource(R.string.permissions_request)
                             },
-                    )
-                }
-            }
-
-            if (!permission.isGranted && permission.warningMessage != null) {
-                Row(
-                    modifier = Modifier.padding(top = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.WarningAmber,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier =
-                            Modifier
-                                .padding(end = 8.dp)
-                                .width(20.dp),
-                    )
-                    Text(
-                        text = permission.warningMessage,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
                     )
                 }
             }

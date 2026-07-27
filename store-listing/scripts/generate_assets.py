@@ -223,7 +223,7 @@ def generate_feature_graphic() -> None:
 
     tagline_lines = wrap_text(
         draw,
-        "Forward SMS & RCS by rule. Schedule texts for later.",
+        "Forward SMS by rule. Schedule texts for later.",
         tagline_font,
         w - text_x - 40,
     )
@@ -387,7 +387,7 @@ def draw_card(
 
 
 def screenshot_redirect_home() -> Image.Image:
-    img, draw, screen_box = new_screenshot_canvas(["Forward SMS & RCS", "by simple rules"])
+    img, draw, screen_box = new_screenshot_canvas(["Forward SMS", "by simple rules"])
     x0, y0, x1, y1 = screen_box
     draw_status_bar(draw, screen_box)
     content_top = draw_app_bar(draw, screen_box, "SMS Redirect Rules")
@@ -645,7 +645,7 @@ def main() -> None:
     generate_icon()
     generate_feature_graphic()
     phone_shots = [
-        ("01-redirect-rules.png", ["Forward SMS & RCS", "by simple rules"], screenshot_redirect_home()),
+        ("01-redirect-rules.png", ["Forward SMS", "by simple rules"], screenshot_redirect_home()),
         ("02-create-rule.png", ["Pick a sender,", "pick a target"], screenshot_create_rule()),
         ("03-schedule-list.png", ["Schedule texts", "to send later"], screenshot_schedule_list()),
         ("04-schedule-form.png", ["Repeats daily, weekly,", "monthly or yearly"], screenshot_schedule_form()),

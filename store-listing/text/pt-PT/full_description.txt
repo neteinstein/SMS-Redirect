@@ -5,7 +5,7 @@ Cubra um telefone de trabalho, monitorize um segundo SIM, reencaminhe códigos d
 
 REDIRECIONAR — Reencaminhar mensagens por regra
 • Crie regras simples: associe um remetente (por texto ou contacto) a um número de destino
-• Funciona com SMS normal, e com mensagens RCS/chat do Google Mensagens, Samsung Mensagens e outras apps de mensagens
+• Funciona com mensagens SMS normais
 • A primeira regra correspondente é aplicada — arraste para reordenar as suas regras
 • Prefixo personalizado opcional adicionado a cada mensagem reencaminhada (por exemplo, "SMS Redirect:")
 • Escolha se o reencaminhamento é permitido em roaming
@@ -32,10 +32,7 @@ TAMBÉM INCLUI
 • Exporte e importe as suas regras e agendamentos como ficheiro de backup, quando quiser
 • Disponível em português e inglês
 
-UMA NOTA SOBRE RCS
-O Android não dá a nenhuma app uma forma direta de intercetar mensagens RCS/chat, por isso o Redirecionador lê as notificações do Google Mensagens como rede de segurança de melhor esforço — não existe um canal de entrega garantido para RCS no Android, para nenhuma app. Funciona bem para mensagens do dia a dia; note que versões mais recentes do Android ocultam códigos de utilização única nas notificações antes de qualquer app, incluindo esta, os poder ler, por isso o reencaminhamento de códigos OTP deve ser considerado de melhor esforço.
-
 PERMISSÕES, EXPLICADAS
-O Redirecionador e Agendador SMS pede apenas o que precisa: permissões de SMS (para detetar e enviar mensagens), Contactos (para escolher números por nome), Estado do telefone (para detetar roaming) e Acesso a notificações (para captar RCS). Veja exatamente como cada permissão é usada na Política de Privacidade da app e no código-fonte público.
+O Redirecionador e Agendador SMS pede apenas o que precisa: permissões de SMS (para detetar e enviar mensagens), Contactos (para escolher números por nome), e Estado do telefone (para detetar roaming). Veja exatamente como cada permissão é usada na Política de Privacidade da app e no código-fonte público.
 
 Perguntas ou sugestões? Contacte play-store-neteinstein@googlegroups.com ou abra uma issue no GitHub.

@@ -47,8 +47,8 @@ class SmsForwarder(
 
     /**
      * Simple deduplication cache: maps (targetNumber + body hash) to the timestamp
-     * of the last forward. Prevents the same message being forwarded twice when
-     * both SmsReceiver and RcsNotificationListener fire for the same SMS.
+     * of the last forward. Prevents the same message from being forwarded twice
+     * when duplicate processing happens in a short window.
      */
     private val recentForwards = mutableMapOf<String, Long>()
 

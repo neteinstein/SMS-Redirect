@@ -12,10 +12,9 @@
     <string name="sideload_warning_message">This app was not installed via the Play Store. An extra step is required:\n\n1. Go to Settings > Apps > SMS Redirect\n2. Tap the three-dot menu (top right)\n3. Select \"Allow restricted settings\"\n\nPress OK to open the app settings screen.</string>
 
     <string name="permissions_title">Permissions Required</string>
-    <string name="permissions_subtitle">SMS Redirect needs these permissions to work properly. Please grant all required permissions to continue; Notification Access is optional.</string>
+    <string name="permissions_subtitle">SMS Redirect needs these permissions to work properly. Please grant all required permissions to continue.</string>
     <string name="permissions_request">Request Permission</string>
     <string name="permissions_granted">Granted</string>
-    <string name="permission_optional_label">Optional</string>
     <string name="permission_sms_label">SMS</string>
     <string name="permission_sms_description">Needed to receive and forward SMS messages</string>
     <string name="permission_send_sms_label">Send SMS</string>
@@ -26,9 +25,6 @@
     <string name="permission_phone_state_description">Needed to detect roaming status</string>
     <string name="permission_notifications_label">Notifications</string>
     <string name="permission_notifications_description">Needed to show notifications when redirecting</string>
-    <string name="permission_notification_access_label">Notification Access</string>
-    <string name="permission_notification_access_description">Needed to capture RCS messages from Google Messages</string>
-    <string name="permission_notification_access_warning">RCS messages will not be caught if this permission is not granted.</string>
 
     <string name="home_title_rules">SMS Redirect Rules</string>
     <string name="home_cd_settings">Settings</string>
@@ -78,7 +74,6 @@
     <string name="settings_forward_prefix_label">Forward message prefix</string>
     <string name="settings_forward_prefix_save">Save prefix</string>
     <string name="settings_prefix_none">None</string>
-    <string name="settings_validate_permissions">Validate Permissions</string>
     <string name="settings_export_rules">Export Backup</string>
     <string name="settings_import_rules">Import Backup</string>
     <string name="settings_import_success">Imported %1$s and %2$s</string>
