@@ -14,11 +14,9 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
-    <!-- Firebase Analytics merges this in automatically. We don't use advertising ID
-         for ads or attribution, so explicitly strip it to prevent GAID collection. -->
-    <uses-permission
-        android:name="com.google.android.gms.permission.AD_ID"
-        tools:node="remove" />
+    <!-- Required on Android 13+ for Firebase Analytics to access Advertising ID.
+         Declared as "Analytics" only — not used for ads or attribution. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
     <application
         android:name=".SmsRedirectApplication"
