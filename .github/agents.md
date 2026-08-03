@@ -161,3 +161,24 @@ Both must pass before merging. Always run these locally before pushing.
 - Rule matching is order-dependent (first match wins). Respect `sortOrder`.
 - The `defaultPrefix` and `forwardPrefix` settings affect message formatting — test formatting changes thoroughly.
 - No Dependency Injection framework is used intentionally — keep it simple with manual DI.
+
+## Agent Orchestration
+
+This repo defines four specialized agent roles, available to both **Claude Code** (`.claude/agents/*.md`) and **GitHub Copilot** (`.github/agents/*.agent.md`):
+
+| Role | File | Responsibility |
+|---|---|---|
+| **Architect** | `architect` | Plans a change: which layer(s) it touches, DI/AppContainer wiring, schema/WorkManager impact, updates `Architecture.md`. Writes no code. |
+| **Developer** | `developer` | Implements the plan following Clean Architecture and the coding conventions above. |
+| **QA** | `qa` | Writes/reviews tests, runs `ktlintCheck` and `test`, checks the invariants called out in this doc (rule ordering, prefix formatting, WorkManager retries). |
+| **Security Manager** | `security-manager` | Reviews SMS/permission handling, logging, analytics payloads, keystore/signing config, and dependency additions against `PrivacyPolicy.md` and `store-listing/data-safety.md`. |
+
+**Default flow:** Architect (plan) → Developer (implement) → QA (test) → Security Manager (gate, for anything touching SMS content, permissions, logging, or signing config). Any agent can hand back to an earlier one if it finds a problem outside its own scope — this isn't a strict one-way pipeline.
+
+### Using them in Claude Code
+
+Subagents in `.claude/agents/` are invoked by the main assistant thread via the `Agent`/Task tool, either automatically (description-based matching) or by name (e.g. "use the architect agent to plan this"). Claude subagents don't call each other directly — the top-level thread drives the handoff sequence between them based on each agent's report.
+
+### Using them in GitHub Copilot
+
+Agent profiles in `.github/agents/` work in both the IDE (`@architect`, `@developer`, `@qa`, `@security-manager` in Copilot Chat) and the cloud coding agent. Each profile includes the `agent` tool, so — unlike the Claude setup — these agents can delegate to each other directly mid-session (real sub-agent sessions, not just a suggestion to the user), and the runtime can also auto-route a request to the matching agent by intent. When Copilot's cloud agent opens a PR from one of these roles, it reacts to review comments and CI failures on that PR automatically (standard Copilot coding agent behavior) — no extra configuration needed for that part.
