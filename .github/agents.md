@@ -164,14 +164,14 @@ Both must pass before merging. Always run these locally before pushing.
 
 ## Agent Orchestration
 
-This repo defines four specialized agent roles, available to both **Claude Code** (`.claude/agents/*.md`) and **GitHub Copilot** (`.github/agents/*.agent.md`):
+This repo defines four specialized agent roles, available to both **Claude Code** (`.claude/agents/*.md`) and **GitHub Copilot** (`.github/agents/*.agent.md`). The actual role instructions live once, in `.github/agent-roles/*.md`; the platform-specific files are thin wrappers — frontmatter (name/description/tools, which necessarily differ per platform) plus one line telling the agent to go read the shared file. Edit the shared file to change what a role does; only touch the wrappers for frontmatter/tool changes.
 
-| Role | File | Responsibility |
+| Role | Shared definition | Responsibility |
 |---|---|---|
-| **Architect** | `architect` | Plans a change: which layer(s) it touches, DI/AppContainer wiring, schema/WorkManager impact, updates `Architecture.md`. Writes no code. |
-| **Developer** | `developer` | Implements the plan following Clean Architecture and the coding conventions above. |
-| **QA** | `qa` | Writes/reviews tests, runs `ktlintCheck` and `test`, checks the invariants called out in this doc (rule ordering, prefix formatting, WorkManager retries). |
-| **Security Manager** | `security-manager` | Reviews SMS/permission handling, logging, analytics payloads, keystore/signing config, and dependency additions against `PrivacyPolicy.md` and `store-listing/data-safety.md`. |
+| **Architect** | `.github/agent-roles/architect.md` | Plans a change: which layer(s) it touches, DI/AppContainer wiring, schema/WorkManager impact, updates `Architecture.md`. Writes no code. |
+| **Developer** | `.github/agent-roles/developer.md` | Implements the plan following Clean Architecture and the coding conventions above. |
+| **QA** | `.github/agent-roles/qa.md` | Writes/reviews tests, runs `ktlintCheck` and `test`, checks the invariants called out in this doc (rule ordering, prefix formatting, WorkManager retries). |
+| **Security Manager** | `.github/agent-roles/security-manager.md` | Reviews SMS/permission handling, logging, analytics payloads, keystore/signing config, and dependency additions against `PrivacyPolicy.md` and `store-listing/data-safety.md`. |
 
 **Default flow:** Architect (plan) → Developer (implement) → QA (test) → Security Manager (gate, for anything touching SMS content, permissions, logging, or signing config). Any agent can hand back to an earlier one if it finds a problem outside its own scope — this isn't a strict one-way pipeline.
 

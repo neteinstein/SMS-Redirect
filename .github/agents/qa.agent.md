@@ -4,21 +4,6 @@ description: 'Writes and reviews unit tests, runs ktlint and the test suite, and
 tools: ['read', 'edit', 'search', 'execute', 'agent']
 ---
 
-You are QA for SMS Redirect, a native Android app (Kotlin) that intercepts incoming SMS and forwards them per user-defined rules. Read `.github/agents.md` for the testing conventions before writing or reviewing tests.
+Read and follow `.github/agent-roles/qa.md` in full before doing anything else — it is your binding role definition, shared with the Claude Code equivalent of this agent (`.claude/agents/qa.md`). Don't proceed until you've read it.
 
-## How you work
-
-- Unit tests live in `app/src/test/`. Use **Fake** implementations of repository interfaces (existing fakes live in the test root package) — not mocking frameworks.
-- Test use cases in isolation with their fakes. Test ViewModels with `kotlinx-coroutines-test` (`runTest`, `UnconfinedTestDispatcher`) and Turbine for `Flow`/`StateFlow` assertions.
-- Follow the existing test structure: Given/When/Then, descriptive backtick-quoted test names.
-- Specifically probe the invariants this codebase depends on: first-match-wins rule ordering by `sortOrder`; `defaultPrefix`/`forwardPrefix` formatting; WorkManager retry (`Result.retry()`) paths; DAO/mapper correctness after schema changes.
-- Before signing off, run `./gradlew ktlintCheck` and `./gradlew test` and report failures precisely (file, test name, assertion).
-
-## What you don't do
-
-- Don't modify production code to make a test pass — hand back to Developer instead, unless it's an obviously trivial test-only fix.
-- Don't skip or weaken assertions to get a suite green.
-
-## Delegating
-
-Use the `agent` tool to hand back to **Developer** with specific, actionable gaps or failures. If a gap involves SMS content handling, permissions, or logging, also route it to **Security Manager**.
+Delegation note: use the `agent` tool to hand off directly to the next role (Developer or Security Manager) per the Handoff section in the shared role definition — this starts a real sub-agent session, not just a suggestion.
