@@ -68,6 +68,7 @@ import androidx.compose.ui.zIndex
 import com.neteinstein.smsredirect.R
 import com.neteinstein.smsredirect.domain.model.RepeatType
 import com.neteinstein.smsredirect.domain.model.ScheduledSms
+import com.neteinstein.smsredirect.presentation.components.WarningBanner
 import com.neteinstein.smsredirect.presentation.theme.CategoryAccentColors
 import com.neteinstein.smsredirect.presentation.theme.Dimens
 import java.text.DateFormat
@@ -88,6 +89,8 @@ fun ScheduleListScreen(
     onMoveScheduledSms: (Int, Int) -> Unit,
     onDragEnd: () -> Unit,
     bottomBar: @Composable () -> Unit = {},
+    showBackgroundWarning: Boolean = false,
+    onFixBackgroundWarning: () -> Unit = {},
 ) {
     var itemToDelete by remember { mutableStateOf<ScheduledSms?>(null) }
 
@@ -147,6 +150,13 @@ fun ScheduleListScreen(
                     .fillMaxSize()
                     .padding(padding),
         ) {
+            if (showBackgroundWarning) {
+                WarningBanner(
+                    message = stringResource(R.string.battery_banner_message),
+                    actionLabel = stringResource(R.string.battery_banner_action),
+                    onActionClick = onFixBackgroundWarning,
+                )
+            }
             if (scheduledSmsList.isEmpty()) {
                 Column(
                     modifier =

@@ -22,7 +22,6 @@ The App requests the following Android permissions. Each is used only for the st
 | `READ_SMS` / `RECEIVE_SMS` | Detect incoming SMS so it can be checked against your forwarding rules |
 | `SEND_SMS` | Send a forwarded message, or a scheduled message, to the number you configured |
 | `READ_CONTACTS` | Let you pick a contact when creating a rule or scheduled message, and show a contact's name instead of a raw number in notifications/history |
-| `READ_PHONE_STATE` | Detect roaming status, used only to honor your "Send while roaming" setting |
 | `POST_NOTIFICATIONS` | Show a notification after a message is forwarded or a scheduled message is sent |
 | Battery optimization exemption | Prevent Android's Doze mode from delaying forwarding or scheduled sends |
 
@@ -73,7 +72,7 @@ The App is not directed at children under 13, and we do not knowingly collect pe
 
 ## 10. Your Choices and Rights
 
-- Revoke any runtime permission at any time in Android Settings — the App shows a banner explaining which features are affected and degrades gracefully rather than crashing.
+- Revoke any runtime permission at any time in Android Settings — the App degrades gracefully rather than crashing (the affected feature, e.g. forwarding, scheduled sending, contact picking, or notifications, simply stops working until you re-grant it). If background running is not enabled, the App shows a persistent banner on the home screen until you enable it.
 - Turn off "Keep history" or "Keep schedule history" in Settings to stop local history logging.
 - Uninstall the App to remove all locally stored data from your device.
 - Depending on your local law (e.g., GDPR, CCPA), you may have rights to access, correct, export, or delete data. Since all rule/schedule/history data lives only on your device, you already have full access via the App itself; for questions about Firebase-processed diagnostic/analytics data, contact us using the details below.

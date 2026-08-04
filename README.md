@@ -47,16 +47,15 @@ Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean archit
 ### Settings
 - Send while roaming toggle (default: off)
 - Keep history toggle (default: on)
-- Show notifications toggle (default: on) — posts a system notification after each successful forward
+- Show notifications toggle (default: off) — posts a system notification after each successful forward
 - Forward prefix text field (default: `SMS Redirect:`)
 - Default country prefix dropdown (None / +351 Portugal)
 - Forward history viewer (last 50 forwarded messages with sender, target, rule, timestamp, and body)
 
 ### General
 - Splash screen with app emoji and name
-- Runtime permission handling for SMS, Contacts, and Phone State
-- Permission status banner on Home and Settings screens showing missing permissions
-- Battery optimization exemption prompt at startup
+- Contextual runtime permission requests (SMS, Contacts, Notifications) with a rationale dialog shown before each system prompt, rather than an upfront onboarding screen
+- Battery optimization exemption prompt shown after creating your first rule or scheduled SMS, with a persistent warning banner on Home if declined
 - Deep link support (`smsredirect://app` URI scheme)
 - Contact name resolution for forwarded-message notifications
 - Message deduplication (30-second window prevents double-forwards)
@@ -72,8 +71,8 @@ When deploying the app from Android Studio or ADB, it is considered **sideloaded
 1. Go to **Settings > Apps > SMS Redirect**
 2. Tap the **three-dot menu** (top right)
 3. Select **"Allow restricted settings"**
-4. Go back to **Permissions** and grant all SMS permissions (RECEIVE_SMS, SEND_SMS, READ_SMS)
-5. Also grant **Contacts** permission if you want to use the contact picker
+4. Back in the app, add a rule or scheduled SMS to trigger the SMS permission dialog, then grant RECEIVE_SMS, SEND_SMS, and READ_SMS when prompted
+5. Tap "pick contact" from a rule or scheduled SMS to trigger and grant **Contacts** permission if you want to use the contact picker
 
 ### Verifying the receiver works
 
