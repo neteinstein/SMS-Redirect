@@ -7,10 +7,10 @@ yourself; wording and categories change over time.
 
 The key rule Google uses: **"collected" means transmitted off the device**
 to the developer or a third party. Data the app only reads/writes locally
-(SMS content, contacts, phone state) and never transmits is **not**
-"collected" for this form, even though the app requests the runtime
-permission for it (that's covered separately by the **Permissions
-declaration form** — see the README's warning about `SmsAndCallLogPolicy`).
+(SMS content, contacts) and never transmits is **not** "collected" for this
+form, even though the app requests the runtime permission for it (that's
+covered separately by the **Permissions declaration form** — see the
+README's warning about `SmsAndCallLogPolicy`).
 
 ## Suggested answers
 

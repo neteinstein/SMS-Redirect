@@ -151,22 +151,20 @@ Redirect and Schedule each own their own tables end-to-end — `ScheduledSmsEnti
 | `keepScheduleHistory` | `true` | Record sent scheduled SMS (Schedule history) |
 | `defaultPrefix` | `+351` | Country code prepended to local numbers (used by both features) |
 | `forwardPrefix` | `SMS Redirect:` | Text prepended to forwarded message body |
-| `showNotifications` | `true` | Show a notification after each successful forward or scheduled send |
+| `showNotifications` | `false` | Show a notification after each successful forward or scheduled send |
 
 ## Permissions
 
-The app requires the following permissions, requested in order:
+Permissions are requested contextually rather than upfront at first launch — there is no onboarding screen that gates the app behind granting everything. Each permission is requested the first time its feature is used, after a rationale dialog (Proceed/Cancel) explains why it's needed:
 
-| # | Permission | Purpose |
+| Permission | Requested when | Purpose |
 |---|-----------|---------|
-| 1 | `READ_SMS` | Access SMS content |
-| 2 | `RECEIVE_SMS` | Receive SMS broadcast |
-| 3 | `READ_CONTACTS` | Pick contacts for rules and scheduled SMS |
-| 4 | `SEND_SMS` | Forward messages / send scheduled SMS |
-| 5 | `READ_PHONE_STATE` | Check roaming status |
-| 6 | Battery Optimization exemption | Prevent Doze from throttling |
+| `READ_SMS` / `RECEIVE_SMS` / `SEND_SMS` | Adding the first rule or scheduled SMS | Detect and forward/send SMS (MMS/RCS are out of scope) |
+| `READ_CONTACTS` | Tapping "pick contact" for the first time | Pick contacts for rules and scheduled SMS |
+| `POST_NOTIFICATIONS` | Turning on "Show notifications" in Settings (default off) | Notify after a successful forward or scheduled send |
+| Battery optimization exemption | Right after creating a new rule or scheduled SMS | Prevent Doze from throttling background delivery; declining shows a persistent warning banner on Home until enabled |
 
-`POST_NOTIFICATIONS` (for both forward-sent and scheduled-sent notifications) and WorkManager's own scheduling permissions were already present for the Redirect feature — Schedule required no new manifest permissions.
+WorkManager's own scheduling permissions were already present for the Redirect feature — Schedule required no new manifest permissions.
 
 ## Presentation Layer
 

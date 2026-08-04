@@ -22,7 +22,6 @@ The App requests the following Android permissions. Each is used only for the st
 | `READ_SMS` / `RECEIVE_SMS` | Detect incoming SMS so it can be checked against your forwarding rules |
 | `SEND_SMS` | Send a forwarded message, or a scheduled message, to the number you configured |
 | `READ_CONTACTS` | Let you pick a contact when creating a rule or scheduled message, and show a contact's name instead of a raw number in notifications/history |
-| `READ_PHONE_STATE` | Detect roaming status, used only to honor your "Send while roaming" setting |
 | `POST_NOTIFICATIONS` | Show a notification after a message is forwarded or a scheduled message is sent |
 | Battery optimization exemption | Prevent Android's Doze mode from delaying forwarding or scheduled sends |
 
