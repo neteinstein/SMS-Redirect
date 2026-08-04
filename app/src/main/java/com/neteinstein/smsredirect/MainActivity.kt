@@ -55,8 +55,6 @@ import com.neteinstein.smsredirect.presentation.home.HomeViewModelFactory
 import com.neteinstein.smsredirect.presentation.navigation.MainBottomBar
 import com.neteinstein.smsredirect.presentation.navigation.MainTab
 import com.neteinstein.smsredirect.presentation.navigation.Routes
-import com.neteinstein.smsredirect.presentation.permissions.PermissionItem
-import com.neteinstein.smsredirect.presentation.permissions.PermissionsScreen
 import com.neteinstein.smsredirect.presentation.rule.RuleScreen
 import com.neteinstein.smsredirect.presentation.rule.RuleViewModel
 import com.neteinstein.smsredirect.presentation.rule.RuleViewModelFactory
@@ -80,14 +78,11 @@ import kotlinx.coroutines.flow.collectLatest
 import java.io.File
 
 class MainActivity : ComponentActivity() {
-    private val requiredPermissions =
+    private val smsPermissions =
         arrayOf(
-            Manifest.permission.READ_SMS,
             Manifest.permission.RECEIVE_SMS,
-            Manifest.permission.READ_CONTACTS,
+            Manifest.permission.READ_SMS,
             Manifest.permission.SEND_SMS,
-            Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.POST_NOTIFICATIONS,
         )
 
     private val newIntentFlow = MutableStateFlow<Intent?>(null)
@@ -114,8 +109,27 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                val showBatteryDialog = remember { mutableStateOf(shouldShowBatteryOptimizationDialog()) }
+                var showBatteryDialog by remember { mutableStateOf(false) }
                 val showSideloadDialog = remember { mutableStateOf(shouldShowSideloadWarning()) }
+
+                val lifecycleOwnerTop = LocalLifecycleOwner.current
+                var appResumeTick by remember { mutableIntStateOf(0) }
+                DisposableEffect(lifecycleOwnerTop) {
+                    val observer =
+                        LifecycleEventObserver { _, event ->
+                            if (event == Lifecycle.Event.ON_RESUME) {
+                                appResumeTick++
+                            }
+                        }
+                    lifecycleOwnerTop.lifecycle.addObserver(observer)
+                    onDispose {
+                        lifecycleOwnerTop.lifecycle.removeObserver(observer)
+                    }
+                }
+                var showBatteryBanner by
+                    remember(appResumeTick) {
+                        mutableStateOf(isBatteryBannerEnabled() && shouldShowBatteryOptimizationDialog())
+                    }
 
                 if (showSideloadDialog.value) {
                     AlertDialog(
@@ -137,22 +151,30 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                if (showBatteryDialog.value) {
+                if (showBatteryDialog) {
                     AlertDialog(
-                        onDismissRequest = { showBatteryDialog.value = false },
+                        onDismissRequest = {
+                            showBatteryDialog = false
+                            setBatteryBannerEnabled(true)
+                            showBatteryBanner = true
+                        },
                         title = { Text(stringResource(R.string.battery_optimization_title)) },
                         text = { Text(stringResource(R.string.battery_optimization_message)) },
                         dismissButton = {
-                            TextButton(onClick = { showBatteryDialog.value = false }) {
+                            TextButton(onClick = {
+                                showBatteryDialog = false
+                                setBatteryBannerEnabled(true)
+                                showBatteryBanner = true
+                            }) {
                                 Text(stringResource(R.string.action_cancel))
                             }
                         },
                         confirmButton = {
                             TextButton(onClick = {
-                                showBatteryDialog.value = false
+                                showBatteryDialog = false
                                 openBatteryOptimizationSettings()
                             }) {
-                                Text(stringResource(R.string.action_open_screen))
+                                Text(stringResource(R.string.action_proceed))
                             }
                         },
                     )
@@ -170,97 +192,90 @@ class MainActivity : ComponentActivity() {
                         SplashScreen()
                         LaunchedEffect(Unit) {
                             delay(1200)
-                            val destination =
-                                if (allPermissionsGranted()) Routes.Home else Routes.Permissions
-                            navController.navigate(destination) {
+                            navController.navigate(Routes.Home) {
                                 popUpTo(Routes.Splash) { inclusive = true }
                             }
-                            if (destination == Routes.Home) {
-                                resolveDeepLinkRoute(intent)?.let { navController.navigate(it) }
-                            }
+                            resolveDeepLinkRoute(intent)?.let { navController.navigate(it) }
                         }
-                    }
-
-                    composable(
-                        route = Routes.PermissionsWithArg,
-                        arguments =
-                            listOf(
-                                navArgument(Routes.PermissionsStandaloneArg) {
-                                    type = NavType.BoolType
-                                    defaultValue = false
-                                },
-                            ),
-                    ) { backStackEntry ->
-                        val standalone =
-                            backStackEntry.arguments?.getBoolean(Routes.PermissionsStandaloneArg) ?: false
-
-                        val lifecycleOwner = LocalLifecycleOwner.current
-                        var permissionCheckTick by remember { mutableIntStateOf(0) }
-                        DisposableEffect(lifecycleOwner) {
-                            val observer =
-                                LifecycleEventObserver { _, event ->
-                                    if (event == Lifecycle.Event.ON_RESUME) {
-                                        permissionCheckTick++
-                                    }
-                                }
-                            lifecycleOwner.lifecycle.addObserver(observer)
-                            onDispose {
-                                lifecycleOwner.lifecycle.removeObserver(observer)
-                            }
-                        }
-
-                        val permissionItems = remember(permissionCheckTick) { buildPermissionItems() }
-
-                        val permissionLauncher =
-                            rememberLauncherForActivityResult(
-                                ActivityResultContracts.RequestMultiplePermissions(),
-                            ) { permissionCheckTick++ }
-
-                        // Skip this auto-advance when revisiting from Settings, otherwise the
-                        // screen would immediately bounce back.
-                        if (!standalone) {
-                            LaunchedEffect(permissionItems) {
-                                if (permissionItems.all { it.isGranted }) {
-                                    navController.navigate(Routes.Home) {
-                                        popUpTo(Routes.Permissions) { inclusive = true }
-                                    }
-                                }
-                            }
-                        }
-
-                        PermissionsScreen(
-                            permissions = permissionItems,
-                            onRequestPermission = { permissionId ->
-                                if (permissionId == Manifest.permission.RECEIVE_SMS) {
-                                    permissionLauncher.launch(
-                                        arrayOf(
-                                            Manifest.permission.RECEIVE_SMS,
-                                            Manifest.permission.READ_SMS,
-                                        ),
-                                    )
-                                } else {
-                                    permissionLauncher.launch(arrayOf(permissionId))
-                                }
-                            },
-                            onBack =
-                                if (standalone) {
-                                    { navController.popBackStack() }
-                                } else {
-                                    null
-                                },
-                        )
                     }
 
                     composable(Routes.Home) {
                         var selectedTab by rememberSaveable { mutableStateOf(MainTab.REDIRECT) }
+
+                        var pendingCreateRoute by remember { mutableStateOf<String?>(null) }
+                        var showSmsRationale by remember { mutableStateOf(false) }
+                        var showSmsDenied by remember { mutableStateOf(false) }
+
+                        val smsPermissionLauncher =
+                            rememberLauncherForActivityResult(
+                                ActivityResultContracts.RequestMultiplePermissions(),
+                            ) { results ->
+                                val route = pendingCreateRoute
+                                pendingCreateRoute = null
+                                if (results.values.all { it } && route != null) {
+                                    navController.navigate(route)
+                                } else {
+                                    showSmsDenied = true
+                                }
+                            }
+
+                        val requestCreate: (String) -> Unit = { route ->
+                            if (hasSmsPermissions()) {
+                                navController.navigate(route)
+                            } else {
+                                pendingCreateRoute = route
+                                showSmsRationale = true
+                            }
+                        }
+
+                        if (showSmsRationale) {
+                            AlertDialog(
+                                onDismissRequest = {
+                                    showSmsRationale = false
+                                    pendingCreateRoute = null
+                                },
+                                title = { Text(stringResource(R.string.sms_permission_rationale_title)) },
+                                text = { Text(stringResource(R.string.sms_permission_rationale_message)) },
+                                dismissButton = {
+                                    TextButton(onClick = {
+                                        showSmsRationale = false
+                                        pendingCreateRoute = null
+                                    }) {
+                                        Text(stringResource(R.string.action_cancel))
+                                    }
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        showSmsRationale = false
+                                        smsPermissionLauncher.launch(smsPermissions)
+                                    }) {
+                                        Text(stringResource(R.string.action_proceed))
+                                    }
+                                },
+                            )
+                        }
+
+                        if (showSmsDenied) {
+                            AlertDialog(
+                                onDismissRequest = { showSmsDenied = false },
+                                title = { Text(stringResource(R.string.sms_permission_denied_title)) },
+                                text = { Text(stringResource(R.string.sms_permission_denied_message)) },
+                                confirmButton = {
+                                    TextButton(onClick = { showSmsDenied = false }) {
+                                        Text(stringResource(R.string.action_ok))
+                                    }
+                                },
+                            )
+                        }
+
                         val bottomBar: @Composable () -> Unit = {
                             MainBottomBar(
                                 selectedTab = selectedTab,
                                 onTabSelected = { selectedTab = it },
                                 onFabClick = {
                                     when (selectedTab) {
-                                        MainTab.REDIRECT -> navController.navigate(Routes.ruleRoute())
-                                        MainTab.SCHEDULE -> navController.navigate(Routes.scheduleRoute())
+                                        MainTab.REDIRECT -> requestCreate(Routes.ruleRoute())
+                                        MainTab.SCHEDULE -> requestCreate(Routes.scheduleRoute())
                                     }
                                 },
                                 fabContentDescription =
@@ -288,7 +303,7 @@ class MainActivity : ComponentActivity() {
                                 HomeScreen(
                                     rules = rules,
                                     contactNames = contactNames,
-                                    onAddRule = { navController.navigate(Routes.ruleRoute()) },
+                                    onAddRule = { requestCreate(Routes.ruleRoute()) },
                                     onOpenHistory = { navController.navigate(Routes.History) },
                                     onOpenSettings = { navController.navigate(Routes.Settings) },
                                     onEditRule = { navController.navigate(Routes.ruleRoute(it)) },
@@ -296,6 +311,8 @@ class MainActivity : ComponentActivity() {
                                     onMoveRule = homeViewModel::moveRule,
                                     onDragEnd = homeViewModel::commitReorder,
                                     bottomBar = bottomBar,
+                                    showBackgroundWarning = showBatteryBanner,
+                                    onFixBackgroundWarning = { openBatteryOptimizationSettings() },
                                 )
                             }
 
@@ -315,7 +332,7 @@ class MainActivity : ComponentActivity() {
                                 ScheduleListScreen(
                                     scheduledSmsList = scheduledSmsList,
                                     contactNames = contactNames,
-                                    onAddScheduledSms = { navController.navigate(Routes.scheduleRoute()) },
+                                    onAddScheduledSms = { requestCreate(Routes.scheduleRoute()) },
                                     onOpenHistory = { navController.navigate(Routes.ScheduleHistory) },
                                     onOpenSettings = { navController.navigate(Routes.Settings) },
                                     onEditScheduledSms = { navController.navigate(Routes.scheduleRoute(it)) },
@@ -323,6 +340,8 @@ class MainActivity : ComponentActivity() {
                                     onMoveScheduledSms = scheduleListViewModel::moveScheduledSms,
                                     onDragEnd = scheduleListViewModel::commitReorder,
                                     bottomBar = bottomBar,
+                                    showBackgroundWarning = showBatteryBanner,
+                                    onFixBackgroundWarning = { openBatteryOptimizationSettings() },
                                 )
                             }
                         }
@@ -368,6 +387,35 @@ class MainActivity : ComponentActivity() {
                         }
                         val currentLanguageLabel =
                             remember(resumeTick) { currentAppLanguageLabel() }
+
+                        var showNotificationsRationale by remember { mutableStateOf(false) }
+                        val notificationsPermissionLauncher =
+                            rememberLauncherForActivityResult(
+                                contract = ActivityResultContracts.RequestPermission(),
+                            ) { granted ->
+                                settingsViewModel.setShowNotifications(granted)
+                            }
+
+                        if (showNotificationsRationale) {
+                            AlertDialog(
+                                onDismissRequest = { showNotificationsRationale = false },
+                                title = { Text(stringResource(R.string.notifications_permission_rationale_title)) },
+                                text = { Text(stringResource(R.string.notifications_permission_rationale_message)) },
+                                dismissButton = {
+                                    TextButton(onClick = { showNotificationsRationale = false }) {
+                                        Text(stringResource(R.string.action_cancel))
+                                    }
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        showNotificationsRationale = false
+                                        notificationsPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    }) {
+                                        Text(stringResource(R.string.action_proceed))
+                                    }
+                                },
+                            )
+                        }
 
                         val importLauncher =
                             rememberLauncherForActivityResult(
@@ -452,7 +500,13 @@ class MainActivity : ComponentActivity() {
                             defaultPrefix = defaultPrefix,
                             currentLanguageLabel = currentLanguageLabel,
                             onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming,
-                            onShowNotificationsChanged = settingsViewModel::setShowNotifications,
+                            onShowNotificationsChanged = { enabled ->
+                                if (enabled) {
+                                    showNotificationsRationale = true
+                                } else {
+                                    settingsViewModel.setShowNotifications(false)
+                                }
+                            },
                             onForwardPrefixSaved = settingsViewModel::setForwardPrefix,
                             onDefaultPrefixChanged = settingsViewModel::setDefaultPrefix,
                             onExportBackup = settingsViewModel::exportBackup,
@@ -604,14 +658,49 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
 
+                        var pendingContactsAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+                        var showContactsRationale by remember { mutableStateOf(false) }
+
+                        if (showContactsRationale) {
+                            AlertDialog(
+                                onDismissRequest = {
+                                    showContactsRationale = false
+                                    pendingContactsAction = null
+                                },
+                                title = { Text(stringResource(R.string.contacts_permission_rationale_title)) },
+                                text = { Text(stringResource(R.string.contacts_permission_rationale_message)) },
+                                dismissButton = {
+                                    TextButton(onClick = {
+                                        showContactsRationale = false
+                                        pendingContactsAction = null
+                                    }) {
+                                        Text(stringResource(R.string.action_cancel))
+                                    }
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        showContactsRationale = false
+                                        pendingContactsAction?.invoke()
+                                        pendingContactsAction = null
+                                    }) {
+                                        Text(stringResource(R.string.action_proceed))
+                                    }
+                                },
+                            )
+                        }
+
                         LaunchedEffect(ruleId) {
                             ruleViewModel.loadRule(ruleId)
                         }
 
                         LaunchedEffect(uiState.saved) {
                             if (uiState.saved) {
+                                val wasNew = uiState.id == 0L
                                 ruleViewModel.clearSavedFlag()
                                 navController.popBackStack()
+                                if (wasNew && shouldShowBatteryOptimizationDialog()) {
+                                    showBatteryDialog = true
+                                }
                             }
                         }
 
@@ -629,7 +718,10 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     pickSenderContactLauncher.launch(null)
                                 } else {
-                                    requestSenderContactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                                    pendingContactsAction = {
+                                        requestSenderContactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                                    }
+                                    showContactsRationale = true
                                 }
                             },
                             onPickTargetContact = {
@@ -640,7 +732,10 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     pickTargetContactLauncher.launch(null)
                                 } else {
-                                    requestTargetContactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                                    pendingContactsAction = {
+                                        requestTargetContactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                                    }
+                                    showContactsRationale = true
                                 }
                             },
                             onSave = {
@@ -704,14 +799,41 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
 
+                        var showContactsRationale by remember { mutableStateOf(false) }
+
+                        if (showContactsRationale) {
+                            AlertDialog(
+                                onDismissRequest = { showContactsRationale = false },
+                                title = { Text(stringResource(R.string.contacts_permission_rationale_title)) },
+                                text = { Text(stringResource(R.string.contacts_permission_rationale_message)) },
+                                dismissButton = {
+                                    TextButton(onClick = { showContactsRationale = false }) {
+                                        Text(stringResource(R.string.action_cancel))
+                                    }
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        showContactsRationale = false
+                                        requestContactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                                    }) {
+                                        Text(stringResource(R.string.action_proceed))
+                                    }
+                                },
+                            )
+                        }
+
                         LaunchedEffect(scheduleId) {
                             scheduleFormViewModel.loadScheduledSms(scheduleId)
                         }
 
                         LaunchedEffect(uiState.saved) {
                             if (uiState.saved) {
+                                val wasNew = uiState.id == 0L
                                 scheduleFormViewModel.clearSavedFlag()
                                 navController.popBackStack()
+                                if (wasNew && shouldShowBatteryOptimizationDialog()) {
+                                    showBatteryDialog = true
+                                }
                             }
                         }
 
@@ -728,7 +850,7 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     pickContactLauncher.launch(null)
                                 } else {
-                                    requestContactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                                    showContactsRationale = true
                                 }
                             },
                             onMessageChanged = scheduleFormViewModel::onMessageChanged,
@@ -798,76 +920,23 @@ class MainActivity : ComponentActivity() {
         return if (number.isNotBlank()) Pair(number, displayName) else null
     }
 
-    private fun allPermissionsGranted(): Boolean =
-        requiredPermissions.all {
+    private fun hasSmsPermissions(): Boolean =
+        smsPermissions.all {
             ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
-
-    private fun hasSmsPermissions(): Boolean {
-        val hasReceiveSmsPermission =
-            ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) ==
-                PackageManager.PERMISSION_GRANTED
-        val hasReadSmsPermission =
-            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) ==
-                PackageManager.PERMISSION_GRANTED
-        return hasReceiveSmsPermission && hasReadSmsPermission
-    }
-
-    private fun buildPermissionItems(): List<PermissionItem> =
-        listOf(
-            PermissionItem(
-                id = Manifest.permission.RECEIVE_SMS,
-                label = getString(R.string.permission_sms_label),
-                description = getString(R.string.permission_sms_description),
-                isGranted = hasSmsPermissions(),
-            ),
-            PermissionItem(
-                id = Manifest.permission.SEND_SMS,
-                label = getString(R.string.permission_send_sms_label),
-                description = getString(R.string.permission_send_sms_description),
-                isGranted =
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) ==
-                        PackageManager.PERMISSION_GRANTED,
-            ),
-            PermissionItem(
-                id = Manifest.permission.READ_CONTACTS,
-                label = getString(R.string.permission_contacts_label),
-                description = getString(R.string.permission_contacts_description),
-                isGranted =
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) ==
-                        PackageManager.PERMISSION_GRANTED,
-            ),
-            PermissionItem(
-                id = Manifest.permission.READ_PHONE_STATE,
-                label = getString(R.string.permission_phone_state_label),
-                description = getString(R.string.permission_phone_state_description),
-                isGranted =
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) ==
-                        PackageManager.PERMISSION_GRANTED,
-            ),
-            PermissionItem(
-                id = Manifest.permission.POST_NOTIFICATIONS,
-                label = getString(R.string.permission_notifications_label),
-                description = getString(R.string.permission_notifications_description),
-                isGranted =
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
-                        PackageManager.PERMISSION_GRANTED,
-            ),
-        )
-
-    private fun currentMissingPermissions(): List<String> {
-        val missing =
-            requiredPermissions
-                .filter {
-                    ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-                }.map { it.removePrefix("android.permission.") }
-                .toMutableList()
-        return missing
-    }
 
     private fun shouldShowBatteryOptimizationDialog(): Boolean {
         val powerManager = getSystemService(POWER_SERVICE) as? PowerManager ?: return false
         return !powerManager.isIgnoringBatteryOptimizations(packageName)
+    }
+
+    private fun isBatteryBannerEnabled(): Boolean =
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getBoolean(KEY_BATTERY_BANNER_ENABLED, false)
+
+    private fun setBatteryBannerEnabled(enabled: Boolean) {
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit {
+            putBoolean(KEY_BATTERY_BANNER_ENABLED, enabled)
+        }
     }
 
     /**
@@ -953,5 +1022,6 @@ class MainActivity : ComponentActivity() {
         private const val TAG = "MainActivity"
         private const val PREFS_NAME = "sms_redirect_prefs"
         private const val KEY_SIDELOAD_DISMISSED = "sideload_warning_dismissed"
+        private const val KEY_BATTERY_BANNER_ENABLED = "battery_banner_enabled"
     }
 }

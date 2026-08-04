@@ -42,7 +42,7 @@ class SettingsViewModel(
     val defaultPrefix: StateFlow<String> = _defaultPrefix.asStateFlow()
     private val _forwardPrefix = MutableStateFlow("SMS Redirect:")
     val forwardPrefix: StateFlow<String> = _forwardPrefix.asStateFlow()
-    private val _showNotifications = MutableStateFlow(true)
+    private val _showNotifications = MutableStateFlow(false)
     val showNotifications: StateFlow<Boolean> = _showNotifications.asStateFlow()
 
     init {

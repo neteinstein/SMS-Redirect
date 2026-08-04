@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.neteinstein.smsredirect.R
 import com.neteinstein.smsredirect.domain.model.Rule
+import com.neteinstein.smsredirect.presentation.components.WarningBanner
 import com.neteinstein.smsredirect.presentation.theme.CategoryAccentColors
 import com.neteinstein.smsredirect.presentation.theme.Dimens
 import kotlin.math.absoluteValue
@@ -84,6 +85,8 @@ fun HomeScreen(
     onMoveRule: (Int, Int) -> Unit,
     onDragEnd: () -> Unit,
     bottomBar: @Composable () -> Unit = {},
+    showBackgroundWarning: Boolean = false,
+    onFixBackgroundWarning: () -> Unit = {},
 ) {
     var ruleToDelete by remember { mutableStateOf<Rule?>(null) }
 
@@ -136,6 +139,13 @@ fun HomeScreen(
                     .fillMaxSize()
                     .padding(padding),
         ) {
+            if (showBackgroundWarning) {
+                WarningBanner(
+                    message = stringResource(R.string.battery_banner_message),
+                    actionLabel = stringResource(R.string.battery_banner_action),
+                    onActionClick = onFixBackgroundWarning,
+                )
+            }
             if (rules.isEmpty()) {
                 Column(
                     modifier =

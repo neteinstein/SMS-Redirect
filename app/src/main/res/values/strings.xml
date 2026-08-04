@@ -1,30 +1,30 @@
 <resources>
     <string name="app_name">SMS Redirect &amp; Schedule</string>
     <string name="splash_subtitle">Redirect and schedule your SMS messages</string>
-    <string name="battery_optimization_title">Disable battery optimization</string>
-    <string name="battery_optimization_message">To keep SMS forwarding reliable, disable battery optimization for this app.</string>
+    <string name="battery_optimization_title">Keep running in background</string>
+    <string name="battery_optimization_message">SMS Redirect needs to keep running in the background to forward messages and send scheduled SMS reliably. Disable battery optimization for this app so Android does not stop it.</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_back">Back</string>
     <string name="action_ok">OK</string>
     <string name="action_open_screen">Open screen</string>
+    <string name="action_proceed">Proceed</string>
 
     <string name="sideload_warning_title">Allow restricted settings</string>
     <string name="sideload_warning_message">This app was not installed via the Play Store. An extra step is required:\n\n1. Go to Settings > Apps > SMS Redirect\n2. Tap the three-dot menu (top right)\n3. Select \"Allow restricted settings\"\n\nPress OK to open the app settings screen.</string>
 
-    <string name="permissions_title">Permissions Required</string>
-    <string name="permissions_subtitle">SMS Redirect needs these permissions to work properly. Please grant all required permissions to continue.</string>
-    <string name="permissions_request">Request Permission</string>
-    <string name="permissions_granted">Granted</string>
-    <string name="permission_sms_label">SMS</string>
-    <string name="permission_sms_description">Needed to receive and forward SMS messages</string>
-    <string name="permission_send_sms_label">Send SMS</string>
-    <string name="permission_send_sms_description">Needed to forward messages to the target number</string>
-    <string name="permission_contacts_label">Contacts</string>
-    <string name="permission_contacts_description">Needed to pick contacts for rules</string>
-    <string name="permission_phone_state_label">Phone State</string>
-    <string name="permission_phone_state_description">Needed to detect roaming status</string>
-    <string name="permission_notifications_label">Notifications</string>
-    <string name="permission_notifications_description">Needed to show notifications when redirecting</string>
+    <string name="sms_permission_rationale_title">SMS permission needed</string>
+    <string name="sms_permission_rationale_message">SMS Redirect needs SMS permissions to read incoming text messages and forward or send them for you. MMS and RCS messages are out of scope and will not be forwarded or scheduled.</string>
+    <string name="sms_permission_denied_title">Can\'t continue without SMS permission</string>
+    <string name="sms_permission_denied_message">SMS Redirect can\'t create redirects or scheduled messages without SMS permission. Grant the permission to continue.</string>
+
+    <string name="contacts_permission_rationale_title">Contacts permission needed</string>
+    <string name="contacts_permission_rationale_message">SMS Redirect needs access to your contacts so you can pick a sender or target directly from your contact list instead of typing a number.</string>
+
+    <string name="notifications_permission_rationale_title">Enable notifications?</string>
+    <string name="notifications_permission_rationale_message">SMS Redirect can show a notification whenever a message is forwarded or a scheduled SMS is sent, so you can confirm it went through.</string>
+
+    <string name="battery_banner_message">Background running is not enabled. SMS forwarding and scheduled messages might not work reliably.</string>
+    <string name="battery_banner_action">Fix now</string>
 
     <string name="home_title_rules">SMS Redirect Rules</string>
     <string name="home_cd_settings">Settings</string>
