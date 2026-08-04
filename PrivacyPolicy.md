@@ -73,7 +73,7 @@ The App is not directed at children under 13, and we do not knowingly collect pe
 
 ## 10. Your Choices and Rights
 
-- Revoke any runtime permission at any time in Android Settings — the App shows a banner explaining which features are affected and degrades gracefully rather than crashing.
+- Revoke any runtime permission at any time in Android Settings — the App degrades gracefully rather than crashing (the affected feature, e.g. forwarding, scheduled sending, contact picking, or notifications, simply stops working until you re-grant it). If background running is not enabled, the App shows a persistent banner on the home screen until you enable it.
 - Turn off "Keep history" or "Keep schedule history" in Settings to stop local history logging.
 - Uninstall the App to remove all locally stored data from your device.
 - Depending on your local law (e.g., GDPR, CCPA), you may have rights to access, correct, export, or delete data. Since all rule/schedule/history data lives only on your device, you already have full access via the App itself; for questions about Firebase-processed diagnostic/analytics data, contact us using the details below.
