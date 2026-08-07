@@ -451,5 +451,10 @@ private fun buildSenderTargetDisplay(
     contactName: String?,
 ): String {
     if (number.isBlank()) return "-"
-    return if (contactName != null) "$contactName ($number)" else number
+    return if (contactName != null) "$contactName (${maskLastFourDigits(number)})" else number
+}
+
+private fun maskLastFourDigits(number: String): String {
+    if (number.length <= 4) return "*".repeat(number.length)
+    return number.substring(0, number.length - 4) + "*".repeat(4)
 }
