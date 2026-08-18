@@ -8,6 +8,16 @@ on:
 permissions:
   contents: write
 
+# Serializes runs so a version-bump commit from one run is always on `main`
+# before the next run's "Bump patch version" step reads CURRENT_VERSION and
+# pushes its own bump commit. Without this, two pushes to `main` landing
+# close together (e.g. a PR merge immediately followed by a direct push)
+# race: both jobs check out `main` before either has pushed, so the second
+# job's `git push` is rejected once the first job's bump commit lands.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
@@ -30,7 +40,22 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add app/build.gradle.kts
           git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
-          git push origin HEAD:main
+
+          # Belt-and-braces alongside the workflow-level concurrency group above:
+          # retry against a freshly fetched main if something outside this
+          # workflow's own concurrency group (e.g. a manual push) still races us.
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              break
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "::error::git push to main failed after $attempt attempts" >&2
+              exit 1
+            fi
+            sleep $((attempt * 3))
+            git fetch origin main
+            git rebase origin/main
+          done
 
           echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
           echo "new_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
@@ -71,13 +96,24 @@ jobs:
           # release body instead of replacing it, so the description grows with
           # duplicated content every time. Generating the notes ourselves and passing
           # them as an explicit body ensures the release body is always fully replaced.
-          gh api \
-            --method POST \
-            -H "Accept: application/vnd.github+json" \
-            "repos/${{ github.repository }}/releases/generate-notes" \
-            -f tag_name="v${{ steps.bump.outputs.new_version }}" \
-            -f target_commitish="${{ steps.bump.outputs.new_sha }}" \
-            --jq '.body' > release_notes.md
+          # Retry on transient GitHub API errors (e.g. 5xx) so a brief outage
+          # doesn't fail an otherwise-successful build after the APK is signed.
+          for attempt in 1 2 3 4 5; do
+            if gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              "repos/${{ github.repository }}/releases/generate-notes" \
+              -f tag_name="v${{ steps.bump.outputs.new_version }}" \
+              -f target_commitish="${{ steps.bump.outputs.new_sha }}" \
+              --jq '.body' > release_notes.md; then
+              break
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "::error::Generating release notes failed after $attempt attempts" >&2
+              exit 1
+            fi
+            sleep $((attempt * 5))
+          done
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
