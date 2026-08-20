@@ -93,14 +93,12 @@ This repo's `.mcp.json` configures the [`play-store-mcp`](https://github.com/lus
 
 ### Setup
 
-1. Reuse the same service account described in [Setup Steps](#1-create-a-google-cloud-service-account) above (or create a dedicated one). It needs the same Play Console permissions: **Release to production, exclude devices, and use Play App Signing** and **Manage store presence**.
-2. Save the service account's JSON key locally as `play-store-service-account.json` (or any path) — this filename pattern is already covered by `.gitignore`, but keep it outside the repo if you prefer.
-3. Export `GOOGLE_APPLICATION_CREDENTIALS` in your shell profile to point at that file:
-   ```bash
-   export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.secrets/play-store-service-account.json"
-   ```
-4. Ensure [`uv`](https://docs.astral.sh/uv/)/`uvx` is installed — Claude Code launches the server with `uvx play-store-mcp`, which fetches and runs it on demand.
-5. Restart Claude Code (or run `/mcp`) so it picks up `.mcp.json`.
+The MCP server reuses the **same GitHub secret** already set up for CI publishing (`PLAY_STORE_SERVICE_ACCOUNT_JSON`, see [Configure GitHub Repository Secrets](#3-configure-github-repository-secrets)) rather than a separate local key file.
+
+1. Confirm the `PLAY_STORE_SERVICE_ACCOUNT_JSON` repository secret exists and its service account has the Play Console permissions from [Setup Steps](#1-create-a-google-cloud-service-account) above: **Release to production, exclude devices, and use Play App Signing** and **Manage store presence**.
+2. Whatever runs the MCP server (a Claude Code environment, a GitHub Actions job, etc.) must expose that secret as the environment variable `PLAY_STORE_SERVICE_ACCOUNT_JSON` — full JSON key contents, not a file path. `.mcp.json` passes it through to the server as `GOOGLE_PLAY_STORE_CREDENTIALS`, the inline-JSON credential form `play-store-mcp` expects.
+3. Ensure [`uv`](https://docs.astral.sh/uv/)/`uvx` is installed — Claude Code launches the server with `uvx play-store-mcp`, which fetches and runs it on demand.
+4. Restart Claude Code (or run `/mcp`) so it picks up `.mcp.json`.
 
 ### Access level
 
@@ -108,6 +106,5 @@ The server is configured with full read/write access — it **can** deploy build
 
 ### Security Notes
 
-- Never commit the service account JSON key. `.gitignore` excludes `play-store-service-account*.json`, but the key can live anywhere outside the repo.
-- The MCP server only receives credentials via the `GOOGLE_APPLICATION_CREDENTIALS` environment variable referenced in `.mcp.json` — the path/contents are never written into the repo.
-- This is a separate credential from the CI service account's GitHub secret (`PLAY_STORE_SERVICE_ACCOUNT_JSON`); the same service account can be reused for both, or you can scope a dedicated one for local/agent use.
+- No credential material lives in the repo — `.mcp.json` only references the `PLAY_STORE_SERVICE_ACCOUNT_JSON` env var name, and its value comes solely from the GitHub secret.
+- This is the same service account/secret used by the **Publish to Play Store** workflow, so rotating or revoking it (Step 1) affects both CI publishing and the MCP server identically.

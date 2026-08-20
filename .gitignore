@@ -25,9 +25,6 @@ captures/
 *.keystore
 keystore.properties
 
-# Play Store service account credentials (used by the play-store MCP server)
-play-store-service-account*.json
-
 # OS files
 .DS_Store
 Thumbs.db
