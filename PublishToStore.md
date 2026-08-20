@@ -86,3 +86,28 @@ The **Publish to Play Store** workflow runs in two ways:
 - Never commit the keystore file or service account JSON to the repository.
 - All sensitive values are stored as GitHub encrypted secrets.
 - The workflow cleans up decoded secret files after execution (even on failure).
+
+## MCP Integration (Claude Code)
+
+This repo's `.mcp.json` configures the [`play-store-mcp`](https://github.com/lusky3/play-store-mcp) MCP server, letting a Claude Code session query and manage the Play Console directly (releases, store listings, reviews, subscriptions, testers) instead of going through the Play Console UI or GitHub Actions.
+
+### Setup
+
+1. Reuse the same service account described in [Setup Steps](#1-create-a-google-cloud-service-account) above (or create a dedicated one). It needs the same Play Console permissions: **Release to production, exclude devices, and use Play App Signing** and **Manage store presence**.
+2. Save the service account's JSON key locally as `play-store-service-account.json` (or any path) — this filename pattern is already covered by `.gitignore`, but keep it outside the repo if you prefer.
+3. Export `GOOGLE_APPLICATION_CREDENTIALS` in your shell profile to point at that file:
+   ```bash
+   export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.secrets/play-store-service-account.json"
+   ```
+4. Ensure [`uv`](https://docs.astral.sh/uv/)/`uvx` is installed — Claude Code launches the server with `uvx play-store-mcp`, which fetches and runs it on demand.
+5. Restart Claude Code (or run `/mcp`) so it picks up `.mcp.json`.
+
+### Access level
+
+The server is configured with full read/write access — it **can** deploy builds, promote releases across tracks (including to production), and reply to reviews, not just read data. Treat prompts that trigger a release or a public reply the same as you would a manual Play Console action: review what's about to happen before confirming. To restrict it to read-only, set `PLAY_STORE_MCP_READ_ONLY=true` in the `env` block of `.mcp.json`.
+
+### Security Notes
+
+- Never commit the service account JSON key. `.gitignore` excludes `play-store-service-account*.json`, but the key can live anywhere outside the repo.
+- The MCP server only receives credentials via the `GOOGLE_APPLICATION_CREDENTIALS` environment variable referenced in `.mcp.json` — the path/contents are never written into the repo.
+- This is a separate credential from the CI service account's GitHub secret (`PLAY_STORE_SERVICE_ACCOUNT_JSON`); the same service account can be reused for both, or you can scope a dedicated one for local/agent use.

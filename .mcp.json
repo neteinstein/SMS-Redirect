@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "play-store": {
+      "command": "uvx",
+      "args": ["play-store-mcp"],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "${GOOGLE_APPLICATION_CREDENTIALS}"
+      }
+    }
+  }
+}
