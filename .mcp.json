@@ -4,7 +4,8 @@
       "command": "uvx",
       "args": ["play-store-mcp"],
       "env": {
-        "GOOGLE_APPLICATION_CREDENTIALS": "play-store-service-account.json"
+        "GOOGLE_APPLICATION_CREDENTIALS": "play-store-service-account.json",
+        "GOOGLE_PLAY_STORE_CREDENTIALS": "${GOOGLE_PLAY_STORE_CREDENTIALS}"
       }
     }
   }
