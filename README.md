@@ -161,7 +161,7 @@ sms send 5551234 "This is a test message"
 ./gradlew test
 ```
 
-## Firebase (Crashlytics & Analytics)
+## Firebase (Crashlytics, Analytics & Performance Monitoring)
 
 The app integrates [Firebase](https://firebase.google.com/) for:
 
@@ -173,21 +173,19 @@ The app integrates [Firebase](https://firebase.google.com/) for:
   (no phone numbers, contact names, or message contents) — see
   `domain/analytics/AnalyticsEvents.kt` for the full event catalog.
 
-> **Performance Monitoring is temporarily disabled.** The
-> `com.google.firebase.firebase-perf` Gradle plugin doesn't yet support
-> Android Gradle Plugin 9 (it relies on the removed legacy `Transform` API —
-> see [firebase-android-sdk#7293](https://github.com/firebase/firebase-android-sdk/issues/7293)).
-> The plugin and the `firebase-perf` dependency have been removed until
-> Firebase ships a compatible release; re-add both to `build.gradle.kts` and
-> `app/build.gradle.kts` at that point to restore automatic app-start/
-> rendering traces.
+- **Performance Monitoring** — automatic app-start and rendering traces via
+  the `com.google.firebase.firebase-perf` Gradle plugin. This was previously
+  disabled because the plugin didn't support Android Gradle Plugin 9 (it
+  relied on the removed legacy `Transform` API — see
+  [firebase-android-sdk#7293](https://github.com/firebase/firebase-android-sdk/issues/7293)),
+  but a compatible plugin release has since shipped, so it's re-enabled.
 
 ### Setup
 
 The repository ships with `app/google-services.json` wired to the
 `sms-redirect-schedule` Firebase project (package name
-`com.neteinstein.smsredirect`), so Crashlytics/Analytics report out of the
-box after building the app.
+`com.neteinstein.smsredirect`), so Crashlytics/Analytics/Performance
+Monitoring report out of the box after building the app.
 
 To point the app at a different Firebase project instead:
 
