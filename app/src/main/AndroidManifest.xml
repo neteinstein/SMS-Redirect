@@ -11,7 +11,6 @@
         tools:ignore="SmsAndCallLogPolicy" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <!-- Required on Android 13+ for Firebase Analytics to access Advertising ID.
          Declared as "Analytics" only — not used for ads or attribution. -->
