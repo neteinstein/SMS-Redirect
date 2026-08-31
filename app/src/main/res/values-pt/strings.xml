@@ -170,4 +170,48 @@
     <string name="schedule_history_contact_format">Para: %1$s</string>
     <string name="schedule_history_name_format">Agendamento: %1$s</string>
     <string name="schedule_history_unknown_contact">Contacto desconhecido</string>
+
+    <string name="main_tab_backup">Backup</string>
+
+    <string name="backup_title">Backup para o Gmail</string>
+    <string name="backup_no_credentials_title">Sem palavra-passe de app do Gmail</string>
+    <string name="backup_no_credentials_message">Para guardar as suas mensagens, adicione o seu endereço Gmail e uma palavra-passe de app nas Definições.</string>
+    <string name="backup_open_settings">Abrir Definições</string>
+    <string name="backup_subject_label">Assunto do email</string>
+    <string name="backup_subject_hint">Use $CONTACT_NAME e $PHONE_NUMBER — são substituídos pelo nome e número do contacto em cada mensagem.</string>
+    <string name="backup_subject_save">Guardar assunto</string>
+    <string name="backup_label_label">Etiqueta do Gmail</string>
+    <string name="backup_label_hint">As mensagens são arquivadas nesta etiqueta. É criada no primeiro backup.</string>
+    <string name="backup_label_save">Guardar etiqueta</string>
+    <string name="backup_previous_label">Fazer backup de todas as SMS anteriores</string>
+    <string name="backup_enable">Ativar backup para o Gmail</string>
+    <string name="backup_enabled">Backup para o Gmail ativado</string>
+    <string name="backup_enable_hint">O backup é feito à medida que as mensagens chegam. Com “Fazer backup de todas as SMS anteriores” ativado, as mensagens existentes são guardadas de imediato e as novas à medida que chegam.</string>
+    <string name="backup_enable_needs_credentials">Adicione primeiro o seu endereço Gmail e a palavra-passe de app nas Definições.</string>
+    <string name="backup_progress">A guardar %1$d de %2$d</string>
+    <string name="backup_cd_enabled">Ativado</string>
+
+    <string name="backup_notification_channel_name">Backup de SMS</string>
+    <string name="backup_notification_channel_description">Progresso do backup das mensagens para o Gmail</string>
+    <string name="backup_notification_progress">Backup em curso %1$d de %2$d</string>
+    <string name="backup_notification_complete">Backup concluído — %1$d mensagens</string>
+    <string name="backup_notification_auth_failed_title">Backup do Gmail parado</string>
+    <string name="backup_notification_auth_failed">O Gmail rejeitou a palavra-passe de app. Abra as Definições para a introduzir novamente.</string>
+
+    <string name="settings_gmail_section">Backup para o Gmail</string>
+    <string name="settings_gmail_address">Endereço Gmail</string>
+    <string name="settings_gmail_app_password">Palavra-passe de app</string>
+    <string name="settings_gmail_app_password_saved">Palavra-passe guardada</string>
+    <string name="settings_gmail_save">Guardar e verificar</string>
+    <string name="settings_gmail_remove">Remover</string>
+    <string name="settings_gmail_verifying">A verificar…</string>
+    <string name="settings_gmail_verified">Ligado ao Gmail</string>
+    <string name="settings_gmail_invalid">O Gmail rejeitou estes dados. Verifique a palavra-passe de app e se a verificação em dois passos está ativa na conta.</string>
+    <string name="settings_gmail_network_error">Sem ligação. Verifique a rede e tente novamente.</string>
+    <string name="settings_gmail_unknown_error">Não foi possível ligar ao Gmail. Tente novamente.</string>
+    <string name="settings_gmail_help">Como criar uma palavra-passe de app</string>
+    <string name="settings_gmail_hint">O SMS Toolbox liga-se diretamente ao Gmail com uma palavra-passe de app. Fica guardada de forma encriptada neste dispositivo e nunca é enviada para mais lado nenhum.</string>
+    <string name="settings_gmail_credentials_lost">Introduza novamente a palavra-passe de app — não pode ser restaurada a partir de uma cópia de segurança.</string>
+    <string name="settings_gmail_cd_show_password">Mostrar palavra-passe</string>
+    <string name="settings_gmail_cd_hide_password">Ocultar palavra-passe</string>
 </resources>

@@ -9,6 +9,13 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.SEND_SMS"
         tools:ignore="SmsAndCallLogPolicy" />
+    <!-- Gmail SMS backup connects directly to imap.gmail.com. Both of these otherwise
+         arrive only via manifest merge from the Firebase and WorkManager AARs; declaring
+         them explicitly keeps the app working if those deps ever change, and keeps the
+         permission list honest for review. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 

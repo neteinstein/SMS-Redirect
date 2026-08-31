@@ -62,6 +62,25 @@ import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateScheduledSmsUseCase
+import com.neteinstein.smsredirect.data.local.AppDatabase
+import com.neteinstein.smsredirect.data.mail.JavaMailImapTransport
+import com.neteinstein.smsredirect.data.repository.SmsBackupSettingsRepositoryImpl
+import com.neteinstein.smsredirect.data.repository.SmsBackupStateRepositoryImpl
+import com.neteinstein.smsredirect.data.scheduling.WorkManagerSmsBackupScheduler
+import com.neteinstein.smsredirect.data.security.AndroidKeystoreSecretCipher
+import com.neteinstein.smsredirect.data.sms.ContentProviderSmsMessageSource
+import com.neteinstein.smsredirect.domain.mail.SmsMailFactory
+import com.neteinstein.smsredirect.domain.repository.SmsBackupSettingsRepository
+import com.neteinstein.smsredirect.domain.scheduling.SmsBackupScheduler
+import com.neteinstein.smsredirect.domain.usecase.BackupSmsMessageUseCase
+import com.neteinstein.smsredirect.domain.usecase.ClearGmailCredentialsUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetSmsBackupSettingsUseCase
+import com.neteinstein.smsredirect.domain.usecase.RunSmsBackupUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetBackupEnabledUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetBackupGmailLabelUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetBackupPreviousEnabledUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetBackupSubjectTemplateUseCase
+import com.neteinstein.smsredirect.domain.usecase.VerifyGmailCredentialsUseCase
 
 class SmsRedirectApplication : Application() {
     lateinit var appContainer: AppContainer
@@ -76,7 +95,7 @@ class SmsRedirectApplication : Application() {
         val database =
             Room
                 .databaseBuilder(this, AppDatabase::class.java, "sms_redirect.db")
-                .addMigrations(AppDatabase.MIGRATION_8_9)
+                .addMigrations(AppDatabase.MIGRATION_8_9, AppDatabase.MIGRATION_9_10)
                 .fallbackToDestructiveMigration(dropAllTables = false)
                 .build()
         val repository = RuleRepositoryImpl(database.ruleDao())
@@ -95,6 +114,18 @@ class SmsRedirectApplication : Application() {
         val contactNameResolver = AndroidContactNameResolver(contentResolver)
         val scheduledSmsScheduler = WorkManagerScheduledSmsScheduler(this)
         val getScheduledSmsUseCase = GetScheduledSmsUseCase(scheduledSmsRepository)
+
+        val secretCipher = AndroidKeystoreSecretCipher()
+        val smsBackupSettingsRepository = SmsBackupSettingsRepositoryImpl(database.backupSettingsDao(), secretCipher)
+        val smsBackupStateRepository = SmsBackupStateRepositoryImpl(database.smsBackupStateDao())
+        val smsMessageSource = ContentProviderSmsMessageSource(contentResolver)
+        val mailTransport = JavaMailImapTransport()
+        val backupSmsMessageUseCase =
+            BackupSmsMessageUseCase(
+                mailFactory = SmsMailFactory(),
+                backupStateRepository = smsBackupStateRepository,
+                contactNameResolver = contactNameResolver,
+            )
         appContainer =
             AppContainer(
                 ruleRepository = repository,
@@ -174,6 +205,25 @@ class SmsRedirectApplication : Application() {
                         analyticsTracker = analyticsTracker,
                         crashReporter = crashReporter,
                     ),
+                smsBackupSettingsRepository = smsBackupSettingsRepository,
+                smsBackupScheduler = WorkManagerSmsBackupScheduler(this),
+                getSmsBackupSettingsUseCase = GetSmsBackupSettingsUseCase(smsBackupSettingsRepository),
+                verifyGmailCredentialsUseCase =
+                    VerifyGmailCredentialsUseCase(mailTransport, smsBackupSettingsRepository),
+                clearGmailCredentialsUseCase = ClearGmailCredentialsUseCase(smsBackupSettingsRepository),
+                setBackupSubjectTemplateUseCase = SetBackupSubjectTemplateUseCase(smsBackupSettingsRepository),
+                setBackupGmailLabelUseCase = SetBackupGmailLabelUseCase(smsBackupSettingsRepository),
+                setBackupPreviousEnabledUseCase =
+                    SetBackupPreviousEnabledUseCase(smsBackupSettingsRepository, analyticsTracker),
+                setBackupEnabledUseCase = SetBackupEnabledUseCase(smsBackupSettingsRepository, analyticsTracker),
+                runSmsBackupUseCase =
+                    RunSmsBackupUseCase(
+                        settingsRepository = smsBackupSettingsRepository,
+                        backupStateRepository = smsBackupStateRepository,
+                        smsMessageSource = smsMessageSource,
+                        mailTransport = mailTransport,
+                        backupSmsMessageUseCase = backupSmsMessageUseCase,
+                    ),
             )
     }
 }
@@ -224,4 +274,14 @@ data class AppContainer(
     val getKeepScheduleHistoryUseCase: GetKeepScheduleHistoryUseCase,
     val setKeepScheduleHistoryUseCase: SetKeepScheduleHistoryUseCase,
     val scheduledSmsSender: ScheduledSmsSender,
+    val smsBackupSettingsRepository: SmsBackupSettingsRepository,
+    val smsBackupScheduler: SmsBackupScheduler,
+    val getSmsBackupSettingsUseCase: GetSmsBackupSettingsUseCase,
+    val verifyGmailCredentialsUseCase: VerifyGmailCredentialsUseCase,
+    val clearGmailCredentialsUseCase: ClearGmailCredentialsUseCase,
+    val setBackupSubjectTemplateUseCase: SetBackupSubjectTemplateUseCase,
+    val setBackupGmailLabelUseCase: SetBackupGmailLabelUseCase,
+    val setBackupPreviousEnabledUseCase: SetBackupPreviousEnabledUseCase,
+    val setBackupEnabledUseCase: SetBackupEnabledUseCase,
+    val runSmsBackupUseCase: RunSmsBackupUseCase,
 )

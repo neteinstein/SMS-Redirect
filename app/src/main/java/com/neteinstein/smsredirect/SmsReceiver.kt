@@ -34,5 +34,15 @@ class SmsReceiver : BroadcastReceiver() {
         Log.i(TAG, "SMS received from='$sender', bodyLength=${body.length}")
 
         ForwardSmsWorker.enqueue(context, sender, body)
+
+        // Backup is triggered for every incoming SMS, independent of whether a redirect rule
+        // matched -- SmsForwarder early-returns on missing SEND_SMS, on roaming and on no rule
+        // match, none of which should stop a backup.
+        //
+        // Nothing from this broadcast is passed along. The worker re-reads the message from the
+        // content provider, so the live path and the historical backfill derive identical keys;
+        // the broadcast's SMSC timestamp and the provider's receive time differ by seconds to
+        // minutes, and hashing one against the other would back the same message up twice.
+        BackupSmsWorker.enqueueForIncomingSms(context)
     }
 }

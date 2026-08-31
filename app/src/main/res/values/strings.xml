@@ -166,4 +166,48 @@
     <string name="schedule_history_contact_format">To: %1$s</string>
     <string name="schedule_history_name_format">Schedule: %1$s</string>
     <string name="schedule_history_unknown_contact">Unknown contact</string>
+
+    <string name="main_tab_backup">Backup</string>
+
+    <string name="backup_title">Backup to Gmail</string>
+    <string name="backup_no_credentials_title">No Gmail app password set</string>
+    <string name="backup_no_credentials_message">To back up your messages, add your Gmail address and an app password in Settings.</string>
+    <string name="backup_open_settings">Open Settings</string>
+    <string name="backup_subject_label">Email subject</string>
+    <string name="backup_subject_hint">Use $CONTACT_NAME and $PHONE_NUMBER — they are replaced with the contact\'s name and number for each message.</string>
+    <string name="backup_subject_save">Save subject</string>
+    <string name="backup_label_label">Gmail label</string>
+    <string name="backup_label_hint">Messages are filed under this label. It is created the first time a backup runs.</string>
+    <string name="backup_label_save">Save label</string>
+    <string name="backup_previous_label">Backup all previous SMS</string>
+    <string name="backup_enable">Enable Backup to Gmail</string>
+    <string name="backup_enabled">Backup to Gmail enabled</string>
+    <string name="backup_enable_hint">Messages are backed up as they arrive. With “Backup all previous SMS” on, your existing messages are backed up immediately first, then new ones as they arrive.</string>
+    <string name="backup_enable_needs_credentials">Add your Gmail address and app password in Settings first.</string>
+    <string name="backup_progress">Backing up %1$d of %2$d</string>
+    <string name="backup_cd_enabled">Enabled</string>
+
+    <string name="backup_notification_channel_name">SMS backup</string>
+    <string name="backup_notification_channel_description">Progress while messages are backed up to Gmail</string>
+    <string name="backup_notification_progress">Backup ongoing %1$d of %2$d</string>
+    <string name="backup_notification_complete">Backup complete — %1$d messages</string>
+    <string name="backup_notification_auth_failed_title">Gmail backup stopped</string>
+    <string name="backup_notification_auth_failed">Gmail rejected the app password. Open Settings to enter it again.</string>
+
+    <string name="settings_gmail_section">Gmail backup</string>
+    <string name="settings_gmail_address">Gmail address</string>
+    <string name="settings_gmail_app_password">App password</string>
+    <string name="settings_gmail_app_password_saved">App password saved</string>
+    <string name="settings_gmail_save">Save and verify</string>
+    <string name="settings_gmail_remove">Remove</string>
+    <string name="settings_gmail_verifying">Checking…</string>
+    <string name="settings_gmail_verified">Connected to Gmail</string>
+    <string name="settings_gmail_invalid">Gmail rejected these details. Check the app password, and that 2-Step Verification is on for the account.</string>
+    <string name="settings_gmail_network_error">No connection. Check your network and try again.</string>
+    <string name="settings_gmail_unknown_error">Could not connect to Gmail. Try again.</string>
+    <string name="settings_gmail_help">How to create an app password</string>
+    <string name="settings_gmail_hint">SMS Toolbox connects straight to Gmail with an app password. It is stored encrypted on this device and is never sent anywhere else.</string>
+    <string name="settings_gmail_credentials_lost">Re-enter your app password — it cannot be restored from a device backup.</string>
+    <string name="settings_gmail_cd_show_password">Show password</string>
+    <string name="settings_gmail_cd_hide_password">Hide password</string>
 </resources>
