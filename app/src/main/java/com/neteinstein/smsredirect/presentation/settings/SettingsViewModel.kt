@@ -40,7 +40,7 @@ class SettingsViewModel(
     val sendWhileRoaming: StateFlow<Boolean> = _sendWhileRoaming.asStateFlow()
     private val _defaultPrefix = MutableStateFlow("+351")
     val defaultPrefix: StateFlow<String> = _defaultPrefix.asStateFlow()
-    private val _forwardPrefix = MutableStateFlow("SMS Redirect:")
+    private val _forwardPrefix = MutableStateFlow("SMS Toolbox:")
     val forwardPrefix: StateFlow<String> = _forwardPrefix.asStateFlow()
     private val _showNotifications = MutableStateFlow(false)
     val showNotifications: StateFlow<Boolean> = _showNotifications.asStateFlow()

@@ -1,1 +1,1 @@
-Reencaminhe SMS por regra, e agende mensagens para envio automático.
+Guarde as suas SMS no Gmail. Com reencaminhamento por regra e envio agendado.

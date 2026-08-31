@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">Redirecionador e Agendador SMS</string>
-    <string name="splash_subtitle">Redirecione e agende as suas mensagens SMS</string>
+    <string name="app_name">SMS Toolbox</string>
+    <string name="splash_subtitle">Guarde, redirecione e agende as suas SMS</string>
     <string name="battery_optimization_title">Manter em execução em segundo plano</string>
-    <string name="battery_optimization_message">O Redirecionador SMS precisa de continuar em execução em segundo plano para reencaminhar mensagens e enviar SMS agendados de forma fiável. Desative a otimização de bateria para esta app para que o Android não a interrompa.</string>
+    <string name="battery_optimization_message">O SMS Toolbox precisa de continuar em execução em segundo plano para reencaminhar mensagens e enviar SMS agendados de forma fiável. Desative a otimização de bateria para esta app para que o Android não a interrompa.</string>
     <string name="action_cancel">Cancelar</string>
     <string name="action_back">Voltar</string>
     <string name="action_ok">OK</string>
@@ -10,23 +10,23 @@
     <string name="action_proceed">Continuar</string>
 
     <string name="sideload_warning_title">Permitir definições restritas</string>
-    <string name="sideload_warning_message">Esta app não foi instalada pela Play Store. É necessário um passo extra:\n\n1. Vá a Definições > Apps > Redirecionador SMS\n2. Toque no menu de três pontos (canto superior direito)\n3. Selecione \"Permitir definições restritas\"\n\nPrima OK para abrir o ecrã de definições da app.</string>
+    <string name="sideload_warning_message">Esta app não foi instalada pela Play Store. É necessário um passo extra:\n\n1. Vá a Definições > Apps > SMS Toolbox\n2. Toque no menu de três pontos (canto superior direito)\n3. Selecione \"Permitir definições restritas\"\n\nPrima OK para abrir o ecrã de definições da app.</string>
 
     <string name="sms_permission_rationale_title">Permissão de SMS necessária</string>
-    <string name="sms_permission_rationale_message">O Redirecionador SMS precisa de permissões de SMS para ler mensagens de texto recebidas e reencaminhá-las ou enviá-las por si. Mensagens MMS e RCS não são suportadas e não serão reencaminhadas nem agendadas.</string>
+    <string name="sms_permission_rationale_message">O SMS Toolbox precisa de permissões de SMS para ler mensagens de texto recebidas, criar cópias de segurança e reencaminhá-las ou enviá-las por si. Mensagens MMS e RCS não são suportadas e não serão reencaminhadas nem agendadas.</string>
     <string name="sms_permission_denied_title">Não é possível continuar sem permissão de SMS</string>
-    <string name="sms_permission_denied_message">O Redirecionador SMS não pode criar redirecionamentos nem mensagens agendadas sem permissão de SMS. Conceda a permissão para continuar.</string>
+    <string name="sms_permission_denied_message">O SMS Toolbox não pode criar redirecionamentos nem mensagens agendadas sem permissão de SMS. Conceda a permissão para continuar.</string>
 
     <string name="contacts_permission_rationale_title">Permissão de contactos necessária</string>
-    <string name="contacts_permission_rationale_message">O Redirecionador SMS precisa de aceder aos seus contactos para poder escolher um remetente ou destinatário diretamente da sua lista de contactos em vez de digitar um número.</string>
+    <string name="contacts_permission_rationale_message">O SMS Toolbox precisa de aceder aos seus contactos para poder escolher um remetente ou destinatário diretamente da sua lista de contactos em vez de digitar um número.</string>
 
     <string name="notifications_permission_rationale_title">Ativar notificações?</string>
-    <string name="notifications_permission_rationale_message">O Redirecionador SMS pode mostrar uma notificação sempre que uma mensagem é reencaminhada ou um SMS agendado é enviado, para que possa confirmar que foi bem-sucedido.</string>
+    <string name="notifications_permission_rationale_message">O SMS Toolbox pode mostrar uma notificação sempre que uma mensagem é copiada, reencaminhada ou um SMS agendado é enviado, para que possa confirmar que foi bem-sucedido.</string>
 
     <string name="battery_banner_message">A execução em segundo plano não está ativada. O reencaminhamento de SMS e as mensagens agendadas podem não funcionar de forma fiável.</string>
     <string name="battery_banner_action">Corrigir agora</string>
 
-    <string name="home_title_rules">Regras de Redirecionamento SMS</string>
+    <string name="home_title_rules">Regras de Redirecionamento</string>
     <string name="home_cd_settings">Definições</string>
     <string name="home_cd_history">Histórico</string>
     <string name="home_cd_add_rule">Adicionar regra</string>

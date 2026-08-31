@@ -82,7 +82,7 @@ class SettingsViewModelTest {
         runTest {
             val vm = createViewModel()
             advanceUntilIdle()
-            assertEquals("SMS Redirect:", vm.forwardPrefix.value)
+            assertEquals("SMS Toolbox:", vm.forwardPrefix.value)
         }
 
     @Test

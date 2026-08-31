@@ -36,9 +36,9 @@ class SettingsRepositoryImpl(
         dao.upsert(current.copy(defaultPrefix = prefix))
     }
 
-    override fun observeForwardPrefix(): Flow<String> = dao.observeSettings().map { it?.forwardPrefix ?: "SMS Redirect:" }
+    override fun observeForwardPrefix(): Flow<String> = dao.observeSettings().map { it?.forwardPrefix ?: "SMS Toolbox:" }
 
-    override suspend fun getForwardPrefix(): String = dao.getSettings()?.forwardPrefix ?: "SMS Redirect:"
+    override suspend fun getForwardPrefix(): String = dao.getSettings()?.forwardPrefix ?: "SMS Toolbox:"
 
     override suspend fun setForwardPrefix(prefix: String) {
         val current = dao.getSettings() ?: AppSettingsEntity()

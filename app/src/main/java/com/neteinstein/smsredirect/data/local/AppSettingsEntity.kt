@@ -10,7 +10,7 @@ data class AppSettingsEntity(
     @ColumnInfo(defaultValue = "0") val sendWhileRoaming: Boolean = false,
     @ColumnInfo(defaultValue = "1") val keepHistory: Boolean = true,
     @ColumnInfo(defaultValue = "+351") val defaultPrefix: String = "+351",
-    @ColumnInfo(defaultValue = "SMS Redirect:") val forwardPrefix: String = "SMS Redirect:",
+    @ColumnInfo(defaultValue = "SMS Toolbox:") val forwardPrefix: String = "SMS Toolbox:",
     @ColumnInfo(defaultValue = "0") val showNotifications: Boolean = false,
     @ColumnInfo(defaultValue = "1") val keepScheduleHistory: Boolean = true,
 )

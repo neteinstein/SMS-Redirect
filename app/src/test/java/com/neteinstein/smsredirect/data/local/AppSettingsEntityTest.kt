@@ -21,7 +21,7 @@ class AppSettingsEntityTest {
         assertFalse(entity.sendWhileRoaming)
         assertTrue(entity.keepHistory)
         assertEquals("+351", entity.defaultPrefix)
-        assertEquals("SMS Redirect:", entity.forwardPrefix)
+        assertEquals("SMS Toolbox:", entity.forwardPrefix)
         assertFalse(entity.showNotifications)
         assertTrue(entity.keepScheduleHistory)
     }
