@@ -3,22 +3,31 @@ package com.neteinstein.smsredirect.presentation.settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.SignalCellularAlt
 import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -33,6 +42,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,8 +54,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.neteinstein.smsredirect.R
+import com.neteinstein.smsredirect.domain.mail.MailVerificationResult
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,6 +69,12 @@ fun SettingsScreen(
     forwardPrefix: String,
     defaultPrefix: String,
     currentLanguageLabel: String,
+    gmailAddress: String,
+    hasGmailAppPassword: Boolean,
+    gmailVerification: GmailVerificationState,
+    onSaveGmailCredentials: (String, String) -> Unit,
+    onClearGmailCredentials: () -> Unit,
+    onOpenAppPasswordHelp: () -> Unit,
     onSendWhileRoamingChanged: (Boolean) -> Unit,
     onShowNotificationsChanged: (Boolean) -> Unit,
     onForwardPrefixSaved: (String) -> Unit,
@@ -83,7 +103,8 @@ fun SettingsScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(padding),
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState()),
         ) {
             LanguageRow(
                 currentLanguageLabel = currentLanguageLabel,
@@ -114,6 +135,17 @@ fun SettingsScreen(
             DefaultPrefixDropdown(
                 selectedPrefix = defaultPrefix,
                 onPrefixSelected = onDefaultPrefixChanged,
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            GmailAccountSection(
+                gmailAddress = gmailAddress,
+                hasGmailAppPassword = hasGmailAppPassword,
+                verification = gmailVerification,
+                onSave = onSaveGmailCredentials,
+                onClear = onClearGmailCredentials,
+                onOpenHelp = onOpenAppPasswordHelp,
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -316,4 +348,167 @@ private fun SettingSwitchRow(
             onCheckedChange = onCheckedChange,
         )
     }
+}
+
+@Composable
+private fun GmailAccountSection(
+    gmailAddress: String,
+    hasGmailAppPassword: Boolean,
+    verification: GmailVerificationState,
+    onSave: (String, String) -> Unit,
+    onClear: () -> Unit,
+    onOpenHelp: () -> Unit,
+) {
+    var address by remember(gmailAddress) { mutableStateOf(gmailAddress) }
+    // Never pre-filled from storage: the saved password should not re-enter the UI layer, so a
+    // blank field plus the "saved" indicator below is all the user sees.
+    var appPassword by remember { mutableStateOf("") }
+    var revealPassword by remember { mutableStateOf(false) }
+    val verifying = verification is GmailVerificationState.Verifying
+
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Text(
+            text = stringResource(R.string.settings_gmail_section),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+        )
+
+        OutlinedTextField(
+            value = address,
+            onValueChange = { address = it },
+            label = { Text(stringResource(R.string.settings_gmail_address)) },
+            leadingIcon = { Icon(imageVector = Icons.Default.Email, contentDescription = null) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            singleLine = true,
+            enabled = !verifying,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+        )
+
+        OutlinedTextField(
+            value = appPassword,
+            onValueChange = { appPassword = it },
+            label = { Text(stringResource(R.string.settings_gmail_app_password)) },
+            leadingIcon = { Icon(imageVector = Icons.Default.Key, contentDescription = null) },
+            trailingIcon = {
+                IconButton(onClick = { revealPassword = !revealPassword }) {
+                    Icon(
+                        imageVector = if (revealPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        contentDescription =
+                            if (revealPassword) {
+                                stringResource(R.string.settings_gmail_cd_hide_password)
+                            } else {
+                                stringResource(R.string.settings_gmail_cd_show_password)
+                            },
+                    )
+                }
+            },
+            visualTransformation =
+                if (revealPassword) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            singleLine = true,
+            enabled = !verifying,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+        )
+
+        if (hasGmailAppPassword && appPassword.isBlank()) {
+            Text(
+                text = stringResource(R.string.settings_gmail_app_password_saved),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+
+        Row(
+            modifier = Modifier.padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Button(
+                onClick = { onSave(address, appPassword) },
+                enabled = !verifying && address.isNotBlank() && appPassword.isNotBlank(),
+            ) {
+                if (verifying) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_gmail_verifying),
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                } else {
+                    Text(stringResource(R.string.settings_gmail_save))
+                }
+            }
+            if (hasGmailAppPassword) {
+                TextButton(onClick = onClear) {
+                    Text(stringResource(R.string.settings_gmail_remove))
+                }
+            }
+        }
+
+        VerificationMessage(verification)
+
+        // The address is stored but the password could not be decrypted -- the database was
+        // restored onto a device whose keystore does not hold the key.
+        if (gmailAddress.isNotBlank() && !hasGmailAppPassword) {
+            Text(
+                text = stringResource(R.string.settings_gmail_credentials_lost),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+
+        Text(
+            text = stringResource(R.string.settings_gmail_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+
+        TextButton(
+            onClick = onOpenHelp,
+            contentPadding = PaddingValues(0.dp),
+        ) {
+            Text(stringResource(R.string.settings_gmail_help))
+        }
+    }
+}
+
+@Composable
+private fun VerificationMessage(verification: GmailVerificationState) {
+    val (messageRes, color) =
+        when (verification) {
+            is GmailVerificationState.Success ->
+                R.string.settings_gmail_verified to MaterialTheme.colorScheme.primary
+
+            is GmailVerificationState.Failure ->
+                when (verification.result) {
+                    is MailVerificationResult.InvalidCredentials ->
+                        R.string.settings_gmail_invalid to MaterialTheme.colorScheme.error
+
+                    is MailVerificationResult.NetworkError ->
+                        R.string.settings_gmail_network_error to MaterialTheme.colorScheme.error
+
+                    else -> R.string.settings_gmail_unknown_error to MaterialTheme.colorScheme.error
+                }
+
+            else -> return
+        }
+
+    Text(
+        text = stringResource(messageRes),
+        style = MaterialTheme.typography.bodySmall,
+        color = color,
+        modifier = Modifier.padding(top = 8.dp),
+    )
 }

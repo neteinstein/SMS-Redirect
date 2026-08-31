@@ -1,19 +1,26 @@
 package com.neteinstein.smsredirect.presentation
 
+import com.neteinstein.smsredirect.FakeMailTransport
 import com.neteinstein.smsredirect.FakeRuleRepository
 import com.neteinstein.smsredirect.FakeScheduledSmsRepository
 import com.neteinstein.smsredirect.FakeScheduledSmsScheduler
 import com.neteinstein.smsredirect.FakeSettingsRepository
+import com.neteinstein.smsredirect.FakeSmsBackupSettingsRepository
+import com.neteinstein.smsredirect.domain.mail.MailVerificationResult
+import com.neteinstein.smsredirect.domain.usecase.ClearGmailCredentialsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ExportBackupUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetSmsBackupSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ImportBackupUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
+import com.neteinstein.smsredirect.domain.usecase.VerifyGmailCredentialsUseCase
+import com.neteinstein.smsredirect.presentation.settings.GmailVerificationState
 import com.neteinstein.smsredirect.presentation.settings.SettingsViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -35,6 +42,8 @@ class SettingsViewModelTest {
     private val ruleRepository = FakeRuleRepository()
     private val scheduledSmsRepository = FakeScheduledSmsRepository()
     private val scheduledSmsScheduler = FakeScheduledSmsScheduler()
+    private val backupSettingsRepository = FakeSmsBackupSettingsRepository()
+    private val mailTransport = FakeMailTransport()
 
     @Before
     fun setUp() {
@@ -59,6 +68,10 @@ class SettingsViewModelTest {
             exportBackupUseCase = ExportBackupUseCase(ruleRepository, scheduledSmsRepository, settingsRepository),
             importBackupUseCase =
                 ImportBackupUseCase(ruleRepository, scheduledSmsRepository, settingsRepository, scheduledSmsScheduler),
+            getSmsBackupSettingsUseCase = GetSmsBackupSettingsUseCase(backupSettingsRepository),
+            verifyGmailCredentialsUseCase =
+                VerifyGmailCredentialsUseCase(mailTransport, backupSettingsRepository),
+            clearGmailCredentialsUseCase = ClearGmailCredentialsUseCase(backupSettingsRepository),
         )
 
     @Test
@@ -151,5 +164,71 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             assertFalse(vm.showNotifications.value)
+        }
+
+    @Test
+    fun `saving gmail credentials moves to success and persists them`() =
+        runTest {
+            mailTransport.verifyResult = MailVerificationResult.Success
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.saveGmailCredentials("me@gmail.com", "abcd efgh ijkl mnop")
+            advanceUntilIdle()
+
+            assertEquals(GmailVerificationState.Success, vm.gmailVerification.value)
+            assertEquals("me@gmail.com", vm.backupSettings.value.gmailAddress)
+            assertTrue(vm.backupSettings.value.hasAppPassword)
+        }
+
+    @Test
+    fun `rejected credentials surface the reason and persist nothing`() =
+        runTest {
+            mailTransport.verifyResult = MailVerificationResult.InvalidCredentials
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.saveGmailCredentials("me@gmail.com", "wrongpassword")
+            advanceUntilIdle()
+
+            val state = vm.gmailVerification.value
+            assertTrue(state is GmailVerificationState.Failure)
+            assertEquals(
+                MailVerificationResult.InvalidCredentials,
+                (state as GmailVerificationState.Failure).result,
+            )
+            assertEquals("", vm.backupSettings.value.gmailAddress)
+            assertFalse(vm.backupSettings.value.hasAppPassword)
+        }
+
+    @Test
+    fun `a network failure is reported separately from a rejection`() =
+        runTest {
+            mailTransport.verifyResult = MailVerificationResult.NetworkError
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.saveGmailCredentials("me@gmail.com", "abcdefghijklmnop")
+            advanceUntilIdle()
+
+            val state = vm.gmailVerification.value as GmailVerificationState.Failure
+            assertEquals(MailVerificationResult.NetworkError, state.result)
+        }
+
+    @Test
+    fun `clearing credentials resets both the stored values and the verification state`() =
+        runTest {
+            mailTransport.verifyResult = MailVerificationResult.Success
+            val vm = createViewModel()
+            advanceUntilIdle()
+            vm.saveGmailCredentials("me@gmail.com", "abcdefghijklmnop")
+            advanceUntilIdle()
+
+            vm.clearGmailCredentials()
+            advanceUntilIdle()
+
+            assertEquals(GmailVerificationState.Idle, vm.gmailVerification.value)
+            assertEquals("", vm.backupSettings.value.gmailAddress)
+            assertFalse(vm.backupSettings.value.hasAppPassword)
         }
 }

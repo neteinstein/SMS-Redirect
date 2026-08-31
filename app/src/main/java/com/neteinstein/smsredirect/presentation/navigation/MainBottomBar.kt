@@ -15,9 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Forward
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,8 +29,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.neteinstein.smsredirect.R
 import com.neteinstein.smsredirect.presentation.theme.Dimens
 
 @Composable
@@ -41,6 +39,8 @@ fun MainBottomBar(
     onTabSelected: (MainTab) -> Unit,
     onFabClick: () -> Unit,
     fabContentDescription: String,
+    /** The Backup tab has no "create" action, so it hides the FAB and takes the full width. */
+    showFab: Boolean = true,
 ) {
     Row(
         modifier =
@@ -63,26 +63,24 @@ fun MainBottomBar(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                FloatingTabItem(
-                    selected = selectedTab == MainTab.REDIRECT,
-                    onClick = { onTabSelected(MainTab.REDIRECT) },
-                    icon = Icons.AutoMirrored.Filled.Forward,
-                    label = stringResource(R.string.main_tab_redirect),
-                )
-                FloatingTabItem(
-                    selected = selectedTab == MainTab.SCHEDULE,
-                    onClick = { onTabSelected(MainTab.SCHEDULE) },
-                    icon = Icons.Default.Schedule,
-                    label = stringResource(R.string.main_tab_schedule),
-                )
+                MainTab.entries.forEach { tab ->
+                    FloatingTabItem(
+                        selected = selectedTab == tab,
+                        onClick = { onTabSelected(tab) },
+                        icon = tab.icon,
+                        label = stringResource(tab.labelRes),
+                    )
+                }
             }
         }
 
-        FloatingActionButton(onClick = onFabClick) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = fabContentDescription,
-            )
+        if (showFab) {
+            FloatingActionButton(onClick = onFabClick) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = fabContentDescription,
+                )
+            }
         }
     }
 }
@@ -117,7 +115,7 @@ private fun RowScope.FloatingTabItem(
                 .clip(RoundedCornerShape(20.dp))
                 .background(backgroundColor)
                 .clickable(onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = 8.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -126,11 +124,17 @@ private fun RowScope.FloatingTabItem(
             contentDescription = label,
             tint = contentColor,
         )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = label,
-            color = contentColor,
-            style = MaterialTheme.typography.labelLarge,
-        )
+        // Only the selected tab shows its label. With three tabs plus the FAB there is not room
+        // for three icon+label pairs on a narrow phone, and the Portuguese labels are longer.
+        if (selected) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = label,
+                color = contentColor,
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
