@@ -37,3 +37,14 @@ jobs:
       - name: Run unit tests
         if: matrix.check == 'unit-tests'
         run: ./gradlew test
+
+      # Temporary: this session's own network egress can't reach dl.google.com to run a
+      # real Gradle build, so the Room v10 schema JSON (needed for PR #90 review) has to be
+      # pulled out of a CI run that can. Remove after committing app/schemas/ from this.
+      - name: Upload Room schema
+        if: always() && matrix.check == 'unit-tests'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: room-schema
+          path: app/schemas/
+          if-no-files-found: warn

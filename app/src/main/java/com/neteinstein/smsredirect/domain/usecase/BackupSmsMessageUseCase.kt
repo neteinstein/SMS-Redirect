@@ -14,6 +14,14 @@ import com.neteinstein.smsredirect.domain.repository.SmsBackupStateRepository
  *
  * Takes an already-open [MailFolder] rather than opening one itself: a backfill appends a whole
  * batch over one IMAP connection, because Gmail throttles rapid connect/disconnect cycles.
+ *
+ * The append and the state-table write below are two separate operations, not one transaction:
+ * a process kill between Gmail accepting the message and [markBackedUp] committing leaves no
+ * record of that append, so the next run re-sends it. Accepted deliberately rather than closing
+ * the window with a `SEARCH` on `Message-ID` before every append -- that trades a guaranteed
+ * extra IMAP round-trip per message (real cost on a multi-thousand-message backfill) for
+ * protection against a failure mode whose worst case is a harmless duplicate email, never lost
+ * data, and that only manifests in the exact instant between those two calls.
  */
 class BackupSmsMessageUseCase(
     private val mailFactory: SmsMailFactory,
