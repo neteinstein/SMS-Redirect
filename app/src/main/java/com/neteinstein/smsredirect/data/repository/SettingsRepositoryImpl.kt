@@ -64,8 +64,7 @@ class SettingsRepositoryImpl(
         dao.upsert(current.copy(keepScheduleHistory = enabled))
     }
 
-    override fun observeLandingScreen(): Flow<LandingScreen> =
-        dao.observeSettings().map { it?.landingScreen.toLandingScreen() }
+    override fun observeLandingScreen(): Flow<LandingScreen> = dao.observeSettings().map { it?.landingScreen.toLandingScreen() }
 
     override suspend fun getLandingScreen(): LandingScreen = dao.getSettings()?.landingScreen.toLandingScreen()
 
