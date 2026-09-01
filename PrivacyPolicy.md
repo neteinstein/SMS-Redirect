@@ -1,29 +1,32 @@
-# Privacy Policy for SMS Redirect & Schedule
+# Privacy Policy for SMS Toolbox
 
-**Effective date:** July 12, 2026
+**Effective date:** August 31, 2026
 
-SMS Redirect & Schedule ("the App", "we", "us", "our") is developed and maintained by [neteinstein](https://github.com/neteinstein). This Privacy Policy explains what data the App accesses, how it is used, and the choices you have. The App has no login/account system and no backend server — your rules, contacts, and messages are processed and stored on your device. The App's full source code is public at [github.com/neteinstein/SMS-Redirect](https://github.com/neteinstein/SMS-Redirect), so every claim below can be verified directly in the code.
+SMS Toolbox ("the App", "we", "us", "our") is developed and maintained by [neteinstein](https://github.com/neteinstein). This Privacy Policy explains what data the App accesses, how it is used, and the choices you have. **We operate no backend server and have no account system** — your rules, contacts, and messages are processed and stored on your device. If you turn on Gmail backup, your device connects **directly to Google's Gmail servers** using credentials you supply; that content goes to your own mailbox and never passes through us. The App's full source code is public at [github.com/neteinstein/SMS-Redirect](https://github.com/neteinstein/SMS-Redirect), so every claim below can be verified directly in the code.
 
 ## Summary
 
 | Question | Answer |
 |---|---|
 | Do we run a server that receives your messages or contacts? | No |
+| Does the App send your SMS anywhere? | Only if **you** enable Gmail backup — then to **your own** Gmail account, over TLS, using an app password you provide |
 | Is your data sold, rented, or used for advertising? | No |
 | Where are your rules, schedules, and history stored? | Locally on your device only |
-| What ever leaves your device? | Anonymous crash reports & usage analytics (Firebase); the SMS content you choose to forward/schedule (sent via your own carrier to the number **you** configured); a backup file only if you manually export and share one |
+| What ever leaves your device? | Anonymous crash reports & usage analytics (Firebase); the SMS content you choose to forward/schedule (sent via your own carrier to the number **you** configured); your SMS messages, if you enable Gmail backup (sent to **your own** mailbox); a settings file only if you manually export and share one |
+| Where is your Gmail app password kept? | Encrypted on your device, in the Android Keystore. It is sent only to Google, never to us, and cannot be recovered from a device backup |
 
 ## 1. Permissions the App Uses, and Why
 
-The App requests the following Android permissions. Each is used only for the stated purpose, and processed entirely on-device — none of them give us remote access to your data.
+The App requests the following Android permissions. Each is used only for the stated purpose. None of them give **us** remote access to your data; the only network destination the App ever contacts with your content is Google's Gmail servers, and only when you enable Gmail backup.
 
 | Permission | Purpose |
 |---|---|
-| `READ_SMS` / `RECEIVE_SMS` | Detect incoming SMS so it can be checked against your forwarding rules |
+| `READ_SMS` / `RECEIVE_SMS` | Read your SMS inbox so messages can be backed up to your Gmail account, and detect incoming SMS so they can be checked against your forwarding rules |
 | `SEND_SMS` | Send a forwarded message, or a scheduled message, to the number you configured |
 | `READ_CONTACTS` | Let you pick a contact when creating a rule or scheduled message, and show a contact's name instead of a raw number in notifications/history |
-| `POST_NOTIFICATIONS` | Show a notification after a message is forwarded or a scheduled message is sent |
-| Battery optimization exemption | Prevent Android's Doze mode from delaying forwarding or scheduled sends |
+| `POST_NOTIFICATIONS` | Show backup progress, and a notification after a message is forwarded or a scheduled message is sent |
+| `INTERNET` / `ACCESS_NETWORK_STATE` | Connect to Gmail to upload backed-up messages, and wait for a working connection before trying |
+| Battery optimization exemption | Prevent Android's Doze mode from delaying backups, forwarding or scheduled sends |
 
 ## 2. Data You Create in the App
 
@@ -32,6 +35,8 @@ The App stores the following locally in an on-device database — none of it is 
 - **Redirect rules** — rule name, sender match text/number, target phone number, sort order
 - **Scheduled messages** — name, category, contact/number, message text, date/time, repeat pattern
 - **Forward history** (on by default, can be disabled) — up to the last 50 forwarded messages: sender, target, matched rule, timestamp, and message body
+- **Backup record** — for each message already copied to Gmail, a one-way hash and a timestamp, so nothing is uploaded twice. No message text is kept.
+- **Gmail backup settings** — your Gmail address, your app password (encrypted, see Section 3a), the email subject template and the label name
 - **Scheduled-send history** (on by default, can be disabled) — up to the last 50 sent scheduled messages
 - **App settings** — roaming preference, notification preference, forwarding prefix, default country prefix, history toggles
 
@@ -41,9 +46,23 @@ You can view, edit, or delete this data at any time from within the App, and rem
 
 When an SMS message matches one of your rules, the App reads the sender and message text on-device and, using Android's `SmsManager`, sends it via **your mobile carrier** to the target number you configured, with your configured prefix prepended. Scheduled messages are sent the same way, via your carrier, at the time you chose. In both cases the message goes only to the phone number you specified, over your device's normal SMS channel — the App does not relay, copy, or store this content on any server we operate.
 
-## 4. Backup and Restore
+## 3a. SMS Backup to Gmail
 
-The "Export Backup" feature (Settings) builds a JSON file containing your rules, scheduled messages (including message text and phone numbers), and settings. This file is generated only on your device and handed to Android's native share sheet — **you** choose its destination (e.g., saved locally, emailed, or uploaded to your own cloud storage). We never receive a copy. "Import Backup" reads a file you select back into the App's local database.
+This feature is **off until you turn it on**, and it does nothing until you supply a Gmail address and an app password in Settings.
+
+When enabled, the App reads messages from your device's SMS inbox and uploads them to your own Gmail account using IMAP over TLS (`imap.gmail.com:993`), filing them under the label you choose (default: `SMS`). Each backed-up message becomes an email in **your** mailbox, addressed from and to your own address. We never see this traffic: the connection is between your device and Google, and there is no server of ours in the path.
+
+**Your Gmail credentials.** The address and app password you enter are stored on your device, with the password encrypted using a key held in the Android Keystore. The password is transmitted only to Google's IMAP servers as your login. We never receive it, and it is never written to logs, analytics, or crash reports. Because the encryption key lives in the Keystore and does not leave the device, a cloud backup or device transfer cannot carry the password with it — you will be asked to enter it again on a new device.
+
+An app password grants access to your whole Gmail mailbox, not just the backup label. You can revoke it at any time at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords), which immediately stops the App from connecting. You can also remove it from within the App (Settings → Gmail backup → Remove).
+
+**What the App records locally.** To avoid backing the same message up twice, the App stores a one-way hash of each backed-up message plus a timestamp. It does **not** keep a second copy of your message text.
+
+**Deleting backed-up messages.** Messages already uploaded live in your Gmail account and are under your control — delete the label or the individual messages in Gmail to remove them.
+
+## 4. Settings Backup and Restore (local file)
+
+This is a separate feature from the Gmail backup described above. The "Export Backup" feature (Settings) builds a JSON file containing your rules, scheduled messages (including message text and phone numbers), and settings. **It deliberately does not include your Gmail address or app password**, because the file is handed to the share sheet and could end up anywhere. This file is generated only on your device and handed to Android's native share sheet — **you** choose its destination (e.g., saved locally, emailed, or uploaded to your own cloud storage). We never receive a copy. "Import Backup" reads a file you select back into the App's local database.
 
 ## 5. Diagnostics and Analytics (Firebase)
 
@@ -60,7 +79,7 @@ The App permits Android's built-in backup mechanism. If you have Android device 
 
 ## 7. Data We Do Not Collect
 
-We do not collect your name, email address, or any account/profile information — the App has no login system. We do not integrate advertising SDKs, and we do not sell or share your data with third parties for marketing purposes.
+We do not collect your name or any account/profile information — the App has no login system and no server of ours to log in to. If you enable Gmail backup you supply a Gmail address, but it is stored on your device and sent only to Google as part of your IMAP login; **we never receive it**. We do not integrate advertising SDKs, and we do not sell or share your data with third parties for marketing purposes.
 
 ## 8. Data Retention and Deletion
 

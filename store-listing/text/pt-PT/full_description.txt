@@ -1,13 +1,23 @@
-O Redirecionador e Agendador SMS reencaminha automaticamente as mensagens que escolher para outro número de telefone, e permite agendar as suas próprias mensagens para envio automático mais tarde — tudo sem conta, sem servidor, e sem que os seus dados saiam do seu dispositivo.
+O SMS Toolbox guarda as suas mensagens de texto na sua própria conta Gmail, reencaminha as mensagens que escolher para outro número, e envia as suas mensagens de forma agendada — sem criar conta e sem nenhum servidor nosso pelo meio.
 
-PORQUÊ ESTA APP?
-Cubra um telefone de trabalho, monitorize um segundo SIM, reencaminhe códigos de utilização única para um número partilhado em família, ou garanta que uma mensagem é enviada enquanto está ocupado. A app funciona discretamente em segundo plano e trata disso por si, de forma fiável e 100% no dispositivo.
+PORQUÊ O SMS TOOLBOX?
+As suas mensagens vivem num só sítio: o seu telemóvel. Se o perder ou trocar de equipamento, anos de conversas vão com ele. O SMS Toolbox copia-as para o seu próprio Gmail, onde ficam pesquisáveis e seguras. Também cobre um telefone de trabalho, monitoriza um segundo SIM, ou garante que uma mensagem é enviada enquanto está ocupado.
+
+BACKUP — As suas mensagens seguras no seu Gmail
+• Guarda as suas SMS numa conta Gmail que lhe pertence, com uma palavra-passe de app criada por si
+• Escolha a etiqueta do Gmail onde ficam arquivadas (predefinição: "SMS")
+• Personalize o assunto do email, com marcadores para o nome e número do contacto
+• As mensagens de cada contacto ficam agrupadas numa só conversa do Gmail
+• As datas originais são preservadas, para que o histórico faça sentido
+• Guarde tudo o que já tem, ou apenas as mensagens a partir de agora
+• Continua de onde ficou se for interrompido, e nunca repete mensagens
+• Vão diretamente do seu telemóvel para a Google, encriptadas — nunca as vemos
 
 REDIRECIONAR — Reencaminhar mensagens por regra
 • Crie regras simples: associe um remetente (por texto ou contacto) a um número de destino
 • Funciona com mensagens SMS normais
 • A primeira regra correspondente é aplicada — arraste para reordenar as suas regras
-• Prefixo personalizado opcional adicionado a cada mensagem reencaminhada (por exemplo, "SMS Redirect:")
+• Prefixo personalizado opcional adicionado a cada mensagem reencaminhada (por exemplo, "SMS Toolbox:")
 • Escolha se o reencaminhamento é permitido em roaming
 • Histórico das últimas 50 mensagens reencaminhadas, com remetente, destino e regra correspondente
 • Receba uma notificação sempre que uma mensagem é reencaminhada
@@ -19,8 +29,10 @@ AGENDAR — Enviar mensagens automaticamente, mais tarde
 • Histórico de todas as mensagens agendadas já enviadas
 
 PRIVACIDADE POR DESIGN
-• Sem conta, sem login, sem servidor
+• Sem conta connosco, sem login, sem servidor nosso que possa receber os seus dados
 • Regras, agendamentos, contactos e histórico ficam guardados apenas no seu dispositivo
+• O backup vai do seu telemóvel para a SUA conta Gmail, encriptado. Está desativado até o ligar, e nunca vemos nenhuma mensagem
+• A palavra-passe de app do Gmail fica encriptada no dispositivo e é enviada apenas para a Google. Pode revogá-la quando quiser na sua conta Google
 • As mensagens reencaminhadas e agendadas são enviadas diretamente pela rede SMS da sua própria operadora — nunca por um servidor nosso, porque não temos nenhum
 • Apenas dados anónimos de falhas e utilização são recolhidos para ajudar a corrigir erros — nunca números de telefone, nomes de contactos ou conteúdo das mensagens
 • O código-fonte é público, para que cada afirmação aqui possa ser verificada: github.com/neteinstein/SMS-Redirect
@@ -29,10 +41,11 @@ TAMBÉM INCLUI
 • Seletor de contactos para remetentes e destinos
 • Reordenação por arrastar e agrupamento por categorias, tanto nas regras como nos agendamentos
 • Modo claro e escuro, com cor dinâmica Material You
-• Exporte e importe as suas regras e agendamentos como ficheiro de backup, quando quiser
+• Exporte e importe as suas regras e agendamentos como ficheiro de definições, quando quiser
+• Escolha o ecrã inicial — Backup, Redirecionar ou Agendar
 • Disponível em português e inglês
 
 PERMISSÕES, EXPLICADAS
-O Redirecionador e Agendador SMS pede apenas o que precisa: permissões de SMS (para detetar e enviar mensagens), Contactos (para escolher números por nome), e Estado do telefone (para detetar roaming). Veja exatamente como cada permissão é usada na Política de Privacidade da app e no código-fonte público.
+O SMS Toolbox pede apenas o que precisa: SMS (backup, deteção e envio), Contactos (escolher números por nome), Estado do telefone (detetar roaming) e Internet (aceder ao Gmail com o backup ativo). Veja como cada permissão é usada na Política de Privacidade e no código-fonte público.
 
 Perguntas ou sugestões? Contacte play-store-neteinstein@googlegroups.com ou abra uma issue no GitHub.

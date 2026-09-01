@@ -4,6 +4,7 @@ import com.neteinstein.smsredirect.FakeRuleRepository
 import com.neteinstein.smsredirect.FakeScheduledSmsRepository
 import com.neteinstein.smsredirect.FakeScheduledSmsScheduler
 import com.neteinstein.smsredirect.FakeSettingsRepository
+import com.neteinstein.smsredirect.domain.model.LandingScreen
 import com.neteinstein.smsredirect.domain.model.Rule
 import com.neteinstein.smsredirect.domain.model.ScheduledSms
 import kotlinx.coroutines.test.runTest
@@ -53,6 +54,7 @@ class BackupUseCasesTest {
             )
             sourceSettingsRepository.setSendWhileRoaming(true)
             sourceSettingsRepository.setKeepScheduleHistory(false)
+            sourceSettingsRepository.setLandingScreen(LandingScreen.SCHEDULE)
             val json =
                 ExportBackupUseCase(sourceRuleRepository, sourceScheduledSmsRepository, sourceSettingsRepository)()
 
@@ -65,6 +67,7 @@ class BackupUseCasesTest {
             assertEquals(1, scheduledSmsRepository.getScheduledSmsSnapshot().size)
             assertTrue(settingsRepository.getSendWhileRoaming())
             assertFalse(settingsRepository.getKeepScheduleHistory())
+            assertEquals(LandingScreen.SCHEDULE, settingsRepository.getLandingScreen())
             assertEquals(1, scheduler.scheduleInitialCalls.size)
         }
 

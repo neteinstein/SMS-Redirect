@@ -1,6 +1,8 @@
-# SMS-Redirect
+# SMS Toolbox
 
-Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean architecture (domain use cases, repository, and Room database) for SMS redirect rules.
+Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean architecture (domain use cases, repository, and Room database).
+
+Three features, as bottom-navigation tabs: **Backup** SMS to your own Gmail account, **Redirect** incoming SMS by rule, and **Schedule** messages to send later.
 
 ## Quick start
 
@@ -26,11 +28,23 @@ Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean archit
 
 ## Features
 
+### SMS Backup to Gmail
+- Copies SMS messages to your own Gmail account over IMAP (`imap.gmail.com:993`, TLS)
+- Authenticates with a Gmail **app password** you supply; verified on save, stored encrypted with an Android Keystore key
+- Files messages under a Gmail label of your choice (default: `SMS`), created on first use
+- Configurable email subject template with `$CONTACT_NAME` and `$PHONE_NUMBER` placeholders
+- Groups each contact's messages into one Gmail conversation, and preserves each message's original timestamp
+- "Backup all previous SMS" backfills your existing inbox; otherwise only messages received after you enable it
+- Resumable: progress is stored in the database, so a killed app continues where it left off and never uploads a message twice
+- Progress notification while a backup runs
+
+> **Why IMAP APPEND and not SMTP:** a Gmail label *is* an IMAP folder, so APPEND can file messages under your chosen label. SMTP can only deliver to the inbox, stamps everything with the send time (so years of history would all be dated today), and would hit Gmail's ~500/day sending cap during a backfill.
+
 ### Message Capture & Forwarding
 - Background SMS forwarding via BroadcastReceiver (high priority 999)
 - WorkManager-based forwarding with expedited execution and retry on failure
 - Roaming-aware forwarding (configurable "Send while roaming" setting)
-- Configurable forward prefix prepended to forwarded messages (default: `SMS Redirect:`)
+- Configurable forward prefix prepended to forwarded messages (default: `SMS Toolbox:`)
 - Multipart SMS support for long messages
 
 ### Rule Management
@@ -48,7 +62,8 @@ Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean archit
 - Send while roaming toggle (default: off)
 - Keep history toggle (default: on)
 - Show notifications toggle (default: off) — posts a system notification after each successful forward
-- Forward prefix text field (default: `SMS Redirect:`)
+- Forward prefix text field (default: `SMS Toolbox:`)
+- Gmail account section — address and app password, verified against Gmail when saved
 - Default country prefix dropdown (None / +351 Portugal)
 - Forward history viewer (last 50 forwarded messages with sender, target, rule, timestamp, and body)
 
@@ -68,7 +83,7 @@ When deploying the app from Android Studio or ADB, it is considered **sideloaded
 
 ### Required setup after install
 
-1. Go to **Settings > Apps > SMS Redirect**
+1. Go to **Settings > Apps > SMS Toolbox**
 2. Tap the **three-dot menu** (top right)
 3. Select **"Allow restricted settings"**
 4. Back in the app, add a rule or scheduled SMS to trigger the SMS permission dialog, then grant RECEIVE_SMS, SEND_SMS, and READ_SMS when prompted

@@ -1,5 +1,6 @@
 package com.neteinstein.smsredirect
 
+import com.neteinstein.smsredirect.domain.model.LandingScreen
 import com.neteinstein.smsredirect.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,8 +12,9 @@ class FakeSettingsRepository(
     private val keepHistoryState = MutableStateFlow(true)
     private val keepScheduleHistoryState = MutableStateFlow(true)
     private val defaultPrefixState = MutableStateFlow("+351")
-    private val forwardPrefixState = MutableStateFlow("SMS Redirect:")
+    private val forwardPrefixState = MutableStateFlow("SMS Toolbox:")
     private val showNotificationsState = MutableStateFlow(true)
+    private val landingScreenState = MutableStateFlow(LandingScreen.BACKUP)
 
     override fun observeSendWhileRoaming(): Flow<Boolean> = sendWhileRoamingState
 
@@ -60,5 +62,13 @@ class FakeSettingsRepository(
 
     override suspend fun setShowNotifications(enabled: Boolean) {
         showNotificationsState.value = enabled
+    }
+
+    override fun observeLandingScreen(): Flow<LandingScreen> = landingScreenState
+
+    override suspend fun getLandingScreen(): LandingScreen = landingScreenState.value
+
+    override suspend fun setLandingScreen(screen: LandingScreen) {
+        landingScreenState.value = screen
     }
 }

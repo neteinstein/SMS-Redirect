@@ -25,6 +25,12 @@ val releaseKeystoreFilePath =
             ?: keystoreProperties.getProperty("storeFile")
     )?.takeIf { it.isNotBlank() }
 
+// Room exports the schema JSON so a migration can be diffed in review. There is no
+// androidTest source set, so this is the only artifact that makes a schema change visible.
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 android {
     namespace = "com.neteinstein.smsredirect"
     compileSdk = 37
@@ -34,7 +40,7 @@ android {
         minSdk = 33
         targetSdk = 37
         versionCode = (project.findProperty("VERSION_CODE") as String?)?.toInt() ?: 1
-        versionName = "1.0.22"
+        versionName = "2.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -53,6 +59,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".test"
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -82,6 +91,20 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            // android-mail and android-activation both ship these under this exact name (not
+            // LICENSE.txt/NOTICE.txt -- AGP's own default excludes already cover those) and
+            // collide during merge.
+            excludes += "/META-INF/LICENSE.md"
+            excludes += "/META-INF/NOTICE.md"
+            // JavaMail builds its provider registry by concatenating these descriptors across
+            // artifacts. They must be merged -- excluding or first-picking them makes
+            // Session.getStore("imaps") fail at runtime with NoSuchProviderException and no
+            // build-time warning.
+            merges += "META-INF/mailcap"
+            merges += "META-INF/javamail.providers"
+            merges += "META-INF/javamail.default.providers"
+            merges += "META-INF/javamail.address.map"
+            merges += "META-INF/javamail.default.address.map"
         }
     }
 }
@@ -110,6 +133,13 @@ dependencies {
     ksp("androidx.room:room-compiler:2.8.4")
 
     implementation("androidx.work:work-runtime-ktx:2.11.2")
+
+    // Android port of JavaMail. Publishes the javax.mail.* namespace (NOT jakarta.mail.*);
+    // com.sun.mail:jakarta.mail and org.eclipse.angus:angus-mail are desktop artifacts that
+    // pull java.beans and will not run on Android. android-activation is required because
+    // MimeMessage/DataHandler need javax.activation, which the platform does not ship.
+    implementation("com.sun.mail:android-mail:1.6.8")
+    implementation("com.sun.mail:android-activation:1.6.8")
 
     implementation(platform("com.google.firebase:firebase-bom:34.16.0"))
     implementation("com.google.firebase:firebase-analytics")

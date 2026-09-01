@@ -1,1 +1,1 @@
-Auto-forward SMS by rule, and schedule texts to send later.
+Back up SMS to Gmail. Plus rule-based forwarding and scheduled messages.

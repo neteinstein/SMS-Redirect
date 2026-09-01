@@ -74,6 +74,7 @@ class ExportBackupUseCase(
         obj.put("defaultPrefix", settingsRepository.getDefaultPrefix())
         obj.put("forwardPrefix", settingsRepository.getForwardPrefix())
         obj.put("showNotifications", settingsRepository.getShowNotifications())
+        obj.put("landingScreen", settingsRepository.getLandingScreen().name)
         return obj
     }
 

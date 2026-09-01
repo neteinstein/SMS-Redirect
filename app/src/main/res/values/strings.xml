@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">SMS Redirect &amp; Schedule</string>
-    <string name="splash_subtitle">Redirect and schedule your SMS messages</string>
+    <string name="app_name">SMS Toolbox</string>
+    <string name="splash_subtitle">Back up, redirect and schedule your SMS</string>
     <string name="battery_optimization_title">Keep running in background</string>
-    <string name="battery_optimization_message">SMS Redirect needs to keep running in the background to forward messages and send scheduled SMS reliably. Disable battery optimization for this app so Android does not stop it.</string>
+    <string name="battery_optimization_message">SMS Toolbox needs to keep running in the background to forward messages and send scheduled SMS reliably. Disable battery optimization for this app so Android does not stop it.</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_back">Back</string>
     <string name="action_ok">OK</string>
@@ -10,23 +10,23 @@
     <string name="action_proceed">Proceed</string>
 
     <string name="sideload_warning_title">Allow restricted settings</string>
-    <string name="sideload_warning_message">This app was not installed via the Play Store. An extra step is required:\n\n1. Go to Settings > Apps > SMS Redirect\n2. Tap the three-dot menu (top right)\n3. Select \"Allow restricted settings\"\n\nPress OK to open the app settings screen.</string>
+    <string name="sideload_warning_message">This app was not installed via the Play Store. An extra step is required:\n\n1. Go to Settings > Apps > SMS Toolbox\n2. Tap the three-dot menu (top right)\n3. Select \"Allow restricted settings\"\n\nPress OK to open the app settings screen.</string>
 
     <string name="sms_permission_rationale_title">SMS permission needed</string>
-    <string name="sms_permission_rationale_message">SMS Redirect needs SMS permissions to read incoming text messages and forward or send them for you. MMS and RCS messages are out of scope and will not be forwarded or scheduled.</string>
+    <string name="sms_permission_rationale_message">SMS Toolbox needs SMS permissions to read incoming text messages, back them up and forward or send them for you. MMS and RCS messages are out of scope and will not be forwarded or scheduled.</string>
     <string name="sms_permission_denied_title">Can\'t continue without SMS permission</string>
-    <string name="sms_permission_denied_message">SMS Redirect can\'t create redirects or scheduled messages without SMS permission. Grant the permission to continue.</string>
+    <string name="sms_permission_denied_message">SMS Toolbox can\'t create redirects or scheduled messages without SMS permission. Grant the permission to continue.</string>
 
     <string name="contacts_permission_rationale_title">Contacts permission needed</string>
-    <string name="contacts_permission_rationale_message">SMS Redirect needs access to your contacts so you can pick a sender or target directly from your contact list instead of typing a number.</string>
+    <string name="contacts_permission_rationale_message">SMS Toolbox needs access to your contacts so you can pick a sender or target directly from your contact list instead of typing a number.</string>
 
     <string name="notifications_permission_rationale_title">Enable notifications?</string>
-    <string name="notifications_permission_rationale_message">SMS Redirect can show a notification whenever a message is forwarded or a scheduled SMS is sent, so you can confirm it went through.</string>
+    <string name="notifications_permission_rationale_message">SMS Toolbox can show a notification whenever a message is backed up, forwarded or a scheduled SMS is sent, so you can confirm it went through.</string>
 
     <string name="battery_banner_message">Background running is not enabled. SMS forwarding and scheduled messages might not work reliably.</string>
     <string name="battery_banner_action">Fix now</string>
 
-    <string name="home_title_rules">SMS Redirect Rules</string>
+    <string name="home_title_rules">Redirect Rules</string>
     <string name="home_cd_settings">Settings</string>
     <string name="home_cd_history">History</string>
     <string name="home_cd_add_rule">Add rule</string>
@@ -67,6 +67,10 @@
     <string name="settings_title">Settings</string>
     <string name="settings_language">Language</string>
     <string name="settings_language_system_default">System default</string>
+    <string name="settings_landing_screen_label">Landing screen</string>
+    <string name="settings_landing_screen_backup">SMS Backup</string>
+    <string name="settings_landing_screen_redirect">Redirect</string>
+    <string name="settings_landing_screen_schedule">Schedule</string>
     <string name="settings_send_while_roaming">Send while roaming</string>
     <string name="settings_keep_history">Keep history</string>
     <string name="settings_show_notifications">Show notifications</string>
@@ -74,8 +78,9 @@
     <string name="settings_forward_prefix_label">Forward message prefix</string>
     <string name="settings_forward_prefix_save">Save prefix</string>
     <string name="settings_prefix_none">None</string>
-    <string name="settings_export_rules">Export Backup</string>
-    <string name="settings_import_rules">Import Backup</string>
+    <string name="settings_export_rules">Export Configurations</string>
+    <string name="settings_import_rules">Import Configurations</string>
+    <string name="settings_export_import_gmail_note">Gmail backup configuration is not exported for security reasons.</string>
     <string name="settings_import_success">Imported %1$s and %2$s</string>
     <plurals name="settings_import_success_rules">
         <item quantity="one">%1$d rule</item>
@@ -166,4 +171,49 @@
     <string name="schedule_history_contact_format">To: %1$s</string>
     <string name="schedule_history_name_format">Schedule: %1$s</string>
     <string name="schedule_history_unknown_contact">Unknown contact</string>
+
+    <string name="main_tab_backup">Backup</string>
+
+    <string name="backup_title">Backup to Gmail</string>
+    <string name="backup_no_credentials_title">No Gmail app password set</string>
+    <string name="backup_no_credentials_message">To back up your messages, add your Gmail address and an app password in Settings.</string>
+    <string name="backup_no_credentials_context">We back up your SMS to a specific Gmail label, so they stay archived and searchable right in Gmail.</string>
+    <string name="backup_open_settings">Open Settings</string>
+    <string name="backup_subject_label">Email subject</string>
+    <string name="backup_subject_hint">Use $CONTACT_NAME and $PHONE_NUMBER — they are replaced with the contact\'s name and number for each message.</string>
+    <string name="backup_subject_save">Save subject</string>
+    <string name="backup_label_label">Gmail label</string>
+    <string name="backup_label_hint">Messages are filed under this label. It is created the first time a backup runs.</string>
+    <string name="backup_label_save">Save label</string>
+    <string name="backup_previous_label">Backup all previous SMS</string>
+    <string name="backup_enable">Enable Backup to Gmail</string>
+    <string name="backup_enabled">Backup to Gmail enabled</string>
+    <string name="backup_enable_hint">Messages are backed up as they arrive. With “Backup all previous SMS” on, your existing messages are backed up immediately first, then new ones as they arrive.</string>
+    <string name="backup_enable_needs_credentials">Add your Gmail address and app password in Settings first.</string>
+    <string name="backup_progress">Backing up %1$d of %2$d</string>
+    <string name="backup_cd_enabled">Enabled</string>
+
+    <string name="backup_notification_channel_name">SMS backup</string>
+    <string name="backup_notification_channel_description">Progress while messages are backed up to Gmail</string>
+    <string name="backup_notification_progress">Backup ongoing %1$d of %2$d</string>
+    <string name="backup_notification_complete">Backup complete — %1$d messages</string>
+    <string name="backup_notification_auth_failed_title">Gmail backup stopped</string>
+    <string name="backup_notification_auth_failed">Gmail rejected the app password. Open Settings to enter it again.</string>
+
+    <string name="settings_gmail_section">Gmail backup</string>
+    <string name="settings_gmail_address">Gmail address</string>
+    <string name="settings_gmail_app_password">App password</string>
+    <string name="settings_gmail_app_password_saved">App password saved</string>
+    <string name="settings_gmail_save">Save and verify</string>
+    <string name="settings_gmail_remove">Remove</string>
+    <string name="settings_gmail_verifying">Checking…</string>
+    <string name="settings_gmail_verified">Connected to Gmail</string>
+    <string name="settings_gmail_invalid">Gmail rejected these details. Check the app password, and that 2-Step Verification is on for the account.</string>
+    <string name="settings_gmail_network_error">No connection. Check your network and try again.</string>
+    <string name="settings_gmail_unknown_error">Could not connect to Gmail. Try again.</string>
+    <string name="settings_gmail_help">How to create an app password</string>
+    <string name="settings_gmail_hint">SMS Toolbox connects straight to Gmail with an app password. It is stored encrypted on this device and is never sent anywhere else.</string>
+    <string name="settings_gmail_credentials_lost">Re-enter your app password — it cannot be restored from a device backup.</string>
+    <string name="settings_gmail_cd_show_password">Show password</string>
+    <string name="settings_gmail_cd_hide_password">Hide password</string>
 </resources>

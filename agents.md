@@ -2,20 +2,23 @@
 
 ## Project Overview
 
-SMS Redirect is a native Android app (Kotlin) that intercepts incoming SMS messages matching user-defined rules and forwards them to a configured target phone number via SMS. See `Architecture.md` for the full system design.
+SMS Toolbox is a native Android app (Kotlin) with three features: backing up SMS to the user's own Gmail account over IMAP (the primary feature and landing tab), forwarding incoming SMS that match user-defined rules, and sending scheduled messages. See `Architecture.md` for the full system design.
+
+The app is named "SMS Toolbox" but the `applicationId` and Kotlin package remain `com.neteinstein.smsredirect`, and the deep link remains `smsredirect://app` — changing them would create a new Play listing and cut existing users off from updates.
 
 ## Tech Stack
 
 - **Language:** Kotlin (JVM target 17)
 - **UI:** Jetpack Compose with Material 3
 - **Navigation:** Navigation Compose
-- **Database:** Room (with kapt annotation processing)
+- **Database:** Room (with KSP annotation processing)
 - **Background work:** WorkManager (expedited coroutine workers)
 - **Async:** Kotlin Coroutines + Flow
 - **DI:** Manual constructor injection via `AppContainer` (no framework)
-- **Linting:** ktlint 1.3.1 (via `org.jlleitschuh.gradle.ktlint` plugin)
+- **Linting:** ktlint 1.8.0 (via `org.jlleitschuh.gradle.ktlint` plugin)
 - **Testing:** JUnit 4, kotlinx-coroutines-test, Turbine
-- **Min/Target SDK:** 35 | **Compile SDK:** 35
+- **Email:** JavaMail Android port (`com.sun.mail:android-mail`, `javax.mail` namespace)
+- **Min SDK:** 33 | **Target SDK:** 37 | **Compile SDK:** 37
 
 ## Architecture
 
@@ -66,6 +69,7 @@ Do **not** introduce Hilt, Dagger, or Koin unless explicitly requested.
 - DAOs: `NounDao` (e.g., `RuleDao`).
 - Repositories: `NounRepository` (interface) / `NounRepositoryImpl` (implementation).
 - Fakes for testing: `FakeNounRepository`.
+- Anything belonging to the SMS→Gmail feature: prefix `SmsBackup*` or `Gmail*`.
 
 ### Compose
 
@@ -79,7 +83,8 @@ Do **not** introduce Hilt, Dagger, or Koin unless explicitly requested.
 ### Guidelines
 
 - Unit tests live in `app/src/test/`.
-- Use **Fake** implementations (not mocks) for repository interfaces. Existing fakes are in the test root package.
+- Use **Fake** implementations (not mocks) for repository interfaces. Existing fakes are in the test root package: `FakeRuleRepository`, `FakeSettingsRepository`, `FakeContactNameResolver`, `FakeForwardHistoryRepository`, `FakeScheduledSmsRepository`, `FakeScheduledSmsHistoryRepository`, `FakeScheduledSmsScheduler`, `FakeMailTransport`, `FakeSmsMessageSource`, `FakeSmsBackupStateRepository`, `FakeSmsBackupSettingsRepository`, `FakeSmsBackupScheduler`, `FakeSecretCipher`.
+- Keep Android and third-party types (`Context`, `SmsManager`, `javax.mail`, WorkManager) behind a domain interface so the logic in front of it is testable. `SmsForwarder` is untested precisely because this was not done.
 - Test use cases in isolation with their respective fakes.
 - Test ViewModels using `kotlinx-coroutines-test` (`runTest`, `UnconfinedTestDispatcher`) and Turbine for Flow assertions.
 - Keep tests focused on behavior, not implementation details.
@@ -154,9 +159,41 @@ Both must pass before merging. Always run these locally before pushing.
 - Pass data via `workDataOf(...)` input; keep payloads small.
 - Handle retries via `Result.retry()`.
 
+## Traps (read before touching these areas)
+
+- **"Backup" is an overloaded word here.** `ExportBackupUseCase` / `ImportBackupUseCase` /
+  `BackupUseCasesTest` predate the Gmail feature and mean the local JSON export of rules,
+  schedules and settings. The SMS→Gmail feature uses `SmsBackup*` / `Gmail*` names. Do not
+  mix them.
+- **Never use `android.util.Base64` in code a unit test can reach.** This module sets
+  `testOptions.unitTests.isReturnDefaultValues = true`, under which every `android.jar` call
+  silently returns null instead of throwing — a test would pass on a lie. Use `java.util.Base64`.
+  The same applies to any other `android.*` API in otherwise-pure logic.
+- **Never log, persist in plaintext, or send to analytics/Crashlytics the Gmail app password.**
+  It grants full IMAP access to the user's entire mailbox. `GmailCredentials.toString()` is
+  redacted on purpose. Do not add the credential columns to `ExportBackupUseCase` — its
+  `buildSettingsJson()` is an explicit allowlist and that file leaves the device via a share sheet.
+- **Room migrations are not optional here.** `fallbackToDestructiveMigration` does *not* rescue a
+  registered-but-wrong migration: Room throws and the app crashes on open for every upgrading
+  user. The migration DDL must byte-match the schema Room generates from the entity annotations.
+  The v10 tables declare no SQL defaults specifically to avoid ambiguity about how Room quotes a
+  default containing `$`, parentheses or an empty string. `exportSchema` is on — commit
+  `app/schemas/` changes and diff them in review.
+- **Subject templating must use literal `String.replace`, never `Regex.replace`** — in a Kotlin
+  regex replacement `$` introduces a group reference, so `$CONTACT_NAME` would be parsed as a
+  backreference.
+- **JavaMail's `META-INF/javamail.*` descriptors must be *merged*, not excluded**, in the
+  `packaging` block. JavaMail concatenates them to build its provider registry; get it wrong and
+  `Session.getStore("imaps")` throws `NoSuchProviderException` at runtime with no build warning.
+- **`SmsForwarder` swallows exceptions**, which is why `ForwardSmsWorker`'s `Result.retry()` is
+  effectively dead for send failures. Do not copy that pattern; new workers must report failures.
+
 ## Important Notes
 
-- The app requires sensitive permissions (SMS, notifications). Never log message content in production.
+- The app requires sensitive permissions (SMS, notifications, internet). Never log message content in production.
+- Google Play's SMS & Call Log Permissions policy gates `READ_SMS` / `RECEIVE_SMS` behind a declared core use case. The declared one is **"Backup and restore"**, which is why Backup is the first tab and the landing screen. Changes that de-emphasise backup have Play-policy consequences, not just product ones.
+- Backup state (`sms_backup_state`) stores a one-way hash per message, never the body. Keep it that way — a second on-device copy of message content would change both `PrivacyPolicy.md` and the Data safety form.
+- `PrivacyPolicy.md` and `store-listing/data-safety.md` are load-bearing: they are linked from the store listing and describe commitments. Any change to what leaves the device must update both.
 - `SmsForwarder` is the core domain logic — keep it free of Android framework coupling (except `SmsManager`).
 - Rule matching is order-dependent (first match wins). Respect `sortOrder`.
 - The `defaultPrefix` and `forwardPrefix` settings affect message formatting — test formatting changes thoroughly.

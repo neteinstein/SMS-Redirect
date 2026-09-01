@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "SMS-Redirect"
+rootProject.name = "SMS-Toolbox"
 include(":app")

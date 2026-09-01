@@ -84,7 +84,7 @@ jobs:
 
       - name: Rename APK
         run: |
-          mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/SMS-Redirect_v${{ steps.bump.outputs.new_version }}.apk
+          mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/SMS-Toolbox_v${{ steps.bump.outputs.new_version }}.apk
 
       - name: Generate release notes
         env:
@@ -121,7 +121,7 @@ jobs:
           tag_name: v${{ steps.bump.outputs.new_version }}
           target_commitish: ${{ steps.bump.outputs.new_sha }}
           name: Release v${{ steps.bump.outputs.new_version }}
-          files: app/build/outputs/apk/release/SMS-Redirect_v${{ steps.bump.outputs.new_version }}.apk
+          files: app/build/outputs/apk/release/SMS-Toolbox_v${{ steps.bump.outputs.new_version }}.apk
           body_path: release_notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,13 +1,136 @@
-# SMS Redirect & Schedule — Architecture
+# SMS Toolbox — Architecture
 
 ## Overview
 
-SMS Redirect & Schedule is an Android app with two independent features, presented as bottom-navigation tabs on the home screen:
+SMS Toolbox is an Android app with three independent features, presented as bottom-navigation tabs on the home screen:
 
+- **Backup** — copies SMS messages to the user's own Gmail account over IMAP. This is the app's primary feature and the landing tab.
 - **Redirect** — intercepts incoming SMS messages matching user-defined rules and forwards them to a configured target phone number via SMS.
 - **Schedule** — lets the user compose a message once and have it sent automatically at a future date/time, optionally repeating on a recurring pattern.
 
-Both features share the same app shell (permissions flow, Settings screen, deep-link handling) but are otherwise independent end-to-end: separate domain models, separate Room tables, separate use cases, separate WorkManager jobs, and separate history logs.
+All three share the same app shell (permissions flow, Settings screen, deep-link handling) but are otherwise independent end-to-end: separate domain models, separate Room tables, separate use cases, separate WorkManager jobs.
+
+> **A note on the word "backup".** It means two different things in this codebase.
+> `ExportBackupUseCase` / `ImportBackupUseCase` predate the Gmail feature and refer to the
+> local JSON export of rules, schedules and settings. Everything belonging to the SMS→Gmail
+> feature is prefixed `SmsBackup*` or `Gmail*`. Keep that split when adding code.
+
+## Why Backup leads
+
+Google Play's SMS & Call Log Permissions policy only grants `READ_SMS` / `RECEIVE_SMS` for a
+declared core use case, and "backup and restore" is on the permitted list while "SMS forwarder"
+is not. Backup is therefore the declared purpose, the first tab, and the screen the app opens
+on — the declaration has to match what the app visibly is.
+
+## SMS Backup to Gmail Pipeline
+
+```
+[ Incoming SMS ]                        [ Backup tab: "Enable" / "Backup all previous" ]
+ │                                       │
+ └─► SmsReceiver                         └─► SmsBackupScheduler
+      │  (also enqueues ForwardSmsWorker)      │
+      ▼                                        ▼
+   BackupSmsWorker  ◄────────────── re-enqueues itself while work remains
+      │
+      ▼
+   RunSmsBackupUseCase
+      │
+      ├─► SmsMessageSource ──► content://sms/inbox  (keyset paging on date,_id)
+      ├─► SmsBackupStateRepository ──► filter out anything already dealt with
+      │
+      └─► MailTransport.withFolder(label)   ── one IMAP connection per run
+             │
+             └─► BackupSmsMessageUseCase ──► SmsMailFactory ──► IMAP APPEND
+                        │                    (subject, threading, dates)
+                        ▼
+                  mark resolved in sms_backup_state
+```
+
+**IMAP APPEND, not SMTP.** A Gmail label *is* an IMAP folder, so APPEND can file messages under
+the user's chosen label and create it on first use; SMTP can only deliver to the inbox and would
+need a server-side filter the app cannot create. APPEND also preserves each message's original
+timestamp, and is not subject to Gmail's ~500/day sending cap that a full-history backfill would
+trip immediately.
+
+**One source of truth for message identity.** Both the live path and the historical backfill read
+the content provider. `SmsReceiver` deliberately passes *nothing* from the broadcast: the broadcast
+carries the SMSC timestamp while the provider stores the device receive time, and the two differ by
+seconds to minutes. Hashing one against the other would give the same message two identities and
+back it up twice. Reading only the provider means one code path and one key.
+
+`SmsBackupKey` is `SHA-256(normalizedAddress | body | dateEpochMs)` — not the provider `_id`, which
+SQLite reuses after a delete and which does not survive a device restore. Only the hash is stored,
+never the message text.
+
+### Components
+
+#### 1. SmsReceiver (shared with Redirect)
+- After enqueueing `ForwardSmsWorker`, also calls `BackupSmsWorker.enqueueForIncomingSms(context)`
+- Unconditional: backup must happen for every incoming SMS regardless of whether a rule matched.
+  `SmsForwarder` early-returns on missing `SEND_SMS`, on roaming and on no rule match — none of
+  those should stop a backup
+- A ~10s initial delay gives the default SMS app time to write the row to the provider; our
+  receiver and that write race each other
+
+#### 2. BackupSmsWorker (CoroutineWorker)
+- Unique work `sms_backup`. `KEEP` coalesces the burst from several messages arriving together into
+  one run; a continuation re-enqueue uses `REPLACE` so it actually takes effect
+- `NetworkType.CONNECTED` constraint, exponential backoff from 30s, capped at 5 attempts
+- **Not expedited** — expedited work has a per-app quota and ignores network constraints, and email
+  backup is not time-critical
+- Bounded per run, then re-enqueues itself while work remains. This keeps every execution inside
+  WorkManager's ten-minute ceiling **without a foreground service** — `FOREGROUND_SERVICE` was
+  deliberately removed from this manifest, and restoring it would mean a `FOREGROUND_SERVICE_DATA_SYNC`
+  declaration and a second Play Console review on top of the SMS permissions one
+- Unlike `SmsForwarder`, it does not swallow exceptions: retry/backoff only works if a failure is
+  actually reported
+
+#### 3. RunSmsBackupUseCase
+- No-ops when backup is off or no usable credentials are stored
+- Pages the provider on `(date, _id)` rather than an offset, so the scan stays stable while new
+  messages arrive mid-backfill
+- The cursor advances across the whole batch including skipped messages, so a fully-backed-up batch
+  cannot make the scan loop on itself
+- Paces appends (~100ms) to stay clear of Gmail's IMAP throttling; throttling responses map to
+  `Transient` and are retried, not treated as fatal
+- On `AuthFailed`, switches backup off so the UI cannot keep showing a green "enabled" state
+
+#### 4. MailTransport / JavaMailImapTransport
+- The seam that keeps `javax.mail` out of every tested path. `SmsForwarder` is untested today
+  precisely because it reaches straight for `SmsManager` and a raw `Context`; everything deciding
+  *what* to send lives behind this interface and is covered by plain JUnit tests
+- `withFolder` opens one folder for a whole batch. Gmail caps IMAP at ~15 concurrent connections
+  per account and throttles rapid connect/disconnect cycles
+- Sets explicit connect/read/write timeouts — JavaMail defaults them to infinite, which would hang
+  a worker until WorkManager kills it at ten minutes with no diagnostic
+- `MimeMessage.getReceivedDate()` is overridden because `Folder.appendMessages()` derives IMAP's
+  INTERNALDATE from it, and Gmail sorts by INTERNALDATE rather than the `Date:` header. Without it
+  a backfill of years of SMS all sorts as "today"
+- Exception messages are never surfaced verbatim — JavaMail text can echo the IMAP command line,
+  which for a failed LOGIN would include the app password
+
+#### 5. SmsMailFactory
+- Pure Kotlin, JDK-only. Subject templating uses literal `String.replace`, never `Regex.replace`:
+  in a Kotlin regex replacement `$` introduces a group reference, so `$CONTACT_NAME` would be
+  parsed as a backreference
+- Every message from one address shares a synthetic thread root, which is what makes Gmail group a
+  contact's history into a single conversation. Synthesized ids use the RFC 6761 reserved
+  `.invalid` TLD, so nothing can ever be delivered to them
+
+### Credential storage
+
+`SecretCipher` (domain) / `AndroidKeystoreSecretCipher` (data) — AES/GCM with a key held in the
+Android Keystore. An interface, not a concrete class, so `SmsBackupSettingsRepositoryImpl` stays
+JVM-testable.
+
+`res/xml/data_extraction_rules.xml` opts the database into cloud backup and device transfer, but
+the keystore key does not travel with it. On a new device `decrypt` returns null; the repository
+reports "no credentials" and the UI asks for the password again rather than blaming Gmail. This is
+a deliberate property, not a bug — the password is not portable off the device.
+
+Uses `java.util.Base64`, never `android.util.Base64`: this module sets
+`testOptions.unitTests.isReturnDefaultValues = true`, under which every `android.jar` call silently
+returns null instead of throwing, and a test would pass on a lie.
 
 ## Message Capture & Forwarding Pipeline
 
@@ -141,6 +264,32 @@ Redirect and Schedule each own their own tables end-to-end — `ScheduledSmsEnti
 | `ForwardHistoryEntity` | `forward_history` | Log of forwarded messages (Redirect) |
 | `ScheduledSmsEntity` | `scheduled_sms` | Scheduled SMS definitions (name, category, contact, message, date, repeat pattern, stop-at, sort order) |
 | `ScheduledSmsHistoryEntity` | `scheduled_sms_history` | Log of sent scheduled SMS (Schedule) |
+| `BackupSettingsEntity` | `backup_settings` | Gmail credentials and backup configuration (single row, `id = 1`) |
+| `SmsBackupStateEntity` | `sms_backup_state` | One row per message already dealt with, keyed by a content hash. Makes a killed backup resumable and idempotent |
+
+Database version is **10**. `MIGRATION_9_10` adds the two tables above and rebuilds `app_settings`
+solely to move the `forwardPrefix` default to `SMS Toolbox:` — SQLite cannot alter a column default
+in place, and Room validates the migration DDL against the schema generated from the entity
+annotations. `exportSchema` is on (`app/schemas/`), which is the only way a schema change here can
+be reviewed: there is no `androidTest` source set to run `MigrationTestHelper` against.
+
+The two new tables deliberately declare **no SQL defaults**. Room compares the migration DDL to its
+own generated schema, and a mismatch crashes every upgrading user on open; omitting defaults removes
+any question of how Room quotes a value containing `$`, parentheses or an empty string. Blank columns
+mean "unset" and `SmsBackupSettingsRepositoryImpl` applies the real defaults, mirroring the existing
+`?: "+351"` fallback style.
+
+### Backup settings (BackupSettingsEntity)
+
+| Field | Default (applied in the repository) | Description |
+|-------|---------|-------------|
+| `gmailAddress` | `""` | The user's Gmail address |
+| `gmailAppPasswordCipher` | `""` | App password, encrypted by `SecretCipher`. Never stored or logged in plaintext, and deliberately absent from `ExportBackupUseCase` |
+| `subjectTemplate` | `SMS with $CONTACT_NAME ($PHONE_NUMBER)` | Email subject; both placeholders are substituted per message |
+| `gmailLabel` | `SMS` | IMAP folder, which Gmail surfaces as a label. Created on first use |
+| `backupPreviousEnabled` | `false` | Whether the whole inbox is eligible, or only messages from when backup was switched on |
+| `backupEnabled` | `false` | Master switch |
+| `backupStartedAtMillis` | `0` | Watermark. Zero means "no watermark, back up everything" |
 
 ### Settings (AppSettingsEntity)
 
@@ -150,7 +299,7 @@ Redirect and Schedule each own their own tables end-to-end — `ScheduledSmsEnti
 | `keepHistory` | `true` | Record forwarded messages (Redirect history) |
 | `keepScheduleHistory` | `true` | Record sent scheduled SMS (Schedule history) |
 | `defaultPrefix` | `+351` | Country code prepended to local numbers (used by both features) |
-| `forwardPrefix` | `SMS Redirect:` | Text prepended to forwarded message body |
+| `forwardPrefix` | `SMS Toolbox:` | Text prepended to forwarded message body |
 | `showNotifications` | `false` | Show a notification after each successful forward or scheduled send |
 
 ## Permissions
@@ -159,17 +308,22 @@ Permissions are requested contextually rather than upfront at first launch — t
 
 | Permission | Requested when | Purpose |
 |---|-----------|---------|
-| `READ_SMS` / `RECEIVE_SMS` / `SEND_SMS` | Adding the first rule or scheduled SMS | Detect and forward/send SMS (MMS/RCS are out of scope) |
+| `READ_SMS` / `RECEIVE_SMS` / `SEND_SMS` | Adding the first rule or scheduled SMS | Read the inbox for backup; detect and forward/send SMS (MMS/RCS are out of scope). `READ_SMS` was declared but unused before the Backup feature — it is now genuinely exercised |
 | `READ_CONTACTS` | Tapping "pick contact" for the first time | Pick contacts for rules and scheduled SMS |
-| `POST_NOTIFICATIONS` | Turning on "Show notifications" in Settings (default off) | Notify after a successful forward or scheduled send |
+| `POST_NOTIFICATIONS` | Turning on "Show notifications" in Settings, **or** enabling Gmail backup | Backup progress; notify after a successful forward or scheduled send. The Backup tab requests it too, because otherwise a user who never opens the notification toggle would silently never see backup progress |
+| `INTERNET` / `ACCESS_NETWORK_STATE` | Not runtime-requested (install-time) | Reach `imap.gmail.com`. Both previously arrived only via manifest merge from the Firebase/WorkManager AARs; they are now declared explicitly |
 | Battery optimization exemption | Right after creating a new rule or scheduled SMS | Prevent Doze from throttling background delivery; declining shows a persistent warning banner on Home until enabled |
 
 WorkManager's own scheduling permissions were already present for the Redirect feature — Schedule required no new manifest permissions.
 
 ## Presentation Layer
 
-Uses Jetpack Compose with a simple NavHost. The `Home` route hosts a bottom navigation bar (`MainBottomBar`) with two tabs (`MainTab.REDIRECT` / `MainTab.SCHEDULE`); switching tabs swaps the body between `HomeScreen` and `ScheduleListScreen` while the `bottomBar` and the `Home` back-stack entry itself stay put, so the selected tab survives round-trips to any child screen.
+Uses Jetpack Compose with a simple NavHost. The `Home` route hosts a bottom navigation bar (`MainBottomBar`) with three tabs (`MainTab.BACKUP` / `REDIRECT` / `SCHEDULE`, in that order); switching tabs swaps the body between `BackupScreen`, `HomeScreen` and `ScheduleListScreen` while the `bottomBar` and the `Home` back-stack entry itself stay put, so the selected tab survives round-trips to any child screen. **`BACKUP` is the initial tab.**
 
+`MainBottomBar` iterates `MainTab.entries` rather than hardcoding items, and shows a label only for the selected tab — three icon+label pairs plus the FAB do not fit a narrow phone, and the Portuguese labels are longer. The FAB has no "create" action on the Backup tab, so it is hidden there (`showFab = false`) and the pill takes the full width.
+
+- **SplashScreen** → **BackupScreen** (`Home` route, Backup tab — the landing screen: Gmail config, enable toggle, progress; or an empty state prompting for credentials when none are stored)
+  - **BackupScreen** → **SettingsScreen** (where the Gmail address and app password are entered)
 - **SplashScreen** → **HomeScreen** (`Home` route, Redirect tab: rule list with drag-to-reorder)
   - **HomeScreen** → **RuleScreen** (create/edit rule)
   - **HomeScreen** → **SettingsScreen** (toggles, prefix config — shared/global, see below)

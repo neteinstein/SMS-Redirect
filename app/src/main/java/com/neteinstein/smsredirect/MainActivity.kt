@@ -47,6 +47,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.neteinstein.smsredirect.domain.model.LandingScreen
+import com.neteinstein.smsredirect.presentation.backup.BackupScreen
+import com.neteinstein.smsredirect.presentation.backup.BackupViewModel
+import com.neteinstein.smsredirect.presentation.backup.BackupViewModelFactory
 import com.neteinstein.smsredirect.presentation.history.HistoryScreen
 import com.neteinstein.smsredirect.presentation.history.HistoryViewModel
 import com.neteinstein.smsredirect.presentation.history.HistoryViewModelFactory
@@ -98,6 +102,8 @@ class MainActivity : ComponentActivity() {
             SmsRedirectTheme {
                 val appContainer = (application as SmsRedirectApplication).appContainer
                 val navController = rememberNavController()
+                val landingScreen by
+                    appContainer.getLandingScreenUseCase().collectAsState(initial = LandingScreen.BACKUP)
 
                 LaunchedEffect(Unit) {
                     newIntentFlow.collectLatest { intent ->
@@ -202,9 +208,18 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable(Routes.Home) {
-                        var selectedTab by rememberSaveable { mutableStateOf(MainTab.REDIRECT) }
+                        var selectedTab by
+                            rememberSaveable {
+                                mutableStateOf(
+                                    when (landingScreen) {
+                                        LandingScreen.BACKUP -> MainTab.BACKUP
+                                        LandingScreen.REDIRECT -> MainTab.REDIRECT
+                                        LandingScreen.SCHEDULE -> MainTab.SCHEDULE
+                                    },
+                                )
+                            }
 
-                        var pendingCreateRoute by remember { mutableStateOf<String?>(null) }
+                        var pendingSmsAction by remember { mutableStateOf<(() -> Unit)?>(null) }
                         var showSmsRationale by remember { mutableStateOf(false) }
                         var showSmsDenied by remember { mutableStateOf(false) }
 
@@ -212,36 +227,43 @@ class MainActivity : ComponentActivity() {
                             rememberLauncherForActivityResult(
                                 ActivityResultContracts.RequestMultiplePermissions(),
                             ) { results ->
-                                val route = pendingCreateRoute
-                                pendingCreateRoute = null
-                                if (results.values.all { it } && route != null) {
-                                    navController.navigate(route)
+                                val action = pendingSmsAction
+                                pendingSmsAction = null
+                                if (results.values.all { it } && action != null) {
+                                    action()
                                 } else {
                                     showSmsDenied = true
                                 }
                             }
 
-                        val requestCreate: (String) -> Unit = { route ->
+                        // Gates any action that needs READ_SMS/RECEIVE_SMS behind the same
+                        // rationale/request flow, whether it navigates to a create screen or (for
+                        // Backup) simply flips a toggle in place.
+                        val requestSmsPermission: (() -> Unit) -> Unit = { action ->
                             if (hasSmsPermissions()) {
-                                navController.navigate(route)
+                                action()
                             } else {
-                                pendingCreateRoute = route
+                                pendingSmsAction = action
                                 showSmsRationale = true
                             }
+                        }
+
+                        val requestCreate: (String) -> Unit = { route ->
+                            requestSmsPermission { navController.navigate(route) }
                         }
 
                         if (showSmsRationale) {
                             AlertDialog(
                                 onDismissRequest = {
                                     showSmsRationale = false
-                                    pendingCreateRoute = null
+                                    pendingSmsAction = null
                                 },
                                 title = { Text(stringResource(R.string.sms_permission_rationale_title)) },
                                 text = { Text(stringResource(R.string.sms_permission_rationale_message)) },
                                 dismissButton = {
                                     TextButton(onClick = {
                                         showSmsRationale = false
-                                        pendingCreateRoute = null
+                                        pendingSmsAction = null
                                     }) {
                                         Text(stringResource(R.string.action_cancel))
                                     }
@@ -276,19 +298,77 @@ class MainActivity : ComponentActivity() {
                                 onTabSelected = { selectedTab = it },
                                 onFabClick = {
                                     when (selectedTab) {
+                                        MainTab.BACKUP -> Unit
                                         MainTab.REDIRECT -> requestCreate(Routes.ruleRoute())
                                         MainTab.SCHEDULE -> requestCreate(Routes.scheduleRoute())
                                     }
                                 },
                                 fabContentDescription =
                                     when (selectedTab) {
+                                        MainTab.BACKUP -> ""
                                         MainTab.REDIRECT -> stringResource(R.string.home_cd_add_rule)
                                         MainTab.SCHEDULE -> stringResource(R.string.schedule_cd_add)
                                     },
+                                showFab = selectedTab != MainTab.BACKUP,
                             )
                         }
 
                         when (selectedTab) {
+                            MainTab.BACKUP -> {
+                                // POST_NOTIFICATIONS is otherwise only requested from the Settings
+                                // screen's notification toggle, so without this the "Backup ongoing
+                                // X of Y" notification would silently never appear. Backup itself
+                                // does not depend on the grant, so the result is not acted on.
+                                val backupNotificationsLauncher =
+                                    rememberLauncherForActivityResult(
+                                        ActivityResultContracts.RequestPermission(),
+                                    ) { }
+
+                                val backupViewModel: BackupViewModel =
+                                    viewModel(
+                                        factory =
+                                            BackupViewModelFactory(
+                                                appContainer.getSmsBackupSettingsUseCase,
+                                                appContainer.setBackupSubjectTemplateUseCase,
+                                                appContainer.setBackupGmailLabelUseCase,
+                                                appContainer.setBackupPreviousEnabledUseCase,
+                                                appContainer.setBackupEnabledUseCase,
+                                                appContainer.smsBackupScheduler,
+                                            ),
+                                    )
+                                val backupState by backupViewModel.uiState.collectAsState()
+                                val needsCredentials by backupViewModel.needsCredentials.collectAsState()
+                                BackupScreen(
+                                    state = backupState,
+                                    needsCredentials = needsCredentials,
+                                    onSubjectTemplateSaved = backupViewModel::onSubjectTemplateSaved,
+                                    onGmailLabelSaved = backupViewModel::onGmailLabelSaved,
+                                    onBackupPreviousChanged = backupViewModel::onBackupPreviousChanged,
+                                    onToggleBackupEnabled = {
+                                        // Backup reads the SMS content provider directly, so it
+                                        // needs the same READ_SMS/RECEIVE_SMS grant Redirect and
+                                        // Schedule require before they can create anything.
+                                        requestSmsPermission {
+                                            if (!backupState.settings.backupEnabled &&
+                                                ContextCompat.checkSelfPermission(
+                                                    this@MainActivity,
+                                                    Manifest.permission.POST_NOTIFICATIONS,
+                                                ) != PackageManager.PERMISSION_GRANTED
+                                            ) {
+                                                backupNotificationsLauncher.launch(
+                                                    Manifest.permission.POST_NOTIFICATIONS,
+                                                )
+                                            }
+                                            backupViewModel.onToggleBackupEnabled()
+                                        }
+                                    },
+                                    onOpenSettings = { navController.navigate(Routes.Settings) },
+                                    bottomBar = bottomBar,
+                                    showBackgroundWarning = showBatteryBanner,
+                                    onFixBackgroundWarning = { openBatteryOptimizationSettings() },
+                                )
+                            }
+
                             MainTab.REDIRECT -> {
                                 val homeViewModel: HomeViewModel =
                                     viewModel(
@@ -362,14 +442,23 @@ class MainActivity : ComponentActivity() {
                                         appContainer.setForwardPrefixUseCase,
                                         appContainer.getShowNotificationsUseCase,
                                         appContainer.setShowNotificationsUseCase,
+                                        appContainer.getLandingScreenUseCase,
+                                        appContainer.setLandingScreenUseCase,
                                         appContainer.exportBackupUseCase,
                                         appContainer.importBackupUseCase,
+                                        appContainer.getSmsBackupSettingsUseCase,
+                                        appContainer.verifyGmailCredentialsUseCase,
+                                        appContainer.clearGmailCredentialsUseCase,
+                                        appContainer.smsBackupScheduler,
                                     ),
                             )
                         val sendWhileRoaming by settingsViewModel.sendWhileRoaming.collectAsState()
                         val showNotifications by settingsViewModel.showNotifications.collectAsState()
                         val defaultPrefix by settingsViewModel.defaultPrefix.collectAsState()
                         val forwardPrefix by settingsViewModel.forwardPrefix.collectAsState()
+                        val settingsLandingScreen by settingsViewModel.landingScreen.collectAsState()
+                        val backupSettings by settingsViewModel.backupSettings.collectAsState()
+                        val gmailVerification by settingsViewModel.gmailVerification.collectAsState()
 
                         val context = this@MainActivity
 
@@ -501,6 +590,14 @@ class MainActivity : ComponentActivity() {
                             forwardPrefix = forwardPrefix,
                             defaultPrefix = defaultPrefix,
                             currentLanguageLabel = currentLanguageLabel,
+                            landingScreen = settingsLandingScreen,
+                            onLandingScreenChanged = settingsViewModel::setLandingScreen,
+                            gmailAddress = backupSettings.gmailAddress,
+                            hasGmailAppPassword = backupSettings.hasAppPassword,
+                            gmailVerification = gmailVerification,
+                            onSaveGmailCredentials = settingsViewModel::saveGmailCredentials,
+                            onClearGmailCredentials = settingsViewModel::clearGmailCredentials,
+                            onOpenAppPasswordHelp = { openGoogleAppPasswordsPage() },
                             onSendWhileRoamingChanged = settingsViewModel::setSendWhileRoaming,
                             onShowNotificationsChanged = { enabled ->
                                 if (enabled) {
@@ -983,6 +1080,11 @@ class MainActivity : ComponentActivity() {
         runCatching { startActivity(intent) }
     }
 
+    private fun openGoogleAppPasswordsPage() {
+        val intent = Intent(Intent.ACTION_VIEW, GOOGLE_APP_PASSWORDS_URL.toUri())
+        runCatching { startActivity(intent) }
+    }
+
     private fun openAppLocaleSettings() {
         val intent =
             Intent(Settings.ACTION_APP_LOCALE_SETTINGS).apply {
@@ -1023,6 +1125,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val TAG = "MainActivity"
         private const val PREFS_NAME = "sms_redirect_prefs"
+        private const val GOOGLE_APP_PASSWORDS_URL = "https://myaccount.google.com/apppasswords"
         private const val KEY_SIDELOAD_DISMISSED = "sideload_warning_dismissed"
         private const val KEY_BATTERY_BANNER_ENABLED = "battery_banner_enabled"
     }
