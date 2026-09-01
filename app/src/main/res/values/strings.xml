@@ -67,6 +67,10 @@
     <string name="settings_title">Settings</string>
     <string name="settings_language">Language</string>
     <string name="settings_language_system_default">System default</string>
+    <string name="settings_landing_screen_label">Landing screen</string>
+    <string name="settings_landing_screen_backup">SMS Backup</string>
+    <string name="settings_landing_screen_redirect">Redirect</string>
+    <string name="settings_landing_screen_schedule">Schedule</string>
     <string name="settings_send_while_roaming">Send while roaming</string>
     <string name="settings_keep_history">Keep history</string>
     <string name="settings_show_notifications">Show notifications</string>

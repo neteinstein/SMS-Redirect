@@ -60,6 +60,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.neteinstein.smsredirect.R
 import com.neteinstein.smsredirect.domain.mail.MailVerificationResult
+import com.neteinstein.smsredirect.domain.model.LandingScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,6 +70,8 @@ fun SettingsScreen(
     forwardPrefix: String,
     defaultPrefix: String,
     currentLanguageLabel: String,
+    landingScreen: LandingScreen,
+    onLandingScreenChanged: (LandingScreen) -> Unit,
     gmailAddress: String,
     hasGmailAppPassword: Boolean,
     gmailVerification: GmailVerificationState,
@@ -109,6 +112,11 @@ fun SettingsScreen(
             LanguageRow(
                 currentLanguageLabel = currentLanguageLabel,
                 onClick = onOpenLanguageSettings,
+            )
+
+            LandingScreenDropdown(
+                selected = landingScreen,
+                onSelected = onLandingScreenChanged,
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -231,6 +239,55 @@ private fun ForwardPrefixRow(
                 imageVector = Icons.Default.Check,
                 contentDescription = stringResource(R.string.settings_forward_prefix_save),
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LandingScreenDropdown(
+    selected: LandingScreen,
+    onSelected: (LandingScreen) -> Unit,
+) {
+    val options =
+        listOf(
+            LandingScreen.BACKUP to stringResource(R.string.settings_landing_screen_backup),
+            LandingScreen.REDIRECT to stringResource(R.string.settings_landing_screen_redirect),
+            LandingScreen.SCHEDULE to stringResource(R.string.settings_landing_screen_schedule),
+        )
+    var expanded by remember { mutableStateOf(false) }
+    val selectedLabel = options.first { it.first == selected }.second
+
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = it },
+        ) {
+            OutlinedTextField(
+                value = selectedLabel,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text(stringResource(R.string.settings_landing_screen_label)) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                options.forEach { (value, label) ->
+                    DropdownMenuItem(
+                        text = { Text(label) },
+                        onClick = {
+                            onSelected(value)
+                            expanded = false
+                        },
+                    )
+                }
+            }
         }
     }
 }

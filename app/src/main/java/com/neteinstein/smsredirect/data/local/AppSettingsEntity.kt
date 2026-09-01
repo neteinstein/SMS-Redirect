@@ -13,4 +13,5 @@ data class AppSettingsEntity(
     @ColumnInfo(defaultValue = "SMS Toolbox:") val forwardPrefix: String = "SMS Toolbox:",
     @ColumnInfo(defaultValue = "0") val showNotifications: Boolean = false,
     @ColumnInfo(defaultValue = "1") val keepScheduleHistory: Boolean = true,
+    @ColumnInfo(defaultValue = "BACKUP") val landingScreen: String = "BACKUP",
 )

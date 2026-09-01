@@ -47,6 +47,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.neteinstein.smsredirect.domain.model.LandingScreen
 import com.neteinstein.smsredirect.presentation.backup.BackupScreen
 import com.neteinstein.smsredirect.presentation.backup.BackupViewModel
 import com.neteinstein.smsredirect.presentation.backup.BackupViewModelFactory
@@ -101,6 +102,8 @@ class MainActivity : ComponentActivity() {
             SmsRedirectTheme {
                 val appContainer = (application as SmsRedirectApplication).appContainer
                 val navController = rememberNavController()
+                val landingScreen by
+                    appContainer.getLandingScreenUseCase().collectAsState(initial = LandingScreen.BACKUP)
 
                 LaunchedEffect(Unit) {
                     newIntentFlow.collectLatest { intent ->
@@ -205,7 +208,16 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable(Routes.Home) {
-                        var selectedTab by rememberSaveable { mutableStateOf(MainTab.BACKUP) }
+                        var selectedTab by
+                            rememberSaveable {
+                                mutableStateOf(
+                                    when (landingScreen) {
+                                        LandingScreen.BACKUP -> MainTab.BACKUP
+                                        LandingScreen.REDIRECT -> MainTab.REDIRECT
+                                        LandingScreen.SCHEDULE -> MainTab.SCHEDULE
+                                    },
+                                )
+                            }
 
                         var pendingSmsAction by remember { mutableStateOf<(() -> Unit)?>(null) }
                         var showSmsRationale by remember { mutableStateOf(false) }
@@ -430,6 +442,8 @@ class MainActivity : ComponentActivity() {
                                         appContainer.setForwardPrefixUseCase,
                                         appContainer.getShowNotificationsUseCase,
                                         appContainer.setShowNotificationsUseCase,
+                                        appContainer.getLandingScreenUseCase,
+                                        appContainer.setLandingScreenUseCase,
                                         appContainer.exportBackupUseCase,
                                         appContainer.importBackupUseCase,
                                         appContainer.getSmsBackupSettingsUseCase,
@@ -442,6 +456,7 @@ class MainActivity : ComponentActivity() {
                         val showNotifications by settingsViewModel.showNotifications.collectAsState()
                         val defaultPrefix by settingsViewModel.defaultPrefix.collectAsState()
                         val forwardPrefix by settingsViewModel.forwardPrefix.collectAsState()
+                        val settingsLandingScreen by settingsViewModel.landingScreen.collectAsState()
                         val backupSettings by settingsViewModel.backupSettings.collectAsState()
                         val gmailVerification by settingsViewModel.gmailVerification.collectAsState()
 
@@ -575,6 +590,8 @@ class MainActivity : ComponentActivity() {
                             forwardPrefix = forwardPrefix,
                             defaultPrefix = defaultPrefix,
                             currentLanguageLabel = currentLanguageLabel,
+                            landingScreen = settingsLandingScreen,
+                            onLandingScreenChanged = settingsViewModel::setLandingScreen,
                             gmailAddress = backupSettings.gmailAddress,
                             hasGmailAppPassword = backupSettings.hasAppPassword,
                             gmailVerification = gmailVerification,

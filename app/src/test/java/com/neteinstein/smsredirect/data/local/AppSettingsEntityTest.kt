@@ -24,5 +24,6 @@ class AppSettingsEntityTest {
         assertEquals("SMS Toolbox:", entity.forwardPrefix)
         assertFalse(entity.showNotifications)
         assertTrue(entity.keepScheduleHistory)
+        assertEquals("BACKUP", entity.landingScreen)
     }
 }

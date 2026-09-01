@@ -2,6 +2,7 @@ package com.neteinstein.smsredirect.data.repository
 
 import com.neteinstein.smsredirect.data.local.AppSettingsDao
 import com.neteinstein.smsredirect.data.local.AppSettingsEntity
+import com.neteinstein.smsredirect.domain.model.LandingScreen
 import com.neteinstein.smsredirect.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -62,4 +63,20 @@ class SettingsRepositoryImpl(
         val current = dao.getSettings() ?: AppSettingsEntity()
         dao.upsert(current.copy(keepScheduleHistory = enabled))
     }
+
+    override fun observeLandingScreen(): Flow<LandingScreen> =
+        dao.observeSettings().map { it?.landingScreen.toLandingScreen() }
+
+    override suspend fun getLandingScreen(): LandingScreen = dao.getSettings()?.landingScreen.toLandingScreen()
+
+    override suspend fun setLandingScreen(screen: LandingScreen) {
+        val current = dao.getSettings() ?: AppSettingsEntity()
+        dao.upsert(current.copy(landingScreen = screen.name))
+    }
+
+    // A restored backup or a stale row from before this column existed could carry anything (or
+    // nothing); fall back to the same BACKUP default the column's own SQL default uses, rather
+    // than throwing on an unrecognized name.
+    private fun String?.toLandingScreen(): LandingScreen =
+        this?.let { name -> runCatching { LandingScreen.valueOf(name) }.getOrNull() } ?: LandingScreen.BACKUP
 }

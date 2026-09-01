@@ -9,16 +9,19 @@ import com.neteinstein.smsredirect.FakeSmsBackupScheduler
 import com.neteinstein.smsredirect.FakeSmsBackupSettingsRepository
 import com.neteinstein.smsredirect.FakeSmsBackupStateRepository
 import com.neteinstein.smsredirect.domain.mail.MailVerificationResult
+import com.neteinstein.smsredirect.domain.model.LandingScreen
 import com.neteinstein.smsredirect.domain.usecase.ClearGmailCredentialsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ExportBackupUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetLandingScreenUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSmsBackupSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ImportBackupUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetLandingScreenUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.VerifyGmailCredentialsUseCase
@@ -69,6 +72,8 @@ class SettingsViewModelTest {
             setForwardPrefixUseCase = SetForwardPrefixUseCase(settingsRepository),
             getShowNotificationsUseCase = GetShowNotificationsUseCase(settingsRepository),
             setShowNotificationsUseCase = SetShowNotificationsUseCase(settingsRepository),
+            getLandingScreenUseCase = GetLandingScreenUseCase(settingsRepository),
+            setLandingScreenUseCase = SetLandingScreenUseCase(settingsRepository),
             exportBackupUseCase = ExportBackupUseCase(ruleRepository, scheduledSmsRepository, settingsRepository),
             importBackupUseCase =
                 ImportBackupUseCase(ruleRepository, scheduledSmsRepository, settingsRepository, scheduledSmsScheduler),
@@ -169,6 +174,26 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             assertFalse(vm.showNotifications.value)
+        }
+
+    @Test
+    fun `init observes landingScreen defaults to backup`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+            assertEquals(LandingScreen.BACKUP, vm.landingScreen.value)
+        }
+
+    @Test
+    fun `setLandingScreen updates state`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.setLandingScreen(LandingScreen.SCHEDULE)
+            advanceUntilIdle()
+
+            assertEquals(LandingScreen.SCHEDULE, vm.landingScreen.value)
         }
 
     @Test

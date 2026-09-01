@@ -3,6 +3,7 @@ package com.neteinstein.smsredirect.domain.usecase
 import com.neteinstein.smsredirect.domain.analytics.AnalyticsEvents
 import com.neteinstein.smsredirect.domain.analytics.AnalyticsTracker
 import com.neteinstein.smsredirect.domain.analytics.NoOpAnalyticsTracker
+import com.neteinstein.smsredirect.domain.model.LandingScreen
 import com.neteinstein.smsredirect.domain.model.RepeatType
 import com.neteinstein.smsredirect.domain.model.Rule
 import com.neteinstein.smsredirect.domain.model.ScheduledSms
@@ -151,6 +152,12 @@ class ImportBackupUseCase(
         }
         if (settings.has("showNotifications")) {
             settingsRepository.setShowNotifications(settings.optBoolean("showNotifications"))
+        }
+        if (settings.has("landingScreen")) {
+            val screen =
+                runCatching { LandingScreen.valueOf(settings.optString("landingScreen")) }
+                    .getOrDefault(LandingScreen.BACKUP)
+            settingsRepository.setLandingScreen(screen)
         }
     }
 }

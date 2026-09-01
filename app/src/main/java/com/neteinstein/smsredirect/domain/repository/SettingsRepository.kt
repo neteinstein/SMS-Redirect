@@ -1,5 +1,6 @@
 package com.neteinstein.smsredirect.domain.repository
 
+import com.neteinstein.smsredirect.domain.model.LandingScreen
 import kotlinx.coroutines.flow.Flow
 
 interface SettingsRepository {
@@ -38,4 +39,10 @@ interface SettingsRepository {
     suspend fun getKeepScheduleHistory(): Boolean
 
     suspend fun setKeepScheduleHistory(enabled: Boolean)
+
+    fun observeLandingScreen(): Flow<LandingScreen>
+
+    suspend fun getLandingScreen(): LandingScreen
+
+    suspend fun setLandingScreen(screen: LandingScreen)
 }

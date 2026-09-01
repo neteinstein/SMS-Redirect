@@ -71,13 +71,15 @@ abstract class AppDatabase : RoomDatabase() {
             }
 
         /**
-         * Adds the Gmail SMS backup feature.
+         * Adds the Gmail SMS backup feature and the landing-screen preference.
          *
          * Two new tables, plus a rebuild of `app_settings` -- the rebuild exists only to move the
          * `forwardPrefix` SQL default from 'SMS Redirect:' to 'SMS Toolbox:' after the rename.
          * SQLite cannot alter a column default in place, and Room compares the entity's declared
          * `@ColumnInfo(defaultValue = ...)` against the real schema, so an ALTER would not do.
          * Existing rows keep whatever prefix the user actually has -- only the default moves.
+         * `landingScreen` rides along on that same rebuild: it isn't listed in the INSERT...SELECT
+         * column lists below, so every existing row picks up the new column's SQL default.
          *
          * `MIGRATION_8_9` above is deliberately left alone: it reconstructs the historical v9
          * schema and must keep the old default to stay a faithful 8 -> 9 step.
@@ -95,6 +97,7 @@ abstract class AppDatabase : RoomDatabase() {
                             forwardPrefix TEXT NOT NULL DEFAULT 'SMS Toolbox:',
                             showNotifications INTEGER NOT NULL DEFAULT 0,
                             keepScheduleHistory INTEGER NOT NULL DEFAULT 1,
+                            landingScreen TEXT NOT NULL DEFAULT 'BACKUP',
                             PRIMARY KEY(id)
                         )
                         """.trimIndent(),

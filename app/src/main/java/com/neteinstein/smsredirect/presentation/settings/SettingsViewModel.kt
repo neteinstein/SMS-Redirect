@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.smsredirect.domain.mail.MailVerificationResult
+import com.neteinstein.smsredirect.domain.model.LandingScreen
 import com.neteinstein.smsredirect.domain.model.SmsBackupSettings
 import com.neteinstein.smsredirect.domain.scheduling.SmsBackupScheduler
 import com.neteinstein.smsredirect.domain.usecase.BackupImportResult
@@ -11,12 +12,14 @@ import com.neteinstein.smsredirect.domain.usecase.ClearGmailCredentialsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ExportBackupUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetLandingScreenUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSmsBackupSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ImportBackupUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetLandingScreenUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.VerifyGmailCredentialsUseCase
@@ -39,6 +42,8 @@ class SettingsViewModel(
     private val setForwardPrefixUseCase: SetForwardPrefixUseCase,
     getShowNotificationsUseCase: GetShowNotificationsUseCase,
     private val setShowNotificationsUseCase: SetShowNotificationsUseCase,
+    getLandingScreenUseCase: GetLandingScreenUseCase,
+    private val setLandingScreenUseCase: SetLandingScreenUseCase,
     private val exportBackupUseCase: ExportBackupUseCase,
     private val importBackupUseCase: ImportBackupUseCase,
     getSmsBackupSettingsUseCase: GetSmsBackupSettingsUseCase,
@@ -54,6 +59,8 @@ class SettingsViewModel(
     val forwardPrefix: StateFlow<String> = _forwardPrefix.asStateFlow()
     private val _showNotifications = MutableStateFlow(false)
     val showNotifications: StateFlow<Boolean> = _showNotifications.asStateFlow()
+    private val _landingScreen = MutableStateFlow(LandingScreen.BACKUP)
+    val landingScreen: StateFlow<LandingScreen> = _landingScreen.asStateFlow()
     private val _backupSettings = MutableStateFlow(SmsBackupSettings())
     val backupSettings: StateFlow<SmsBackupSettings> = _backupSettings.asStateFlow()
     private val _gmailVerification = MutableStateFlow<GmailVerificationState>(GmailVerificationState.Idle)
@@ -71,6 +78,9 @@ class SettingsViewModel(
             .launchIn(viewModelScope)
         getShowNotificationsUseCase()
             .onEach { _showNotifications.value = it }
+            .launchIn(viewModelScope)
+        getLandingScreenUseCase()
+            .onEach { _landingScreen.value = it }
             .launchIn(viewModelScope)
         getSmsBackupSettingsUseCase()
             .onEach { _backupSettings.value = it }
@@ -129,6 +139,12 @@ class SettingsViewModel(
         }
     }
 
+    fun setLandingScreen(screen: LandingScreen) {
+        viewModelScope.launch {
+            setLandingScreenUseCase(screen)
+        }
+    }
+
     private val _exportEvent = MutableSharedFlow<String>()
     val exportEvent: SharedFlow<String> = _exportEvent.asSharedFlow()
 
@@ -159,6 +175,8 @@ class SettingsViewModelFactory(
     private val setForwardPrefixUseCase: SetForwardPrefixUseCase,
     private val getShowNotificationsUseCase: GetShowNotificationsUseCase,
     private val setShowNotificationsUseCase: SetShowNotificationsUseCase,
+    private val getLandingScreenUseCase: GetLandingScreenUseCase,
+    private val setLandingScreenUseCase: SetLandingScreenUseCase,
     private val exportBackupUseCase: ExportBackupUseCase,
     private val importBackupUseCase: ImportBackupUseCase,
     private val getSmsBackupSettingsUseCase: GetSmsBackupSettingsUseCase,
@@ -177,6 +195,8 @@ class SettingsViewModelFactory(
             setForwardPrefixUseCase = setForwardPrefixUseCase,
             getShowNotificationsUseCase = getShowNotificationsUseCase,
             setShowNotificationsUseCase = setShowNotificationsUseCase,
+            getLandingScreenUseCase = getLandingScreenUseCase,
+            setLandingScreenUseCase = setLandingScreenUseCase,
             exportBackupUseCase = exportBackupUseCase,
             importBackupUseCase = importBackupUseCase,
             getSmsBackupSettingsUseCase = getSmsBackupSettingsUseCase,

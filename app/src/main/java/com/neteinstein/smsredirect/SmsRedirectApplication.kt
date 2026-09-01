@@ -51,6 +51,7 @@ import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepScheduleHistoryNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepScheduleHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetLandingScreenUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetScheduledSmsCategoriesUseCase
@@ -75,6 +76,7 @@ import com.neteinstein.smsredirect.domain.usecase.SetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetKeepScheduleHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.SetLandingScreenUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
@@ -165,6 +167,8 @@ class SmsRedirectApplication : Application() {
                 deleteAllHistoryUseCase = DeleteAllHistoryUseCase(forwardHistoryRepository),
                 getShowNotificationsUseCase = GetShowNotificationsUseCase(settingsRepository),
                 setShowNotificationsUseCase = SetShowNotificationsUseCase(settingsRepository, analyticsTracker),
+                getLandingScreenUseCase = GetLandingScreenUseCase(settingsRepository),
+                setLandingScreenUseCase = SetLandingScreenUseCase(settingsRepository),
                 findMatchingRuleUseCase = findMatchingRuleUseCase,
                 canForwardSmsUseCase = canForwardSmsUseCase,
                 smsForwarder =
@@ -258,6 +262,8 @@ data class AppContainer(
     val deleteAllHistoryUseCase: DeleteAllHistoryUseCase,
     val getShowNotificationsUseCase: GetShowNotificationsUseCase,
     val setShowNotificationsUseCase: SetShowNotificationsUseCase,
+    val getLandingScreenUseCase: GetLandingScreenUseCase,
+    val setLandingScreenUseCase: SetLandingScreenUseCase,
     val findMatchingRuleUseCase: FindMatchingRuleUseCase,
     val canForwardSmsUseCase: CanForwardSmsUseCase,
     val smsForwarder: SmsForwarder,
