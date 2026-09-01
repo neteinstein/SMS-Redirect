@@ -91,9 +91,11 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            // android-mail and android-activation both ship these and they collide.
-            excludes += "/META-INF/LICENSE.txt"
-            excludes += "/META-INF/NOTICE.txt"
+            // android-mail and android-activation both ship these under this exact name (not
+            // LICENSE.txt/NOTICE.txt -- AGP's own default excludes already cover those) and
+            // collide during merge.
+            excludes += "/META-INF/LICENSE.md"
+            excludes += "/META-INF/NOTICE.md"
             // JavaMail builds its provider registry by concatenating these descriptors across
             // artifacts. They must be merged -- excluding or first-picking them makes
             // Session.getStore("imaps") fail at runtime with NoSuchProviderException and no
