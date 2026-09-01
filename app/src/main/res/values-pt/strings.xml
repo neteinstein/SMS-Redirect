@@ -75,8 +75,9 @@
     <string name="settings_forward_prefix_label">Prefixo da mensagem reencaminhada</string>
     <string name="settings_forward_prefix_save">Guardar prefixo</string>
     <string name="settings_prefix_none">Nenhum</string>
-    <string name="settings_export_rules">Exportar Cópia de Segurança</string>
-    <string name="settings_import_rules">Importar Cópia de Segurança</string>
+    <string name="settings_export_rules">Exportar Configurações</string>
+    <string name="settings_import_rules">Importar Configurações</string>
+    <string name="settings_export_import_gmail_note">A configuração de backup para o Gmail não é exportada por motivos de segurança.</string>
     <string name="settings_import_success">Importados %1$s e %2$s</string>
     <plurals name="settings_import_success_rules">
         <item quantity="one">%1$d regra</item>

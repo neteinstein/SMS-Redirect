@@ -74,8 +74,9 @@
     <string name="settings_forward_prefix_label">Forward message prefix</string>
     <string name="settings_forward_prefix_save">Save prefix</string>
     <string name="settings_prefix_none">None</string>
-    <string name="settings_export_rules">Export Backup</string>
-    <string name="settings_import_rules">Import Backup</string>
+    <string name="settings_export_rules">Export Configurations</string>
+    <string name="settings_import_rules">Import Configurations</string>
+    <string name="settings_export_import_gmail_note">Gmail backup configuration is not exported for security reasons.</string>
     <string name="settings_import_success">Imported %1$s and %2$s</string>
     <plurals name="settings_import_success_rules">
         <item quantity="one">%1$d rule</item>
