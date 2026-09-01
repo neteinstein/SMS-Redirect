@@ -34,14 +34,6 @@ jobs:
         if: matrix.check == 'ktlint'
         run: ./gradlew ktlintCheck
 
-      - name: TEMP print room schema
-        if: matrix.check == 'unit-tests'
-        run: |
-          ./gradlew kspDebugKotlin
-          echo "===SCHEMA-BEGIN==="
-          cat app/schemas/com.neteinstein.smsredirect.data.local.AppDatabase/10.json
-          echo "===SCHEMA-END==="
-
       - name: Run unit tests
         if: matrix.check == 'unit-tests'
         run: ./gradlew test
