@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generates the Play Store icon, feature graphic, and screenshot mockups
-for SMS Redirect & Schedule — phone, plus 7-inch and 10-inch tablet ("large
-screens") variants.
+for SMS Toolbox — phone, plus 7-inch and 10-inch tablet ("large screens")
+variants.
 
 These are concept/marketing graphics built from the app's real brand colors
 (app/src/main/java/.../presentation/theme/Color.kt) and real UI strings
@@ -215,18 +215,15 @@ def generate_feature_graphic() -> None:
     text_x = icon_x + icon_size + 48
     title_font = bold(64)
     tagline_font = regular(30)
-    title_lines = ["SMS Redirect", "& Schedule"]
-    title_y = h / 2 - 100
+    title_lines = ["SMS Toolbox"]
+    title_y = h / 2 - 66
     for line in title_lines:
         draw.text((text_x, title_y), line, font=title_font, fill=WHITE)
         title_y += 74
 
-    tagline_lines = wrap_text(
-        draw,
-        "Forward SMS by rule. Schedule texts for later.",
-        tagline_font,
-        w - text_x - 40,
-    )
+    # Manually split (rather than wrap_text's greedy fill) so the two lines
+    # come out visually balanced instead of leaving a lone trailing word.
+    tagline_lines = ["Backup SMS, Forward or", "Schedule for later."]
     tagline_y = title_y + 14
     for line in tagline_lines:
         draw.text((text_x, tagline_y), line, font=tagline_font, fill=BRAND_PRIMARY_CONTAINER)
@@ -329,8 +326,10 @@ def draw_bottom_nav(draw: ImageDraw.ImageDraw, screen_box: tuple[int, int, int, 
     top = y1 - BOTTOM_NAV_H
     draw.rectangle((x0, top, x1, y1), fill=WHITE)
     draw.line((x0, top, x1, top), fill=BRAND_OUTLINE, width=3)
-    labels = ["Redirect", "Schedule"]
-    seg_w = (x1 - x0) / 2
+    # Matches MainTab's real order: Backup is the first tab and the app's
+    # landing screen (the declared "Backup and restore" Play use case).
+    labels = ["Backup", "Redirect", "Schedule"]
+    seg_w = (x1 - x0) / len(labels)
     f = bold(28)
     for i, label in enumerate(labels):
         cx = x0 + seg_w * i + seg_w / 2
@@ -386,12 +385,63 @@ def draw_card(
     return y + height + 20
 
 
+def draw_enabled_banner(draw: ImageDraw.ImageDraw, x0: int, x1: int, y: int, label: str) -> int:
+    """A filled green banner with a checkmark — the "grey -> green" enabled
+    state of the real Backup screen's "Enable Backup to Gmail" button."""
+    box = (x0 + 36, y, x1 - 36, y + 110)
+    draw.rounded_rectangle(box, radius=20, fill=BRAND_SECONDARY)
+    r = 22
+    cx, cy = box[0] + 56, (box[1] + box[3]) / 2
+    draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=WHITE)
+    draw.line((cx - 11, cy, cx - 2, cy + 11), fill=BRAND_SECONDARY, width=7)
+    draw.line((cx - 2, cy + 11, cx + 15, cy - 13), fill=BRAND_SECONDARY, width=7)
+    f = bold(34)
+    draw.text((cx + 46, cy - 20), label, font=f, fill=WHITE)
+    return box[3] + 30
+
+
+def screenshot_backup() -> Image.Image:
+    img, draw, screen_box = new_screenshot_canvas(["Back up your SMS", "safely to your Gmail"])
+    x0, y0, x1, y1 = screen_box
+    draw_status_bar(draw, screen_box)
+    content_top = draw_app_bar(draw, screen_box, "Backup to Gmail", icons=1)
+    # Backup has no "create" action, so the real UI hides the FAB on this
+    # tab — the mockup does the same.
+    draw_bottom_nav(draw, screen_box, active=0)
+
+    y = content_top + 30
+    y = draw_enabled_banner(draw, x0, x1, y, "Backup to Gmail enabled")
+    y = draw_form_field(draw, x0, x1, y, "Gmail label", "SMS")
+    y = draw_form_field(draw, x0, x1, y, "Email subject", "SMS with $CONTACT_NAME ($PHONE_NUMBER)")
+    y += 6
+    y = draw_toggle_row(draw, x0, x1, y, "Backup all previous SMS", False)
+    y += 14
+
+    box = (x0 + 24, y, x1 - 24, y + 150)
+    draw.rounded_rectangle(box, radius=22, fill=WHITE, outline=BRAND_OUTLINE, width=2)
+    f1 = bold(30)
+    f2 = regular(24)
+    draw.text((box[0] + 30, box[1] + 22), "3,214 messages backed up", font=f1, fill=BRAND_ON_SURFACE)
+    draw.text((box[0] + 30, box[1] + 68), "Filed under the “SMS” Gmail label", font=f2, fill=BRAND_ON_SURFACE_VARIANT)
+    draw.text(
+        (box[0] + 30, box[1] + 104),
+        "Continues automatically as new messages arrive",
+        font=f2,
+        fill=BRAND_ON_SURFACE_VARIANT,
+    )
+
+    SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
+    img.save(SCREENSHOTS_DIR / "01-backup.png", "PNG")
+    print("Wrote screenshots/phone/01-backup.png")
+    return img
+
+
 def screenshot_redirect_home() -> Image.Image:
     img, draw, screen_box = new_screenshot_canvas(["Forward SMS", "by simple rules"])
     x0, y0, x1, y1 = screen_box
     draw_status_bar(draw, screen_box)
-    content_top = draw_app_bar(draw, screen_box, "SMS Redirect Rules")
-    nav_top = draw_bottom_nav(draw, screen_box, active=0)
+    content_top = draw_app_bar(draw, screen_box, "Redirect Rules")
+    nav_top = draw_bottom_nav(draw, screen_box, active=1)
 
     y = content_top + 30
     y = draw_category_header(draw, x0, x1, y, "Work", "2 rules")
@@ -403,8 +453,8 @@ def screenshot_redirect_home() -> Image.Image:
 
     draw_fab(draw, screen_box, nav_top)
     SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
-    img.save(SCREENSHOTS_DIR / "01-redirect-rules.png", "PNG")
-    print("Wrote screenshots/phone/01-redirect-rules.png")
+    img.save(SCREENSHOTS_DIR / "02-redirect-rules.png", "PNG")
+    print("Wrote screenshots/phone/02-redirect-rules.png")
     return img
 
 
@@ -439,8 +489,8 @@ def screenshot_create_rule() -> Image.Image:
     bf = bold(32)
     draw_centered_text(draw, (btn_box[0] + btn_box[2]) / 2, btn_box[1] + 24, "Save Rule", bf, WHITE)
 
-    img.save(SCREENSHOTS_DIR / "02-create-rule.png", "PNG")
-    print("Wrote screenshots/phone/02-create-rule.png")
+    img.save(SCREENSHOTS_DIR / "03-create-rule.png", "PNG")
+    print("Wrote screenshots/phone/03-create-rule.png")
     return img
 
 
@@ -449,7 +499,7 @@ def screenshot_schedule_list() -> Image.Image:
     x0, y0, x1, y1 = screen_box
     draw_status_bar(draw, screen_box)
     content_top = draw_app_bar(draw, screen_box, "Scheduled SMS")
-    nav_top = draw_bottom_nav(draw, screen_box, active=1)
+    nav_top = draw_bottom_nav(draw, screen_box, active=2)
 
     y = content_top + 30
     y = draw_category_header(draw, x0, x1, y, "Reminders", "2 items")
@@ -460,8 +510,8 @@ def screenshot_schedule_list() -> Image.Image:
     y = draw_card(draw, x0, x1, y, 150, CATEGORY_ACCENTS[4], "Happy birthday, Ana!", "Next send: 3 Sep, 08:00", "Repeat: Yearly")
 
     draw_fab(draw, screen_box, nav_top)
-    img.save(SCREENSHOTS_DIR / "03-schedule-list.png", "PNG")
-    print("Wrote screenshots/phone/03-schedule-list.png")
+    img.save(SCREENSHOTS_DIR / "04-schedule-list.png", "PNG")
+    print("Wrote screenshots/phone/04-schedule-list.png")
     return img
 
 
@@ -482,8 +532,8 @@ def screenshot_schedule_form() -> Image.Image:
     bf = bold(30)
     draw_centered_text(draw, (btn_box[0] + btn_box[2]) / 2, btn_box[1] + 24, "Save Scheduled SMS", bf, WHITE)
 
-    img.save(SCREENSHOTS_DIR / "04-schedule-form.png", "PNG")
-    print("Wrote screenshots/phone/04-schedule-form.png")
+    img.save(SCREENSHOTS_DIR / "05-schedule-form.png", "PNG")
+    print("Wrote screenshots/phone/05-schedule-form.png")
     return img
 
 
@@ -506,22 +556,24 @@ def screenshot_settings() -> Image.Image:
     content_top = draw_app_bar(draw, screen_box, "Settings", icons=1)
 
     y = content_top + 30
+    y = draw_form_field(draw, x0, x1, y, "Landing screen", "SMS Backup")
+    y += 10
     y = draw_toggle_row(draw, x0, x1, y, "Send while roaming", False)
     y = draw_toggle_row(draw, x0, x1, y, "Keep history", True)
     y = draw_toggle_row(draw, x0, x1, y, "Show notifications", True)
     y += 10
-    y = draw_form_field(draw, x0, x1, y, "Forward message prefix", "SMS Redirect:")
+    y = draw_form_field(draw, x0, x1, y, "Forward message prefix", "SMS Toolbox:")
     y += 10
     btn_box = (x0 + 36, y, (x0 + x1) / 2 - 12, y + 90)
     draw.rounded_rectangle(btn_box, radius=16, outline=BRAND_PRIMARY, width=3)
     bf = bold(26)
-    draw_centered_text(draw, (btn_box[0] + btn_box[2]) / 2, btn_box[1] + 28, "Export Backup", bf, BRAND_PRIMARY)
+    draw_centered_text(draw, (btn_box[0] + btn_box[2]) / 2, btn_box[1] + 28, "Export Config", bf, BRAND_PRIMARY)
     btn_box2 = ((x0 + x1) / 2 + 12, y, x1 - 36, y + 90)
     draw.rounded_rectangle(btn_box2, radius=16, outline=BRAND_PRIMARY, width=3)
-    draw_centered_text(draw, (btn_box2[0] + btn_box2[2]) / 2, btn_box2[1] + 28, "Import Backup", bf, BRAND_PRIMARY)
+    draw_centered_text(draw, (btn_box2[0] + btn_box2[2]) / 2, btn_box2[1] + 28, "Import Config", bf, BRAND_PRIMARY)
 
-    img.save(SCREENSHOTS_DIR / "05-settings.png", "PNG")
-    print("Wrote screenshots/phone/05-settings.png")
+    img.save(SCREENSHOTS_DIR / "06-settings.png", "PNG")
+    print("Wrote screenshots/phone/06-settings.png")
     return img
 
 
@@ -548,8 +600,8 @@ def screenshot_history() -> Image.Image:
         draw.text((box[0] + 30, box[1] + 100), time_line, font=f2, fill=BRAND_ON_SURFACE_VARIANT)
         y += 180
 
-    img.save(SCREENSHOTS_DIR / "06-history.png", "PNG")
-    print("Wrote screenshots/phone/06-history.png")
+    img.save(SCREENSHOTS_DIR / "07-history.png", "PNG")
+    print("Wrote screenshots/phone/07-history.png")
     return img
 
 
@@ -625,7 +677,7 @@ def generate_tablet_screenshot(
     tagline_font = regular(int(out_h * 0.035))
     draw.text(
         (text_x, out_h * 0.86),
-        "SMS Redirect & Schedule",
+        "SMS Toolbox",
         font=tagline_font,
         fill=BRAND_PRIMARY_CONTAINER,
     )
@@ -645,12 +697,13 @@ def main() -> None:
     generate_icon()
     generate_feature_graphic()
     phone_shots = [
-        ("01-redirect-rules.png", ["Forward SMS", "by simple rules"], screenshot_redirect_home()),
-        ("02-create-rule.png", ["Pick a sender,", "pick a target"], screenshot_create_rule()),
-        ("03-schedule-list.png", ["Schedule texts", "to send later"], screenshot_schedule_list()),
-        ("04-schedule-form.png", ["Repeats daily, weekly,", "monthly or yearly"], screenshot_schedule_form()),
-        ("05-settings.png", ["Your data stays", "on your device"], screenshot_settings()),
-        ("06-history.png", ["Full history of every", "forwarded message"], screenshot_history()),
+        ("01-backup.png", ["Back up your SMS", "safely to your Gmail"], screenshot_backup()),
+        ("02-redirect-rules.png", ["Forward SMS", "by simple rules"], screenshot_redirect_home()),
+        ("03-create-rule.png", ["Pick a sender,", "pick a target"], screenshot_create_rule()),
+        ("04-schedule-list.png", ["Schedule texts", "to send later"], screenshot_schedule_list()),
+        ("05-schedule-form.png", ["Repeats daily, weekly,", "monthly or yearly"], screenshot_schedule_form()),
+        ("06-settings.png", ["Your data stays", "on your device"], screenshot_settings()),
+        ("07-history.png", ["Full history of every", "forwarded message"], screenshot_history()),
     ]
     generate_tablet_screenshots(phone_shots)
 

@@ -15,9 +15,9 @@ store-listing/
 │   ├── icon-512.png                  512x512 hi-res icon
 │   └── feature-graphic-1024x500.png  1024x500 feature graphic
 ├── screenshots/
-│   ├── phone/                        6 captioned 1080x1920 screenshots
-│   ├── sevenInchTablet/              same 6 moments, 1920x1080 "large screen" layout
-│   └── tenInchTablet/                same 6 moments, 2560x1440 "large screen" layout
+│   ├── phone/                        7 captioned 1080x1920 screenshots
+│   ├── sevenInchTablet/              same 7 moments, 1920x1080 "large screen" layout
+│   └── tenInchTablet/                same 7 moments, 2560x1440 "large screen" layout
 ├── scripts/generate_assets.py        regenerates everything under graphics/ + screenshots/
 └── data-safety.md                    cheat-sheet for the Data safety questionnaire
 ```
@@ -26,10 +26,10 @@ store-listing/
 
 | Play Console field | File | Limit | Current length |
 |---|---|---|---|
-| App name | `text/<locale>/title.txt` | 30 chars | 23 (en-US) / 30 (pt-PT) |
-| Short description | `text/<locale>/short_description.txt` | 80 chars | 65 (en-US) / 74 (pt-PT) |
-| Full description | `text/<locale>/full_description.txt` | 4000 chars | 3070 (en-US) / 3593 (pt-PT) |
-| What's new (this release) | `text/<locale>/release_notes.txt` | 500 chars | 287 (en-US) / 322 (pt-PT) |
+| App name | `text/<locale>/title.txt` | 30 chars | 11 (en-US) / 11 (pt-PT) |
+| Short description | `text/<locale>/short_description.txt` | 80 chars | 72 (en-US) / 77 (pt-PT) |
+| Full description | `text/<locale>/full_description.txt` | 4000 chars | 3787 (en-US) / 3931 (pt-PT) |
+| What's new (this release) | `text/<locale>/release_notes.txt` | 500 chars | 355 (en-US) / 381 (pt-PT) |
 
 Paste each file's contents verbatim into the matching field for that locale.
 `pt-PT` matches the tone/wording already used in `app/src/main/res/values-pt/strings.xml`
@@ -61,12 +61,13 @@ generated from the app's real brand colors and strings (not from a running
 emulator, since none was available in this environment) to give the listing
 a strong, on-brand starting point:
 
-1. `01-redirect-rules.png` — Redirect rule list, grouped by category
-2. `02-create-rule.png` — Create Rule form
-3. `03-schedule-list.png` — Scheduled SMS list
-4. `04-schedule-form.png` — Create Schedule SMS form
-5. `05-settings.png` — Settings (privacy-forward toggles + backup)
-6. `06-history.png` — Redirect history
+1. `01-backup.png` — Backup tab, enabled and running (the app's landing screen)
+2. `02-redirect-rules.png` — Redirect rule list, grouped by category
+3. `03-create-rule.png` — Create Rule form
+4. `04-schedule-list.png` — Scheduled SMS list
+5. `05-schedule-form.png` — Create Schedule SMS form
+6. `06-settings.png` — Settings (Gmail account, landing screen, privacy-forward toggles)
+7. `07-history.png` — Redirect history
 
 They already satisfy Play's technical requirements (1080x1920, 24-bit PNG, no
 alpha) and can be uploaded as-is. For pixel-perfect real captures instead,
@@ -76,7 +77,7 @@ action or:
 ```bash
 adb exec-out screencap -p > screenshot.png
 ```
-then recreate the same 6 moments, optionally reusing the caption banners from
+then recreate the same 7 moments, optionally reusing the caption banners from
 `scripts/generate_assets.py` (`new_screenshot_canvas`) as an overlay.
 
 ### Tablet ("large screens") screenshots
@@ -93,7 +94,7 @@ actually looks like on a bigger screen.
 
 They meet Play's current requirements for large-screen screenshots: 16:9
 landscape, both dimensions between 1080 and 7680px, 24-bit PNG with no alpha,
-and 6 images each (Play recommends a minimum of 4, allows up to 8). Uploading
+and 7 images each (Play recommends a minimum of 4, allows up to 8). Uploading
 them is optional — Play only requires phone screenshots to publish — but
 recommended if the app is listed as tablet-compatible, since it isn't
 restricted to phones (no `<supports-screens>` or `<compatible-screens>`

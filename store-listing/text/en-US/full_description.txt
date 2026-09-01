@@ -17,7 +17,7 @@ REDIRECT — Forward messages by rule
 • Create simple rules: match a sender (by text or contact) and pick a target number
 • Works for standard SMS messages
 • First matching rule wins — drag to reorder your rules
-• Optional custom prefix added to every forwarded message (e.g. "SMS Redirect:")
+• Optional custom prefix added to every forwarded message (e.g. "SMS Toolbox:")
 • Choose whether forwarding is allowed while roaming
 • History of the last 50 forwarded messages, with sender, target, and matched rule
 • Get a notification every time a message is forwarded
@@ -42,6 +42,7 @@ ALSO INCLUDES
 • Drag-and-drop reordering and category grouping for both rules and schedules
 • Light & dark mode with Material You dynamic color
 • Export and import your rules and schedules as a settings file, anytime
+• Choose which tab opens first — Backup, Redirect, or Schedule — to match how you use the app
 • Available in English and Portuguese
 
 PERMISSIONS, EXPLAINED

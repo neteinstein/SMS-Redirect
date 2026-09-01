@@ -17,7 +17,7 @@ REDIRECIONAR — Reencaminhar mensagens por regra
 • Crie regras simples: associe um remetente (por texto ou contacto) a um número de destino
 • Funciona com mensagens SMS normais
 • A primeira regra correspondente é aplicada — arraste para reordenar as suas regras
-• Prefixo personalizado opcional adicionado a cada mensagem reencaminhada (por exemplo, "SMS Redirect:")
+• Prefixo personalizado opcional adicionado a cada mensagem reencaminhada (por exemplo, "SMS Toolbox:")
 • Escolha se o reencaminhamento é permitido em roaming
 • Histórico das últimas 50 mensagens reencaminhadas, com remetente, destino e regra correspondente
 • Receba uma notificação sempre que uma mensagem é reencaminhada
@@ -42,9 +42,10 @@ TAMBÉM INCLUI
 • Reordenação por arrastar e agrupamento por categorias, tanto nas regras como nos agendamentos
 • Modo claro e escuro, com cor dinâmica Material You
 • Exporte e importe as suas regras e agendamentos como ficheiro de definições, quando quiser
+• Escolha o ecrã inicial — Backup, Redirecionar ou Agendar
 • Disponível em português e inglês
 
 PERMISSÕES, EXPLICADAS
-O Redirecionador e Agendador SMS pede apenas o que precisa: permissões de SMS (para detetar e enviar mensagens), Contactos (para escolher números por nome), e Estado do telefone (para detetar roaming). Veja exatamente como cada permissão é usada na Política de Privacidade da app e no código-fonte público.
+O SMS Toolbox pede apenas o que precisa: SMS (backup, deteção e envio), Contactos (escolher números por nome), Estado do telefone (detetar roaming) e Internet (aceder ao Gmail com o backup ativo). Veja como cada permissão é usada na Política de Privacidade e no código-fonte público.
 
 Perguntas ou sugestões? Contacte play-store-neteinstein@googlegroups.com ou abra uma issue no GitHub.
