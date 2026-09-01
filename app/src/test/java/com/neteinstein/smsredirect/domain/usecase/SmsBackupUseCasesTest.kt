@@ -138,7 +138,13 @@ class SmsBackupUseCasesTest {
             assertEquals(SmsBackupRunOutcome.Completed, second)
             assertEquals(6, transport.appended.size)
             // Every message present exactly once.
-            assertEquals(6, transport.appended.map { it.messageId }.toSet().size)
+            assertEquals(
+                6,
+                transport.appended
+                    .map { it.messageId }
+                    .toSet()
+                    .size,
+            )
             assertTrue(sentBeforeFailure < 6)
         }
 
@@ -190,7 +196,13 @@ class SmsBackupUseCasesTest {
 
             assertEquals(SmsBackupRunOutcome.Completed, outcome)
             assertEquals(120, transport.appended.size)
-            assertEquals(120, transport.appended.map { it.messageId }.toSet().size)
+            assertEquals(
+                120,
+                transport.appended
+                    .map { it.messageId }
+                    .toSet()
+                    .size,
+            )
         }
 
     @Test
@@ -210,9 +222,13 @@ class SmsBackupUseCasesTest {
         runTest {
             messageSource.messages = (1L..50L).map { message("Body $it", it * 1000, it) }
             var elapsed = 0L
+            val elapsedNowMs = {
+                elapsed += 100L
+                elapsed
+            }
 
             // Each call advances the clock; the deadline is hit long before all 50 messages send.
-            val outcome = runUseCase(elapsedNowMs = { elapsed += 100L; elapsed })(deadlineMs = 250L)
+            val outcome = runUseCase(elapsedNowMs = elapsedNowMs)(deadlineMs = 250L)
 
             assertTrue(outcome is SmsBackupRunOutcome.ChunkDone)
             assertTrue(transport.appended.size < 50)

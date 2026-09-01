@@ -23,6 +23,5 @@ class FakeSmsMessageSource(
             .sortedWith(compareBy({ it.dateEpochMs }, { it.providerId }))
             .take(limit)
 
-    private fun eligible(sinceEpochMs: Long) =
-        messages.filter { sinceEpochMs <= 0 || it.dateEpochMs >= sinceEpochMs }
+    private fun eligible(sinceEpochMs: Long) = messages.filter { sinceEpochMs <= 0 || it.dateEpochMs >= sinceEpochMs }
 }
