@@ -207,7 +207,7 @@ class MainActivity : ComponentActivity() {
                     composable(Routes.Home) {
                         var selectedTab by rememberSaveable { mutableStateOf(MainTab.BACKUP) }
 
-                        var pendingCreateRoute by remember { mutableStateOf<String?>(null) }
+                        var pendingSmsAction by remember { mutableStateOf<(() -> Unit)?>(null) }
                         var showSmsRationale by remember { mutableStateOf(false) }
                         var showSmsDenied by remember { mutableStateOf(false) }
 
@@ -215,36 +215,43 @@ class MainActivity : ComponentActivity() {
                             rememberLauncherForActivityResult(
                                 ActivityResultContracts.RequestMultiplePermissions(),
                             ) { results ->
-                                val route = pendingCreateRoute
-                                pendingCreateRoute = null
-                                if (results.values.all { it } && route != null) {
-                                    navController.navigate(route)
+                                val action = pendingSmsAction
+                                pendingSmsAction = null
+                                if (results.values.all { it } && action != null) {
+                                    action()
                                 } else {
                                     showSmsDenied = true
                                 }
                             }
 
-                        val requestCreate: (String) -> Unit = { route ->
+                        // Gates any action that needs READ_SMS/RECEIVE_SMS behind the same
+                        // rationale/request flow, whether it navigates to a create screen or (for
+                        // Backup) simply flips a toggle in place.
+                        val requestSmsPermission: (() -> Unit) -> Unit = { action ->
                             if (hasSmsPermissions()) {
-                                navController.navigate(route)
+                                action()
                             } else {
-                                pendingCreateRoute = route
+                                pendingSmsAction = action
                                 showSmsRationale = true
                             }
+                        }
+
+                        val requestCreate: (String) -> Unit = { route ->
+                            requestSmsPermission { navController.navigate(route) }
                         }
 
                         if (showSmsRationale) {
                             AlertDialog(
                                 onDismissRequest = {
                                     showSmsRationale = false
-                                    pendingCreateRoute = null
+                                    pendingSmsAction = null
                                 },
                                 title = { Text(stringResource(R.string.sms_permission_rationale_title)) },
                                 text = { Text(stringResource(R.string.sms_permission_rationale_message)) },
                                 dismissButton = {
                                     TextButton(onClick = {
                                         showSmsRationale = false
-                                        pendingCreateRoute = null
+                                        pendingSmsAction = null
                                     }) {
                                         Text(stringResource(R.string.action_cancel))
                                     }
@@ -326,17 +333,22 @@ class MainActivity : ComponentActivity() {
                                     onGmailLabelSaved = backupViewModel::onGmailLabelSaved,
                                     onBackupPreviousChanged = backupViewModel::onBackupPreviousChanged,
                                     onToggleBackupEnabled = {
-                                        if (!backupState.settings.backupEnabled &&
-                                            ContextCompat.checkSelfPermission(
-                                                this@MainActivity,
-                                                Manifest.permission.POST_NOTIFICATIONS,
-                                            ) != PackageManager.PERMISSION_GRANTED
-                                        ) {
-                                            backupNotificationsLauncher.launch(
-                                                Manifest.permission.POST_NOTIFICATIONS,
-                                            )
+                                        // Backup reads the SMS content provider directly, so it
+                                        // needs the same READ_SMS/RECEIVE_SMS grant Redirect and
+                                        // Schedule require before they can create anything.
+                                        requestSmsPermission {
+                                            if (!backupState.settings.backupEnabled &&
+                                                ContextCompat.checkSelfPermission(
+                                                    this@MainActivity,
+                                                    Manifest.permission.POST_NOTIFICATIONS,
+                                                ) != PackageManager.PERMISSION_GRANTED
+                                            ) {
+                                                backupNotificationsLauncher.launch(
+                                                    Manifest.permission.POST_NOTIFICATIONS,
+                                                )
+                                            }
+                                            backupViewModel.onToggleBackupEnabled()
                                         }
-                                        backupViewModel.onToggleBackupEnabled()
                                     },
                                     onOpenSettings = { navController.navigate(Routes.Settings) },
                                     bottomBar = bottomBar,
@@ -423,6 +435,7 @@ class MainActivity : ComponentActivity() {
                                         appContainer.getSmsBackupSettingsUseCase,
                                         appContainer.verifyGmailCredentialsUseCase,
                                         appContainer.clearGmailCredentialsUseCase,
+                                        appContainer.smsBackupScheduler,
                                     ),
                             )
                         val sendWhileRoaming by settingsViewModel.sendWhileRoaming.collectAsState()

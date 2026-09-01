@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.map
 class WorkManagerSmsBackupScheduler(
     private val context: Context,
 ) : SmsBackupScheduler {
-    override fun requestBackup() = BackupSmsWorker.enqueue(context, replaceExisting = false)
+    override fun requestBackup() = BackupSmsWorker.enqueue(context)
 
     override fun cancelBackup() = BackupSmsWorker.cancel(context)
 

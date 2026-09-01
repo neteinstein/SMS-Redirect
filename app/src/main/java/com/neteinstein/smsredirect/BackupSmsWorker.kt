@@ -56,7 +56,9 @@ class BackupSmsWorker(
 
                 is SmsBackupRunOutcome.ChunkDone -> {
                     // More to do. Re-enqueue rather than run long, so the OS keeps scheduling us.
-                    enqueue(applicationContext, replaceExisting = true)
+                    // REPLACE (not APPEND_OR_REPLACE): this call is itself the continuation of
+                    // the run that just finished, not a new trigger that should chain after it.
+                    enqueue(applicationContext, existingWorkPolicy = ExistingWorkPolicy.REPLACE)
                     Result.success()
                 }
 
@@ -102,7 +104,7 @@ class BackupSmsWorker(
 
         fun enqueue(
             context: Context,
-            replaceExisting: Boolean = false,
+            existingWorkPolicy: ExistingWorkPolicy = ExistingWorkPolicy.APPEND_OR_REPLACE,
             initialDelaySeconds: Long = 0L,
         ) {
             val request =
@@ -116,17 +118,15 @@ class BackupSmsWorker(
                     .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
                     .build()
 
-            WorkManager.getInstance(context).enqueueUniqueWork(
-                UNIQUE_WORK_NAME,
-                // KEEP coalesces the burst of triggers from several messages arriving together
-                // into one run. A continuation re-enqueue must REPLACE to actually take effect.
-                if (replaceExisting) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP,
-                request,
-            )
+            WorkManager.getInstance(context).enqueueUniqueWork(UNIQUE_WORK_NAME, existingWorkPolicy, request)
         }
 
         fun enqueueForIncomingSms(context: Context) =
-            enqueue(context, replaceExisting = false, initialDelaySeconds = LIVE_BACKUP_DELAY_SECONDS)
+            // APPEND_OR_REPLACE chains onto a run already in progress rather than dropping the
+            // trigger: several messages arriving together still coalesce into that one run, but
+            // this one is guaranteed a follow-up scan once it finishes, so an SMS that arrives
+            // mid-run is never missed.
+            enqueue(context, initialDelaySeconds = LIVE_BACKUP_DELAY_SECONDS)
 
         fun cancel(context: Context) {
             WorkManager.getInstance(context).cancelUniqueWork(UNIQUE_WORK_NAME)

@@ -82,7 +82,15 @@ class SmsBackupSettingsRepositoryImpl(
     private fun BackupSettingsEntity?.toDomain(): SmsBackupSettings =
         SmsBackupSettings(
             gmailAddress = this?.gmailAddress.orEmpty(),
-            hasAppPassword = !this?.gmailAppPasswordCipher.isNullOrBlank(),
+            // Ciphertext merely being present isn't enough -- a database restored onto a device
+            // whose keystore lacks the original key holds undecryptable garbage. Matching
+            // getCredentials()'s notion of "usable" here is what lets the UI ask for the
+            // password again instead of claiming one is already configured.
+            hasAppPassword =
+                this
+                    ?.gmailAppPasswordCipher
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { secretCipher.decrypt(it) } != null,
             subjectTemplate =
                 this?.subjectTemplate?.takeIf { it.isNotBlank() }
                     ?: SmsBackupSettings.DEFAULT_SUBJECT_TEMPLATE,

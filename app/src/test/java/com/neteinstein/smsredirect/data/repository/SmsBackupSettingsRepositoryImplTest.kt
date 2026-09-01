@@ -110,6 +110,9 @@ class SmsBackupSettingsRepositoryImplTest {
             // The address is still on record, which is what lets the UI say "re-enter your
             // password" instead of reporting an authentication failure.
             assertEquals("me@gmail.com", repository.getSettings().gmailAddress)
+            // Ciphertext is still on record too, but it's unusable -- the UI must not claim a
+            // password is configured when it cannot actually be decrypted.
+            assertFalse(repository.getSettings().hasAppPassword)
         }
 
     @Test

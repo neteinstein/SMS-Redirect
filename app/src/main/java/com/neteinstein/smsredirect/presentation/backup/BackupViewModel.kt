@@ -54,7 +54,17 @@ class BackupViewModel(
     }
 
     fun onBackupPreviousChanged(enabled: Boolean) {
-        viewModelScope.launch { setBackupPreviousEnabledUseCase(enabled) }
+        viewModelScope.launch {
+            setBackupPreviousEnabledUseCase(enabled)
+            // The watermark is otherwise only recomputed when backup transitions off -> on, so
+            // flipping this while backup is already running would silently leave the old
+            // watermark in place. Recompute it for the new choice and re-scan under it.
+            val current = uiState.value.settings
+            if (current.backupEnabled) {
+                setBackupEnabledUseCase(enabled = true, backupPrevious = enabled)
+                smsBackupScheduler.requestBackup()
+            }
+        }
     }
 
     fun onToggleBackupEnabled() {

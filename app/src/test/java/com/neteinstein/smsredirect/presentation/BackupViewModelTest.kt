@@ -225,6 +225,45 @@ class BackupViewModelTest {
         }
 
     @Test
+    fun `toggling backup previous while disabled does not start a run`() =
+        runTest {
+            val vm = createViewModel(configured(backupEnabled = false))
+            advanceUntilIdle()
+
+            vm.onBackupPreviousChanged(true)
+            advanceUntilIdle()
+
+            assertEquals(0, scheduler.requestBackupCalls)
+        }
+
+    @Test
+    fun `toggling backup previous while already enabled recomputes the watermark and rescans`() =
+        runTest {
+            val vm = createViewModel(configured(backupPrevious = false, backupEnabled = true))
+            advanceUntilIdle()
+
+            vm.onBackupPreviousChanged(true)
+            advanceUntilIdle()
+
+            // Watermark cleared so the whole inbox becomes eligible, and a scan is kicked off
+            // immediately rather than waiting for the next incoming SMS.
+            assertEquals(0L, settingsRepository.getSettings().backupStartedAtMillis)
+            assertEquals(1, scheduler.requestBackupCalls)
+        }
+
+    @Test
+    fun `turning backup previous off while enabled restores the current-moment watermark`() =
+        runTest {
+            val vm = createViewModel(configured(backupPrevious = true, backupEnabled = true))
+            advanceUntilIdle()
+
+            vm.onBackupPreviousChanged(false)
+            advanceUntilIdle()
+
+            assertEquals(5_000L, settingsRepository.getSettings().backupStartedAtMillis)
+        }
+
+    @Test
     fun `progress from the scheduler reaches the ui`() =
         runTest {
             val vm = createViewModel(configured(backupEnabled = true))

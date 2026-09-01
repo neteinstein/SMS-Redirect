@@ -4,6 +4,7 @@ import com.neteinstein.smsredirect.domain.mail.MailTransport
 import com.neteinstein.smsredirect.domain.mail.MailVerificationResult
 import com.neteinstein.smsredirect.domain.model.GmailCredentials
 import com.neteinstein.smsredirect.domain.repository.SmsBackupSettingsRepository
+import com.neteinstein.smsredirect.domain.repository.SmsBackupStateRepository
 
 /**
  * Checks a Gmail address and app password against the IMAP server, persisting them only if the
@@ -12,6 +13,7 @@ import com.neteinstein.smsredirect.domain.repository.SmsBackupSettingsRepository
 class VerifyGmailCredentialsUseCase(
     private val mailTransport: MailTransport,
     private val repository: SmsBackupSettingsRepository,
+    private val backupStateRepository: SmsBackupStateRepository,
 ) {
     suspend operator fun invoke(
         address: String,
@@ -26,6 +28,13 @@ class VerifyGmailCredentialsUseCase(
 
         val result = mailTransport.verify(GmailCredentials(trimmedAddress, normalizedPassword))
         if (result is MailVerificationResult.Success) {
+            val previousAddress = repository.getSettings().gmailAddress
+            // The "already backed up" bookkeeping is scoped to whichever mailbox it was recorded
+            // against. Switching accounts makes it stale -- keeping it would make every message
+            // look already sent to a mailbox that has never seen any of them.
+            if (previousAddress.isNotBlank() && !previousAddress.equals(trimmedAddress, ignoreCase = true)) {
+                backupStateRepository.clear()
+            }
             repository.setCredentials(trimmedAddress, normalizedPassword)
         }
         return result

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.smsredirect.domain.mail.MailVerificationResult
 import com.neteinstein.smsredirect.domain.model.SmsBackupSettings
+import com.neteinstein.smsredirect.domain.scheduling.SmsBackupScheduler
 import com.neteinstein.smsredirect.domain.usecase.BackupImportResult
 import com.neteinstein.smsredirect.domain.usecase.ClearGmailCredentialsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ExportBackupUseCase
@@ -43,6 +44,7 @@ class SettingsViewModel(
     getSmsBackupSettingsUseCase: GetSmsBackupSettingsUseCase,
     private val verifyGmailCredentialsUseCase: VerifyGmailCredentialsUseCase,
     private val clearGmailCredentialsUseCase: ClearGmailCredentialsUseCase,
+    private val smsBackupScheduler: SmsBackupScheduler,
 ) : ViewModel() {
     private val _sendWhileRoaming = MutableStateFlow(false)
     val sendWhileRoaming: StateFlow<Boolean> = _sendWhileRoaming.asStateFlow()
@@ -96,6 +98,9 @@ class SettingsViewModel(
     fun clearGmailCredentials() {
         viewModelScope.launch {
             clearGmailCredentialsUseCase()
+            // Without stored credentials any in-flight or scheduled run would just fail on its
+            // next connect attempt, but only after retrying -- cancel it outright instead.
+            smsBackupScheduler.cancelBackup()
             _gmailVerification.value = GmailVerificationState.Idle
         }
     }
@@ -159,6 +164,7 @@ class SettingsViewModelFactory(
     private val getSmsBackupSettingsUseCase: GetSmsBackupSettingsUseCase,
     private val verifyGmailCredentialsUseCase: VerifyGmailCredentialsUseCase,
     private val clearGmailCredentialsUseCase: ClearGmailCredentialsUseCase,
+    private val smsBackupScheduler: SmsBackupScheduler,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
@@ -176,6 +182,7 @@ class SettingsViewModelFactory(
             getSmsBackupSettingsUseCase = getSmsBackupSettingsUseCase,
             verifyGmailCredentialsUseCase = verifyGmailCredentialsUseCase,
             clearGmailCredentialsUseCase = clearGmailCredentialsUseCase,
+            smsBackupScheduler = smsBackupScheduler,
         ) as T
     }
 }

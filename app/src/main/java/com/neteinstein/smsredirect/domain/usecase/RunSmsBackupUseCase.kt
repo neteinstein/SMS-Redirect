@@ -1,5 +1,6 @@
 package com.neteinstein.smsredirect.domain.usecase
 
+import com.neteinstein.smsredirect.domain.mail.MailConnectException
 import com.neteinstein.smsredirect.domain.mail.MailTransport
 import com.neteinstein.smsredirect.domain.mail.SmsBackupOutcome
 import com.neteinstein.smsredirect.domain.model.SmsBackupProgress
@@ -42,9 +43,11 @@ class RunSmsBackupUseCase(
     private val mailTransport: MailTransport,
     private val backupSmsMessageUseCase: BackupSmsMessageUseCase,
     private val interMessageDelayMs: Long = DEFAULT_INTER_MESSAGE_DELAY_MS,
+    private val elapsedNowMs: () -> Long = System::currentTimeMillis,
 ) {
     suspend operator fun invoke(
         maxMessages: Int = DEFAULT_MAX_MESSAGES,
+        deadlineMs: Long = DEFAULT_DEADLINE_MS,
         onProgress: suspend (SmsBackupProgress) -> Unit = {},
         isStopped: () -> Boolean = { false },
     ): SmsBackupRunOutcome {
@@ -55,72 +58,101 @@ class RunSmsBackupUseCase(
         // Zero watermark means "everything"; otherwise only messages from when backup was enabled.
         val since = settings.backupStartedAtMillis
 
+        // `alreadyDone` counts every message ever backed up, `total` only those the current
+        // watermark makes eligible -- the two are on different scopes and can't be compared to
+        // decide completion. Whether anything is actually pending is answered by scanning, below.
         val alreadyDone = backupStateRepository.count()
         val total = smsMessageSource.count(since)
-        if (total <= alreadyDone) return SmsBackupRunOutcome.Completed
 
         var done = alreadyDone
         var sentThisRun = 0
         var cursorDate = 0L
         var cursorId = 0L
         var outcome: SmsBackupRunOutcome = SmsBackupRunOutcome.Completed
+        val startElapsedMs = elapsedNowMs()
 
-        mailTransport.withFolder(credentials, settings.gmailLabel) { folder ->
-            loop@ while (true) {
-                if (isStopped() || sentThisRun >= maxMessages) {
-                    outcome = SmsBackupRunOutcome.ChunkDone(done)
-                    break@loop
-                }
-
-                val batch = smsMessageSource.readBatch(since, cursorDate, cursorId, BATCH_SIZE)
-                if (batch.isEmpty()) {
-                    outcome = SmsBackupRunOutcome.Completed
-                    break@loop
-                }
-
-                // Advance the cursor across the whole batch, including messages we skip, so a
-                // fully-backed-up batch cannot make the scan loop on itself forever.
-                batch.last().let { last ->
-                    cursorDate = last.dateEpochMs
-                    cursorId = last.providerId
-                }
-
-                val alreadyBackedUp = backupStateRepository.filterAlreadyBackedUp(batch.map { it.stableKey })
-                for (message in batch) {
-                    // Already in Gmail, and already counted in `alreadyDone`.
-                    if (message.stableKey in alreadyBackedUp) continue
-                    if (isStopped() || sentThisRun >= maxMessages) {
+        try {
+            mailTransport.withFolder(credentials, settings.gmailLabel) { folder ->
+                loop@ while (true) {
+                    // Bounded on both message count and wall-clock time: a run of tiny messages
+                    // could otherwise stay under maxMessages while still running past
+                    // WorkManager's ten-minute execution ceiling.
+                    if (isStopped() ||
+                        sentThisRun >= maxMessages ||
+                        elapsedNowMs() - startElapsedMs >= deadlineMs
+                    ) {
                         outcome = SmsBackupRunOutcome.ChunkDone(done)
                         break@loop
                     }
 
-                    when (
-                        val result =
-                            backupSmsMessageUseCase(folder, credentials.address, settings.subjectTemplate, message)
-                    ) {
-                        is SmsBackupOutcome.Success -> {
-                            done++
-                            sentThisRun++
-                            onProgress(SmsBackupProgress(done, total))
-                            // Paced to stay clear of Gmail's IMAP throttling.
-                            if (interMessageDelayMs > 0) delay(interMessageDelayMs)
-                        }
-                        // Raced with another run; it is already counted in `alreadyDone`.
-                        is SmsBackupOutcome.Skipped -> Unit
-                        // Recorded as resolved by the use case, so the run can finish rather than
-                        // re-enqueueing itself forever over a message Gmail will never accept.
-                        is SmsBackupOutcome.Permanent -> done++
-                        is SmsBackupOutcome.AuthFailed -> {
-                            outcome = SmsBackupRunOutcome.AuthFailed
+                    val batch = smsMessageSource.readBatch(since, cursorDate, cursorId, BATCH_SIZE)
+                    if (batch.isEmpty()) {
+                        outcome = SmsBackupRunOutcome.Completed
+                        break@loop
+                    }
+
+                    // Advance the cursor across the whole batch, including messages we skip, so
+                    // a fully-backed-up batch cannot make the scan loop on itself forever.
+                    batch.last().let { last ->
+                        cursorDate = last.dateEpochMs
+                        cursorId = last.providerId
+                    }
+
+                    val alreadyBackedUp = backupStateRepository.filterAlreadyBackedUp(batch.map { it.stableKey })
+                    for (message in batch) {
+                        // Already in Gmail, and already counted in `alreadyDone`.
+                        if (message.stableKey in alreadyBackedUp) continue
+                        if (isStopped() ||
+                            sentThisRun >= maxMessages ||
+                            elapsedNowMs() - startElapsedMs >= deadlineMs
+                        ) {
+                            outcome = SmsBackupRunOutcome.ChunkDone(done)
                             break@loop
                         }
-                        is SmsBackupOutcome.Transient -> {
-                            outcome = SmsBackupRunOutcome.Transient(result.message)
-                            break@loop
+
+                        when (
+                            val result =
+                                backupSmsMessageUseCase(
+                                    folder,
+                                    credentials.address,
+                                    settings.subjectTemplate,
+                                    message,
+                                )
+                        ) {
+                            is SmsBackupOutcome.Success -> {
+                                done++
+                                sentThisRun++
+                                onProgress(SmsBackupProgress(done, total))
+                                // Paced to stay clear of Gmail's IMAP throttling.
+                                if (interMessageDelayMs > 0) delay(interMessageDelayMs)
+                            }
+                            // Raced with another run; it is already counted in `alreadyDone`.
+                            is SmsBackupOutcome.Skipped -> Unit
+                            // Recorded as resolved by the use case, so the run can finish rather
+                            // than re-enqueueing itself forever over a message Gmail will never
+                            // accept. Still counted against the run's budget and reported, like a
+                            // success, since the use case did resolve it one way or another.
+                            is SmsBackupOutcome.Permanent -> {
+                                done++
+                                sentThisRun++
+                                onProgress(SmsBackupProgress(done, total))
+                            }
+                            is SmsBackupOutcome.AuthFailed -> {
+                                outcome = SmsBackupRunOutcome.AuthFailed
+                                break@loop
+                            }
+                            is SmsBackupOutcome.Transient -> {
+                                outcome = SmsBackupRunOutcome.Transient(result.message)
+                                break@loop
+                            }
                         }
                     }
                 }
             }
+        } catch (e: MailConnectException.AuthFailed) {
+            outcome = SmsBackupRunOutcome.AuthFailed
+        } catch (e: MailConnectException.Transient) {
+            outcome = SmsBackupRunOutcome.Transient(e.message.orEmpty())
         }
 
         // Credentials that stopped working must not leave the UI showing a green "enabled" state.
@@ -134,6 +166,10 @@ class RunSmsBackupUseCase(
     companion object {
         const val DEFAULT_MAX_MESSAGES = 400
         const val BATCH_SIZE = 50
+
+        // Comfortably under WorkManager's ten-minute execution ceiling, leaving room for the
+        // connect and folder-open time this budget does not otherwise account for.
+        const val DEFAULT_DEADLINE_MS = 8 * 60 * 1000L
         private const val DEFAULT_INTER_MESSAGE_DELAY_MS = 100L
     }
 }

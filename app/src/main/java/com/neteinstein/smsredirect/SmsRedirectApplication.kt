@@ -208,7 +208,7 @@ class SmsRedirectApplication : Application() {
                 smsBackupScheduler = WorkManagerSmsBackupScheduler(this),
                 getSmsBackupSettingsUseCase = GetSmsBackupSettingsUseCase(smsBackupSettingsRepository),
                 verifyGmailCredentialsUseCase =
-                    VerifyGmailCredentialsUseCase(mailTransport, smsBackupSettingsRepository),
+                    VerifyGmailCredentialsUseCase(mailTransport, smsBackupSettingsRepository, smsBackupStateRepository),
                 clearGmailCredentialsUseCase = ClearGmailCredentialsUseCase(smsBackupSettingsRepository),
                 setBackupSubjectTemplateUseCase = SetBackupSubjectTemplateUseCase(smsBackupSettingsRepository),
                 setBackupGmailLabelUseCase = SetBackupGmailLabelUseCase(smsBackupSettingsRepository),

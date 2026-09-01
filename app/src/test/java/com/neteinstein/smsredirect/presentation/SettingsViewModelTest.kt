@@ -5,7 +5,9 @@ import com.neteinstein.smsredirect.FakeRuleRepository
 import com.neteinstein.smsredirect.FakeScheduledSmsRepository
 import com.neteinstein.smsredirect.FakeScheduledSmsScheduler
 import com.neteinstein.smsredirect.FakeSettingsRepository
+import com.neteinstein.smsredirect.FakeSmsBackupScheduler
 import com.neteinstein.smsredirect.FakeSmsBackupSettingsRepository
+import com.neteinstein.smsredirect.FakeSmsBackupStateRepository
 import com.neteinstein.smsredirect.domain.mail.MailVerificationResult
 import com.neteinstein.smsredirect.domain.usecase.ClearGmailCredentialsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ExportBackupUseCase
@@ -43,7 +45,9 @@ class SettingsViewModelTest {
     private val scheduledSmsRepository = FakeScheduledSmsRepository()
     private val scheduledSmsScheduler = FakeScheduledSmsScheduler()
     private val backupSettingsRepository = FakeSmsBackupSettingsRepository()
+    private val backupStateRepository = FakeSmsBackupStateRepository()
     private val mailTransport = FakeMailTransport()
+    private val smsBackupScheduler = FakeSmsBackupScheduler()
 
     @Before
     fun setUp() {
@@ -70,8 +74,9 @@ class SettingsViewModelTest {
                 ImportBackupUseCase(ruleRepository, scheduledSmsRepository, settingsRepository, scheduledSmsScheduler),
             getSmsBackupSettingsUseCase = GetSmsBackupSettingsUseCase(backupSettingsRepository),
             verifyGmailCredentialsUseCase =
-                VerifyGmailCredentialsUseCase(mailTransport, backupSettingsRepository),
+                VerifyGmailCredentialsUseCase(mailTransport, backupSettingsRepository, backupStateRepository),
             clearGmailCredentialsUseCase = ClearGmailCredentialsUseCase(backupSettingsRepository),
+            smsBackupScheduler = smsBackupScheduler,
         )
 
     @Test
@@ -230,5 +235,20 @@ class SettingsViewModelTest {
             assertEquals(GmailVerificationState.Idle, vm.gmailVerification.value)
             assertEquals("", vm.backupSettings.value.gmailAddress)
             assertFalse(vm.backupSettings.value.hasAppPassword)
+        }
+
+    @Test
+    fun `clearing credentials cancels any backup run so it cannot keep failing against them`() =
+        runTest {
+            mailTransport.verifyResult = MailVerificationResult.Success
+            val vm = createViewModel()
+            advanceUntilIdle()
+            vm.saveGmailCredentials("me@gmail.com", "abcdefghijklmnop")
+            advanceUntilIdle()
+
+            vm.clearGmailCredentials()
+            advanceUntilIdle()
+
+            assertEquals(1, smsBackupScheduler.cancelBackupCalls)
         }
 }

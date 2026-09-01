@@ -31,3 +31,14 @@ interface MailTransport {
 interface MailFolder {
     suspend fun append(mail: OutgoingMail): MailAppendResult
 }
+
+/**
+ * Thrown by [MailTransport.withFolder] when the connection or folder open fails, before [block]
+ * ever runs. A connect-time failure can't be reported through the generic return type [T], so an
+ * exception is the only channel available to signal it to the caller.
+ */
+sealed class MailConnectException(message: String) : Exception(message) {
+    class AuthFailed : MailConnectException("AuthenticationFailedException")
+
+    class Transient(reason: String) : MailConnectException(reason)
+}
