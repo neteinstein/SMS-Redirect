@@ -48,7 +48,8 @@ class AndroidKeystoreSecretCipher(
     private fun existingKey(): SecretKey? = keyStore().getKey(keyAlias, null) as? SecretKey
 
     private fun loadOrCreateKey(): SecretKey =
-        existingKey() ?: KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
+        existingKey() ?: KeyGenerator
+            .getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
             .apply {
                 init(
                     KeyGenParameterSpec

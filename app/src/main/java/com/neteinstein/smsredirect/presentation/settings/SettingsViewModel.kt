@@ -195,5 +195,7 @@ sealed interface GmailVerificationState {
 
     data object Success : GmailVerificationState
 
-    data class Failure(val result: MailVerificationResult) : GmailVerificationState
+    data class Failure(
+        val result: MailVerificationResult,
+    ) : GmailVerificationState
 }

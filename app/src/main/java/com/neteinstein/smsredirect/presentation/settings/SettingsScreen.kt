@@ -488,21 +488,29 @@ private fun GmailAccountSection(
 private fun VerificationMessage(verification: GmailVerificationState) {
     val (messageRes, color) =
         when (verification) {
-            is GmailVerificationState.Success ->
+            is GmailVerificationState.Success -> {
                 R.string.settings_gmail_verified to MaterialTheme.colorScheme.primary
+            }
 
-            is GmailVerificationState.Failure ->
+            is GmailVerificationState.Failure -> {
                 when (verification.result) {
-                    is MailVerificationResult.InvalidCredentials ->
+                    is MailVerificationResult.InvalidCredentials -> {
                         R.string.settings_gmail_invalid to MaterialTheme.colorScheme.error
+                    }
 
-                    is MailVerificationResult.NetworkError ->
+                    is MailVerificationResult.NetworkError -> {
                         R.string.settings_gmail_network_error to MaterialTheme.colorScheme.error
+                    }
 
-                    else -> R.string.settings_gmail_unknown_error to MaterialTheme.colorScheme.error
+                    else -> {
+                        R.string.settings_gmail_unknown_error to MaterialTheme.colorScheme.error
+                    }
                 }
+            }
 
-            else -> return
+            else -> {
+                return
+            }
         }
 
     Text(

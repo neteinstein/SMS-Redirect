@@ -13,7 +13,9 @@ sealed interface MailVerificationResult {
 
     data object NetworkError : MailVerificationResult
 
-    data class Unknown(val message: String) : MailVerificationResult
+    data class Unknown(
+        val message: String,
+    ) : MailVerificationResult
 }
 
 /** Outcome of appending one message. */
@@ -24,10 +26,14 @@ sealed interface MailAppendResult {
     data object AuthFailed : MailAppendResult
 
     /** Worth retrying: timeouts, throttling, connection limits. */
-    data class Transient(val message: String) : MailAppendResult
+    data class Transient(
+        val message: String,
+    ) : MailAppendResult
 
     /** Retrying will not help; the message is marked failed and the run moves on. */
-    data class Permanent(val message: String) : MailAppendResult
+    data class Permanent(
+        val message: String,
+    ) : MailAppendResult
 }
 
 /** What [com.neteinstein.smsredirect.domain.usecase.BackupSmsMessageUseCase] did with a message. */
@@ -39,7 +45,11 @@ sealed interface SmsBackupOutcome {
 
     data object AuthFailed : SmsBackupOutcome
 
-    data class Transient(val message: String) : SmsBackupOutcome
+    data class Transient(
+        val message: String,
+    ) : SmsBackupOutcome
 
-    data class Permanent(val message: String) : SmsBackupOutcome
+    data class Permanent(
+        val message: String,
+    ) : SmsBackupOutcome
 }

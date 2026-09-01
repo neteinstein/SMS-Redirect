@@ -15,14 +15,18 @@ sealed interface SmsBackupRunOutcome {
     data object Completed : SmsBackupRunOutcome
 
     /** Hit the per-run budget; the caller should re-enqueue to continue. */
-    data class ChunkDone(val done: Int) : SmsBackupRunOutcome
+    data class ChunkDone(
+        val done: Int,
+    ) : SmsBackupRunOutcome
 
     /** Backup is off or no usable credentials are stored. Not an error. */
     data object NotConfigured : SmsBackupRunOutcome
 
     data object AuthFailed : SmsBackupRunOutcome
 
-    data class Transient(val message: String) : SmsBackupRunOutcome
+    data class Transient(
+        val message: String,
+    ) : SmsBackupRunOutcome
 }
 
 /**
@@ -126,8 +130,12 @@ class RunSmsBackupUseCase(
                                 // Paced to stay clear of Gmail's IMAP throttling.
                                 if (interMessageDelayMs > 0) delay(interMessageDelayMs)
                             }
+
                             // Raced with another run; it is already counted in `alreadyDone`.
-                            is SmsBackupOutcome.Skipped -> Unit
+                            is SmsBackupOutcome.Skipped -> {
+                                Unit
+                            }
+
                             // Recorded as resolved by the use case, so the run can finish rather
                             // than re-enqueueing itself forever over a message Gmail will never
                             // accept. Still counted against the run's budget and reported, like a
@@ -137,10 +145,12 @@ class RunSmsBackupUseCase(
                                 sentThisRun++
                                 onProgress(SmsBackupProgress(done, total))
                             }
+
                             is SmsBackupOutcome.AuthFailed -> {
                                 outcome = SmsBackupRunOutcome.AuthFailed
                                 break@loop
                             }
+
                             is SmsBackupOutcome.Transient -> {
                                 outcome = SmsBackupRunOutcome.Transient(result.message)
                                 break@loop

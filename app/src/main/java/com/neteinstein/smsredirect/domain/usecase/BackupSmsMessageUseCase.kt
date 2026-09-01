@@ -41,8 +41,15 @@ class BackupSmsMessageUseCase(
                 backupStateRepository.markBackedUp(listOf(message.stableKey), now())
                 SmsBackupOutcome.Success
             }
-            is MailAppendResult.AuthFailed -> SmsBackupOutcome.AuthFailed
-            is MailAppendResult.Transient -> SmsBackupOutcome.Transient(result.message)
+
+            is MailAppendResult.AuthFailed -> {
+                SmsBackupOutcome.AuthFailed
+            }
+
+            is MailAppendResult.Transient -> {
+                SmsBackupOutcome.Transient(result.message)
+            }
+
             is MailAppendResult.Permanent -> {
                 // Recorded as resolved even though it never reached Gmail. Retrying cannot help,
                 // and leaving it unrecorded would make every later run pick it up again -- with
