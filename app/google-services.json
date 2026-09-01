@@ -26,7 +26,7 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1",
+        "mobilesdk_app_id": "1:967302411916:android:9882314f78d367ea222da9",
         "android_client_info": {
           "package_name": "com.neteinstein.smsredirect.test"
         }
@@ -34,7 +34,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "X"
+          "current_key": "AIzaSyDeCm4eyJs3gs218u8x33vsLIKI0gT-daE"
         }
       ],
       "services": {
