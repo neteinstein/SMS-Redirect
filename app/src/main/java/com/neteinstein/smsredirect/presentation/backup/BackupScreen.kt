@@ -133,6 +133,13 @@ private fun NoCredentialsState(onOpenSettings: () -> Unit) {
             modifier = Modifier.padding(top = 8.dp),
             textAlign = TextAlign.Center,
         )
+        Text(
+            text = stringResource(R.string.backup_no_credentials_context),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 16.dp),
+            textAlign = TextAlign.Center,
+        )
         Button(
             onClick = onOpenSettings,
             modifier = Modifier.padding(top = 24.dp),

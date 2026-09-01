@@ -177,6 +177,7 @@
     <string name="backup_title">Backup para o Gmail</string>
     <string name="backup_no_credentials_title">Sem palavra-passe de app do Gmail</string>
     <string name="backup_no_credentials_message">Para guardar as suas mensagens, adicione o seu endereço Gmail e uma palavra-passe de app nas Definições.</string>
+    <string name="backup_no_credentials_context">Guardamos as suas SMS numa etiqueta específica do Gmail, para ficarem arquivadas e pesquisáveis diretamente no Gmail.</string>
     <string name="backup_open_settings">Abrir Definições</string>
     <string name="backup_subject_label">Assunto do email</string>
     <string name="backup_subject_hint">Use $CONTACT_NAME e $PHONE_NUMBER — são substituídos pelo nome e número do contacto em cada mensagem.</string>

@@ -173,6 +173,7 @@
     <string name="backup_title">Backup to Gmail</string>
     <string name="backup_no_credentials_title">No Gmail app password set</string>
     <string name="backup_no_credentials_message">To back up your messages, add your Gmail address and an app password in Settings.</string>
+    <string name="backup_no_credentials_context">We back up your SMS to a specific Gmail label, so they stay archived and searchable right in Gmail.</string>
     <string name="backup_open_settings">Open Settings</string>
     <string name="backup_subject_label">Email subject</string>
     <string name="backup_subject_hint">Use $CONTACT_NAME and $PHONE_NUMBER — they are replaced with the contact\'s name and number for each message.</string>
