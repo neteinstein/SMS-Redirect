@@ -192,9 +192,18 @@ class SmsBackupUseCasesTest {
             messageSource.messages = (1L..120L).map { message("Body $it", it * 1000, it) }
 
             runUseCase()(maxMessages = 60)
-            val outcome = runUseCase()(maxMessages = 60)
+            val second = runUseCase()(maxMessages = 60)
 
-            assertEquals(SmsBackupRunOutcome.Completed, outcome)
+            // 120 messages at 60 per chunk lands exactly on the budget boundary: the chunk that
+            // sends the last message still reports ChunkDone, since it only learns nothing is
+            // left once it goes looking for a next batch. One more (cheap, no-op) call is needed
+            // to observe Completed -- that's the worker re-enqueueing itself once more, not a bug.
+            assertTrue(second is SmsBackupRunOutcome.ChunkDone)
+            assertEquals(120, transport.appended.size)
+
+            val third = runUseCase()(maxMessages = 60)
+
+            assertEquals(SmsBackupRunOutcome.Completed, third)
             assertEquals(120, transport.appended.size)
             assertEquals(
                 120,

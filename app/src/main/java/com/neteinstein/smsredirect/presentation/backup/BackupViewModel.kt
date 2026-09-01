@@ -39,7 +39,11 @@ class BackupViewModel(
             getSmsBackupSettingsUseCase(),
             smsBackupScheduler.observeProgress(),
         ) { settings, progress -> BackupUiState(settings, progress) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BackupUiState())
+            // Eager, matching every other ViewModel in this codebase: onToggleBackupEnabled() and
+            // onBackupPreviousChanged() read uiState.value synchronously, so it must already
+            // reflect real settings by the time the screen is interacted with, not just once
+            // something starts collecting it.
+            .stateIn(viewModelScope, SharingStarted.Eagerly, BackupUiState())
 
     /** Set when the user taps Enable without usable credentials, so the UI can say why. */
     private val _needsCredentials = MutableStateFlow(false)

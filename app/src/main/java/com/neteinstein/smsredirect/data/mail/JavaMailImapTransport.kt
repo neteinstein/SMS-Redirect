@@ -64,8 +64,9 @@ class JavaMailImapTransport(
             try {
                 val openedFolder =
                     try {
-                        store = connect(credentials)
-                        store!!.getFolder(folderName.ifBlank { DEFAULT_FOLDER }).also {
+                        val connectedStore = connect(credentials)
+                        store = connectedStore
+                        connectedStore.getFolder(folderName.ifBlank { DEFAULT_FOLDER }).also {
                             // Gmail creates the matching label the first time the folder is created.
                             if (!it.exists()) it.create(Folder.HOLDS_MESSAGES)
                             it.open(Folder.READ_WRITE)
