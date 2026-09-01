@@ -7,7 +7,6 @@ import com.neteinstein.smsredirect.data.analytics.FirebaseAnalyticsTracker
 import com.neteinstein.smsredirect.data.analytics.FirebaseCrashReporter
 import com.neteinstein.smsredirect.data.contacts.AndroidContactNameResolver
 import com.neteinstein.smsredirect.data.local.AppDatabase
-import com.neteinstein.smsredirect.data.local.AppDatabase
 import com.neteinstein.smsredirect.data.mail.JavaMailImapTransport
 import com.neteinstein.smsredirect.data.repository.ForwardHistoryRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.RuleRepositoryImpl
