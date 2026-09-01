@@ -91,6 +91,10 @@ class BackupViewModelTest {
     fun `with credentials the configuration is shown`() =
         runTest {
             val vm = createViewModel(configured())
+            // Without this, awaitItem() below can return uiState's seeded default -- whose
+            // hasCredentials is also false -- before the eager collector gets a turn to run and
+            // replace it with the real settings this test actually means to check.
+            advanceUntilIdle()
 
             vm.uiState.test {
                 assertTrue(awaitItem().hasCredentials)
