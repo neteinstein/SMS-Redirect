@@ -19,7 +19,8 @@ store-listing/
 │   ├── sevenInchTablet/              same 7 moments, 1920x1080 "large screen" layout
 │   └── tenInchTablet/                same 7 moments, 2560x1440 "large screen" layout
 ├── scripts/generate_assets.py        regenerates everything under graphics/ + screenshots/
-└── data-safety.md                    cheat-sheet for the Data safety questionnaire
+├── data-safety.md                    cheat-sheet for the Data safety questionnaire
+└── testing-instructions.md           App access instructions + internal-track QA checklist
 ```
 
 ## Copy-pasting the text fields
@@ -162,3 +163,10 @@ production release; it's a manual review on Google's side and can take days.
 See [`data-safety.md`](data-safety.md) for a field-by-field mapping of the
 **App content > Data safety** questionnaire, derived from
 [PrivacyPolicy.md](../PrivacyPolicy.md).
+
+## Testing on Google Play
+
+See [`testing-instructions.md`](testing-instructions.md) for the **App
+content > App access** reviewer instructions (including the demonstration
+video needed for the permissions declaration), and a manual QA checklist to
+run against the `internal` testing track before promoting a build further.
