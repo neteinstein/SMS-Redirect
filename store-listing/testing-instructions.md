@@ -11,39 +11,45 @@ Play Console asks: *"Do you need to provide access instructions...?"* — i.e.
 is any part of the app gated behind a login the reviewer can't reach on their
 own.
 
-**Answer: No special access is required for the app itself.** `com.neteinstein.smsredirect`
+**Answer: Yes, provide access instructions.** `com.neteinstein.smsredirect`
 has no developer-operated account system and no login screen (see
-[PrivacyPolicy.md](../PrivacyPolicy.md), §7) — every screen is reachable the
-moment the runtime permissions are granted.
+[PrivacyPolicy.md](../PrivacyPolicy.md), §7), so every screen is reachable
+without a special "unlock" step — but the app's **declared core use case is
+"Backup and restore"** (see the
+[README's permissions-declaration section](README.md#before-this-can-go-live-the-sms-permissions-declaration)),
+and that feature only does something once the user enters a Gmail address and
+app password in Settings. A reviewer with no credentials sees the Backup
+tab's empty/disabled state, not the feature actually working, which is enough
+to make the "Backup and restore" declaration look unsubstantiated. Mark the
+declaration as requiring access instructions and fill in the
+**"Instructions"** free-text field with something like:
 
-That said, the app's **declared core use case is "Backup and restore"**
-(see the [README's permissions-declaration section](README.md#before-this-can-go-live-the-sms-permissions-declaration)),
-and the backup feature only does something once the user enters a Gmail
-address and app password in Settings. A reviewer who only taps around
-without those credentials will see the Backup tab's empty/disabled state,
-not the feature actually working. To avoid a review bounce, still fill in
-the **"Instructions"** free-text field with something like:
-
-> No login is required to use this app. All screens are reachable without
-> special access. The app's primary feature (SMS backup to Gmail, declared
-> under "Backup and restore") requires the user to supply their own Gmail
-> address and a 16-character Gmail **app password** in Settings → Gmail
-> backup. We've provided a disposable test Gmail account below so you can
-> exercise this feature directly; app passwords require 2-Step Verification
-> to be enabled on the Google Account, which we've done for this account:
+> No login is required to use most of this app — every screen is reachable
+> without special access. The app's primary feature (SMS backup to Gmail,
+> declared under "Backup and restore") requires the user to supply their own
+> Gmail address and a 16-character Gmail **app password** in Settings →
+> Gmail backup. We've provided a disposable test Gmail account below so you
+> can exercise this feature directly; app passwords require 2-Step
+> Verification to be enabled on the Google Account, which we've done for
+> this account:
 >
 > - Email: *(disposable test Gmail address — do not use a real/personal account)*
 > - App password: *(generate at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) and paste here)*
 >
-> Steps: open the app → grant SMS/notifications permissions when prompted →
-> Settings tab → "Gmail backup" → enter the address and app password above →
-> Save (this validates the login against Gmail) → Backup tab → toggle it on
-> → send/receive an SMS on the test device → the message appears as an email
-> in the test account's Gmail, under the "SMS" label.
+> Steps: open the app (it lands on the Backup tab) → tap the gear/settings
+> icon in the top app bar → "Gmail backup" → enter the address and app
+> password above → Save (this validates the login against Gmail) → turn on
+> "Backup all previous SMS" if you want existing messages included → back to
+> the Backup tab → toggle it on → grant the SMS and notification permission
+> prompts that appear → receive an SMS on the test device (only *incoming*
+> SMS trigger the backup worker) → the message appears as an email in the
+> test account's Gmail, under the "SMS" label.
 
-Generate a fresh app password for this specific submission and revoke it
-afterward — see the **Security notes** at the end of this document instead
-of reusing a personal account's credentials.
+Generate a fresh app password for this specific submission, and treat it as
+a **standing** credential for as long as the App access entry lists it —
+see the **Security notes** at the end of this document for how to rotate it
+safely instead of just revoking it. Never reuse a personal account's
+credentials here.
 
 ### Demonstration video (Permissions declaration form)
 
@@ -52,12 +58,17 @@ The same **App content > Permissions declaration form** that requires the
 Record one take, screen-recorded on a real device (not an emulator, so the
 SMS flow is real):
 
-1. Fresh install → grant SMS, Contacts, and Notifications permissions when prompted.
-2. Settings tab → "Gmail backup" → enter the test Gmail address + app password from
-   above → Save → show the success state (it verifies the login against Gmail
-   before saving).
-3. Backup tab (the app opens directly on this tab) → toggle backup on.
-4. Receive (or send, from a second device) an SMS on the test device.
+1. Fresh install → launch (the app opens directly on the Backup tab; no
+   permission prompt yet — this app requests permissions contextually, not
+   on launch).
+2. Tap the gear/settings icon in the top app bar → "Gmail backup" → enter
+   the test Gmail address + app password from above → Save → show the
+   success state (it verifies the login against Gmail before saving).
+   Optionally turn on "Backup all previous SMS" to include existing messages.
+3. Back to the Backup tab → toggle backup on → grant the SMS and
+   notification permission prompts that appear at this point.
+4. Receive an SMS on the test device (an *incoming* message — the backup
+   worker only observes incoming SMS, not outgoing).
 5. Switch to the Gmail app/web on the same test account → show the message
    arriving as an email under the configured label (default: `SMS`).
 6. Optionally show that Redirect and Schedule are separate, secondary tabs —
@@ -93,12 +104,20 @@ Schedule, and Backup is intentionally the tab the app opens on (Play policy
 reasons, not incidental).
 
 **Backup tab**
-- [ ] First launch prompts for `READ_SMS`/`RECEIVE_SMS`/`POST_NOTIFICATIONS`;
-      denying one doesn't crash the app, just disables the dependent feature.
-- [ ] Settings → Gmail backup: entering a bad app password fails visibly at
-      Save time (the app validates by connecting, not just by format).
-- [ ] With valid credentials saved, toggling backup on scans and uploads
-      existing SMS, then keeps uploading new messages as they arrive.
+- [ ] Permissions are requested contextually, not on first launch: enabling
+      Backup prompts for `READ_SMS`/`RECEIVE_SMS`/`SEND_SMS` and, separately,
+      `POST_NOTIFICATIONS`; denying one doesn't crash the app, just disables
+      the dependent feature.
+- [ ] Settings (gear icon) → Gmail backup: entering a bad app password fails
+      visibly at Save time (the app validates by connecting, not just by
+      format).
+- [ ] "Backup all previous SMS" defaults to **off** — with it off, enabling
+      Backup sets a start-time watermark and only backs up messages that
+      arrive from that point forward; existing SMS are *not* uploaded. Turn
+      it on and confirm existing messages get backed up too.
+- [ ] With valid credentials saved and backup on, receiving a new SMS
+      triggers an upload (outgoing/sent SMS do not — only incoming SMS are
+      observed).
 - [ ] Confirm in Gmail: each backed-up message is a separate email under the
       configured label, and re-running backup doesn't duplicate already-backed-up
       messages (the local hash record dedupes — see `PrivacyPolicy.md` §3a).
@@ -122,8 +141,10 @@ reasons, not incidental).
       scheduled time via `SmsManager` and appears in Schedule history.
 - [ ] Test a repeating schedule; confirm it reschedules itself after firing.
 - [ ] Kill the app (swipe away from recents) before the scheduled time fires;
-      confirm WorkManager still delivers it (this is what the expedited work
-      request + battery-optimization exemption prompt exist for).
+      confirm WorkManager still delivers it via its delayed `OneTimeWorkRequest`
+      (unlike SMS forwarding, scheduled sends are not expedited work — this
+      is what the battery-optimization exemption prompt is for: without it,
+      Doze can defer the delayed work past its target time).
 
 **Cross-cutting**
 - [ ] Revoke SMS permission from Android Settings mid-use; confirm the
@@ -139,9 +160,14 @@ reasons, not incidental).
 - Never use a real/personal Gmail account for the app-access reviewer
   credentials or the demo video — use a disposable test account created
   solely for this purpose.
-- Revoke the test account's app password at
-  [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
-  once the review completes; app passwords grant full mailbox access.
+- The App access entry's credentials need to stay valid for as long as it's
+  listed — Google re-reviews apps periodically, not just at submission — so
+  don't revoke the app password right after your own review. If you need to
+  rotate it, generate the new app password first, **update the Play Console
+  App access entry with it**, and only then revoke the old one at
+  [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords);
+  revoking before updating the Console entry leaves a later reviewer locked
+  out.
 - Never paste real credentials into this repository. The example fields
   above are placeholders — fill them into the Play Console form directly,
   not into a commit.
