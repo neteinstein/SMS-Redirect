@@ -21,9 +21,11 @@ import kotlin.system.exitProcess
  * cleanly so the system's "App has stopped" dialog never shows. [NoSuchFieldError] and
  * [NoSuchMethodError] can only be thrown when compiled bytecode references a field/method
  * that doesn't exist in the class actually loaded at runtime - our own Kotlin code is verified
- * against our declared dependency versions at compile time, so in this app (release builds are
- * unminified, see proguard-rules.pro) any instance of these two error types reaching here is,
- * by construction, a platform/OEM firmware incompatibility rather than an app bug we could fix.
+ * against our declared dependency versions at compile time, and R8 rewrites call sites and
+ * targets together, so any instance of these two error types reaching here is a platform/OEM
+ * firmware incompatibility rather than an app bug we could fix. The one thing that could
+ * invalidate that reasoning is a missing keep rule on something resolved reflectively; see
+ * proguard-rules.pro before adding such a dependency.
  * Every other throwable is forwarded to [previousHandler] unchanged, preserving normal fatal
  * crash reporting.
  */
