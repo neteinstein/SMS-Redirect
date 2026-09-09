@@ -63,7 +63,12 @@ android {
             applicationIdSuffix = ".test"
         }
         release {
-            isMinifyEnabled = false
+            // R8 in full mode: shrink + optimize + obfuscate. Everything this app relies on
+            // that is resolved by name at runtime (JavaMail providers, enum constants
+            // persisted in Room and in exported backup JSON) is pinned in proguard-rules.pro
+            // -- read that file before adding a dependency that uses reflection.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
