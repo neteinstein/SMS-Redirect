@@ -19,6 +19,8 @@ store-listing/
 │   ├── sevenInchTablet/              same 7 moments, 1920x1080 "large screen" layout
 │   └── tenInchTablet/                same 7 moments, 2560x1440 "large screen" layout
 ├── scripts/generate_assets.py        regenerates everything under graphics/ + screenshots/
+├── scripts/generate_demo_video.py    regenerates video/ (needs ffmpeg)
+├── video/                            permissions demo video + storyboard (see video/README.md)
 ├── data-safety.md                    cheat-sheet for the Data safety questionnaire
 └── testing-instructions.md           App access instructions + internal-track QA checklist
 ```
