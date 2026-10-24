@@ -55,8 +55,11 @@ credentials here.
 
 The same **App content > Permissions declaration form** that requires the
 "Backup and restore" use case also asks for a short demonstration video.
-Record one take, screen-recorded on a real device (not an emulator, so the
-SMS flow is real):
+A rendered walkthrough of the full app, covering every permission prompt
+(SMS, contacts, notifications, battery exemption), is in
+[`video/`](video/README.md): use it as the shot list, or as a placeholder
+until you have a device recording. Record one take, screen-recorded on a real
+device (not an emulator, so the SMS flow is real):
 
 1. Fresh install → launch (the app opens directly on the Backup tab; no
    permission prompt yet — this app requests permissions contextually, not
