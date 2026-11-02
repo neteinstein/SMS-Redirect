@@ -78,4 +78,25 @@ class SmsBackupKeyTest {
         assertEquals(64, key.length)
         assertEquals(true, key.all { it in "0123456789abcdef" })
     }
+
+    @Test
+    fun `the same number with and without a country code is the same sender`() {
+        assertEquals(true, SmsBackupKey.sameAddress("+351 912 345 678", "912345678"))
+    }
+
+    @Test
+    fun `different numbers sharing a short suffix are different senders`() {
+        assertEquals(false, SmsBackupKey.sameAddress("+351912345678", "+351962345678"))
+    }
+
+    @Test
+    fun `short codes must match exactly, ignoring case`() {
+        assertEquals(true, SmsBackupKey.sameAddress("VODAFONE", "Vodafone"))
+        assertEquals(false, SmsBackupKey.sameAddress("1234", "91234"))
+    }
+
+    @Test
+    fun `two blank addresses are not the same sender`() {
+        assertEquals(false, SmsBackupKey.sameAddress("", " "))
+    }
 }

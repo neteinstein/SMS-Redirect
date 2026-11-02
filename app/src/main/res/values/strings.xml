@@ -216,4 +216,67 @@
     <string name="settings_gmail_credentials_lost">Re-enter your app password — it cannot be restored from a device backup.</string>
     <string name="settings_gmail_cd_show_password">Show password</string>
     <string name="settings_gmail_cd_hide_password">Hide password</string>
+
+    <!-- Restore from Gmail -->
+    <string name="backup_no_credentials_restore_hint">Setting up a new phone? Add the same Gmail account in Settings, then come back here to restore your messages.</string>
+    <string name="restore_title">Restore from Gmail</string>
+    <string name="restore_description">Copy the messages backed up under the Gmail label “%1$s” back to this phone. Messages already on the phone are skipped, so it is safe to run more than once.</string>
+    <string name="restore_start">Restore messages</string>
+    <string name="restore_role_denied">Restore needs SMS Toolbox to be your default SMS app while it runs. Nothing was changed.</string>
+    <string name="restore_preparing">Preparing restore…</string>
+    <string name="restore_progress">Checking %1$d of %2$d</string>
+    <plurals name="restore_progress_restored">
+        <item quantity="one">%1$d message restored so far</item>
+        <item quantity="other">%1$d messages restored so far</item>
+    </plurals>
+    <string name="restore_running_hint">You can leave the app — the restore continues in the background.</string>
+    <string name="restore_stop">Stop</string>
+    <plurals name="restore_result_restored">
+        <item quantity="one">%1$d message restored</item>
+        <item quantity="other">%1$d messages restored</item>
+    </plurals>
+    <plurals name="restore_result_already_on_device">
+        <item quantity="one">%1$d was already on this phone</item>
+        <item quantity="other">%1$d were already on this phone</item>
+    </plurals>
+    <plurals name="restore_result_not_backups">
+        <item quantity="one">%1$d email under this label was not an SMS backup and was skipped</item>
+        <item quantity="other">%1$d emails under this label were not SMS backups and were skipped</item>
+    </plurals>
+    <plurals name="restore_result_failed">
+        <item quantity="one">%1$d could not be saved by the phone</item>
+        <item quantity="other">%1$d could not be saved by the phone</item>
+    </plurals>
+    <string name="restore_switch_back_explanation">Last step: make your usual messaging app the default again, so you keep getting all messages, including picture messages (MMS).</string>
+    <string name="restore_switch_back">Switch back to your messaging app</string>
+    <string name="restore_done">Done</string>
+    <string name="restore_failed_not_default">The restore stopped because SMS Toolbox is no longer your default SMS app.</string>
+    <string name="restore_failed_auth">Gmail rejected the app password. Check it in Settings.</string>
+    <string name="restore_failed_label_not_found">No backups found: the Gmail label “%1$s” does not exist. Check the label name above.</string>
+    <string name="restore_failed_network">Could not reach Gmail. Check your connection.</string>
+    <string name="restore_failed_not_configured">Add your Gmail address and app password in Settings first.</string>
+    <string name="restore_failed_safe_to_retry">Messages restored so far are kept. Trying again skips them.</string>
+    <string name="restore_try_again">Try again</string>
+    <string name="restore_dismiss">Dismiss</string>
+    <string name="restore_dialog_title">Restore messages from Gmail?</string>
+    <string name="restore_dialog_intro">SMS Toolbox will copy the messages in the Gmail label “%1$s” back to this phone. It takes three steps:</string>
+    <string name="restore_dialog_step_role">Make SMS Toolbox your default SMS app for now. Android only lets the default SMS app add messages.</string>
+    <string name="restore_dialog_step_restore">Wait while your messages are restored. You can keep using your phone.</string>
+    <string name="restore_dialog_step_switch_back">Switch back to your usual messaging app. We will remind you.</string>
+    <string name="restore_dialog_mms_note">Meanwhile, new text messages are still saved, but picture messages (MMS) cannot be received. Only text messages are restored.</string>
+    <string name="restore_dialog_confirm">Continue</string>
+    <string name="restore_dialog_confirm_start">Start restore</string>
+    <string name="restore_dialog_cancel">Cancel</string>
+    <string name="default_sms_banner_message">SMS Toolbox is still your default SMS app, so picture messages (MMS) cannot be received.</string>
+    <string name="default_sms_banner_action">Switch back</string>
+    <string name="restore_notification_progress">Restoring messages — %1$d of %2$d</string>
+    <plurals name="restore_notification_complete">
+        <item quantity="one">Restore complete — %1$d message</item>
+        <item quantity="other">Restore complete — %1$d messages</item>
+    </plurals>
+    <string name="restore_notification_complete_text">Last step: switch back to your usual messaging app.</string>
+    <string name="restore_notification_failed">Restore stopped. Open SMS Toolbox to see why.</string>
+    <string name="default_sms_notification_title">New message received</string>
+    <string name="default_sms_notification_sms_text">It was saved. SMS Toolbox is still your default SMS app — switch back to your messaging app to read it.</string>
+    <string name="default_sms_notification_mms_text">A picture message (MMS) could not be received because SMS Toolbox is still your default SMS app. Switch back to your messaging app.</string>
 </resources>

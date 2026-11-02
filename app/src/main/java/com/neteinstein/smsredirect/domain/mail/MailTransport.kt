@@ -19,17 +19,34 @@ interface MailTransport {
      * The session shape is deliberate. Gmail caps IMAP at roughly 15 concurrent connections per
      * account and throttles rapid connect/disconnect cycles, so a backfill must append a whole
      * batch over a single connection rather than reconnecting per message.
+     *
+     * With [readOnly] the folder is opened for reading only and is never created: a restore must
+     * not conjure up an empty label, and reports [MailConnectException.FolderNotFound] instead.
      */
     suspend fun <T> withFolder(
         credentials: GmailCredentials,
         folderName: String,
+        readOnly: Boolean = false,
         block: suspend (MailFolder) -> T,
     ): T
 }
 
-/** An open, writable IMAP folder. Gmail maps folders onto labels. */
+/** An open IMAP folder. Gmail maps folders onto labels. */
 interface MailFolder {
     suspend fun append(mail: OutgoingMail): MailAppendResult
+
+    /** Number of mails in the folder, for the restore's "X of Y" denominator. */
+    suspend fun messageCount(): Int
+
+    /**
+     * Reads up to [limit] mails whose UID is strictly greater than [afterUid], in UID order.
+     * An empty list means the end of the folder. Throws [MailConnectException] on failure --
+     * a restore that cannot read has nothing to fall back on, so there is no per-mail result.
+     */
+    suspend fun readAfter(
+        afterUid: Long,
+        limit: Int,
+    ): List<BackedUpMail>
 }
 
 /**
@@ -45,4 +62,7 @@ sealed class MailConnectException(
     class Transient(
         reason: String,
     ) : MailConnectException(reason)
+
+    /** Only from a read-only open: the label does not exist, so there is nothing to read. */
+    class FolderNotFound : MailConnectException("FolderNotFound")
 }

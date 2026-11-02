@@ -17,8 +17,11 @@ import com.neteinstein.smsredirect.data.repository.SmsBackupSettingsRepositoryIm
 import com.neteinstein.smsredirect.data.repository.SmsBackupStateRepositoryImpl
 import com.neteinstein.smsredirect.data.scheduling.WorkManagerScheduledSmsScheduler
 import com.neteinstein.smsredirect.data.scheduling.WorkManagerSmsBackupScheduler
+import com.neteinstein.smsredirect.data.scheduling.WorkManagerSmsRestoreScheduler
 import com.neteinstein.smsredirect.data.security.AndroidKeystoreSecretCipher
+import com.neteinstein.smsredirect.data.sms.AndroidDefaultSmsAppChecker
 import com.neteinstein.smsredirect.data.sms.ContentProviderSmsMessageSource
+import com.neteinstein.smsredirect.data.sms.ContentProviderSmsMessageWriter
 import com.neteinstein.smsredirect.domain.analytics.AnalyticsTracker
 import com.neteinstein.smsredirect.domain.analytics.CrashReporter
 import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
@@ -30,6 +33,9 @@ import com.neteinstein.smsredirect.domain.repository.ScheduledSmsRepository
 import com.neteinstein.smsredirect.domain.repository.SmsBackupSettingsRepository
 import com.neteinstein.smsredirect.domain.scheduling.ScheduledSmsScheduler
 import com.neteinstein.smsredirect.domain.scheduling.SmsBackupScheduler
+import com.neteinstein.smsredirect.domain.scheduling.SmsRestoreScheduler
+import com.neteinstein.smsredirect.domain.sms.DefaultSmsAppChecker
+import com.neteinstein.smsredirect.domain.sms.SmsMessageWriter
 import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.AddScheduledSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.BackupSmsMessageUseCase
@@ -68,6 +74,7 @@ import com.neteinstein.smsredirect.domain.usecase.RecordScheduledSmsHistoryUseCa
 import com.neteinstein.smsredirect.domain.usecase.ReorderRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.ReorderScheduledSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.RunSmsBackupUseCase
+import com.neteinstein.smsredirect.domain.usecase.RunSmsRestoreUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetBackupEnabledUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetBackupGmailLabelUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetBackupPreviousEnabledUseCase
@@ -121,6 +128,8 @@ class SmsRedirectApplication : Application() {
         val smsBackupStateRepository = SmsBackupStateRepositoryImpl(database.smsBackupStateDao())
         val smsMessageSource = ContentProviderSmsMessageSource(contentResolver)
         val mailTransport = JavaMailImapTransport()
+        val defaultSmsAppChecker = AndroidDefaultSmsAppChecker(this)
+        val smsMessageWriter = ContentProviderSmsMessageWriter(contentResolver, defaultSmsAppChecker)
         val backupSmsMessageUseCase =
             BackupSmsMessageUseCase(
                 mailFactory = SmsMailFactory(),
@@ -227,6 +236,16 @@ class SmsRedirectApplication : Application() {
                         mailTransport = mailTransport,
                         backupSmsMessageUseCase = backupSmsMessageUseCase,
                     ),
+                smsRestoreScheduler = WorkManagerSmsRestoreScheduler(this),
+                defaultSmsAppChecker = defaultSmsAppChecker,
+                smsMessageWriter = smsMessageWriter,
+                runSmsRestoreUseCase =
+                    RunSmsRestoreUseCase(
+                        settingsRepository = smsBackupSettingsRepository,
+                        backupStateRepository = smsBackupStateRepository,
+                        mailTransport = mailTransport,
+                        smsMessageWriter = smsMessageWriter,
+                    ),
             )
     }
 }
@@ -289,4 +308,8 @@ data class AppContainer(
     val setBackupPreviousEnabledUseCase: SetBackupPreviousEnabledUseCase,
     val setBackupEnabledUseCase: SetBackupEnabledUseCase,
     val runSmsBackupUseCase: RunSmsBackupUseCase,
+    val smsRestoreScheduler: SmsRestoreScheduler,
+    val defaultSmsAppChecker: DefaultSmsAppChecker,
+    val smsMessageWriter: SmsMessageWriter,
+    val runSmsRestoreUseCase: RunSmsRestoreUseCase,
 )

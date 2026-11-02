@@ -116,6 +116,34 @@ never the message text.
 - Every message from one address shares a synthetic thread root, which is what makes Gmail group a
   contact's history into a single conversation. Synthesized ids use the RFC 6761 reserved
   `.invalid` TLD, so nothing can ever be delivered to them
+- Writes the restore metadata as `X-SMS-*` headers (`SmsMailHeaders`), see the next section
+
+### Backup format: headers, not body
+
+Every backup email carries what a restore needs to rebuild the provider row exactly:
+
+| Header | Value |
+|---|---|
+| `X-SMS-Toolbox-Format` | `1`. Bump on any incompatible change; the parser keeps accepting older values |
+| `X-SMS-Type` | `inbox` or `sent` (only `inbox` is backed up today; carried now so sent support needs no format revision) |
+| `X-SMS-Address` | The raw provider address, not the normalized one, so restored messages thread exactly as before. RFC 2047-encoded only if non-ASCII |
+| `X-SMS-Date` | Provider `date`, epoch **milliseconds** |
+| `X-SMS-Date-Sent` | Provider `date_sent`, omitted when unknown (0 on many OEMs) |
+
+Why headers rather than structured data in the body:
+- **The body is the user's view in Gmail.** It stays a clean transcript (`From:` / `Received:` /
+  blank line / text) rather than growing key/value noise.
+- **The body is ambiguous to parse.** A contact name can contain parentheses, so the
+  `From: Name (number)` line is not a reliable source for the number.
+- **The body is lossy.** `Received:` is second precision in the device's time zone. The restore
+  needs the exact millisecond `date` to recompute the original `SmsBackupKey`. Without it,
+  restored messages look new and the backup would upload them all again.
+- Gmail keeps custom headers verbatim on APPEND, returns them on FETCH and keeps them in Takeout's
+  mbox. They are also independent of the user-editable subject template.
+
+The body is still parsed as a **fallback for legacy backups** written before the headers existed.
+Address comes from the last ` (` … `)` of the `From:` line, the timestamp from the `Date:` header
+(second precision), and the box is always inbox.
 
 ### Credential storage
 
@@ -131,6 +159,68 @@ a deliberate property, not a bug — the password is not portable off the device
 Uses `java.util.Base64`, never `android.util.Base64`: this module sets
 `testOptions.unitTests.isReturnDefaultValues = true`, under which every `android.jar` call silently
 returns null instead of throwing, and a test would pass on a lie.
+
+## SMS Restore from Gmail Pipeline
+
+```
+[ Backup tab: "Restore messages" ] → 3-step dialog → RoleManager.ROLE_SMS request
+ │
+ └─► SmsRestoreScheduler ──► RestoreSmsWorker  ◄── re-enqueues itself with its cursor
+                                │
+                                ▼
+                          RunSmsRestoreUseCase
+                                │
+                                ├─► MailTransport.withFolder(label, readOnly = true)
+                                │      └─► MailFolder.readAfter(uid, 100) ──► BackedUpMail
+                                ├─► SmsMailParser  (headers, or legacy body fallback)
+                                ├─► SmsMessageWriter.findAround(date, ±1s)  ── skip duplicates
+                                ├─► SmsMessageWriter.insert  ──► content://sms
+                                └─► SmsBackupStateRepository.markBackedUp(key)
+```
+
+**Why the default SMS role.** Android silently drops every write to `content://sms` that does not
+come from the SMS-role holder, so there is no other way. The role is held only for the restore.
+`BackupUiState.shouldSwitchBack` drives a card button, a screen banner and a notification that all
+send the user to the system default-apps screen. Android cannot hand the role to a *specific* app,
+so that screen is as far as the app can take them. `refreshDefaultSmsApp()` runs on every resume,
+because the hand-back happens outside the app with no callback.
+
+**Role components** (`DefaultSmsAppComponents.kt`). Android only offers the role to an app
+declaring an `SMS_DELIVER` receiver, a `WAP_PUSH_DELIVER` receiver, a `SENDTO` activity and a
+`RESPOND_VIA_MESSAGE` service. While the role is held, SMS_DELIVER goes *only* to the role holder,
+so `SmsDeliverReceiver` writes incoming SMS to the inbox; it is not a stub. Quick replies are
+sent. MMS is out of scope: an arriving MMS cannot be downloaded and the user is notified.
+`SMS_RECEIVED` is still broadcast to everyone, so Redirect and live backup keep working.
+
+**Idempotent, so resumable without state.** The cursor (IMAP UID + counters) travels in the work
+input between bounded chunks rather than in a table. Before each insert the provider is searched
+for the same body within ±1s from a matching address (`SmsBackupKey.sameAddress`, which also
+matches `+351912…` against `912…` on the last nine digits). That makes a killed run, a restore run
+twice, or a restore onto a phone that still holds some messages all safe. The ±1s covers legacy
+backups' second-precision timestamps.
+
+**No re-upload after restore.** Each restored message's `SmsBackupKey` is recorded in
+`sms_backup_state`. For current-format backups the key equals the original, because the timestamp
+is millisecond-exact.
+
+**Reading.** `JavaMailImapTransport` opens the label `READ_ONLY` and never creates it (a missing
+label is `FolderNotFound`). It pages by position over the folder's lightweight message handles
+and binary-searches the UID cursor once per run, so it does not re-list the rest of a large folder
+on every batch. Each page is one FETCH (`BODY.PEEK[]`), which marks nothing as read.
+
+**What counts as a backup.** The label can hold anything the user files there, so every mail
+must pass `SmsMailParser` or it is skipped, counted (`notBackups`, shown in the result) and never
+written. It must have our `<sms-…@sms-toolbox.invalid>` Message-ID (not the thread root), a body
+with the preamble, and valid `X-SMS-*` headers (or a parseable legacy body). The Message-ID and
+headers can be copied by anyone, so it must also be **from the account itself** (every backup ever
+written is) and must **not have arrived over SMTP**. Backups are IMAP APPENDs and never carry a
+`Received: from <host>` hop, while anything emailed in does, even with a forged `From:`. Without
+these two checks, a crafted email filed under the label by a Gmail filter would be inserted as a
+genuine-looking SMS from a number of the sender's choosing. Only the `from` clause of `Received:`
+counts, so an internal `Received: by …` stamp Gmail might add on APPEND cannot drop real backups.
+
+**Losing the role mid-restore** is checked per batch and after any refused insert. It ends the
+run as `NOT_DEFAULT_SMS_APP` instead of counting every remaining message as failed.
 
 ## Message Capture & Forwarding Pipeline
 
@@ -313,6 +403,7 @@ Permissions are requested contextually rather than upfront at first launch — t
 | `POST_NOTIFICATIONS` | Turning on "Show notifications" in Settings, **or** enabling Gmail backup | Backup progress; notify after a successful forward or scheduled send. The Backup tab requests it too, because otherwise a user who never opens the notification toggle would silently never see backup progress |
 | `INTERNET` / `ACCESS_NETWORK_STATE` | Not runtime-requested (install-time) | Reach `imap.gmail.com`. Both previously arrived only via manifest merge from the Firebase/WorkManager AARs; they are now declared explicitly |
 | Battery optimization exemption | Right after creating a new rule or scheduled SMS | Prevent Doze from throttling background delivery; declining shows a persistent warning banner on Home until enabled |
+| Default SMS app role (`RoleManager.ROLE_SMS`) | Confirming "Restore messages", after a dialog explaining the three steps | Write restored messages to `content://sms`. Held only for the restore; the Backup tab prompts the user to switch back as soon as no restore needs it |
 
 WorkManager's own scheduling permissions were already present for the Redirect feature — Schedule required no new manifest permissions.
 

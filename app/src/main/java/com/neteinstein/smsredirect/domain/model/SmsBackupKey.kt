@@ -28,6 +28,30 @@ object SmsBackupKey {
         return if (digitsOnly) stripped else stripped.lowercase()
     }
 
+    /**
+     * Whether two provider addresses name the same sender, for restore-time duplicate detection.
+     *
+     * Looser than [normalizeAddress] equality on purpose: the same contact can be stored as
+     * `+351912345678` on one device and `912345678` on another, depending on the carrier and the
+     * messaging app. Numeric addresses therefore also match on their last [SUFFIX_DIGITS] digits.
+     * Short codes are too short for that and must match exactly.
+     */
+    fun sameAddress(
+        a: String?,
+        b: String?,
+    ): Boolean {
+        val left = normalizeAddress(a)
+        val right = normalizeAddress(b)
+        if (left == right) return left.isNotEmpty()
+        val leftDigits = left.removePrefix("+")
+        val rightDigits = right.removePrefix("+")
+        if (!leftDigits.all { it.isDigit() } || !rightDigits.all { it.isDigit() }) return false
+        if (leftDigits.length < SUFFIX_DIGITS || rightDigits.length < SUFFIX_DIGITS) return false
+        return leftDigits.takeLast(SUFFIX_DIGITS) == rightDigits.takeLast(SUFFIX_DIGITS)
+    }
+
+    private const val SUFFIX_DIGITS = 9
+
     fun of(
         address: String?,
         body: String,

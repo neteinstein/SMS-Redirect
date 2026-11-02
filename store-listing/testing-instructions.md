@@ -74,7 +74,12 @@ device (not an emulator, so the SMS flow is real):
    worker only observes incoming SMS, not outgoing).
 5. Switch to the Gmail app/web on the same test account → show the message
    arriving as an email under the configured label (default: `SMS`).
-6. Optionally show that Redirect and Schedule are separate, secondary tabs —
+6. Restore: on the Backup tab tap **Restore messages** → read the 3-step
+   dialog → Continue → accept the system "set as default SMS app" prompt →
+   show the progress → tap **Switch back to your messaging app** and pick the
+   original app again. This shows the reviewer that the default-SMS role is
+   used only for the restore.
+7. Optionally show that Redirect and Schedule are separate, secondary tabs —
    the reviewer should come away with backup as the app's obvious purpose.
 
 ## 2. Internal testing track (pre-release QA)
@@ -125,6 +130,40 @@ reasons, not incidental).
       configured label, and re-running backup doesn't duplicate already-backed-up
       messages (the local hash record dedupes — see `PrivacyPolicy.md` §3a).
 - [ ] Turn backup off, then back on — it should resume, not re-upload everything.
+- [ ] Gmail → open a backed-up email → "Show original": the `X-SMS-Toolbox-Format`,
+      `X-SMS-Type`, `X-SMS-Address` and `X-SMS-Date` headers are present.
+
+**Restore (Backup tab → Restore from Gmail)**
+- [ ] Delete a few SMS on the device, tap **Restore messages**, accept the
+      dialog and the system default-SMS prompt. The deleted messages come
+      back in the right conversations with their original dates. Everything
+      else counts as "already on this phone", with no duplicates.
+- [ ] Run the restore a second time: 0 restored, everything already on the phone.
+- [ ] Decline the system prompt: the card explains why it is needed, and nothing
+      runs.
+- [ ] Mid-restore, switch the default SMS app back in system Settings: the
+      restore stops with a clear message instead of reporting thousands of
+      failures.
+- [ ] After a restore, the card and a notification both prompt you to switch
+      back. Until you do, a banner stays on the Backup tab. Once you switch
+      back, the banner disappears when you return to the app.
+- [ ] While SMS Toolbox is still the default SMS app, receive an SMS: it is saved
+      to the inbox (visible after switching back), and a notification without
+      any message content says it arrived.
+- [ ] Restore onto a fresh install (new device or cleared storage): after the
+      restore, backup must **not** re-upload the restored messages to Gmail.
+- [ ] Restore from a label containing backups made **before** this release
+      (no `X-SMS-*` headers): they restore from the email body, inbox only, and
+      nothing is duplicated when some are already on the phone.
+- [ ] A label name that doesn't exist in Gmail fails with "No backups found",
+      and no empty label is created in Gmail.
+- [ ] **Do this one before release:** after a normal backup, open a backup email
+      in Gmail → "Show original" and confirm there is **no** `Received: from …`
+      header. Restore rejects any mail that has one, to block forged backups.
+      If Gmail ever adds one to APPENDed mail, every restore would skip everything.
+- [ ] File an ordinary email, and an email *sent* to the account that copies a
+      backup's headers, under the label. Restore skips both, writes neither,
+      and the result says "N emails … were not SMS backups and were skipped".
 
 **Redirect tab**
 - [ ] Create two rules that could both match the same incoming sender; the
