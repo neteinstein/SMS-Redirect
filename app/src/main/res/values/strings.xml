@@ -239,6 +239,10 @@
         <item quantity="one">%1$d was already on this phone</item>
         <item quantity="other">%1$d were already on this phone</item>
     </plurals>
+    <plurals name="restore_result_not_backups">
+        <item quantity="one">%1$d email under this label was not an SMS backup and was skipped</item>
+        <item quantity="other">%1$d emails under this label were not SMS backups and were skipped</item>
+    </plurals>
     <plurals name="restore_result_failed">
         <item quantity="one">%1$d could not be saved by the phone</item>
         <item quantity="other">%1$d could not be saved by the phone</item>

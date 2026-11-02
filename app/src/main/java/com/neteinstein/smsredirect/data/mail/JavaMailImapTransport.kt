@@ -191,7 +191,20 @@ class JavaMailImapTransport(
                         }.toMap(),
                 sentDateEpochMs = sentDate?.time,
                 bodyText = plainText(this),
+                fromAddress = runCatching { (from?.firstOrNull() as? InternetAddress)?.address }.getOrNull(),
+                arrivedOverSmtp = arrivedOverSmtp(),
             )
+
+        /**
+         * Inbound SMTP delivery always stamps a `Received: from <sending host> ...` line. Only the
+         * `from` clause is looked for, not the mere presence of the header, so that any internal
+         * `Received: by ...` line Gmail might add when storing a message cannot make a genuine
+         * backup look emailed-in and silently drop it from every restore.
+         */
+        private fun Message.arrivedOverSmtp(): Boolean =
+            getHeader("Received")
+                ?.any { MimeUtility.unfold(it).trimStart().startsWith("from ", ignoreCase = true) }
+                ?: false
 
         private fun plainText(part: Part): String? =
             when {

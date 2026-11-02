@@ -12,6 +12,8 @@ data class SmsRestoreCursor(
     val restored: Int = 0,
     val alreadyOnDevice: Int = 0,
     val failed: Int = 0,
+    /** Mail under the label that is not one of our backups (or is a forgery of one): skipped. */
+    val notBackups: Int = 0,
 )
 
 data class SmsRestoreProgress(
@@ -48,6 +50,7 @@ sealed interface SmsRestoreState {
         val restored: Int,
         val alreadyOnDevice: Int,
         val failed: Int,
+        val notBackups: Int = 0,
     ) : SmsRestoreState
 
     data class Failed(

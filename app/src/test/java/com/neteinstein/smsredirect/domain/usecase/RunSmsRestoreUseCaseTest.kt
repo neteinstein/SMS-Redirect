@@ -53,6 +53,7 @@ class RunSmsRestoreUseCaseTest {
                 headers = mail.extraHeaders.mapKeys { it.key.lowercase() },
                 sentDateEpochMs = date,
                 bodyText = mail.body.replace("\n", "\r\n"),
+                fromAddress = mail.from,
             )
         return sms
     }
@@ -121,7 +122,7 @@ class RunSmsRestoreUseCaseTest {
 
             val outcome = useCase()() as SmsRestoreRunOutcome.Completed
 
-            assertEquals(SmsRestoreCursor(afterUid = 2, processed = 2, restored = 1), outcome.cursor)
+            assertEquals(SmsRestoreCursor(afterUid = 2, processed = 2, restored = 1, notBackups = 1), outcome.cursor)
         }
 
     @Test
@@ -206,5 +207,21 @@ class RunSmsRestoreUseCaseTest {
             settings.storedPassword = null
 
             assertEquals(SmsRestoreRunOutcome.NotConfigured, useCase()())
+        }
+
+    @Test
+    fun `a forged backup under the label is skipped and counted, never written`() =
+        runTest {
+            // Given: a genuine backup, plus a copy of one emailed in by someone else.
+            val genuine = storeBackup(uid = 1)
+            storeBackup(uid = 2, address = "+351000000000", body = "Your account is locked, call us")
+            transport.stored[1] = transport.stored[1].copy(fromAddress = "attacker@example.com", arrivedOverSmtp = true)
+
+            // When
+            val outcome = useCase()() as SmsRestoreRunOutcome.Completed
+
+            // Then
+            assertEquals(listOf(genuine.body), writer.inserted.map { it.body })
+            assertEquals(1, outcome.cursor.notBackups)
         }
 }

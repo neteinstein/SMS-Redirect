@@ -68,7 +68,7 @@ An app password grants access to your whole Gmail mailbox, not just the backup l
 
 Restore is **only ever started by you**, from the Backup tab. It uses the same Gmail address and app password as backup.
 
-When you start a restore, your device connects directly to Google's Gmail servers (IMAP over TLS, read-only) and reads the emails under your backup label. It reads only the emails the App itself created and ignores any other mail under that label. Each message is written back into your phone's SMS storage. A message that is already on the phone is skipped. The download goes from your own mailbox to your own device, with no server of ours in the path, and nothing is sent anywhere else. Only text messages (SMS) are restored, not picture messages (MMS).
+When you start a restore, your device connects directly to Google's Gmail servers (IMAP over TLS, read-only) and reads the emails under your backup label. It restores only the emails the App itself created: email under that label that was sent to you by anyone, even if it imitates a backup, is skipped and never written to your phone. The result tells you how many emails were skipped. Each message is written back into your phone's SMS storage. A message that is already on the phone is skipped. The download goes from your own mailbox to your own device, with no server of ours in the path, and nothing is sent anywhere else. Only text messages (SMS) are restored, not picture messages (MMS).
 
 For each restored message the App stores the same one-way hash it stores for a backup, so restored messages are not uploaded to Gmail a second time. As with backup, it keeps no second copy of the message text.
 

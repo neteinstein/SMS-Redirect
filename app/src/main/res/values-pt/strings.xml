@@ -243,6 +243,10 @@
         <item quantity="one">%1$d já estava no telemóvel</item>
         <item quantity="other">%1$d já estavam no telemóvel</item>
     </plurals>
+    <plurals name="restore_result_not_backups">
+        <item quantity="one">%1$d email nesta etiqueta não era uma cópia de SMS e foi ignorado</item>
+        <item quantity="other">%1$d emails nesta etiqueta não eram cópias de SMS e foram ignorados</item>
+    </plurals>
     <plurals name="restore_result_failed">
         <item quantity="one">%1$d não pôde ser guardada pelo telemóvel</item>
         <item quantity="other">%1$d não puderam ser guardadas pelo telemóvel</item>

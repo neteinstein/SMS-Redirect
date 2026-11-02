@@ -157,6 +157,13 @@ reasons, not incidental).
       nothing is duplicated when some are already on the phone.
 - [ ] A label name that doesn't exist in Gmail fails with "No backups found",
       and no empty label is created in Gmail.
+- [ ] **Do this one before release:** after a normal backup, open a backup email
+      in Gmail → "Show original" and confirm there is **no** `Received: from …`
+      header. Restore rejects any mail that has one, to block forged backups.
+      If Gmail ever adds one to APPENDed mail, every restore would skip everything.
+- [ ] File an ordinary email, and an email *sent* to the account that copies a
+      backup's headers, under the label. Restore skips both, writes neither,
+      and the result says "N emails … were not SMS backups and were skipped".
 
 **Redirect tab**
 - [ ] Create two rules that could both match the same incoming sender; the

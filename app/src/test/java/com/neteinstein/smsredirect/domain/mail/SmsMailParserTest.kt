@@ -43,13 +43,16 @@ class SmsMailParserTest {
         headers = mail.extraHeaders.mapKeys { it.key.lowercase() },
         sentDateEpochMs = mail.dateEpochMs / 1000 * 1000,
         bodyText = mail.body.replace("\n", "\r\n"),
+        fromAddress = mail.from,
     )
+
+    private fun SmsMailParser.parse(mail: BackedUpMail) = parse(mail, ACCOUNT)
 
     @Test
     fun `a current-format backup restores exactly what was backed up`() {
         // Given
         val original = backup()
-        val mail = factory.build("me@gmail.com", SmsBackupSettings.DEFAULT_SUBJECT_TEMPLATE, original, "Jane (work)")
+        val mail = factory.build(ACCOUNT, SmsBackupSettings.DEFAULT_SUBJECT_TEMPLATE, original, "Jane (work)")
 
         // When
         val restored = parser.parse(roundTrip(mail))
@@ -70,7 +73,7 @@ class SmsMailParserTest {
     @Test
     fun `the restored message keeps its original backup key`() {
         val original = backup()
-        val mail = factory.build("me@gmail.com", "", original, null)
+        val mail = factory.build(ACCOUNT, "", original, null)
 
         val restored = parser.parse(roundTrip(mail))!!
 
@@ -81,14 +84,14 @@ class SmsMailParserTest {
     @Test
     fun `a body containing blank lines survives intact`() {
         val original = backup(body = "Line one\n\nLine three\n")
-        val mail = factory.build("me@gmail.com", "", original, null)
+        val mail = factory.build(ACCOUNT, "", original, null)
 
         assertEquals("Line one\n\nLine three\n", parser.parse(roundTrip(mail))?.body)
     }
 
     @Test
     fun `a sent message is restored to the sent box`() {
-        val mail = factory.build("me@gmail.com", "", backup(box = SmsBox.SENT), null)
+        val mail = factory.build(ACCOUNT, "", backup(box = SmsBox.SENT), null)
 
         assertEquals(SmsBox.SENT, parser.parse(roundTrip(mail))?.box)
     }
@@ -103,6 +106,7 @@ class SmsMailParserTest {
                 headers = emptyMap(),
                 sentDateEpochMs = 1_700_000_000_000,
                 bodyText = "From: Ana (work) (+351912345678)\r\nReceived: 2023-11-14 22:13:20\r\n\r\nHello",
+                fromAddress = ACCOUNT,
             )
 
         // When
@@ -121,6 +125,7 @@ class SmsMailParserTest {
                 headers = emptyMap(),
                 sentDateEpochMs = 1_700_000_000_000,
                 bodyText = "From: VODAFONE\nReceived: 2023-11-14 22:13:20\n\nYour bill is ready",
+                fromAddress = ACCOUNT,
             )
 
         assertEquals("VODAFONE", parser.parse(legacy)?.address)
@@ -142,14 +147,14 @@ class SmsMailParserTest {
 
     @Test
     fun `a synthetic thread root id is not mistaken for a message`() {
-        val mail = roundTrip(factory.build("me@gmail.com", "", backup(), null))
+        val mail = roundTrip(factory.build(ACCOUNT, "", backup(), null))
 
         assertNull(parser.parse(mail.copy(messageId = "<sms-thread-abc@sms-toolbox.invalid>")))
     }
 
     @Test
     fun `an unknown message type from a newer format is skipped rather than misfiled`() {
-        val mail = roundTrip(factory.build("me@gmail.com", "", backup(), null))
+        val mail = roundTrip(factory.build(ACCOUNT, "", backup(), null))
         val newer = mail.copy(headers = mail.headers + (SmsMailHeaders.TYPE.lowercase() to "draft"))
 
         assertNull(parser.parse(newer))
@@ -157,8 +162,42 @@ class SmsMailParserTest {
 
     @Test
     fun `a current-format mail missing its timestamp header is skipped`() {
-        val mail = roundTrip(factory.build("me@gmail.com", "", backup(), null))
+        val mail = roundTrip(factory.build(ACCOUNT, "", backup(), null))
 
         assertNull(parser.parse(mail.copy(headers = mail.headers - SmsMailHeaders.DATE.lowercase())))
+    }
+
+    @Test
+    fun `a forged backup emailed in from someone else is rejected`() {
+        // Given: our exact Message-ID format and headers, but sent by a stranger.
+        val forged = roundTrip(factory.build(ACCOUNT, "", backup(), null)).copy(fromAddress = "attacker@example.com")
+
+        // Then
+        assertNull(parser.parse(forged))
+    }
+
+    @Test
+    fun `a backup that travelled over SMTP is rejected even with a spoofed From`() {
+        val forged = roundTrip(factory.build(ACCOUNT, "", backup(), null)).copy(arrivedOverSmtp = true)
+
+        assertNull(parser.parse(forged))
+    }
+
+    @Test
+    fun `a mail with no From is rejected`() {
+        val mail = roundTrip(factory.build(ACCOUNT, "", backup(), null)).copy(fromAddress = null)
+
+        assertNull(parser.parse(mail))
+    }
+
+    @Test
+    fun `the account address is matched case-insensitively`() {
+        val mail = roundTrip(factory.build(ACCOUNT, "", backup(), null)).copy(fromAddress = "Me@Gmail.com")
+
+        assertEquals("See you at 8", parser.parse(mail)?.body)
+    }
+
+    private companion object {
+        const val ACCOUNT = "me@gmail.com"
     }
 }

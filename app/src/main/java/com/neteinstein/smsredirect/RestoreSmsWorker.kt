@@ -124,6 +124,7 @@ class RestoreSmsWorker(
         const val KEY_RESTORED = "restored"
         const val KEY_ALREADY_ON_DEVICE = "already_on_device"
         const val KEY_FAILED = "failed"
+        const val KEY_NOT_BACKUPS = "not_backups"
         const val KEY_FINISHED = "finished"
         const val KEY_FAILURE = "failure"
         private const val KEY_AFTER_UID = "after_uid"
@@ -169,6 +170,7 @@ class RestoreSmsWorker(
                 KEY_RESTORED to restored,
                 KEY_ALREADY_ON_DEVICE to alreadyOnDevice,
                 KEY_FAILED to failed,
+                KEY_NOT_BACKUPS to notBackups,
             )
 
         private fun Data.finished(): Data =
@@ -185,6 +187,7 @@ class RestoreSmsWorker(
                 restored = getInt(KEY_RESTORED, 0),
                 alreadyOnDevice = getInt(KEY_ALREADY_ON_DEVICE, 0),
                 failed = getInt(KEY_FAILED, 0),
+                notBackups = getInt(KEY_NOT_BACKUPS, 0),
             )
     }
 }

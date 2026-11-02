@@ -103,12 +103,14 @@ class RunSmsRestoreUseCase(
                             outcome = SmsRestoreRunOutcome.ChunkDone(cursor)
                             break@loop
                         }
-                        val message = parser.parse(mail)
+                        val message = parser.parse(mail, credentials.address)
                         val counted =
                             when {
-                                // Not one of ours: other mail filed under the same label.
+                                // Not one of ours: other mail filed under the same label, a
+                                // damaged backup, or a forgery. Never written; counted so the
+                                // result can say why fewer messages came back than expected.
                                 message == null -> {
-                                    cursor
+                                    cursor.copy(notBackups = cursor.notBackups + 1)
                                 }
 
                                 isAlreadyOnDevice(message) -> {

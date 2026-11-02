@@ -63,6 +63,7 @@ class WorkManagerSmsRestoreScheduler(
                     restored = done.outputData.getInt(RestoreSmsWorker.KEY_RESTORED, 0),
                     alreadyOnDevice = done.outputData.getInt(RestoreSmsWorker.KEY_ALREADY_ON_DEVICE, 0),
                     failed = done.outputData.getInt(RestoreSmsWorker.KEY_FAILED, 0),
+                    notBackups = done.outputData.getInt(RestoreSmsWorker.KEY_NOT_BACKUPS, 0),
                 )
             }
         // Nothing queued, or the user cancelled.

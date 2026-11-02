@@ -16,10 +16,22 @@ import com.neteinstein.smsredirect.domain.model.SmsMessageToRestore
  *
  * Returns null for anything that is not one of ours, so a label the user also files other mail
  * under is safe to restore from.
+ *
+ * "Ours" is more than a Message-ID pattern, which anyone can copy. A crafted email carrying our
+ * Message-ID and `X-SMS-*` headers, filed under the label by a Gmail filter, would otherwise be
+ * written to the phone as a genuine-looking SMS from any number the sender chose. So a backup
+ * must also be **from the account itself** -- every backup, legacy ones included, is -- and must
+ * **never have travelled over SMTP**: backups are IMAP APPENDs straight into the mailbox, while
+ * anything emailed in, even with a forged `From:`, carries the receiving server's `Received:` hop.
  */
 class SmsMailParser {
-    fun parse(mail: BackedUpMail): SmsMessageToRestore? {
+    fun parse(
+        mail: BackedUpMail,
+        accountAddress: String,
+    ): SmsMessageToRestore? {
         if (!isOurs(mail.messageId)) return null
+        if (!mail.fromAddress.equals(accountAddress.trim(), ignoreCase = true)) return null
+        if (mail.arrivedOverSmtp) return null
 
         val text = mail.bodyText?.replace("\r\n", "\n") ?: return null
         val separator = text.indexOf(PREAMBLE_END)

@@ -15,6 +15,13 @@ data class BackedUpMail(
     val sentDateEpochMs: Long?,
     /** The `text/plain` body, or null when the mail has none. */
     val bodyText: String?,
+    /** Bare address of the first `From:` mailbox, or null when missing or unparseable. */
+    val fromAddress: String? = null,
+    /**
+     * Whether any `Received:` header records a hop *from* another host -- i.e. the mail travelled
+     * through SMTP. Backups are IMAP APPENDs straight into the mailbox and never do.
+     */
+    val arrivedOverSmtp: Boolean = false,
 ) {
     fun header(name: String): String? = headers[name.lowercase()]
 }

@@ -202,6 +202,13 @@ private fun FinishedContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+    if (result.notBackups > 0) {
+        Text(
+            text = pluralStringResource(R.plurals.restore_result_not_backups, result.notBackups, result.notBackups),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
     if (result.failed > 0) {
         Text(
             text = pluralStringResource(R.plurals.restore_result_failed, result.failed, result.failed),

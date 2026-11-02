@@ -208,6 +208,17 @@ label is `FolderNotFound`). It pages by position over the folder's lightweight m
 and binary-searches the UID cursor once per run, so it does not re-list the rest of a large folder
 on every batch. Each page is one FETCH (`BODY.PEEK[]`), which marks nothing as read.
 
+**What counts as a backup.** The label can hold anything the user files there, so every mail
+must pass `SmsMailParser` or it is skipped, counted (`notBackups`, shown in the result) and never
+written. It must have our `<sms-…@sms-toolbox.invalid>` Message-ID (not the thread root), a body
+with the preamble, and valid `X-SMS-*` headers (or a parseable legacy body). The Message-ID and
+headers can be copied by anyone, so it must also be **from the account itself** (every backup ever
+written is) and must **not have arrived over SMTP**. Backups are IMAP APPENDs and never carry a
+`Received: from <host>` hop, while anything emailed in does, even with a forged `From:`. Without
+these two checks, a crafted email filed under the label by a Gmail filter would be inserted as a
+genuine-looking SMS from a number of the sender's choosing. Only the `from` clause of `Received:`
+counts, so an internal `Received: by …` stamp Gmail might add on APPEND cannot drop real backups.
+
 **Losing the role mid-restore** is checked per batch and after any refused insert. It ends the
 run as `NOT_DEFAULT_SMS_APP` instead of counting every remaining message as failed.
 
