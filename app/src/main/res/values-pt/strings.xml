@@ -220,4 +220,63 @@
     <string name="settings_gmail_credentials_lost">Introduza novamente a palavra-passe de app — não pode ser restaurada a partir de uma cópia de segurança.</string>
     <string name="settings_gmail_cd_show_password">Mostrar palavra-passe</string>
     <string name="settings_gmail_cd_hide_password">Ocultar palavra-passe</string>
+
+    <!-- Restaurar do Gmail -->
+    <string name="backup_no_credentials_restore_hint">A configurar um telemóvel novo? Adicione a mesma conta Gmail nas Definições e volte aqui para restaurar as suas mensagens.</string>
+    <string name="restore_title">Restaurar do Gmail</string>
+    <string name="restore_description">Copie de volta para este telemóvel as mensagens guardadas na etiqueta do Gmail “%1$s”. As mensagens que já estão no telemóvel são ignoradas, por isso pode repetir sem problema.</string>
+    <string name="restore_start">Restaurar mensagens</string>
+    <string name="restore_role_denied">O restauro precisa que o SMS Toolbox seja a sua app de SMS predefinida enquanto decorre. Nada foi alterado.</string>
+    <string name="restore_preparing">A preparar o restauro…</string>
+    <string name="restore_progress">A verificar %1$d de %2$d</string>
+    <plurals name="restore_progress_restored">
+        <item quantity="one">%1$d mensagem restaurada até agora</item>
+        <item quantity="other">%1$d mensagens restauradas até agora</item>
+    </plurals>
+    <string name="restore_running_hint">Pode sair da app — o restauro continua em segundo plano.</string>
+    <string name="restore_stop">Parar</string>
+    <plurals name="restore_result_restored">
+        <item quantity="one">%1$d mensagem restaurada</item>
+        <item quantity="other">%1$d mensagens restauradas</item>
+    </plurals>
+    <plurals name="restore_result_already_on_device">
+        <item quantity="one">%1$d já estava no telemóvel</item>
+        <item quantity="other">%1$d já estavam no telemóvel</item>
+    </plurals>
+    <plurals name="restore_result_failed">
+        <item quantity="one">%1$d não pôde ser guardada pelo telemóvel</item>
+        <item quantity="other">%1$d não puderam ser guardadas pelo telemóvel</item>
+    </plurals>
+    <string name="restore_switch_back_explanation">Último passo: volte a definir a sua app de mensagens habitual como predefinida, para continuar a receber todas as mensagens, incluindo mensagens com imagem (MMS).</string>
+    <string name="restore_switch_back">Voltar à sua app de mensagens</string>
+    <string name="restore_done">Concluído</string>
+    <string name="restore_failed_not_default">O restauro parou porque o SMS Toolbox deixou de ser a sua app de SMS predefinida.</string>
+    <string name="restore_failed_auth">O Gmail rejeitou a palavra-passe de app. Verifique-a nas Definições.</string>
+    <string name="restore_failed_label_not_found">Nenhuma cópia encontrada: a etiqueta do Gmail “%1$s” não existe. Verifique o nome da etiqueta acima.</string>
+    <string name="restore_failed_network">Não foi possível contactar o Gmail. Verifique a sua ligação.</string>
+    <string name="restore_failed_not_configured">Adicione primeiro o seu endereço Gmail e a palavra-passe de app nas Definições.</string>
+    <string name="restore_failed_safe_to_retry">As mensagens já restauradas são mantidas. Tentar novamente ignora-as.</string>
+    <string name="restore_try_again">Tentar novamente</string>
+    <string name="restore_dismiss">Fechar</string>
+    <string name="restore_dialog_title">Restaurar mensagens do Gmail?</string>
+    <string name="restore_dialog_intro">O SMS Toolbox vai copiar de volta para este telemóvel as mensagens da etiqueta do Gmail “%1$s”. São três passos:</string>
+    <string name="restore_dialog_step_role">Tornar o SMS Toolbox a sua app de SMS predefinida por agora. O Android só permite que a app de SMS predefinida adicione mensagens.</string>
+    <string name="restore_dialog_step_restore">Aguardar enquanto as mensagens são restauradas. Pode continuar a usar o telemóvel.</string>
+    <string name="restore_dialog_step_switch_back">Voltar à sua app de mensagens habitual. Nós lembramos.</string>
+    <string name="restore_dialog_mms_note">Entretanto, as novas mensagens de texto continuam a ser guardadas, mas não é possível receber mensagens com imagem (MMS). Só são restauradas mensagens de texto.</string>
+    <string name="restore_dialog_confirm">Continuar</string>
+    <string name="restore_dialog_confirm_start">Iniciar restauro</string>
+    <string name="restore_dialog_cancel">Cancelar</string>
+    <string name="default_sms_banner_message">O SMS Toolbox continua a ser a sua app de SMS predefinida, por isso não é possível receber mensagens com imagem (MMS).</string>
+    <string name="default_sms_banner_action">Voltar</string>
+    <string name="restore_notification_progress">A restaurar mensagens — %1$d de %2$d</string>
+    <plurals name="restore_notification_complete">
+        <item quantity="one">Restauro concluído — %1$d mensagem</item>
+        <item quantity="other">Restauro concluído — %1$d mensagens</item>
+    </plurals>
+    <string name="restore_notification_complete_text">Último passo: volte à sua app de mensagens habitual.</string>
+    <string name="restore_notification_failed">O restauro parou. Abra o SMS Toolbox para ver porquê.</string>
+    <string name="default_sms_notification_title">Nova mensagem recebida</string>
+    <string name="default_sms_notification_sms_text">Foi guardada. O SMS Toolbox continua a ser a sua app de SMS predefinida — volte à sua app de mensagens para a ler.</string>
+    <string name="default_sms_notification_mms_text">Não foi possível receber uma mensagem com imagem (MMS) porque o SMS Toolbox continua a ser a sua app de SMS predefinida. Volte à sua app de mensagens.</string>
 </resources>

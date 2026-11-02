@@ -5,7 +5,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.smsredirect.domain.model.SmsBackupProgress
 import com.neteinstein.smsredirect.domain.model.SmsBackupSettings
+import com.neteinstein.smsredirect.domain.model.SmsRestoreState
 import com.neteinstein.smsredirect.domain.scheduling.SmsBackupScheduler
+import com.neteinstein.smsredirect.domain.scheduling.SmsRestoreScheduler
+import com.neteinstein.smsredirect.domain.sms.DefaultSmsAppChecker
 import com.neteinstein.smsredirect.domain.usecase.GetSmsBackupSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetBackupEnabledUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetBackupGmailLabelUseCase
@@ -22,8 +25,19 @@ import kotlinx.coroutines.launch
 data class BackupUiState(
     val settings: SmsBackupSettings = SmsBackupSettings(),
     val progress: SmsBackupProgress? = null,
+    val restoreState: SmsRestoreState = SmsRestoreState.Idle,
+    val isDefaultSmsApp: Boolean = false,
 ) {
     val hasCredentials: Boolean get() = settings.hasCredentials
+
+    val isRestoring: Boolean get() = restoreState is SmsRestoreState.Running
+
+    /**
+     * The last step of a restore, and the one most easily forgotten: while this app holds the SMS
+     * role the user's usual messaging app receives nothing and MMS cannot arrive at all. Shown
+     * whenever the role is held and no restore needs it.
+     */
+    val shouldSwitchBack: Boolean get() = isDefaultSmsApp && !isRestoring
 }
 
 class BackupViewModel(
@@ -33,12 +47,30 @@ class BackupViewModel(
     private val setBackupPreviousEnabledUseCase: SetBackupPreviousEnabledUseCase,
     private val setBackupEnabledUseCase: SetBackupEnabledUseCase,
     private val smsBackupScheduler: SmsBackupScheduler,
+    private val smsRestoreScheduler: SmsRestoreScheduler,
+    private val defaultSmsAppChecker: DefaultSmsAppChecker,
 ) : ViewModel() {
+    private val isDefaultSmsApp = MutableStateFlow(defaultSmsAppChecker.isDefaultSmsApp())
+
+    /** Hides a finished/failed restore's result card once the user has acknowledged it. */
+    private val restoreResultDismissed = MutableStateFlow(false)
+
     val uiState: StateFlow<BackupUiState> =
         combine(
             getSmsBackupSettingsUseCase(),
             smsBackupScheduler.observeProgress(),
-        ) { settings, progress -> BackupUiState(settings, progress) }
+            smsRestoreScheduler.observeState(),
+            isDefaultSmsApp,
+            restoreResultDismissed,
+        ) { settings, progress, restoreState, isDefault, dismissed ->
+            val visibleRestoreState =
+                if (dismissed && (restoreState is SmsRestoreState.Finished || restoreState is SmsRestoreState.Failed)) {
+                    SmsRestoreState.Idle
+                } else {
+                    restoreState
+                }
+            BackupUiState(settings, progress, visibleRestoreState, isDefault)
+        }
             // Eager, matching every other ViewModel in this codebase: onToggleBackupEnabled() and
             // onBackupPreviousChanged() read uiState.value synchronously, so it must already
             // reflect real settings by the time the screen is interacted with, not just once
@@ -89,6 +121,58 @@ class BackupViewModel(
     fun onCredentialsWarningShown() {
         _needsCredentials.value = false
     }
+
+    /**
+     * Set when the screen must ask Android for the SMS role. The request itself needs an
+     * Activity, so the screen launches it and reports back through [onDefaultSmsRoleResult].
+     */
+    private val _requestDefaultSmsRole = MutableStateFlow(false)
+    val requestDefaultSmsRole: StateFlow<Boolean> = _requestDefaultSmsRole.asStateFlow()
+
+    /** Set when the user declined the SMS role, so the screen can explain why restore needs it. */
+    private val _defaultSmsRoleDenied = MutableStateFlow(false)
+    val defaultSmsRoleDenied: StateFlow<Boolean> = _defaultSmsRoleDenied.asStateFlow()
+
+    /** The user confirmed the restore explanation dialog. */
+    fun onRestoreConfirmed() {
+        _defaultSmsRoleDenied.value = false
+        if (refreshDefaultSmsApp()) {
+            startRestore()
+        } else {
+            _requestDefaultSmsRole.value = true
+        }
+    }
+
+    fun onDefaultSmsRoleRequestLaunched() {
+        _requestDefaultSmsRole.value = false
+    }
+
+    fun onDefaultSmsRoleResult() {
+        if (refreshDefaultSmsApp()) {
+            startRestore()
+        } else {
+            _defaultSmsRoleDenied.value = true
+        }
+    }
+
+    fun onCancelRestore() {
+        smsRestoreScheduler.cancelRestore()
+    }
+
+    fun onRestoreResultDismissed() {
+        restoreResultDismissed.value = true
+    }
+
+    /**
+     * Re-reads who holds the SMS role. Called on every resume: the user hands the role back in
+     * system Settings, outside this app, so there is no callback to observe.
+     */
+    fun refreshDefaultSmsApp(): Boolean = defaultSmsAppChecker.isDefaultSmsApp().also { isDefaultSmsApp.value = it }
+
+    private fun startRestore() {
+        restoreResultDismissed.value = false
+        smsRestoreScheduler.requestRestore()
+    }
 }
 
 class BackupViewModelFactory(
@@ -98,6 +182,8 @@ class BackupViewModelFactory(
     private val setBackupPreviousEnabledUseCase: SetBackupPreviousEnabledUseCase,
     private val setBackupEnabledUseCase: SetBackupEnabledUseCase,
     private val smsBackupScheduler: SmsBackupScheduler,
+    private val smsRestoreScheduler: SmsRestoreScheduler,
+    private val defaultSmsAppChecker: DefaultSmsAppChecker,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
@@ -108,5 +194,7 @@ class BackupViewModelFactory(
             setBackupPreviousEnabledUseCase,
             setBackupEnabledUseCase,
             smsBackupScheduler,
+            smsRestoreScheduler,
+            defaultSmsAppChecker,
         ) as T
 }

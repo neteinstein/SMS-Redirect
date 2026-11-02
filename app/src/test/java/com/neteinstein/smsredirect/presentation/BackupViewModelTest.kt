@@ -1,10 +1,14 @@
 package com.neteinstein.smsredirect.presentation
 
 import app.cash.turbine.test
+import com.neteinstein.smsredirect.FakeDefaultSmsAppChecker
 import com.neteinstein.smsredirect.FakeSmsBackupScheduler
 import com.neteinstein.smsredirect.FakeSmsBackupSettingsRepository
+import com.neteinstein.smsredirect.FakeSmsRestoreScheduler
 import com.neteinstein.smsredirect.domain.model.SmsBackupProgress
 import com.neteinstein.smsredirect.domain.model.SmsBackupSettings
+import com.neteinstein.smsredirect.domain.model.SmsRestoreProgress
+import com.neteinstein.smsredirect.domain.model.SmsRestoreState
 import com.neteinstein.smsredirect.domain.usecase.GetSmsBackupSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetBackupEnabledUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetBackupGmailLabelUseCase
@@ -29,6 +33,8 @@ import org.junit.Test
 class BackupViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val scheduler = FakeSmsBackupScheduler()
+    private val restoreScheduler = FakeSmsRestoreScheduler()
+    private val defaultSmsAppChecker = FakeDefaultSmsAppChecker()
     private lateinit var settingsRepository: FakeSmsBackupSettingsRepository
 
     @Before
@@ -50,6 +56,8 @@ class BackupViewModelTest {
             setBackupPreviousEnabledUseCase = SetBackupPreviousEnabledUseCase(settingsRepository),
             setBackupEnabledUseCase = SetBackupEnabledUseCase(settingsRepository, now = { 5_000L }),
             smsBackupScheduler = scheduler,
+            smsRestoreScheduler = restoreScheduler,
+            defaultSmsAppChecker = defaultSmsAppChecker,
         )
     }
 
@@ -280,5 +288,126 @@ class BackupViewModelTest {
                 assertEquals(40, state.progress?.total)
                 cancelAndIgnoreRemainingEvents()
             }
+        }
+
+    @Test
+    fun `confirming a restore while already the default SMS app starts it straight away`() =
+        runTest {
+            defaultSmsAppChecker.isDefault = true
+            val vm = createViewModel(configured())
+            advanceUntilIdle()
+
+            vm.onRestoreConfirmed()
+
+            assertEquals(1, restoreScheduler.requestRestoreCalls)
+            assertFalse(vm.requestDefaultSmsRole.value)
+        }
+
+    @Test
+    fun `confirming a restore asks for the SMS role first`() =
+        runTest {
+            val vm = createViewModel(configured())
+            advanceUntilIdle()
+
+            vm.onRestoreConfirmed()
+
+            assertTrue(vm.requestDefaultSmsRole.value)
+            assertEquals(0, restoreScheduler.requestRestoreCalls)
+
+            vm.onDefaultSmsRoleRequestLaunched()
+            assertFalse(vm.requestDefaultSmsRole.value)
+        }
+
+    @Test
+    fun `granting the SMS role starts the restore`() =
+        runTest {
+            val vm = createViewModel(configured())
+            advanceUntilIdle()
+            vm.onRestoreConfirmed()
+
+            defaultSmsAppChecker.isDefault = true
+            vm.onDefaultSmsRoleResult()
+            advanceUntilIdle()
+
+            assertEquals(1, restoreScheduler.requestRestoreCalls)
+            assertTrue(vm.uiState.value.isDefaultSmsApp)
+        }
+
+    @Test
+    fun `declining the SMS role explains why and starts nothing`() =
+        runTest {
+            val vm = createViewModel(configured())
+            advanceUntilIdle()
+            vm.onRestoreConfirmed()
+
+            vm.onDefaultSmsRoleResult()
+
+            assertTrue(vm.defaultSmsRoleDenied.value)
+            assertEquals(0, restoreScheduler.requestRestoreCalls)
+        }
+
+    @Test
+    fun `holding the SMS role with no restore running prompts the user to switch back`() =
+        runTest {
+            defaultSmsAppChecker.isDefault = true
+            val vm = createViewModel(configured())
+            restoreScheduler.state.value = SmsRestoreState.Finished(restored = 3, alreadyOnDevice = 1, failed = 0)
+            advanceUntilIdle()
+
+            assertTrue(vm.uiState.value.shouldSwitchBack)
+        }
+
+    @Test
+    fun `no switch-back prompt while the restore still needs the role`() =
+        runTest {
+            defaultSmsAppChecker.isDefault = true
+            val vm = createViewModel(configured())
+            restoreScheduler.state.value = SmsRestoreState.Running(SmsRestoreProgress(processed = 1, total = 10, restored = 1))
+            advanceUntilIdle()
+
+            assertFalse(vm.uiState.value.shouldSwitchBack)
+        }
+
+    @Test
+    fun `switching back in system settings is picked up on resume`() =
+        runTest {
+            defaultSmsAppChecker.isDefault = true
+            val vm = createViewModel(configured())
+            advanceUntilIdle()
+            assertTrue(vm.uiState.value.isDefaultSmsApp)
+
+            defaultSmsAppChecker.isDefault = false
+            vm.refreshDefaultSmsApp()
+            advanceUntilIdle()
+
+            assertFalse(vm.uiState.value.isDefaultSmsApp)
+            assertFalse(vm.uiState.value.shouldSwitchBack)
+        }
+
+    @Test
+    fun `a dismissed result is hidden until the next restore starts`() =
+        runTest {
+            val vm = createViewModel(configured())
+            restoreScheduler.state.value = SmsRestoreState.Finished(restored = 3, alreadyOnDevice = 0, failed = 0)
+            advanceUntilIdle()
+
+            vm.onRestoreResultDismissed()
+            advanceUntilIdle()
+            assertEquals(SmsRestoreState.Idle, vm.uiState.value.restoreState)
+
+            defaultSmsAppChecker.isDefault = true
+            vm.onRestoreConfirmed()
+            advanceUntilIdle()
+            assertEquals(SmsRestoreState.Finished(3, 0, 0), vm.uiState.value.restoreState)
+        }
+
+    @Test
+    fun `stopping a restore cancels it`() =
+        runTest {
+            val vm = createViewModel(configured())
+
+            vm.onCancelRestore()
+
+            assertEquals(1, restoreScheduler.cancelRestoreCalls)
         }
 }

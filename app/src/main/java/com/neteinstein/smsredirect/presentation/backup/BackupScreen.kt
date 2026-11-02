@@ -42,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.neteinstein.smsredirect.R
+import com.neteinstein.smsredirect.domain.model.SmsRestoreState
 import com.neteinstein.smsredirect.presentation.components.WarningBanner
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,6 +58,11 @@ fun BackupScreen(
     bottomBar: @Composable () -> Unit = {},
     showBackgroundWarning: Boolean = false,
     onFixBackgroundWarning: () -> Unit = {},
+    defaultSmsRoleDenied: Boolean = false,
+    onRestoreConfirmed: () -> Unit = {},
+    onCancelRestore: () -> Unit = {},
+    onRestoreResultDismissed: () -> Unit = {},
+    onSwitchBackToMessagingApp: () -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -88,6 +94,17 @@ fun BackupScreen(
                 )
             }
 
+            // The restore card already carries this prompt once a restore has finished; the
+            // banner covers every other way of ending up still holding the SMS role (a failed
+            // or cancelled restore, or the app reopened later).
+            if (state.shouldSwitchBack && state.restoreState !is SmsRestoreState.Finished) {
+                WarningBanner(
+                    message = stringResource(R.string.default_sms_banner_message),
+                    actionLabel = stringResource(R.string.default_sms_banner_action),
+                    onActionClick = onSwitchBackToMessagingApp,
+                )
+            }
+
             if (!state.hasCredentials) {
                 NoCredentialsState(onOpenSettings = onOpenSettings)
             } else {
@@ -98,6 +115,16 @@ fun BackupScreen(
                     onGmailLabelSaved = onGmailLabelSaved,
                     onBackupPreviousChanged = onBackupPreviousChanged,
                     onToggleBackupEnabled = onToggleBackupEnabled,
+                    restoreSection = {
+                        RestoreSection(
+                            state = state,
+                            defaultSmsRoleDenied = defaultSmsRoleDenied,
+                            onRestoreConfirmed = onRestoreConfirmed,
+                            onCancelRestore = onCancelRestore,
+                            onRestoreResultDismissed = onRestoreResultDismissed,
+                            onSwitchBackToMessagingApp = onSwitchBackToMessagingApp,
+                        )
+                    },
                 )
             }
         }
@@ -140,6 +167,15 @@ private fun NoCredentialsState(onOpenSettings: () -> Unit) {
             modifier = Modifier.padding(top = 16.dp),
             textAlign = TextAlign.Center,
         )
+        // A new phone is exactly when someone looks for restore, and exactly when no credentials
+        // are stored yet -- so say where restore lives before they go looking for it.
+        Text(
+            text = stringResource(R.string.backup_no_credentials_restore_hint),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 16.dp),
+            textAlign = TextAlign.Center,
+        )
         Button(
             onClick = onOpenSettings,
             modifier = Modifier.padding(top = 24.dp),
@@ -157,6 +193,7 @@ private fun BackupConfiguration(
     onGmailLabelSaved: (String) -> Unit,
     onBackupPreviousChanged: (Boolean) -> Unit,
     onToggleBackupEnabled: () -> Unit,
+    restoreSection: @Composable () -> Unit,
 ) {
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         EditableSettingRow(
@@ -244,6 +281,9 @@ private fun BackupConfiguration(
                 )
             }
         }
+
+        HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+        restoreSection()
     }
 }
 

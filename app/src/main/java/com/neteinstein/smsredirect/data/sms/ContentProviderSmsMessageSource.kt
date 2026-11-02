@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.provider.Telephony
 import android.util.Log
 import com.neteinstein.smsredirect.domain.model.SmsBackupKey
+import com.neteinstein.smsredirect.domain.model.SmsBox
 import com.neteinstein.smsredirect.domain.model.SmsMessageToBackup
 import com.neteinstein.smsredirect.domain.sms.SmsMessageSource
 import kotlinx.coroutines.CoroutineDispatcher
@@ -63,6 +64,7 @@ class ContentProviderSmsMessageSource(
                             Telephony.Sms.ADDRESS,
                             Telephony.Sms.BODY,
                             Telephony.Sms.DATE,
+                            Telephony.Sms.DATE_SENT,
                         ),
                     selection = conditions.joinToString(" AND "),
                     selectionArgs = args.toTypedArray(),
@@ -78,6 +80,8 @@ class ContentProviderSmsMessageSource(
         val addressIndex = cursor.getColumnIndex(Telephony.Sms.ADDRESS)
         val bodyIndex = cursor.getColumnIndex(Telephony.Sms.BODY)
         val dateIndex = cursor.getColumnIndex(Telephony.Sms.DATE)
+        // Optional: some OEM providers omit it, and a restore can do without.
+        val dateSentIndex = cursor.getColumnIndex(Telephony.Sms.DATE_SENT)
         if (idIndex < 0 || addressIndex < 0 || bodyIndex < 0 || dateIndex < 0) return emptyList()
 
         val result = mutableListOf<SmsMessageToBackup>()
@@ -96,6 +100,8 @@ class ContentProviderSmsMessageSource(
                     body = body,
                     dateEpochMs = date,
                     providerId = cursor.getLong(idIndex),
+                    dateSentEpochMs = if (dateSentIndex >= 0) cursor.getLong(dateSentIndex) else 0L,
+                    box = SmsBox.INBOX,
                 )
         }
         return result

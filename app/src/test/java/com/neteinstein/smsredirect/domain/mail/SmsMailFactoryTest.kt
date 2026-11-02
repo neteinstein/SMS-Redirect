@@ -2,8 +2,10 @@ package com.neteinstein.smsredirect.domain.mail
 
 import com.neteinstein.smsredirect.domain.model.SmsBackupKey
 import com.neteinstein.smsredirect.domain.model.SmsBackupSettings
+import com.neteinstein.smsredirect.domain.model.SmsBox
 import com.neteinstein.smsredirect.domain.model.SmsMessageToBackup
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -157,6 +159,52 @@ class SmsMailFactoryTest {
 
         assertEquals(account, mail.from)
         assertEquals(account, mail.to)
+        assertEquals("Jane Doe", mail.fromDisplayName)
+    }
+
+    @Test
+    fun `restore metadata is written to headers, not the body`() {
+        val mail =
+            factory.build(
+                account,
+                "",
+                message(address = "+351 912 345 678", date = 1_700_000_000_123).copy(dateSentEpochMs = 1_699_999_999_000),
+                contactName = "Jane Doe",
+            )
+
+        assertEquals(
+            mapOf(
+                SmsMailHeaders.FORMAT to SmsMailHeaders.CURRENT_FORMAT,
+                SmsMailHeaders.TYPE to "inbox",
+                SmsMailHeaders.ADDRESS to "+351 912 345 678",
+                SmsMailHeaders.DATE to "1700000000123",
+                SmsMailHeaders.DATE_SENT to "1699999999000",
+            ),
+            mail.extraHeaders,
+        )
+        assertFalse(mail.body.contains("1700000000123"))
+    }
+
+    @Test
+    fun `an unknown sent time is left out rather than written as zero`() {
+        val mail = factory.build(account, "", message(), contactName = null)
+
+        assertFalse(mail.extraHeaders.containsKey(SmsMailHeaders.DATE_SENT))
+    }
+
+    @Test
+    fun `a sent message reads as sent in the body`() {
+        val mail = factory.build(account, "", message().copy(box = SmsBox.SENT), contactName = "Jane Doe")
+
+        assertTrue(mail.body.startsWith("To: Jane Doe (+351912345678)\nSent: "))
+        assertEquals("sent", mail.extraHeaders[SmsMailHeaders.TYPE])
+    }
+
+    @Test
+    fun `line breaks in a contact name cannot end the preamble early`() {
+        val mail = factory.build(account, "", message(body = "Hi"), contactName = "Jane\n\nDoe")
+
+        assertEquals("Hi", mail.body.substringAfter("\n\n"))
         assertEquals("Jane Doe", mail.fromDisplayName)
     }
 }

@@ -83,7 +83,7 @@ Do **not** introduce Hilt, Dagger, or Koin unless explicitly requested.
 ### Guidelines
 
 - Unit tests live in `app/src/test/`.
-- Use **Fake** implementations (not mocks) for repository interfaces. Existing fakes are in the test root package: `FakeRuleRepository`, `FakeSettingsRepository`, `FakeContactNameResolver`, `FakeForwardHistoryRepository`, `FakeScheduledSmsRepository`, `FakeScheduledSmsHistoryRepository`, `FakeScheduledSmsScheduler`, `FakeMailTransport`, `FakeSmsMessageSource`, `FakeSmsBackupStateRepository`, `FakeSmsBackupSettingsRepository`, `FakeSmsBackupScheduler`, `FakeSecretCipher`.
+- Use **Fake** implementations (not mocks) for repository interfaces. Existing fakes are in the test root package: `FakeRuleRepository`, `FakeSettingsRepository`, `FakeContactNameResolver`, `FakeForwardHistoryRepository`, `FakeScheduledSmsRepository`, `FakeScheduledSmsHistoryRepository`, `FakeScheduledSmsScheduler`, `FakeMailTransport`, `FakeSmsMessageSource`, `FakeSmsBackupStateRepository`, `FakeSmsBackupSettingsRepository`, `FakeSmsBackupScheduler`, `FakeSecretCipher`, `FakeSmsMessageWriter`, `FakeSmsRestoreScheduler`, `FakeDefaultSmsAppChecker`.
 - Keep Android and third-party types (`Context`, `SmsManager`, `javax.mail`, WorkManager) behind a domain interface so the logic in front of it is testable. `SmsForwarder` is untested precisely because this was not done.
 - Test use cases in isolation with their respective fakes.
 - Test ViewModels using `kotlinx-coroutines-test` (`runTest`, `UnconfinedTestDispatcher`) and Turbine for Flow assertions.
@@ -185,6 +185,14 @@ Both must pass before merging. Always run these locally before pushing.
 - **JavaMail's `META-INF/javamail.*` descriptors must be *merged*, not excluded**, in the
   `packaging` block. JavaMail concatenates them to build its provider registry; get it wrong and
   `Session.getStore("imaps")` throws `NoSuchProviderException` at runtime with no build warning.
+- **The backup email format is a restore contract.** The `X-SMS-*` headers in `SmsMailHeaders`
+  are what `SmsMailParser` reads back. Never rename or drop one. Bump `CURRENT_FORMAT` for an
+  incompatible change and keep parsing older formats, including legacy backups that have no
+  headers at all. Backups already in users' mailboxes can never be rewritten.
+- **The default SMS role is borrowed, not kept.** Restore needs it because only the role holder
+  can write `content://sms`. Never add a code path that asks for the role outside a
+  user-started restore, and keep `SmsDeliverReceiver` saving incoming SMS: while the role is
+  held, nothing else will.
 - **`SmsForwarder` swallows exceptions**, which is why `ForwardSmsWorker`'s `Result.retry()` is
   effectively dead for send failures. Do not copy that pattern; new workers must report failures.
 

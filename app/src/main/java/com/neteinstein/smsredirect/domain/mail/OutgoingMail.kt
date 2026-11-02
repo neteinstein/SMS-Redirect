@@ -20,4 +20,6 @@ data class OutgoingMail(
     val messageId: String,
     val inReplyTo: String?,
     val references: List<String>,
+    /** Machine-readable restore metadata; see [SmsMailHeaders]. Written in iteration order. */
+    val extraHeaders: Map<String, String> = emptyMap(),
 )

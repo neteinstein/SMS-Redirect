@@ -155,6 +155,25 @@ Notes for the submission:
   this release. It is linked from the listing and its previous wording ("no
   backend server", "we do not collect your email address") is no longer accurate.
 
+### Restore makes the app a (temporary) default SMS handler
+
+To restore messages, the app has to hold Android's SMS role while it writes to
+the SMS store. So the manifest now declares the four components that make an
+app eligible for the role: `SMS_DELIVER` and `WAP_PUSH_DELIVER` receivers, a
+`SENDTO` activity and a `RESPOND_VIA_MESSAGE` service. Play's SMS policy treats
+default-SMS-handler capability as its own category. Before submitting:
+
+- Keep **"Backup and restore"** as the declared core use case. Restore is the
+  second half of it, so it now does exactly what the declaration says. On the
+  form, explain that the app asks for the default-SMS role only for the length
+  of a user-started restore, and then sends the user back to their usual app.
+- Add the restore to the demonstration video (see
+  [`testing-instructions.md`](testing-instructions.md)): Backup tab → Restore
+  messages → the system's default-SMS prompt → progress → "Switch back to your
+  messaging app".
+- Check the form for a separate "default SMS handler" question and answer it
+  consistently. Policy wording shifts, so confirm on the live form.
+
 The `tools:ignore="SmsAndCallLogPolicy"` lint suppressions in `AndroidManifest.xml`
 are a reminder that this review exists — they silence the lint warning, not
 the Play Console policy review itself. Budget time for this before your first

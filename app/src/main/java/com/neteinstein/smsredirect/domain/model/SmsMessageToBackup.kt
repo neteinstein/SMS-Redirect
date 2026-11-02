@@ -15,4 +15,7 @@ data class SmsMessageToBackup(
     val body: String,
     val dateEpochMs: Long,
     val providerId: Long,
+    /** The provider's `date_sent`. Zero on many OEM builds; carried only so a restore can keep it. */
+    val dateSentEpochMs: Long = 0L,
+    val box: SmsBox = SmsBox.INBOX,
 )

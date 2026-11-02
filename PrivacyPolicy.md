@@ -1,6 +1,6 @@
 # Privacy Policy for SMS Toolbox
 
-**Effective date:** August 31, 2026
+**Effective date:** November 2, 2026
 
 SMS Toolbox ("the App", "we", "us", "our") is developed and maintained by [neteinstein](https://github.com/neteinstein). This Privacy Policy explains what data the App accesses, how it is used, and the choices you have. **We operate no backend server and have no account system** — your rules, contacts, and messages are processed and stored on your device. If you turn on Gmail backup, your device connects **directly to Google's Gmail servers** using credentials you supply; that content goes to your own mailbox and never passes through us. The App's full source code is public at [github.com/neteinstein/SMS-Redirect](https://github.com/neteinstein/SMS-Redirect), so every claim below can be verified directly in the code.
 
@@ -13,6 +13,7 @@ SMS Toolbox ("the App", "we", "us", "our") is developed and maintained by [netei
 | Is your data sold, rented, or used for advertising? | No |
 | Where are your rules, schedules, and history stored? | Locally on your device only |
 | What ever leaves your device? | Anonymous crash reports & usage analytics (Firebase); the SMS content you choose to forward/schedule (sent via your own carrier to the number **you** configured); your SMS messages, if you enable Gmail backup (sent to **your own** mailbox); a settings file only if you manually export and share one |
+| Can messages be restored from Gmail? | Yes, if **you** start a restore. Your device downloads the backups from **your own** Gmail label and writes them into the phone's SMS storage. Nothing goes to us |
 | Where is your Gmail app password kept? | Encrypted on your device, in the Android Keystore. It is sent only to Google, never to us, and cannot be recovered from a device backup |
 
 ## 1. Permissions the App Uses, and Why
@@ -27,6 +28,7 @@ The App requests the following Android permissions. Each is used only for the st
 | `POST_NOTIFICATIONS` | Show backup progress, and a notification after a message is forwarded or a scheduled message is sent |
 | `INTERNET` / `ACCESS_NETWORK_STATE` | Connect to Gmail to upload backed-up messages, and wait for a working connection before trying |
 | Battery optimization exemption | Prevent Android's Doze mode from delaying backups, forwarding or scheduled sends |
+| Default SMS app role (only while you restore) | Android lets only the default SMS app write messages to the phone's SMS storage. When you start a restore, the App asks you to make it the default SMS app. It then asks you to switch back to your usual messaging app as soon as the restore is done. While the App holds the role, any new incoming SMS is saved to your inbox exactly as your usual app would save it. Picture messages (MMS) cannot be received during that time |
 
 ## 2. Data You Create in the App
 
@@ -56,9 +58,19 @@ When enabled, the App reads messages from your device's SMS inbox and uploads th
 
 An app password grants access to your whole Gmail mailbox, not just the backup label. You can revoke it at any time at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords), which immediately stops the App from connecting. You can also remove it from within the App (Settings → Gmail backup → Remove).
 
+**What each backup email contains.** The email body is a readable transcript: the sender's name (if they are in your contacts) and number, the time the message was received, and the message text. A few hidden email headers repeat the sender's number and the exact received/sent timestamps in a machine-readable form, so the message can be restored exactly. These headers add no new kind of information beyond what the body already shows, and they stay inside your own mailbox like the rest of the email.
+
 **What the App records locally.** To avoid backing the same message up twice, the App stores a one-way hash of each backed-up message plus a timestamp. It does **not** keep a second copy of your message text.
 
 **Deleting backed-up messages.** Messages already uploaded live in your Gmail account and are under your control — delete the label or the individual messages in Gmail to remove them.
+
+## 3b. Restoring SMS from Gmail
+
+Restore is **only ever started by you**, from the Backup tab. It uses the same Gmail address and app password as backup.
+
+When you start a restore, your device connects directly to Google's Gmail servers (IMAP over TLS, read-only) and reads the emails under your backup label. It reads only the emails the App itself created and ignores any other mail under that label. Each message is written back into your phone's SMS storage. A message that is already on the phone is skipped. The download goes from your own mailbox to your own device, with no server of ours in the path, and nothing is sent anywhere else. Only text messages (SMS) are restored, not picture messages (MMS).
+
+For each restored message the App stores the same one-way hash it stores for a backup, so restored messages are not uploaded to Gmail a second time. As with backup, it keeps no second copy of the message text.
 
 ## 4. Settings Backup and Restore (local file)
 

@@ -1,5 +1,6 @@
 package com.neteinstein.smsredirect
 
+import com.neteinstein.smsredirect.domain.mail.BackedUpMail
 import com.neteinstein.smsredirect.domain.mail.MailAppendResult
 import com.neteinstein.smsredirect.domain.mail.MailConnectException
 import com.neteinstein.smsredirect.domain.mail.MailFolder
@@ -25,6 +26,14 @@ class FakeMailTransport(
     /** Scripts [withFolder] itself failing before the block ever runs -- i.e. connect time. */
     var connectFailure: MailConnectException? = null
 
+    /** What a read-only folder holds, i.e. the mails a restore will find. */
+    val stored = mutableListOf<BackedUpMail>()
+
+    /** Scripts a read failure once the restore has read past this UID. */
+    var failReadAfterUid: Long? = null
+    var readFailure: MailConnectException = MailConnectException.Transient("scripted")
+    val readOnlyOpens = mutableListOf<Boolean>()
+
     override suspend fun verify(credentials: GmailCredentials): MailVerificationResult {
         verifiedWith = credentials
         return verifyResult
@@ -33,10 +42,12 @@ class FakeMailTransport(
     override suspend fun <T> withFolder(
         credentials: GmailCredentials,
         folderName: String,
+        readOnly: Boolean,
         block: suspend (MailFolder) -> T,
     ): T {
         connectFailure?.let { throw it }
         openedFolders += folderName
+        readOnlyOpens += readOnly
         return block(FakeMailFolder())
     }
 
@@ -45,6 +56,16 @@ class FakeMailTransport(
             if (failAllAppends || appended.size + 1 == failAppendAtIndex) return appendFailure
             appended += mail
             return MailAppendResult.Success
+        }
+
+        override suspend fun messageCount(): Int = stored.size
+
+        override suspend fun readAfter(
+            afterUid: Long,
+            limit: Int,
+        ): List<BackedUpMail> {
+            failReadAfterUid?.let { if (afterUid >= it) throw readFailure }
+            return stored.filter { it.uid > afterUid }.sortedBy { it.uid }.take(limit)
         }
     }
 }

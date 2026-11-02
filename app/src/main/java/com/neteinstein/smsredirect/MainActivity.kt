@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.LocaleManager
 import android.app.NotificationManager
+import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -334,10 +335,38 @@ class MainActivity : ComponentActivity() {
                                                 appContainer.setBackupPreviousEnabledUseCase,
                                                 appContainer.setBackupEnabledUseCase,
                                                 appContainer.smsBackupScheduler,
+                                                appContainer.smsRestoreScheduler,
+                                                appContainer.defaultSmsAppChecker,
                                             ),
                                     )
                                 val backupState by backupViewModel.uiState.collectAsState()
                                 val needsCredentials by backupViewModel.needsCredentials.collectAsState()
+                                val requestDefaultSmsRole by backupViewModel.requestDefaultSmsRole.collectAsState()
+                                val defaultSmsRoleDenied by backupViewModel.defaultSmsRoleDenied.collectAsState()
+
+                                // The SMS role is handed back in system Settings, outside the
+                                // app, so the only way to notice is to re-check on every resume.
+                                LaunchedEffect(appResumeTick) { backupViewModel.refreshDefaultSmsApp() }
+
+                                val defaultSmsRoleLauncher =
+                                    rememberLauncherForActivityResult(
+                                        ActivityResultContracts.StartActivityForResult(),
+                                    ) { backupViewModel.onDefaultSmsRoleResult() }
+                                LaunchedEffect(requestDefaultSmsRole) {
+                                    if (requestDefaultSmsRole) {
+                                        backupViewModel.onDefaultSmsRoleRequestLaunched()
+                                        val roleManager = getSystemService(RoleManager::class.java)
+                                        if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_SMS)) {
+                                            defaultSmsRoleLauncher.launch(
+                                                roleManager.createRequestRoleIntent(RoleManager.ROLE_SMS),
+                                            )
+                                        } else {
+                                            // No SMS role on this device (e.g. a tablet without
+                                            // telephony); reported back as a refusal.
+                                            backupViewModel.onDefaultSmsRoleResult()
+                                        }
+                                    }
+                                }
                                 BackupScreen(
                                     state = backupState,
                                     needsCredentials = needsCredentials,
@@ -366,6 +395,26 @@ class MainActivity : ComponentActivity() {
                                     bottomBar = bottomBar,
                                     showBackgroundWarning = showBatteryBanner,
                                     onFixBackgroundWarning = { openBatteryOptimizationSettings() },
+                                    defaultSmsRoleDenied = defaultSmsRoleDenied,
+                                    onRestoreConfirmed = {
+                                        // Same SMS grant as backup (the duplicate check reads the
+                                        // SMS store); the notification is how progress is shown.
+                                        requestSmsPermission {
+                                            if (ContextCompat.checkSelfPermission(
+                                                    this@MainActivity,
+                                                    Manifest.permission.POST_NOTIFICATIONS,
+                                                ) != PackageManager.PERMISSION_GRANTED
+                                            ) {
+                                                backupNotificationsLauncher.launch(
+                                                    Manifest.permission.POST_NOTIFICATIONS,
+                                                )
+                                            }
+                                            backupViewModel.onRestoreConfirmed()
+                                        }
+                                    },
+                                    onCancelRestore = backupViewModel::onCancelRestore,
+                                    onRestoreResultDismissed = backupViewModel::onRestoreResultDismissed,
+                                    onSwitchBackToMessagingApp = { openDefaultAppsSettings() },
                                 )
                             }
 
@@ -1052,6 +1101,15 @@ class MainActivity : ComponentActivity() {
                 data = "package:$packageName".toUri()
             }
         runCatching { startActivity(intent) }
+    }
+
+    /**
+     * Android offers no way to hand the SMS role to a *specific* other app, so the user is taken
+     * to the system's default-apps screen to pick their usual messaging app again.
+     */
+    private fun openDefaultAppsSettings() {
+        runCatching { startActivity(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)) }
+            .recoverCatching { startActivity(Intent(Settings.ACTION_SETTINGS)) }
     }
 
     private fun shouldShowSideloadWarning(): Boolean {
