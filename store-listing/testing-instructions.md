@@ -41,9 +41,10 @@ declaration as requiring access instructions and fill in the
 > password above → Save (this validates the login against Gmail) → turn on
 > "Backup all previous SMS" if you want existing messages included → back to
 > the Backup tab → toggle it on → grant the SMS and notification permission
-> prompts that appear → receive an SMS on the test device (only *incoming*
-> SMS trigger the backup worker) → the message appears as an email in the
-> test account's Gmail, under the "SMS" label.
+> prompts that appear → receive an SMS on the test device, or send one from
+> it → within a couple of minutes the message appears as an email in the
+> test account's Gmail, under the "SMS" label (sent messages are marked
+> `To:` / `Sent:` instead of `From:` / `Received:`).
 
 Generate a fresh app password for this specific submission, and treat it as
 a **standing** credential for as long as the App access entry lists it —
@@ -70,8 +71,8 @@ device (not an emulator, so the SMS flow is real):
    Optionally turn on "Backup all previous SMS" to include existing messages.
 3. Back to the Backup tab → toggle backup on → grant the SMS and
    notification permission prompts that appear at this point.
-4. Receive an SMS on the test device (an *incoming* message — the backup
-   worker only observes incoming SMS, not outgoing).
+4. Receive an SMS on the test device, then send a reply from the usual
+   messaging app. Both are backed up: received and sent messages alike.
 5. Switch to the Gmail app/web on the same test account → show the message
    arriving as an email under the configured label (default: `SMS`).
 6. Restore: on the Backup tab tap **Restore messages** → read the 3-step
@@ -124,8 +125,16 @@ reasons, not incidental).
       arrive from that point forward; existing SMS are *not* uploaded. Turn
       it on and confirm existing messages get backed up too.
 - [ ] With valid credentials saved and backup on, receiving a new SMS
-      triggers an upload (outgoing/sent SMS do not — only incoming SMS are
-      observed).
+      triggers an upload.
+- [ ] Sending an SMS from the usual messaging app also triggers an upload,
+      within about two minutes (the trigger waits for the SMS provider to go
+      quiet first). The email body starts with `To:` / `Sent:` and
+      "Show original" shows `X-SMS-Type: sent`. A draft, or a message that
+      failed to send, is **not** uploaded.
+- [ ] Marking a message read, or deleting a thread, does not upload
+      anything or duplicate an existing backup.
+- [ ] Restore a backed-up sent message: it lands in the **sent** box, and the
+      next backup run does not upload it again.
 - [ ] Confirm in Gmail: each backed-up message is a separate email under the
       configured label, and re-running backup doesn't duplicate already-backed-up
       messages (the local hash record dedupes — see `PrivacyPolicy.md` §3a).

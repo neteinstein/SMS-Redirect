@@ -9,6 +9,7 @@ import com.neteinstein.smsredirect.domain.mail.MailConnectException
 import com.neteinstein.smsredirect.domain.mail.SmsMailFactory
 import com.neteinstein.smsredirect.domain.model.SmsBackupKey
 import com.neteinstein.smsredirect.domain.model.SmsBackupSettings
+import com.neteinstein.smsredirect.domain.model.SmsBox
 import com.neteinstein.smsredirect.domain.model.SmsMessageToBackup
 import com.neteinstein.smsredirect.domain.model.SmsRestoreCursor
 import com.neteinstein.smsredirect.domain.model.StoredSms
@@ -43,8 +44,10 @@ class RunSmsRestoreUseCaseTest {
         address: String = "+351912345678",
         body: String = "Message $uid",
         date: Long = 1_700_000_000_000 + uid * 60_000,
+        box: SmsBox = SmsBox.INBOX,
     ): SmsMessageToBackup {
-        val sms = SmsMessageToBackup(SmsBackupKey.of(address, body, date), address, body, date, providerId = uid)
+        val sms =
+            SmsMessageToBackup(SmsBackupKey.of(address, body, date, box), address, body, date, providerId = uid, box = box)
         val mail = factory.build("me@gmail.com", "", sms, null)
         transport.stored +=
             BackedUpMail(
@@ -111,6 +114,20 @@ class RunSmsRestoreUseCaseTest {
 
             useCase()()
 
+            assertEquals(setOf(sms.stableKey), backupState.backedUp)
+        }
+
+    @Test
+    fun `a restored sent message is marked with its sent key so the backup does not upload it again`() =
+        runTest {
+            // Given
+            val sms = storeBackup(uid = 1, box = SmsBox.SENT)
+
+            // When
+            useCase()()
+
+            // Then: the key matches what the backup scan derives for the restored sent row
+            assertEquals(SmsBox.SENT, writer.inserted.single().box)
             assertEquals(setOf(sms.stableKey), backupState.backedUp)
         }
 

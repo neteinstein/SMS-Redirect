@@ -9,9 +9,11 @@ import com.neteinstein.smsredirect.domain.mail.MailAppendResult
 import com.neteinstein.smsredirect.domain.mail.MailConnectException
 import com.neteinstein.smsredirect.domain.mail.MailVerificationResult
 import com.neteinstein.smsredirect.domain.mail.SmsMailFactory
+import com.neteinstein.smsredirect.domain.mail.SmsMailHeaders
 import com.neteinstein.smsredirect.domain.model.SmsBackupKey
 import com.neteinstein.smsredirect.domain.model.SmsBackupProgress
 import com.neteinstein.smsredirect.domain.model.SmsBackupSettings
+import com.neteinstein.smsredirect.domain.model.SmsBox
 import com.neteinstein.smsredirect.domain.model.SmsMessageToBackup
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -33,12 +35,14 @@ class SmsBackupUseCasesTest {
         date: Long,
         providerId: Long,
         address: String = "+351912345678",
+        box: SmsBox = SmsBox.INBOX,
     ) = SmsMessageToBackup(
-        stableKey = SmsBackupKey.of(address, body, date),
+        stableKey = SmsBackupKey.of(address, body, date, box),
         rawAddress = address,
         body = body,
         dateEpochMs = date,
         providerId = providerId,
+        box = box,
     )
 
     private fun runUseCase(elapsedNowMs: () -> Long = { 0L }) =
@@ -90,6 +94,122 @@ class SmsBackupUseCasesTest {
 
             runUseCase()()
 
+            assertEquals(1, transport.openedFolders.size)
+        }
+
+    // --- sent messages ---
+
+    @Test
+    fun `sent messages are backed up alongside received ones, in date order`() =
+        runTest {
+            // Given
+            messageSource.messages =
+                listOf(
+                    message("Hi there", 1000, 1),
+                    message("Hi back", 2000, 2, box = SmsBox.SENT),
+                    message("How are you?", 3000, 3),
+                )
+
+            // When
+            val outcome = runUseCase()()
+
+            // Then
+            assertEquals(SmsBackupRunOutcome.Completed, outcome)
+            assertEquals(
+                listOf("inbox", "sent", "inbox"),
+                transport.appended.map { it.extraHeaders[SmsMailHeaders.TYPE] },
+            )
+            assertTrue(transport.appended[1].body.startsWith("To: "))
+        }
+
+    @Test
+    fun `a sent and a received message with identical content are both backed up`() =
+        runTest {
+            // Texting your own number: same address, body and timestamp in both boxes.
+            messageSource.messages =
+                listOf(
+                    message("Note to self", 1000, 1, box = SmsBox.SENT),
+                    message("Note to self", 1000, 2, box = SmsBox.INBOX),
+                )
+
+            runUseCase()()
+
+            assertEquals(2, transport.appended.size)
+            assertEquals(2, stateRepository.backedUp.size)
+        }
+
+    @Test
+    fun `a newly sent message is picked up by the next run`() =
+        runTest {
+            // Given a completed backup
+            messageSource.messages = listOf(message("Received", 1000, 1))
+            runUseCase()()
+
+            // When the user sends a message and the provider trigger starts another run
+            messageSource.messages += message("Sent reply", 2000, 2, box = SmsBox.SENT)
+            val outcome = runUseCase()()
+
+            // Then only the new message is uploaded
+            assertEquals(SmsBackupRunOutcome.Completed, outcome)
+            assertEquals(listOf("Received", "Sent reply"), transport.appended.map { it.body.substringAfterLast("\n") })
+            assertEquals(SmsBox.SENT.headerValue, transport.appended.last().extraHeaders[SmsMailHeaders.TYPE])
+        }
+
+    // --- runs with nothing to do ---
+
+    @Test
+    fun `a run with nothing pending does not connect to gmail`() =
+        runTest {
+            // A provider-change trigger fires for read flags and deletes too; those must not
+            // cost an IMAP login.
+            val messages = (1L..3L).map { message("Body $it", it * 1000, it) }
+            messageSource.messages = messages
+            stateRepository.backedUp += messages.map { it.stableKey }
+
+            val outcome = runUseCase()()
+
+            assertEquals(SmsBackupRunOutcome.Completed, outcome)
+            assertTrue(transport.openedFolders.isEmpty())
+        }
+
+    @Test
+    fun `an empty message store does not connect to gmail`() =
+        runTest {
+            val outcome = runUseCase()()
+
+            assertEquals(SmsBackupRunOutcome.Completed, outcome)
+            assertTrue(transport.openedFolders.isEmpty())
+        }
+
+    @Test
+    fun `a connect failure with nothing pending is not reported`() =
+        runTest {
+            // Nothing to send means nothing to log in for, so expired credentials surface on the
+            // next run that has work rather than switching backup off over an idle trigger.
+            transport.connectFailure = MailConnectException.AuthFailed()
+            val message = message("Body", 1000, 1)
+            messageSource.messages = listOf(message)
+            stateRepository.backedUp += message.stableKey
+
+            val outcome = runUseCase()()
+
+            assertEquals(SmsBackupRunOutcome.Completed, outcome)
+            assertTrue(settingsRepository.state.value.backupEnabled)
+        }
+
+    @Test
+    fun `pending messages past several fully backed up batches are still found`() =
+        runTest {
+            // More than two batches already done, then one new message at the end.
+            val done = (1L..120L).map { message("Body $it", it * 1000, it) }
+            val pending = message("New", 200_000, 200, box = SmsBox.SENT)
+            messageSource.messages = done + pending
+            stateRepository.backedUp += done.map { it.stableKey }
+
+            val outcome = runUseCase()()
+
+            assertEquals(SmsBackupRunOutcome.Completed, outcome)
+            assertEquals(1, transport.appended.size)
             assertEquals(1, transport.openedFolders.size)
         }
 

@@ -34,7 +34,8 @@ Three features, as bottom-navigation tabs: **Backup** SMS to your own Gmail acco
 - Files messages under a Gmail label of your choice (default: `SMS`), created on first use
 - Configurable email subject template with `$CONTACT_NAME` and `$PHONE_NUMBER` placeholders
 - Groups each contact's messages into one Gmail conversation, and preserves each message's original timestamp
-- "Backup all previous SMS" backfills your existing inbox; otherwise only messages received after you enable it
+- Backs up both received and sent SMS (not drafts, failed sends or MMS). A sent message is picked up within about two minutes
+- "Backup all previous SMS" backfills your existing messages; otherwise only messages received or sent after you enable it
 - Resumable: progress is stored in the database, so a killed app continues where it left off and never uploads a message twice
 - Progress notification while a backup runs
 

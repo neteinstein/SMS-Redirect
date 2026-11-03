@@ -5,8 +5,8 @@ package com.neteinstein.smsredirect.domain.model
  * [com.neteinstein.smsredirect.domain.mail.SmsMailHeaders.TYPE]) so a restore can put the message
  * back in the right box.
  *
- * Only [INBOX] is backed up today, but the format carries the type from day one so that sent
- * messages, once supported, are restorable without a second format revision.
+ * Both boxes are backed up. Drafts, the outbox, queued and failed messages are not: they were
+ * never delivered, and a restore has no box to put them back in.
  */
 enum class SmsBox(
     val headerValue: String,
