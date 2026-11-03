@@ -5,13 +5,18 @@ This folder holds two videos with different jobs:
 | File | Use it for |
 |---|---|
 | `sms-toolbox-launch.mp4` | The store listing's promo video, social posts, the README. 24 s, with music |
-| `sms-toolbox-demo.mp4` | The Permissions declaration form's demonstration video. 1:50, shows every permission prompt |
+| `sms-toolbox-demo.mp4` | The Permissions declaration form's demonstration video. 2:19, shows every permission prompt and the restore's temporary default-SMS role |
 
 ## Launch video: `sms-toolbox-launch.mp4`
 
 A 24-second launch video (1920x1080, 30 fps, H.264 with AAC music) covering all
 four features. `sms-toolbox-launch.jpg` is its poster, and is also baked in as
 frame 0 so platforms that thumbnail the first frame show it.
+
+`sms-toolbox-launch-preview.gif` is a silent 720px, 12 fps loop of the same video
+for the root README. GitHub does not play an `.mp4` committed to the repository
+inline (a link only opens the file page, and `<video>` tags pointing at repo files
+are stripped), so the README shows the GIF and links it to the MP4.
 
 | Time | Scene | On screen |
 |---|---|---|
@@ -43,9 +48,11 @@ Rebuild it (needs Node + Playwright with Chromium, Python 3 + numpy, ffmpeg, and
 store-listing/scripts/launch_video/build.sh
 ```
 
+The build script also regenerates the README preview GIF.
+
 ## Permissions demo: `sms-toolbox-demo.mp4`
 
-`sms-toolbox-demo.mp4` is a 1:50 walkthrough of the whole app (1080x1920 portrait,
+`sms-toolbox-demo.mp4` is a 2:19 walkthrough of the whole app (1080x1920 portrait,
 30 fps, H.264 with a silent AAC track). It shows every permission the app asks
 for, at the moment it asks and why. `storyboard.png` is a contact sheet of the
 same video with timestamps.
@@ -70,19 +77,26 @@ python3 store-listing/scripts/generate_demo_video.py   # needs Pillow + ffmpeg (
 | 0:37 | Existing SMS backed up ("Backing up X of 3,214") | `READ_SMS` |
 | 0:41 | A new SMS arrives and is backed up straight away | `RECEIVE_SMS` |
 | 0:44 | The message in Gmail under the `SMS` label, named from contacts | n/a |
-| 0:49 | Redirect tab → + → contact icon on Sender | n/a |
-| 0:55 | In-app "Contacts permission needed" explanation → Proceed | `READ_CONTACTS` |
-| 1:00 | Android prompt "Allow SMS Toolbox to access your contacts?" → Allow | `READ_CONTACTS` |
-| 1:04 | Contact picker → Mom → rule filled → Save Rule | n/a |
-| 1:10 | "Keep running in background" explanation → Android exemption prompt | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` |
-| 1:18 | A matching SMS arrives and is forwarded; logged in Redirect History | `RECEIVE_SMS` · `SEND_SMS` |
-| 1:25 | Schedule tab → create a scheduled SMS (contact already allowed) → saved | `SEND_SMS` |
-| 1:37 | "Why each permission is needed" summary card | all of the above |
+| 0:49 | Backup tab → Restore from Gmail → "Restore messages" | n/a |
+| 0:52 | In-app 3-step explanation: become the default SMS app for now, restore, switch back → Continue | Default SMS app (role) |
+| 0:59 | Android prompt "Set SMS Toolbox as your default SMS app?" → Set as default | `ROLE_SMS`, only for this restore |
+| 1:04 | "Checking X of 3,214", messages written back to the phone | Default SMS app (role) |
+| 1:08 | "3,214 messages restored" → "Switch back to your messaging app" | n/a |
+| 1:13 | Android Settings → Default apps → SMS app → Messages: the role goes back | Role returned |
+| 1:18 | Redirect tab → + → contact icon on Sender | n/a |
+| 1:24 | In-app "Contacts permission needed" explanation → Proceed | `READ_CONTACTS` |
+| 1:29 | Android prompt "Allow SMS Toolbox to access your contacts?" → Allow | `READ_CONTACTS` |
+| 1:33 | Contact picker → Mom → rule filled → Save Rule | n/a |
+| 1:39 | "Keep running in background" explanation → Android exemption prompt | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` |
+| 1:48 | A matching SMS arrives and is forwarded; logged in Redirect History | `RECEIVE_SMS` · `SEND_SMS` |
+| 1:55 | Schedule tab → create a scheduled SMS (contact already allowed) → saved | `SEND_SMS` |
+| 2:07 | "Why each permission is needed" summary card | all of the above |
 
 The order and dialog text follow the code: each permission is asked for only
 when a feature needs it, and the in-app explanation always comes before the
 system prompt (`MainActivity.kt`: `requestSmsPermission`, `showContactsRationale`,
-`showBatteryDialog`, and `backupNotificationsLauncher` when backup is enabled).
+`showBatteryDialog`, `backupNotificationsLauncher` when backup is enabled, and the
+`RoleManager.ROLE_SMS` request after the restore dialog).
 All copy comes from `app/src/main/res/values/strings.xml`.
 
 ### Important: this is a rendered walkthrough, not a screen recording
@@ -99,7 +113,7 @@ ways to use this file:
    fresh install with the disposable test Gmail account from
    [`testing-instructions.md`](../testing-instructions.md). Turn on
    *Developer options → Show taps* so taps are visible. Optionally put this
-   video's summary card (1:37 onward) at the end.
+   video's summary card (2:07 onward) at the end.
 2. Upload it as is if you just need a placeholder to unblock the form, and
    replace it with a device recording before the review.
 

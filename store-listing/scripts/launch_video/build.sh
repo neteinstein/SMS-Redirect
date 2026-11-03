@@ -25,4 +25,8 @@ ffmpeg -loglevel error -y -i video_silent.mp4 -i poster.png -i music.wav \
   -c:v libx264 -preset slow -crf 16 -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart -shortest \
   "$out/sms-toolbox-launch.mp4"
 ffmpeg -loglevel error -y -i poster.png -q:v 2 "$out/sms-toolbox-launch.jpg"
-echo "Wrote $out/sms-toolbox-launch.mp4 and .jpg"
+# Silent looping preview for the root README: GitHub doesn't play a committed .mp4 inline.
+ffmpeg -loglevel error -y -i "$out/sms-toolbox-launch.mp4" \
+  -vf "fps=12,scale=720:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle" \
+  -loop 0 "$out/sms-toolbox-launch-preview.gif"
+echo "Wrote $out/sms-toolbox-launch.mp4, .jpg and -preview.gif"

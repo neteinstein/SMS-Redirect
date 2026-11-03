@@ -223,7 +223,7 @@ def generate_feature_graphic() -> None:
 
     # Manually split (rather than wrap_text's greedy fill) so the two lines
     # come out visually balanced instead of leaving a lone trailing word.
-    tagline_lines = ["Backup SMS, Forward or", "Schedule for later."]
+    tagline_lines = ["Back up & restore SMS,", "forward or schedule them."]
     tagline_y = title_y + 14
     for line in tagline_lines:
         draw.text((text_x, tagline_y), line, font=tagline_font, fill=BRAND_PRIMARY_CONTAINER)
