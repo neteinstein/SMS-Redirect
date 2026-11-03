@@ -1,1 +1,1 @@
-Back up SMS to Gmail. Plus rule-based forwarding and scheduled messages.
+Back up and restore SMS with Gmail. Plus forwarding rules and scheduled texts.

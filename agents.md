@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-SMS Toolbox is a native Android app (Kotlin) with three features: backing up SMS to the user's own Gmail account over IMAP (the primary feature and landing tab), forwarding incoming SMS that match user-defined rules, and sending scheduled messages. See `Architecture.md` for the full system design.
+SMS Toolbox is a native Android app (Kotlin) with three features: backing up received and sent SMS to the user's own Gmail account over IMAP and restoring them to a phone (the primary feature and landing tab), forwarding incoming SMS that match user-defined rules, and sending scheduled messages. See `Architecture.md` for the full system design.
 
 The app is named "SMS Toolbox" but the `applicationId` and Kotlin package remain `com.neteinstein.smsredirect`, and the deep link remains `smsredirect://app` — changing them would create a new Play listing and cut existing users off from updates.
 

@@ -2,7 +2,11 @@
 
 Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean architecture (domain use cases, repository, and Room database).
 
-Three features, as bottom-navigation tabs: **Backup** SMS to your own Gmail account, **Redirect** incoming SMS by rule, and **Schedule** messages to send later.
+Three features, as bottom-navigation tabs: **Backup** SMS to your own Gmail account (and **restore** them to a new phone), **Redirect** incoming SMS by rule, and **Schedule** messages to send later.
+
+[![SMS Toolbox launch video](store-listing/video/sms-toolbox-launch.jpg)](store-listing/video/sms-toolbox-launch.mp4)
+
+*24-second launch video: [`store-listing/video/sms-toolbox-launch.mp4`](store-listing/video/sms-toolbox-launch.mp4).*
 
 ## Quick start
 
@@ -38,6 +42,12 @@ Three features, as bottom-navigation tabs: **Backup** SMS to your own Gmail acco
 - "Backup all previous SMS" backfills your existing messages; otherwise only messages received or sent after you enable it
 - Resumable: progress is stored in the database, so a killed app continues where it left off and never uploads a message twice
 - Progress notification while a backup runs
+
+### SMS Restore from Gmail
+- **Restore messages** on the Backup tab copies everything under your Gmail label back to the phone, received and sent messages each into the right box
+- Messages already on the phone are skipped, so a restore is safe to run more than once, and restored messages are not uploaded again by the next backup
+- Android only lets the default SMS app write messages, so the app asks for the default-SMS role for the length of a user-started restore, then asks you to switch back to your usual messaging app
+- Runs in the background in bounded, resumable chunks; MMS is not restored
 
 > **Why IMAP APPEND and not SMTP:** a Gmail label *is* an IMAP folder, so APPEND can file messages under your chosen label. SMTP can only deliver to the inbox, stamps everything with the send time (so years of history would all be dated today), and would hit Gmail's ~500/day sending cap during a backfill.
 

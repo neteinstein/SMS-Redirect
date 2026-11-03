@@ -15,12 +15,13 @@ store-listing/
 │   ├── icon-512.png                  512x512 hi-res icon
 │   └── feature-graphic-1024x500.png  1024x500 feature graphic
 ├── screenshots/
-│   ├── phone/                        7 captioned 1080x1920 screenshots
-│   ├── sevenInchTablet/              same 7 moments, 1920x1080 "large screen" layout
-│   └── tenInchTablet/                same 7 moments, 2560x1440 "large screen" layout
+│   ├── phone/                        8 captioned 1080x1920 screenshots
+│   ├── sevenInchTablet/              same 8 moments, 1920x1080 "large screen" layout
+│   └── tenInchTablet/                same 8 moments, 2560x1440 "large screen" layout
 ├── scripts/generate_assets.py        regenerates everything under graphics/ + screenshots/
-├── scripts/generate_demo_video.py    regenerates video/ (needs ffmpeg)
-├── video/                            permissions demo video + storyboard (see video/README.md)
+├── scripts/generate_demo_video.py    regenerates the permissions demo video (needs ffmpeg)
+├── scripts/launch_video/build.sh     regenerates the launch video (needs Playwright + ffmpeg)
+├── video/                            launch video, permissions demo video + storyboard (see video/README.md)
 ├── data-safety.md                    cheat-sheet for the Data safety questionnaire
 └── testing-instructions.md           App access instructions + internal-track QA checklist
 ```
@@ -30,9 +31,9 @@ store-listing/
 | Play Console field | File | Limit | Current length |
 |---|---|---|---|
 | App name | `text/<locale>/title.txt` | 30 chars | 11 (en-US) / 11 (pt-PT) |
-| Short description | `text/<locale>/short_description.txt` | 80 chars | 72 (en-US) / 77 (pt-PT) |
-| Full description | `text/<locale>/full_description.txt` | 4000 chars | 3787 (en-US) / 3931 (pt-PT) |
-| What's new (this release) | `text/<locale>/release_notes.txt` | 500 chars | 355 (en-US) / 381 (pt-PT) |
+| Short description | `text/<locale>/short_description.txt` | 80 chars | 78 (en-US) / 73 (pt-PT) |
+| Full description | `text/<locale>/full_description.txt` | 4000 chars | 3983 (en-US) / 3964 (pt-PT) |
+| What's new (this release) | `text/<locale>/release_notes.txt` | 500 chars | 305 (en-US) / 330 (pt-PT) |
 
 Paste each file's contents verbatim into the matching field for that locale.
 `pt-PT` matches the tone/wording already used in `app/src/main/res/values-pt/strings.xml`
@@ -71,6 +72,11 @@ a strong, on-brand starting point:
 5. `05-schedule-form.png` — Create Schedule SMS form
 6. `06-settings.png` — Settings (Gmail account, landing screen, privacy-forward toggles)
 7. `07-history.png` — Redirect history
+8. `08-restore.png` — Restore from Gmail, mid-run (on the Backup tab)
+
+Play shows screenshots in upload order. Consider uploading `08-restore.png`
+second, right after `01-backup.png`, so the listing tells the backup-and-restore
+story first. That is the declared core use case (see below).
 
 They already satisfy Play's technical requirements (1080x1920, 24-bit PNG, no
 alpha) and can be uploaded as-is. For pixel-perfect real captures instead,
@@ -80,7 +86,7 @@ action or:
 ```bash
 adb exec-out screencap -p > screenshot.png
 ```
-then recreate the same 7 moments, optionally reusing the caption banners from
+then recreate the same 8 moments, optionally reusing the caption banners from
 `scripts/generate_assets.py` (`new_screenshot_canvas`) as an overlay.
 
 ### Tablet ("large screens") screenshots
@@ -97,7 +103,7 @@ actually looks like on a bigger screen.
 
 They meet Play's current requirements for large-screen screenshots: 16:9
 landscape, both dimensions between 1080 and 7680px, 24-bit PNG with no alpha,
-and 7 images each (Play recommends a minimum of 4, allows up to 8). Uploading
+and 8 images each (Play recommends a minimum of 4, allows up to 8). Uploading
 them is optional — Play only requires phone screenshots to publish — but
 recommended if the app is listed as tablet-compatible, since it isn't
 restricted to phones (no `<supports-screens>` or `<compatible-screens>`
@@ -109,6 +115,18 @@ To tweak colors/copy and regenerate every graphic (phone + both tablet sizes):
 pip install pillow
 python3 store-listing/scripts/generate_assets.py
 ```
+
+## Promo video
+
+`video/sms-toolbox-launch.mp4` is a 24-second launch video (1920x1080, 30 fps,
+H.264 + AAC, with music) that walks through Backup, Restore, Redirect and
+Schedule. Play Console's **Video** field on the main store listing takes a
+YouTube URL, not a file: upload the MP4 to YouTube (public or unlisted, ads
+off), then paste the link. `video/sms-toolbox-launch.jpg` is its poster frame.
+See [`video/README.md`](video/README.md) for what it shows and how to rebuild it.
+
+This is **not** the demonstration video for the permissions declaration form:
+that one is `video/sms-toolbox-demo.mp4` and has to show the permission flow.
 
 ## Suggested Play Console fields not covered by a file
 

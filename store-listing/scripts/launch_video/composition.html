@@ -1,0 +1,596 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@font-face { font-family: Inter; src: url(fonts/Inter-Regular.otf); font-weight: 400; }
+@font-face { font-family: Inter; src: url(fonts/Inter-Medium.otf); font-weight: 500; }
+@font-face { font-family: Inter; src: url(fonts/Inter-SemiBold.otf); font-weight: 600; }
+@font-face { font-family: Inter; src: url(fonts/Inter-Bold.otf); font-weight: 700; }
+@font-face { font-family: InterDisplay; src: url(fonts/InterDisplay-Bold.otf); font-weight: 700; }
+@font-face { font-family: InterDisplay; src: url(fonts/InterDisplay-ExtraBold.otf); font-weight: 800; }
+
+:root {
+  --primary: #1A73E8; --on-primary: #FFFFFF; --primary-c: #D3E3FD; --on-primary-c: #001A41;
+  --secondary: #188038; --secondary-c: #C4EED0; --on-secondary-c: #072711;
+  --tertiary: #F9AB00; --tertiary-c: #FFDF99;
+  --bg: #FAFBFF; --on-surface: #1A1C1E; --surface-variant: #DFE2EB; --on-variant: #43474E; --outline: #73777F;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+body { font-family: Inter, "Noto Color Emoji", sans-serif; color: var(--on-surface); -webkit-font-smoothing: antialiased; }
+#stage { position: absolute; inset: 0; overflow: hidden;
+  background: radial-gradient(1400px 900px at 78% 40%, #E4EEFE 0%, #F3F7FF 45%, var(--bg) 75%); }
+.abs { position: absolute; }
+.display { font-family: InterDisplay, Inter, "Noto Color Emoji", sans-serif; }
+
+/* floating background bubbles (texture) */
+.fb { position: absolute; border-radius: 22px; background: var(--primary-c); opacity: .55; }
+.fb::after { content: ""; position: absolute; left: 18px; bottom: -10px; border: 10px solid transparent;
+  border-top-color: var(--primary-c); border-left-color: var(--primary-c); }
+
+/* ---------- hook ---------- */
+#hook { inset: 0; }
+#hookBubble { left: 50%; top: 50%; width: 1180px; padding: 56px 72px; background: white; border-radius: 48px;
+  box-shadow: 0 30px 80px rgba(26,115,232,.18), 0 4px 14px rgba(0,0,0,.06); transform-origin: 8% 100%; }
+#hookBubble::after { content: ""; position: absolute; left: 70px; bottom: -34px; border: 22px solid transparent;
+  border-top: 22px solid white; border-left: 22px solid white; }
+#hookText { font-size: 92px; font-weight: 800; line-height: 1.08; letter-spacing: -2px; }
+#hookText .w { display: inline-block; }
+#hookText .hl { color: var(--primary); }
+#hookDots { position: absolute; left: 72px; top: 50%; display: flex; gap: 18px; }
+#hookDots i { width: 26px; height: 26px; border-radius: 50%; background: var(--outline); display: block; }
+#hookFrom { left: 50%; top: 50%; font-size: 26px; font-weight: 600; color: var(--on-variant); }
+
+/* ---------- reveal / outro ---------- */
+.brand { left: 0; right: 0; text-align: center; }
+.appicon { width: 220px; height: 220px; border-radius: 56px; background: var(--primary); position: relative;
+  box-shadow: 0 30px 70px rgba(26,115,232,.35); overflow: hidden; }
+.appicon svg { position: absolute; inset: -12%; width: 124%; height: 124%; }
+#revealIcon, #outroIcon { left: 50%; margin-left: -110px; }
+#revealTitle, #outroTitle { font-size: 120px; font-weight: 800; letter-spacing: -3px; }
+#revealSub { font-size: 44px; font-weight: 600; color: var(--on-variant); letter-spacing: -.5px; }
+#revealSub b { color: var(--primary); font-weight: 700; }
+#outroTag { font-size: 46px; font-weight: 700; letter-spacing: -.8px; color: var(--on-surface); }
+.chips { display: flex; gap: 22px; justify-content: center; }
+.chip { display: flex; align-items: center; gap: 14px; padding: 18px 30px 18px 22px; border-radius: 999px;
+  background: white; box-shadow: 0 8px 26px rgba(0,0,0,.08); font-size: 32px; font-weight: 700; }
+.chip .ic { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; }
+.chip svg { width: 30px; height: 30px; }
+
+/* ---------- feature captions ---------- */
+.cap { left: 130px; width: 700px; top: 340px; }
+.cap .over { display: inline-flex; align-items: center; gap: 14px; font-size: 26px; font-weight: 700; letter-spacing: 3px;
+  color: var(--primary); text-transform: uppercase; padding: 10px 20px 10px 12px; background: var(--primary-c); border-radius: 999px; }
+.cap .over .ic { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); display: grid; place-items: center; }
+.cap .over svg { width: 24px; height: 24px; fill: white; }
+.cap h1 { margin-top: 30px; font-size: 84px; line-height: 1.04; font-weight: 800; letter-spacing: -2.5px; }
+.cap p { margin-top: 26px; font-size: 36px; line-height: 1.3; font-weight: 500; color: var(--on-variant); }
+
+/* ---------- phone ---------- */
+#phone { left: 900px; top: 85px; width: 450px; height: 910px; border-radius: 64px; background: #1F2125; padding: 14px;
+  box-shadow: 0 50px 100px rgba(16,40,90,.28), 0 10px 26px rgba(0,0,0,.18), inset 0 0 0 2px #3a3d42; }
+#screen { position: relative; width: 100%; height: 100%; border-radius: 52px; background: var(--bg); overflow: hidden; }
+.status { position: absolute; left: 0; right: 0; top: 0; height: 46px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 34px; font-size: 17px; font-weight: 600; z-index: 5; }
+.status .cam { position: absolute; left: 50%; top: 14px; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%; background: #1F2125; }
+.sicons { display: flex; gap: 7px; align-items: center; }
+.sicons svg { width: 20px; height: 20px; }
+.view { position: absolute; left: 0; right: 0; top: 46px; bottom: 84px; }
+.appbar { height: 66px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px 0 22px; }
+.appbar h2 { font-size: 24px; font-weight: 600; letter-spacing: -.2px; }
+.appbar .acts { display: flex; gap: 6px; }
+.appbar .acts svg { width: 26px; height: 26px; fill: var(--on-variant); margin: 8px; }
+.body { padding: 4px 20px; }
+.nav { position: absolute; left: 0; right: 0; bottom: 0; height: 84px; background: #EEF1F8; display: flex; justify-content: space-around; padding-top: 12px; z-index: 4; }
+.nav .it { width: 120px; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: var(--on-variant); position: relative; }
+.nav .pill { width: 64px; height: 32px; border-radius: 16px; display: grid; place-items: center; position: relative; }
+.nav .pill svg { width: 24px; height: 24px; fill: var(--on-variant); position: relative; z-index: 1; }
+#navInd { position: absolute; top: 12px; width: 64px; height: 32px; border-radius: 16px; background: var(--primary-c); z-index: 0; }
+
+/* material-ish controls */
+.banner { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 16px; background: var(--secondary); color: white;
+  font-size: 18px; font-weight: 600; }
+.banner svg { width: 26px; height: 26px; fill: white; flex: none; }
+.field { margin-top: 18px; position: relative; border: 1.5px solid var(--outline); border-radius: 6px; padding: 16px 16px 14px; font-size: 18px; min-height: 56px; }
+.field label { position: absolute; top: -10px; left: 12px; background: var(--bg); padding: 0 5px; font-size: 13px; color: var(--on-variant); font-weight: 500; }
+.field.focus { border: 2.5px solid var(--primary); padding: 15px 15px 13px; }
+.field.focus label { color: var(--primary); }
+.field .ph { color: var(--outline); }
+.field .trail { position: absolute; right: 12px; top: 50%; margin-top: -13px; width: 26px; height: 26px; fill: var(--on-variant); }
+.caret { display: inline-block; width: 2px; height: 22px; background: var(--primary); vertical-align: -4px; margin-left: 1px; }
+.row { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; font-size: 18px; font-weight: 500; }
+.switch { width: 52px; height: 32px; border-radius: 16px; background: var(--primary); position: relative; }
+.switch::after { content: ""; position: absolute; right: 4px; top: 4px; width: 24px; height: 24px; border-radius: 50%; background: white; }
+.card { margin-top: 18px; background: white; border-radius: 16px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.06); }
+.card h3 { font-size: 19px; font-weight: 600; }
+.card .sub { font-size: 15px; color: var(--on-variant); line-height: 1.4; margin-top: 6px; }
+.bar { margin-top: 14px; height: 6px; border-radius: 3px; background: var(--primary-c); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--primary); border-radius: 3px; }
+.btn { margin-top: 16px; height: 48px; border-radius: 24px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center;
+  font-size: 17px; font-weight: 600; position: relative; overflow: hidden; }
+.btn.tonal { background: var(--secondary-c); color: var(--on-secondary-c); }
+.ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,.45); pointer-events: none; }
+.tap { position: absolute; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: rgba(26,28,30,.22);
+  border: 3px solid rgba(255,255,255,.9); z-index: 20; }
+
+/* rules list */
+.cat { display: flex; justify-content: space-between; font-size: 17px; font-weight: 600; margin: 14px 4px 0; }
+.cat span { font-weight: 500; color: var(--on-variant); font-size: 15px; }
+.rule { margin-top: 10px; background: white; border-radius: 14px; padding: 14px 16px 14px 22px; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.rule::before { content: ""; position: absolute; left: 10px; top: 14px; bottom: 14px; width: 4px; border-radius: 2px; background: var(--primary); }
+.rule.fam::before { background: var(--secondary); }
+.rule b { font-size: 18px; font-weight: 600; display: block; }
+.rule span { font-size: 14.5px; color: var(--on-variant); display: block; margin-top: 3px; }
+.rule .glow { position: absolute; inset: 0; border-radius: 14px; border: 2.5px solid var(--primary); background: rgba(211,227,253,.55); }
+.fab { position: absolute; right: 18px; bottom: 16px; width: 60px; height: 60px; border-radius: 18px; background: var(--primary-c); display: grid; place-items: center; box-shadow: 0 3px 8px rgba(0,0,0,.18); }
+.fab svg { width: 28px; height: 28px; fill: var(--on-primary-c); }
+
+/* heads-up notification */
+.headsup { position: absolute; left: 12px; right: 12px; top: 54px; background: white; border-radius: 22px; padding: 14px 16px; z-index: 10;
+  box-shadow: 0 10px 30px rgba(0,0,0,.22); display: flex; gap: 12px; }
+.headsup .av { width: 40px; height: 40px; border-radius: 50%; background: #E8DEF8; display: grid; place-items: center; font-weight: 700; color: #4A3A78; flex: none; font-size: 17px; }
+.headsup b { font-size: 16px; } .headsup .tm { font-size: 13px; color: var(--on-variant); font-weight: 500; margin-left: 6px; }
+.headsup p { font-size: 16px; color: var(--on-variant); margin-top: 3px; }
+
+/* companion cards */
+.comp { position: absolute; background: white; border-radius: 28px; box-shadow: 0 30px 70px rgba(16,40,90,.16), 0 4px 12px rgba(0,0,0,.06); overflow: hidden; }
+#mail { left: 1420px; top: 210px; width: 410px; }
+.mailhead { padding: 20px 24px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #ECEEF4; }
+.mailhead .t { font-size: 20px; font-weight: 700; }
+.lbl { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 8px; background: var(--primary-c); color: var(--on-primary-c); font-size: 15px; font-weight: 700; }
+.lbl svg { width: 18px; height: 18px; fill: var(--on-primary-c); }
+.mrow { padding: 14px 24px; border-bottom: 1px solid #F0F2F7; display: flex; gap: 14px; align-items: flex-start; }
+.mrow .av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: white; font-weight: 700; font-size: 17px; flex: none; }
+.mrow .s { font-size: 15.5px; font-weight: 700; white-space: nowrap; }
+.mrow .p { font-size: 14.5px; color: var(--on-variant); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 280px; }
+.mrow .d { font-size: 13px; color: var(--on-variant); margin-left: auto; font-weight: 600; }
+.fly { position: absolute; width: 54px; height: 40px; border-radius: 14px; background: var(--primary); z-index: 30;
+  box-shadow: 0 8px 18px rgba(26,115,232,.35); }
+.fly::after { content: ""; position: absolute; left: 9px; bottom: -8px; border: 6px solid transparent; border-top-color: var(--primary); border-left-color: var(--primary); }
+.fly i { position: absolute; top: 15px; width: 8px; height: 8px; border-radius: 50%; background: white; }
+
+#work { left: 1440px; top: 250px; width: 380px; }
+.convhead { padding: 18px 22px; display: flex; gap: 14px; align-items: center; border-bottom: 1px solid #ECEEF4; }
+.convhead .av { width: 46px; height: 46px; border-radius: 50%; background: var(--primary); display: grid; place-items: center; }
+.convhead .av svg { width: 26px; height: 26px; fill: white; }
+.convhead b { font-size: 19px; display: block; } .convhead span { font-size: 14px; color: var(--on-variant); }
+.convbody { padding: 22px; min-height: 250px; background: #F7F9FD; }
+.inb { background: white; border-radius: 22px 22px 22px 6px; padding: 16px 18px; font-size: 19px; line-height: 1.4; box-shadow: 0 1px 2px rgba(0,0,0,.08); width: 300px; }
+.inb small { display: block; font-size: 13px; color: var(--on-variant); margin-top: 8px; }
+.okchip { margin-top: 18px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px; background: var(--secondary-c); color: var(--on-secondary-c); font-weight: 700; font-size: 16px; }
+.okchip svg { width: 20px; height: 20px; fill: var(--on-secondary-c); }
+
+#future { left: 1430px; top: 330px; width: 390px; padding: 26px; }
+#future .when { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 700; color: var(--primary); }
+#future .when svg { width: 26px; height: 26px; fill: var(--primary); }
+.outb { margin-top: 18px; margin-left: auto; background: var(--primary); color: white; border-radius: 22px 22px 6px 22px; padding: 16px 18px; font-size: 21px; width: 290px; }
+.outb small { display: block; font-size: 13px; opacity: .85; margin-top: 8px; text-align: right; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bgBubbles"></div>
+
+  <!-- HOOK -->
+  <div id="hook" class="abs">
+    <div id="hookFrom" class="abs">Your phone · now</div>
+    <div id="hookBubble" class="abs">
+      <div id="hookDots"><i></i><i></i><i></i></div>
+      <div id="hookText" class="display"></div>
+    </div>
+  </div>
+
+  <!-- REVEAL -->
+  <div id="reveal" class="abs" style="inset:0">
+    <div id="revealIcon" class="abs appicon" style="top:250px"></div>
+    <div id="revealTitle" class="abs brand display" style="top:505px">SMS Toolbox</div>
+    <div id="revealSub" class="abs brand" style="top:670px"></div>
+  </div>
+
+  <!-- CAPTIONS -->
+  <div id="capBackup" class="abs cap"></div>
+  <div id="capRestore" class="abs cap"></div>
+  <div id="capRedirect" class="abs cap"></div>
+  <div id="capSchedule" class="abs cap"></div>
+
+  <!-- COMPANIONS -->
+  <div id="mail" class="comp">
+    <div class="mailhead"><span class="t">Gmail</span><span class="lbl"><svg viewBox="0 0 24 24"><path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16z"/></svg>SMS</span></div>
+    <div id="mailRows"></div>
+  </div>
+  <div id="work" class="comp">
+    <div class="convhead"><div class="av"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+      <div><b>Your work phone</b><span>+351 912 345 678</span></div></div>
+    <div class="convbody">
+      <div id="fwdMsg" class="inb">SMS Toolbox: (WorkBank) - Your code is 482913<small>now</small></div>
+      <div id="fwdOk" class="okchip"><svg viewBox="0 0 24 24"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Forwarded by “Work OTP”</div>
+    </div>
+  </div>
+  <div id="future" class="comp">
+    <div class="when"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>Mar 14, 2027 · 09:00</div>
+    <div class="outb">Happy birthday, Mom! 🎂<small>Sent automatically ✓</small></div>
+  </div>
+
+  <!-- PHONE -->
+  <div id="phone" class="abs">
+    <div id="screen">
+      <div class="status"><span>9:41</span><span class="cam"></span>
+        <span class="sicons"><svg viewBox="0 0 24 24"><path d="M2 22h20V2z"/></svg><svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg></span></div>
+
+      <!-- Backup view -->
+      <div id="vBackup" class="view">
+        <div class="appbar"><h2>Backup to Gmail</h2><div class="acts">SETTINGS_ICON</div></div>
+        <div class="body">
+          <div class="banner"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>Backup to Gmail enabled</div>
+          <div class="field"><label>Gmail label</label>SMS</div>
+          <div class="field" style="font-size:16.5px"><label>Email subject</label>SMS with $CONTACT_NAME ($PHONE_NUMBER)</div>
+          <div class="row">Backup all previous SMS<div class="switch"></div></div>
+          <div class="card"><h3 id="bkTitle"></h3><div class="bar"><i id="bkBar"></i></div><div class="sub">Messages are backed up as they arrive.</div></div>
+        </div>
+      </div>
+
+      <!-- Restore view -->
+      <div id="vRestore" class="view">
+        <div class="appbar"><h2>Backup to Gmail</h2><div class="acts">SETTINGS_ICON</div></div>
+        <div class="body">
+          <div class="banner"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>Backup to Gmail enabled</div>
+          <div class="card" style="margin-top:22px">
+            <h3>Restore from Gmail</h3>
+            <div class="sub">Copy the messages backed up under the Gmail label “SMS” back to this phone. Messages already on the phone are skipped, so it is safe to run more than once.</div>
+            <div id="rsIdle"><div id="rsBtn" class="btn">Restore messages<span id="rsRipple" class="ripple"></span></div></div>
+            <div id="rsRun"><div style="margin-top:16px;font-size:17px;font-weight:600" id="rsCheck"></div><div class="bar"><i id="rsBar"></i></div><div class="sub" id="rsSoFar"></div></div>
+            <div id="rsDone"><div style="margin-top:16px;display:flex;align-items:center;gap:10px;font-size:19px;font-weight:700;color:var(--secondary)">
+              <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:var(--secondary)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>3,214 messages restored</div>
+              <div class="btn tonal">Done</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Redirect view -->
+      <div id="vRedirect" class="view">
+        <div class="appbar"><h2>Redirect Rules</h2><div class="acts">HISTORY_ICON SETTINGS_ICON</div></div>
+        <div class="body">
+          <div class="cat">Work<span>2 rules</span></div>
+          <div class="rule"><div id="ruleGlow" class="glow"></div><b style="position:relative">Work OTP</b><span style="position:relative">Sender: WorkBank</span><span style="position:relative">Target: +351 912 345 678</span></div>
+          <div class="rule"><b>Delivery codes</b><span>Sender: contains "DHL"</span><span>Target: +351 912 345 678</span></div>
+          <div class="cat" style="margin-top:18px">Family<span>1 rule</span></div>
+          <div class="rule fam"><b>Mom's phone</b><span>Sender: Mom</span><span>Target: +351 933 111 222</span></div>
+        </div>
+        <div class="fab"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></div>
+        <div id="headsup" class="headsup"><div class="av">W</div><div><b>WorkBank</b><span class="tm">now</span><p>Your code is 482913</p></div></div>
+      </div>
+
+      <!-- Schedule form view -->
+      <div id="vSchedForm" class="view">
+        <div class="appbar"><h2>Create Schedule SMS</h2><div class="acts"></div></div>
+        <div class="body" style="padding-top:0">
+          <div id="sfName" class="field"><label>Scheduled SMS Name</label><span></span></div>
+          <div id="sfContact" class="field"><label>Contact</label><span></span><svg class="trail" viewBox="0 0 24 24"><path d="M20 0H4v2h16V0zM4 24h16v-2H4v2zM20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 2.75c1.24 0 2.25 1.01 2.25 2.25s-1.01 2.25-2.25 2.25S9.75 10.24 9.75 9 10.76 6.75 12 6.75zM17 17H7v-1.5c0-1.67 3.33-2.5 5-2.5s5 .83 5 2.5V17z"/></svg></div>
+          <div id="sfMsg" class="field" style="min-height:84px"><label>Message</label><span></span></div>
+          <div style="display:flex;gap:12px">
+            <div id="sfDate" class="field" style="flex:1.25"><label>Date</label><span></span></div>
+            <div id="sfTime" class="field" style="flex:1"><label>Time</label><span></span></div>
+          </div>
+          <div id="sfRepeat" class="field"><label>Repeat</label><span></span><svg class="trail" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></div>
+          <div id="sfSave" class="btn">Save Scheduled SMS<span id="sfRipple" class="ripple"></span></div>
+        </div>
+      </div>
+
+      <!-- Schedule list view -->
+      <div id="vSchedList" class="view">
+        <div class="appbar"><h2>Scheduled SMS Rules</h2><div class="acts">HISTORY_ICON SETTINGS_ICON</div></div>
+        <div class="body">
+          <div class="cat">Family<span>1 scheduled SMS</span></div>
+          <div id="schedItem" class="rule fam"><b>Mom's birthday</b><span>Contact: Mom</span><span>Next send: Mar 14, 2027 09:00</span><span>Repeat: Yearly</span></div>
+        </div>
+        <div class="fab"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></div>
+      </div>
+
+      <div id="tap" class="tap"></div>
+
+      <div class="nav">
+        <div id="navInd"></div>
+        <div class="it" id="nav0"><div class="pill">ICON_BACKUP</div>Backup</div>
+        <div class="it" id="nav1"><div class="pill">ICON_FORWARD</div>Redirect</div>
+        <div class="it" id="nav2"><div class="pill">ICON_SCHEDULE</div>Schedule</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="flies"></div>
+
+  <!-- OUTRO -->
+  <div id="outro" class="abs" style="inset:0">
+    <div id="outroIcon" class="abs appicon" style="top:150px"></div>
+    <div id="outroTitle" class="abs brand display" style="top:395px">SMS Toolbox</div>
+    <div id="outroChips" class="abs chips" style="left:0;right:0;top:575px"></div>
+    <div id="outroTag" class="abs brand" style="top:735px">No account. No server. Just your Gmail.</div>
+    <div id="outroAnd" class="abs brand" style="top:818px;font-size:28px;font-weight:600;color:var(--on-variant)">For Android</div>
+  </div>
+</div>
+
+<script>
+// ---------- icons (Material Icons paths; app icon from ic_launcher_foreground.xml) ----------
+const P = {
+  backup: "M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z",
+  forward: "M12 8V4l8 8-8 8v-4H4V8z",
+  schedule: "M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z",
+  restore: "M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9z",
+  settings: "M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z",
+  history: "M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z",
+};
+const svg = (p, extra = "") => `<svg viewBox="0 0 24 24" ${extra}><path d="${p}"/></svg>`;
+const APP_ICON = `<svg viewBox="0 0 108 108"><path fill="#FFFFFF" d="M30,36 L78,36 C80.2,36 82,37.8 82,40 L82,62 C82,64.2 80.2,66 78,66 L44,66 L36,74 L36,66 L30,66 C27.8,66 26,64.2 26,62 L26,40 C26,37.8 27.8,36 30,36 Z"/><path fill="#1A73E8" d="M48,46 L60,51 L48,56 L48,53 L42,53 L42,49 L48,49 Z"/><path fill="#1A73E8" d="M56,46 L68,51 L56,56 L56,53 L52,53 L52,49 L56,49 Z"/></svg>`;
+
+document.body.innerHTML = document.body.innerHTML
+  .replaceAll("SETTINGS_ICON", svg(P.settings)).replaceAll("HISTORY_ICON", svg(P.history))
+  .replace("ICON_BACKUP", svg(P.backup)).replace("ICON_FORWARD", svg(P.forward)).replace("ICON_SCHEDULE", svg(P.schedule));
+const $ = id => document.getElementById(id);
+$("revealIcon").innerHTML = APP_ICON; $("outroIcon").innerHTML = APP_ICON;
+
+// captions
+const CAPS = {
+  capBackup: [P.backup, "Backup", "Straight to your own Gmail", "Every SMS you send or receive, filed under a label you choose."],
+  capRestore: [P.restore, "Restore", "New phone, same history", "Every text back from Gmail, in one tap."],
+  capRedirect: [P.forward, "Redirect", "Forward the texts you choose", "Simple rules. First match wins."],
+  capSchedule: [P.schedule, "Schedule", "Write now, send later", "Once, daily, monthly or every year."],
+};
+for (const [id, [ic, over, h, p]] of Object.entries(CAPS)) {
+  $(id).innerHTML = `<div class="over"><span class="ic">${svg(ic)}</span>${over}</div><h1 class="display">${h}</h1><p>${p}</p>`;
+}
+// hook words
+const HOOK = [["Lose", 0], ["the", 0], ["phone,", 0], ["lose", 1], ["the", 1], ["texts?", 1]];
+$("hookText").innerHTML = HOOK.map(([w, hl], i) => `<span class="w${hl ? " hl" : ""}" id="hw${i}">${w}</span>`).join(" ").replace('phone,</span> ', 'phone,</span><br>');
+$("revealSub").innerHTML = ["Backup", "Restore", "Redirect", "Schedule"].map((w, i) => `<span id="rv${i}" style="display:inline-block">${w}</span>`).join('<b> · </b>');
+// outro chips
+const CHIPS = [[P.backup, "Backup", "#1A73E8"], [P.restore, "Restore", "#188038"], [P.forward, "Redirect", "#F9AB00"], [P.schedule, "Schedule", "#7B57C9"]];
+$("outroChips").innerHTML = CHIPS.map(([p, l, c], i) => `<div class="chip" id="oc${i}"><span class="ic" style="background:${c}">${svg(p, 'style="fill:white"')}</span>${l}</div>`).join("");
+// mail rows (fictional)
+const MAIL = [
+  ["M", "#188038", "SMS with Mom (+351 933 111 222)", "Landed safely! Call you tonight ❤️", "9:38"],
+  ["A", "#7B57C9", "SMS with Alex (+351 961 234 567)", "To: Alex · On my way, 10 minutes", "9:12"],
+  ["D", "#F29900", "SMS with DHL (DHL)", "Your parcel arrives today 14:00–16:00", "8:47"],
+  ["A", "#7B57C9", "SMS with Alex (+351 961 234 567)", "Dinner at 8? 🍝", "Mon"],
+  ["W", "#1A73E8", "SMS with WorkBank (WorkBank)", "Your code is 771204", "Mon"],
+];
+$("mailRows").innerHTML = MAIL.map(([a, c, s, p, d], i) =>
+  `<div class="mrow" id="mr${i}"><div class="av" style="background:${c}">${a}</div><div><div class="s">${s}</div><div class="p">${p}</div></div><div class="d">${d}</div></div>`).join("");
+// background bubbles
+const FB = [[90, 120, 150, 70], [1650, 90, 120, 56], [1720, 880, 170, 76], [140, 860, 110, 52], [760, 60, 90, 44], [1100, 960, 130, 58], [40, 480, 80, 40]];
+$("bgBubbles").innerHTML = FB.map(([x, y, w, h], i) => `<div class="fb" id="fb${i}" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px"></div>`).join("");
+// flying bubbles
+$("flies").innerHTML = Array.from({ length: 8 }, (_, i) => `<div class="fly" id="fly${i}"><i style="left:12px"></i><i style="left:23px"></i><i style="left:34px"></i></div>`).join("");
+
+// ---------- timing helpers ----------
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lin = (t, a, b) => clamp((t - a) / (b - a));
+const eOut = x => 1 - Math.pow(1 - x, 3);
+const eInOut = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const back = x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+const fmt = n => Math.round(n).toLocaleString("en-US");
+const show = (el, o, tf = "") => { el.style.opacity = o; el.style.transform = tf; el.style.visibility = o <= 0.001 ? "hidden" : "visible"; };
+// window in/out: rises in over [a, a+din], leaves over [b-dout, b]
+const win = (t, a, b, din = .4, dout = .3) => Math.min(eOut(lin(t, a, a + din)), 1 - eInOut(lin(t, b - dout, b)));
+
+// Scene cuts (120 BPM, 0.5s beat)
+const S = { hook: [0, 3], reveal: [3, 5], backup: [5, 9.5], restore: [9.5, 13], redirect: [13, 17], schedule: [17, 21], outro: [21, 24] };
+const DUR = 24;
+
+function centerIn(id) { const r = $(id).getBoundingClientRect(), sc = $("screen").getBoundingClientRect(); return [r.left - sc.left + r.width / 2, r.top - sc.top + r.height / 2]; }
+function typed(text, t, a, cps) { const n = Math.floor(clamp((t - a) * cps, 0, text.length)); return [...text].slice(0, n).join(""); }
+
+function render(t) {
+  // background texture drifts slowly
+  FB.forEach((f, i) => { const el = $("fb" + i); el.style.transform = `translate(${Math.sin(t * .4 + i) * 14}px, ${Math.cos(t * .33 + i * 2) * 12}px)`; });
+
+  // ---- HOOK ----
+  {
+    const [a, b] = S.hook;
+    const o = 1 - eInOut(lin(t, b - .3, b));
+    const pop = back(lin(t, .05, .45));
+    const bub = $("hookBubble");
+    show($("hook"), o);
+    bub.style.transform = `translate(-50%, -50%) scale(${lerp(.6, 1, pop)}) translateY(${lerp(0, -30, eInOut(lin(t, b - .3, b)))}px)`;
+    bub.style.opacity = clamp(lin(t, .05, .25));
+    const dots = $("hookDots"); const dO = clamp(lin(t, .2, .3)) * (1 - lin(t, .55, .65));
+    dots.style.opacity = dO; dots.style.transform = "translateY(-50%)";
+    [...dots.children].forEach((d, i) => d.style.transform = `translateY(${-10 * Math.max(0, Math.sin((t * 9) - i * .9))}px)`);
+    HOOK.forEach((_, i) => { const x = eOut(lin(t, .6 + i * .09, .9 + i * .09)); const w = $("hw" + i); w.style.opacity = x; w.style.transform = `translateY(${lerp(28, 0, x)}px)`; });
+    const f = $("hookFrom"); f.style.opacity = clamp(lin(t, .3, .6)) * o; f.style.transform = `translate(-540px, -250px)`;
+  }
+
+  // ---- REVEAL ----
+  {
+    const [a, b] = S.reveal;
+    const out = 1 - eInOut(lin(t, b - .3, b));
+    show($("reveal"), t >= a && t < b ? 1 : 0);
+    const ip = back(lin(t, a, a + .45));
+    $("revealIcon").style.transform = `scale(${lerp(.3, 1, ip) * lerp(1, .9, 1 - out)}) rotate(${lerp(-14, 0, eOut(lin(t, a, a + .5)))}deg)`;
+    $("revealIcon").style.opacity = clamp(lin(t, a, a + .15)) * out;
+    const tt = eOut(lin(t, a + .2, a + .55));
+    $("revealTitle").style.opacity = tt * out; $("revealTitle").style.transform = `translateY(${lerp(40, 0, tt)}px)`;
+    for (let i = 0; i < 4; i++) { const x = eOut(lin(t, a + .45 + i * .125, a + .75 + i * .125)); const w = $("rv" + i); w.style.opacity = x; w.style.transform = `translateY(${lerp(24, 0, x)}px)`; }
+    $("revealSub").style.opacity = out * clamp(lin(t, a + .45, a + .6));
+  }
+
+  // ---- PHONE (persistent across features) ----
+  {
+    const pa = S.backup[0], pb = S.schedule[1];
+    const inX = eOut(lin(t, pa, pa + .55)), outX = eInOut(lin(t, pb - .28, pb));
+    const ph = $("phone");
+    show(ph, t >= pa && t < pb ? 1 : 0, `translate(${lerp(700, 0, inX) + lerp(0, -40, outX)}px, ${lerp(0, 60, outX)}px) rotate(${lerp(6, 0, inX)}deg) scale(${lerp(1, .92, outX)})`);
+    ph.style.opacity = (t >= pa && t < pb) ? 1 - outX : 0;
+
+    // views
+    const views = { vBackup: [S.backup[0], S.backup[1]], vRestore: [S.restore[0], S.restore[1]], vRedirect: [S.redirect[0], S.redirect[1]], vSchedForm: [S.schedule[0], 19.85], vSchedList: [19.85, S.schedule[1] + 1] };
+    for (const [id, [a, b]] of Object.entries(views)) {
+      const first = a === S.backup[0];
+      const o = first ? (t >= a && t < b ? 1 - lin(t, b - .2, b) : 0) : Math.min(lin(t, a + .05, a + .3), 1 - lin(t, b - .2, b));
+      show($(id), t >= a - 0.001 && t < b ? clamp(o) : 0, `translateY(${first ? 0 : lerp(16, 0, eOut(lin(t, a, a + .35)))}px)`);
+    }
+    // nav indicator
+    const pos = t < S.redirect[0] ? 0 : t < S.schedule[0] ? 1 : 2;
+    const prev = t < S.redirect[0] ? 0 : t < S.schedule[0] ? 0 : 1;
+    const cut = t < S.schedule[0] ? S.redirect[0] : S.schedule[0];
+    const mv = eInOut(lin(t, cut - .1, cut + .25));
+    const idx = lerp(prev, pos, mv);
+    const navW = 422 / 3;
+    $("navInd").style.left = `${(navW * idx) + navW / 2 - 32 + 0}px`;
+    for (let i = 0; i < 3; i++) {
+      const active = Math.abs(idx - i) < .5;
+      $("nav" + i).style.color = active ? "var(--on-surface)" : "var(--on-variant)";
+      $("nav" + i).querySelector("svg").style.fill = active ? "var(--on-primary-c)" : "var(--on-variant)";
+    }
+  }
+
+  // ---- captions ----
+  const capIds = { capBackup: S.backup, capRestore: S.restore, capRedirect: S.redirect, capSchedule: S.schedule };
+  for (const [id, [a, b]] of Object.entries(capIds)) {
+    const el = $(id); const kids = el.children;
+    const live = t >= a && t < b;
+    el.style.visibility = live ? "visible" : "hidden";
+    const outp = eInOut(lin(t, b - .3, b));
+    for (let k = 0; k < kids.length; k++) {
+      const x = eOut(lin(t, a + .08 + k * .1, a + .48 + k * .1));
+      kids[k].style.opacity = x * (1 - outp);
+      kids[k].style.transform = `translateX(${lerp(-50, 0, x) + lerp(0, -30, outp)}px)`;
+    }
+  }
+
+  // ---- BACKUP scene ----
+  {
+    const [a, b] = S.backup;
+    const n = lerp(1180, 3214, eInOut(lin(t, a + .6, a + 3.8)));
+    $("bkTitle").textContent = n >= 3214 ? "3,214 messages backed up" : `Backing up ${fmt(n)} of 3,214`;
+    $("bkBar").style.width = `${(n / 3214) * 100}%`;
+    // mail card (also visible in restore)
+    const mo = Math.min(eOut(lin(t, a + .35, a + .8)), 1 - eInOut(lin(t, S.restore[1] - .3, S.restore[1])));
+    show($("mail"), t >= a && t < S.restore[1] ? mo : 0, `translateX(${lerp(80, 0, eOut(lin(t, a + .35, a + .8)))}px)`);
+    MAIL.forEach((_, i) => {
+      const at = a + 1.0 + i * .5; // on beats
+      const x = t < S.restore[0] ? eOut(lin(t, at, at + .35)) : 1;
+      const r = $("mr" + i);
+      r.style.opacity = x; r.style.transform = `translateY(${lerp(-24, 0, x)}px)`;
+      r.style.background = (t > at && t < at + .6 && t < S.restore[0]) ? `rgba(211,227,253,${.7 * (1 - lin(t, at + .1, at + .6))})` : "transparent";
+    });
+  }
+
+  // ---- flying bubbles (backup: phone -> mail ; restore: mail -> phone) ----
+  for (let i = 0; i < 8; i++) {
+    const el = $("fly" + i);
+    let vis = 0, x = 0, y = 0, sc = 1;
+    const PH = [1125, 520], ML = [1500, 330];
+    if (i < 5) { // backup flights land on the row arrival
+      const at = S.backup[0] + 1.0 + i * .5, st = at - .45;
+      const p = lin(t, st, at);
+      if (t >= st && t <= at + .05) { vis = 1; const e = eInOut(p); x = lerp(PH[0], ML[0], e); y = lerp(PH[1], ML[1] + i * 10, e) - Math.sin(e * Math.PI) * 140; sc = lerp(.7, 1, Math.sin(e * Math.PI)); }
+    } else { // restore flights on beats while progress runs
+      const k = i - 5;
+      const st = S.restore[0] + 1.1 + k * .5, at = st + .5;
+      const p = lin(t, st, at);
+      if (t >= st && t <= at) { vis = 1; const e = eInOut(p); x = lerp(ML[0], PH[0], e); y = lerp(ML[1] + 60, PH[1] + 40, e) - Math.sin(e * Math.PI) * 140; sc = lerp(.7, 1, Math.sin(e * Math.PI)); }
+    }
+    el.style.visibility = vis ? "visible" : "hidden";
+    el.style.left = `${x - 27}px`; el.style.top = `${y - 20}px`; el.style.transform = `scale(${sc})`;
+    el.style.opacity = vis;
+  }
+
+  // ---- RESTORE scene ----
+  {
+    const [a, b] = S.restore;
+    const tapT = a + .75;
+    const tp = $("tap");
+    const tapVis = (t >= tapT - .2 && t < tapT + .25);
+    tp.style.visibility = tapVis ? "visible" : "hidden";
+    if (tapVis) { const [cx, cy] = centerIn("rsBtn"); tp.style.left = `${cx}px`; tp.style.top = `${cy}px`; }
+    tp.style.opacity = tapVis ? Math.min(lin(t, tapT - .2, tapT - .05), 1 - lin(t, tapT + .05, tapT + .25)) : 0;
+    tp.style.transform = `scale(${t < tapT ? lerp(1.3, 1, lin(t, tapT - .2, tapT)) : lerp(1, .8, lin(t, tapT, tapT + .25))})`;
+    const rp = $("rsRipple"); const rr = lin(t, tapT, tapT + .35);
+    rp.style.width = rp.style.height = `${rr * 500}px`; rp.style.left = `${180 - rr * 250}px`; rp.style.top = `${24 - rr * 250}px`; rp.style.opacity = (t >= tapT && t < tapT + .4) ? 1 - rr : 0;
+    const runA = tapT + .3, runB = b - .9;
+    $("rsIdle").style.display = t < runA ? "block" : "none";
+    $("rsRun").style.display = t >= runA && t < runB ? "block" : "none";
+    $("rsDone").style.display = t >= runB ? "block" : "none";
+    show($("rsDone"), t >= runB ? eOut(lin(t, runB, runB + .25)) : 0, `scale(${lerp(.94, 1, eOut(lin(t, runB, runB + .3)))})`);
+    const pr = eInOut(lin(t, runA, runB - .05));
+    $("rsCheck").textContent = `Checking ${fmt(lerp(1, 3214, pr))} of 3,214`;
+    $("rsBar").style.width = `${pr * 100}%`;
+    $("rsSoFar").textContent = `${fmt(lerp(0, 3214, pr))} messages restored so far`;
+    // in the restore scene the mail rows are all present
+  }
+
+  // ---- REDIRECT scene ----
+  {
+    const [a, b] = S.redirect;
+    const hu = $("headsup"); const hin = eOut(lin(t, a + .5, a + .85)); const hout = eInOut(lin(t, a + 2.4, a + 2.7));
+    show(hu, t >= a + .5 && t < a + 2.7 ? 1 : 0, `translateY(${lerp(-150, 0, hin) + lerp(0, -150, hout)}px)`);
+    const g = $("ruleGlow"); const gx = lin(t, a + 1.0, a + 1.2) * (1 - lin(t, a + 3.2, a + 3.6));
+    g.style.opacity = gx * (0.75 + 0.25 * Math.sin((t - a) * 12.566));
+    const w = $("work"); const wo = Math.min(eOut(lin(t, a + .3, a + .75)), 1 - eInOut(lin(t, b - .3, b)));
+    show(w, t >= a && t < b ? wo : 0, `translateX(${lerp(80, 0, eOut(lin(t, a + .3, a + .75)))}px)`);
+    const m = eOut(lin(t, a + 1.5, a + 1.8)); show($("fwdMsg"), m, `translateY(${lerp(20, 0, m)}px) scale(${lerp(.92, 1, back(lin(t, a + 1.5, a + 1.85)))})`);
+    const ok = eOut(lin(t, a + 2.0, a + 2.3)); show($("fwdOk"), ok, `translateY(${lerp(14, 0, ok)}px)`);
+    // a flight phone -> work phone
+    const fl = $("fly7");
+    const st = a + 1.05, at = a + 1.5;
+    if (t >= st && t <= at) {
+      const e = eInOut(lin(t, st, at));
+      fl.style.visibility = "visible"; fl.style.opacity = 1;
+      fl.style.left = `${lerp(1180, 1560, e) - 27}px`; fl.style.top = `${lerp(330, 420, e) - Math.sin(e * Math.PI) * 120 - 20}px`;
+      fl.style.transform = `scale(${lerp(.7, 1, Math.sin(e * Math.PI))})`;
+    }
+  }
+
+  // ---- SCHEDULE scene ----
+  {
+    const [a, b] = S.schedule;
+    const fields = [
+      ["sfName", "Mom's birthday", a + .35, 30],
+      ["sfContact", "Mom", a + .8, 20],
+      ["sfMsg", "Happy birthday, Mom! 🎂", a + 1.05, 28],
+      ["sfDate", "Mar 14, 2027", a + 1.95, 99],
+      ["sfTime", "09:00", a + 2.1, 99],
+      ["sfRepeat", "Yearly", a + 2.25, 99],
+    ];
+    fields.forEach(([id, text, st, cps], i) => {
+      const el = $(id); const span = el.querySelector("span");
+      const nextSt = i + 1 < fields.length ? fields[i + 1][2] : a + 2.5;
+      const typing = t >= st && t < nextSt;
+      const s = typed(text, t, st, cps);
+      span.innerHTML = s + (typing && cps < 99 ? '<i class="caret"></i>' : "");
+      el.classList.toggle("focus", typing);
+    });
+    const tapT = a + 2.6;
+    const tp = $("tap");
+    if (t >= tapT - .2 && t < tapT + .25) {
+      const [cx, cy] = centerIn("sfSave"); tp.style.visibility = "visible"; tp.style.left = `${cx}px`; tp.style.top = `${cy}px`;
+      tp.style.opacity = Math.min(lin(t, tapT - .2, tapT - .05), 1 - lin(t, tapT + .05, tapT + .25));
+      tp.style.transform = `scale(${t < tapT ? lerp(1.3, 1, lin(t, tapT - .2, tapT)) : lerp(1, .8, lin(t, tapT, tapT + .25))})`;
+    }
+    const rp = $("sfRipple"); const rr = lin(t, tapT, tapT + .35);
+    rp.style.width = rp.style.height = `${rr * 500}px`; rp.style.left = `${190 - rr * 250}px`; rp.style.top = `${24 - rr * 250}px`; rp.style.opacity = (t >= tapT && t < tapT + .4) ? 1 - rr : 0;
+    const si = eOut(lin(t, 19.95, 20.3)); $("schedItem").style.transform = `translateY(${lerp(30, 0, si)}px)`; $("schedItem").style.opacity = si;
+    const f = $("future"); const fo = Math.min(eOut(lin(t, 20.0, 20.4)), 1 - eInOut(lin(t, b - .3, b)));
+    show(f, t >= 19.9 && t < b ? fo : 0, `translateX(${lerp(80, 0, eOut(lin(t, 20.0, 20.4)))}px)`);
+  }
+
+  // ---- OUTRO ----
+  {
+    const [a, b] = S.outro;
+    show($("outro"), t >= a ? 1 : 0);
+    const ip = back(lin(t, a, a + .45));
+    $("outroIcon").style.transform = `scale(${lerp(.3, 1, ip)})`; $("outroIcon").style.opacity = clamp(lin(t, a, a + .15));
+    const tt = eOut(lin(t, a + .15, a + .5));
+    $("outroTitle").style.opacity = tt; $("outroTitle").style.transform = `translateY(${lerp(40, 0, tt)}px)`;
+    for (let i = 0; i < 4; i++) { const x = back(lin(t, a + .3 + i * .125, a + .65 + i * .125)); const c = $("oc" + i); c.style.opacity = clamp(lin(t, a + .3 + i * .125, a + .45 + i * .125)); c.style.transform = `scale(${lerp(.5, 1, x)})`; }
+    const tg = eOut(lin(t, a + .8, a + 1.1)); $("outroTag").style.opacity = tg; $("outroTag").style.transform = `translateY(${lerp(24, 0, tg)}px)`;
+    const an = eOut(lin(t, a + 1.0, a + 1.3)); $("outroAnd").style.opacity = an;
+  }
+}
+window.render = render;
+window.DUR = DUR;
+</script>
+</body>
+</html>

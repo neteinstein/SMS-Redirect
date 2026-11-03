@@ -425,7 +425,7 @@ def screenshot_backup() -> Image.Image:
     draw.text((box[0] + 30, box[1] + 68), "Filed under the “SMS” Gmail label", font=f2, fill=BRAND_ON_SURFACE_VARIANT)
     draw.text(
         (box[0] + 30, box[1] + 104),
-        "Continues automatically as new messages arrive",
+        "Keeps going as you send and receive texts",
         font=f2,
         fill=BRAND_ON_SURFACE_VARIANT,
     )
@@ -433,6 +433,57 @@ def screenshot_backup() -> Image.Image:
     SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
     img.save(SCREENSHOTS_DIR / "01-backup.png", "PNG")
     print("Wrote screenshots/phone/01-backup.png")
+    return img
+
+
+def screenshot_restore() -> Image.Image:
+    """The Restore card on the Backup tab, mid-run. Copy from strings.xml
+    (restore_title, restore_description, restore_progress, restore_running_hint)."""
+    img, draw, screen_box = new_screenshot_canvas(["Restore your texts", "to a new phone"])
+    x0, y0, x1, y1 = screen_box
+    draw_status_bar(draw, screen_box)
+    content_top = draw_app_bar(draw, screen_box, "Backup to Gmail", icons=1)
+    draw_bottom_nav(draw, screen_box, active=0)
+
+    y = content_top + 30
+    y = draw_enabled_banner(draw, x0, x1, y, "Backup to Gmail enabled")
+
+    pad = 30
+    box_x0, box_x1 = x0 + 24, x1 - 24
+    inner_w = box_x1 - box_x0 - 2 * pad
+    f_title = bold(32)
+    f_body = regular(24)
+    f_prog = bold(28)
+    description = (
+        "Copy the messages backed up under the Gmail label “SMS” back to this phone. "
+        "Messages already on the phone are skipped, so it is safe to run more than once."
+    )
+    desc_lines = wrap_text(draw, description, f_body, inner_w)
+    hint_lines = wrap_text(draw, "You can leave the app — the restore continues in the background.", f_body, inner_w)
+    height = 22 + 50 + len(desc_lines) * 34 + 30 + 44 + 34 + 40 + len(hint_lines) * 34 + 24
+    draw.rounded_rectangle((box_x0, y, box_x1, y + height), radius=22, fill=WHITE, outline=BRAND_OUTLINE, width=2)
+    ty = y + 22
+    draw.text((box_x0 + pad, ty), "Restore from Gmail", font=f_title, fill=BRAND_ON_SURFACE)
+    ty += 50
+    for line in desc_lines:
+        draw.text((box_x0 + pad, ty), line, font=f_body, fill=BRAND_ON_SURFACE_VARIANT)
+        ty += 34
+    ty += 30
+    draw.text((box_x0 + pad, ty), "Checking 2,180 of 3,214", font=f_prog, fill=BRAND_ON_SURFACE)
+    ty += 44
+    bar = (box_x0 + pad, ty, box_x1 - pad, ty + 12)
+    draw.rounded_rectangle(bar, radius=6, fill=BRAND_PRIMARY_CONTAINER)
+    draw.rounded_rectangle((bar[0], bar[1], bar[0] + (bar[2] - bar[0]) * 2180 / 3214, bar[3]), radius=6, fill=BRAND_PRIMARY)
+    ty += 34
+    draw.text((box_x0 + pad, ty), "2,176 messages restored so far", font=f_body, fill=BRAND_ON_SURFACE_VARIANT)
+    ty += 40
+    for line in hint_lines:
+        draw.text((box_x0 + pad, ty), line, font=f_body, fill=BRAND_ON_SURFACE_VARIANT)
+        ty += 34
+
+    SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
+    img.save(SCREENSHOTS_DIR / "08-restore.png", "PNG")
+    print("Wrote screenshots/phone/08-restore.png")
     return img
 
 
@@ -704,6 +755,7 @@ def main() -> None:
         ("05-schedule-form.png", ["Repeats daily, weekly,", "monthly or yearly"], screenshot_schedule_form()),
         ("06-settings.png", ["Your data stays", "on your device"], screenshot_settings()),
         ("07-history.png", ["Full history of every", "forwarded message"], screenshot_history()),
+        ("08-restore.png", ["Restore your texts", "to a new phone"], screenshot_restore()),
     ]
     generate_tablet_screenshots(phone_shots)
 
