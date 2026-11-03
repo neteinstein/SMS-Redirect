@@ -32,3 +32,6 @@ Thumbs.db
 # Misc
 *.hprof
 __pycache__/
+
+# /brag launch-video working output
+brag-output*/

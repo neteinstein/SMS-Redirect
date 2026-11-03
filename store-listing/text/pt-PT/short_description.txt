@@ -1,1 +1,1 @@
-Guarde as suas SMS no Gmail. Com reencaminhamento por regra e envio agendado.
+Backup e restauro de SMS no Gmail. Com reencaminhamento e envio agendado.

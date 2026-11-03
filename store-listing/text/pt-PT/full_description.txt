@@ -1,29 +1,32 @@
-O SMS Toolbox guarda as suas mensagens de texto na sua própria conta Gmail, reencaminha as mensagens que escolher para outro número, e envia as suas mensagens de forma agendada — sem criar conta e sem nenhum servidor nosso pelo meio.
+O SMS Toolbox guarda as suas mensagens de texto na sua própria conta Gmail, restaura-as num telemóvel novo, reencaminha as mensagens que escolher para outro número, e envia as suas mensagens de forma agendada — sem criar conta e sem nenhum servidor nosso pelo meio.
 
 PORQUÊ O SMS TOOLBOX?
-As suas mensagens vivem num só sítio: o seu telemóvel. Se o perder ou trocar de equipamento, anos de conversas vão com ele. O SMS Toolbox copia-as para o seu próprio Gmail, onde ficam pesquisáveis e seguras. Também cobre um telefone de trabalho, monitoriza um segundo SIM, ou garante que uma mensagem é enviada enquanto está ocupado.
+As suas mensagens vivem só no telemóvel. Se o perder ou mudar de equipamento, anos de conversas vão com ele. O SMS Toolbox guarda-as no seu Gmail, pesquisáveis e seguras, e devolve-as num telemóvel novo.
 
 BACKUP — As suas mensagens seguras no seu Gmail
-• Guarda as suas SMS numa conta Gmail que lhe pertence, com uma palavra-passe de app criada por si
+• Guarda as SMS que recebe e as que envia numa conta Gmail que lhe pertence, com uma palavra-passe de app criada por si
 • Escolha a etiqueta do Gmail onde ficam arquivadas (predefinição: "SMS")
 • Personalize o assunto do email, com marcadores para o nome e número do contacto
 • As mensagens de cada contacto ficam agrupadas numa só conversa do Gmail
-• As datas originais são preservadas, para que o histórico faça sentido
+• As datas originais são preservadas
 • Guarde tudo o que já tem, ou apenas as mensagens a partir de agora
 • Continua de onde ficou se for interrompido, e nunca repete mensagens
 • Vão diretamente do seu telemóvel para a Google, encriptadas — nunca as vemos
 
+RESTAURAR — O seu histórico num telemóvel novo
+• Copia as mensagens do Gmail de volta para o telemóvel, recebidas e enviadas, cada uma no sítio certo
+• As mensagens que já estão no telemóvel são ignoradas, por isso pode repetir sem duplicar
+• O Android só deixa a app de SMS predefinida adicionar mensagens: o SMS Toolbox assume esse papel durante o restauro e lembra-o de voltar à sua app
+
 REDIRECIONAR — Reencaminhar mensagens por regra
 • Crie regras simples: associe um remetente (por texto ou contacto) a um número de destino
-• Funciona com mensagens SMS normais
-• A primeira regra correspondente é aplicada — arraste para reordenar as suas regras
-• Prefixo personalizado opcional adicionado a cada mensagem reencaminhada (por exemplo, "SMS Toolbox:")
+• A primeira regra que corresponde é aplicada — arraste para reordenar
+• Prefixo opcional em cada mensagem reencaminhada (por exemplo, "SMS Toolbox:")
 • Escolha se o reencaminhamento é permitido em roaming
-• Histórico das últimas 50 mensagens reencaminhadas, com remetente, destino e regra correspondente
-• Receba uma notificação sempre que uma mensagem é reencaminhada
+• Histórico das últimas 50 mensagens reencaminhadas, com remetente, destino e regra
 
 AGENDAR — Enviar mensagens automaticamente, mais tarde
-• Escreva uma mensagem uma vez, escolha um contacto, uma data e uma hora — a app envia-a por si
+• Escolha um contacto, uma data e uma hora — a app envia a mensagem por si
 • Repita diariamente, em dias úteis, quinzenalmente, mensalmente ou anualmente, com data de fim opcional
 • Organize as mensagens agendadas por categorias
 • Histórico de todas as mensagens agendadas já enviadas
@@ -32,20 +35,20 @@ PRIVACIDADE POR DESIGN
 • Sem conta connosco, sem login, sem servidor nosso que possa receber os seus dados
 • Regras, agendamentos, contactos e histórico ficam guardados apenas no seu dispositivo
 • O backup vai do seu telemóvel para a SUA conta Gmail, encriptado. Está desativado até o ligar, e nunca vemos nenhuma mensagem
-• A palavra-passe de app do Gmail fica encriptada no dispositivo e é enviada apenas para a Google. Pode revogá-la quando quiser na sua conta Google
-• As mensagens reencaminhadas e agendadas são enviadas diretamente pela rede SMS da sua própria operadora — nunca por um servidor nosso, porque não temos nenhum
-• Apenas dados anónimos de falhas e utilização são recolhidos para ajudar a corrigir erros — nunca números de telefone, nomes de contactos ou conteúdo das mensagens
+• A palavra-passe de app do Gmail fica encriptada no dispositivo e é enviada só para a Google. Pode revogá-la na sua conta Google
+• As mensagens reencaminhadas e agendadas são enviadas diretamente pela rede da sua operadora — nunca por um servidor nosso, porque não temos nenhum
+• Só recolhemos dados anónimos de falhas e utilização — nunca números, nomes de contactos ou conteúdo das mensagens
 • O código-fonte é público, para que cada afirmação aqui possa ser verificada: github.com/neteinstein/SMS-Redirect
 
 TAMBÉM INCLUI
 • Seletor de contactos para remetentes e destinos
-• Reordenação por arrastar e agrupamento por categorias, tanto nas regras como nos agendamentos
+• Reordenação por arrastar e categorias, nas regras e nos agendamentos
 • Modo claro e escuro, com cor dinâmica Material You
-• Exporte e importe as suas regras e agendamentos como ficheiro de definições, quando quiser
+• Exporte e importe as suas regras e agendamentos num ficheiro
 • Escolha o ecrã inicial — Backup, Redirecionar ou Agendar
 • Disponível em português e inglês
 
 PERMISSÕES, EXPLICADAS
-O SMS Toolbox pede apenas o que precisa: SMS (backup, deteção e envio), Contactos (escolher números por nome), Estado do telefone (detetar roaming) e Internet (aceder ao Gmail com o backup ativo). Veja como cada permissão é usada na Política de Privacidade e no código-fonte público.
+O SMS Toolbox pede apenas o que precisa: SMS (backup, deteção e envio), Contactos (escolher números por nome), Estado do telefone (detetar roaming) e Internet (aceder ao Gmail com o backup ativo). App de SMS predefinida: só durante um restauro iniciado por si. Veja como cada permissão é usada na Política de Privacidade e no código-fonte público.
 
 Perguntas ou sugestões? Contacte play-store-neteinstein@googlegroups.com ou abra uma issue no GitHub.
