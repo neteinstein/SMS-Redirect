@@ -18,8 +18,8 @@ store-listing/
 │   ├── phone/                        8 captioned 1080x1920 screenshots
 │   ├── sevenInchTablet/              same 8 moments, 1920x1080 "large screen" layout
 │   └── tenInchTablet/                same 8 moments, 2560x1440 "large screen" layout
-├── scripts/generate_assets.py        regenerates everything under graphics/ + screenshots/
-├── scripts/generate_demo_video.py    regenerates the permissions demo video (needs ffmpeg)
+├── scripts/store_assets/build.sh     regenerates everything under graphics/ + screenshots/ (needs Playwright)
+├── scripts/generate_demo_video.py    regenerates the permissions demo video (needs Pillow + ffmpeg)
 ├── scripts/launch_video/build.sh     regenerates the launch video (needs Playwright + ffmpeg)
 ├── video/                            launch video, permissions demo video + storyboard (see video/README.md)
 ├── data-safety.md                    cheat-sheet for the Data safety questionnaire
@@ -30,12 +30,15 @@ store-listing/
 
 | Play Console field | File | Limit | Current length |
 |---|---|---|---|
-| App name | `text/<locale>/title.txt` | 30 chars | 11 (en-US) / 11 (pt-PT) |
-| Short description | `text/<locale>/short_description.txt` | 80 chars | 78 (en-US) / 73 (pt-PT) |
-| Full description | `text/<locale>/full_description.txt` | 4000 chars | 3983 (en-US) / 3964 (pt-PT) |
-| What's new (this release) | `text/<locale>/release_notes.txt` | 500 chars | 305 (en-US) / 330 (pt-PT) |
+| App name | `text/<locale>/title.txt` | 30 chars | 29 (en-US) / 30 (pt-PT) |
+| Short description | `text/<locale>/short_description.txt` | 80 chars | 79 (en-US) / 80 (pt-PT) |
+| Full description | `text/<locale>/full_description.txt` | 4000 chars | 3067 (en-US) / 3395 (pt-PT) |
+| What's new (this release) | `text/<locale>/release_notes.txt` | 500 chars | 359 (en-US) / 359 (pt-PT) |
 
 Paste each file's contents verbatim into the matching field for that locale.
+The store title is **"SMS Toolbox: Backup & Restore"** (pt-PT: "SMS Toolbox: Backup e Restauro"),
+which leads with the declared core use case. The app's own name on the device stays
+"SMS Toolbox"; Play allows the two to differ.
 `pt-PT` matches the tone/wording already used in `app/src/main/res/values-pt/strings.xml`
 (European Portuguese — "ecrã", "definições", not Brazilian Portuguese).
 
@@ -54,67 +57,63 @@ for d in sorted(pathlib.Path('text').iterdir()):
 
 ## Graphics & screenshots
 
-`graphics/icon-512.png` and `graphics/feature-graphic-1024x500.png` are ready
-to upload as-is — the icon is a faithful high-res recreation of the real
-launcher icon (`app/src/main/res/drawable/ic_launcher_*.xml`: brand blue
-background, white chat bubble, forward chevrons), and the feature graphic
-reuses it with the app name and tagline.
+Everything here is ready to upload as-is.
 
-`screenshots/phone/*.png` are **concept mockups**, not raw device captures —
-generated from the app's real brand colors and strings (not from a running
-emulator, since none was available in this environment) to give the listing
-a strong, on-brand starting point:
+**Icon** (`graphics/icon-512.png`, 512x512, 32-bit PNG). The real launcher glyph
+from `app/src/main/res/drawable/ic_launcher_foreground.xml` (the chat bubble and
+forward chevrons, path for path) on a brand-blue gradient, full bleed. Play applies
+its own rounded mask, so the corners are left square.
 
-1. `01-backup.png` — Backup tab, enabled and running (the app's landing screen)
-2. `02-redirect-rules.png` — Redirect rule list, grouped by category
-3. `03-create-rule.png` — Create Rule form
-4. `04-schedule-list.png` — Scheduled SMS list
-5. `05-schedule-form.png` — Create Schedule SMS form
-6. `06-settings.png` — Settings (Gmail account, landing screen, privacy-forward toggles)
-7. `07-history.png` — Redirect history
-8. `08-restore.png` — Restore from Gmail, mid-run (on the Backup tab)
+**Feature graphic** (`graphics/feature-graphic-1024x500.png`). The icon, the app
+name and the backup-and-restore promise, next to two phones showing the real
+Redirect and Backup screens.
 
-Play shows screenshots in upload order. Consider uploading `08-restore.png`
-second, right after `01-backup.png`, so the listing tells the backup-and-restore
-story first. That is the declared core use case (see below).
+**Screenshots.** Each one pairs a headline with the real screen in a phone frame,
+plus a few floating callouts (a notification, the Gmail label, a forwarded text)
+that show the result of the feature. Upload them in this order, so the listing
+leads with the declared core use case, backup and restore:
 
-They already satisfy Play's technical requirements (1080x1920, 24-bit PNG, no
-alpha) and can be uploaded as-is. For pixel-perfect real captures instead,
-run the app on a device/emulator and use Android Studio's **Take Screenshot**
-action or:
+| # | File | Headline | Screen |
+|---|---|---|---|
+| 1 | `01-backup.png` | Every text, safe in your own Gmail | Backup tab, running (the landing screen) |
+| 2 | `02-restore.png` | New phone? Bring every text back | Restore from Gmail, mid-run |
+| 3 | `03-redirect-rules.png` | Forward the texts that matter | Redirect Rules, a code being forwarded |
+| 4 | `04-create-rule.png` | Pick a sender. Pick a target. | Create Rule, with the contact picker |
+| 5 | `05-schedule-list.png` | Write now, send later | Scheduled SMS Rules |
+| 6 | `06-schedule-form.png` | Once, daily, monthly or every year | Create Schedule SMS, repeat menu open |
+| 7 | `07-history.png` | Every forward, on record | Redirect History |
+| 8 | `08-privacy.png` | No account. No server. Just your Gmail. | Settings → Gmail backup, dark theme |
 
-```bash
-adb exec-out screencap -p > screenshot.png
-```
-then recreate the same 8 moments, optionally reusing the caption banners from
-`scripts/generate_assets.py` (`new_screenshot_canvas`) as an overlay.
+**How they are made.** `scripts/store_assets/store.html` rebuilds each screen in
+HTML from the real Compose layouts (`app/src/main/java/.../presentation/`), the
+real strings (`res/values/strings.xml`) and the brand colors (`theme/Color.kt`),
+using Roboto, the app's font, and the official Material Icons. Both are bundled in
+`scripts/store_assets/` with their licenses. `render.js` renders them with headless
+Chromium. They are not device captures: no emulator was available where they were
+made, and the surface colors follow Material You with a blue wallpaper. Every
+name, number and message in them is fictional.
 
-### Tablet ("large screens") screenshots
+They meet Play's requirements:
+- **Phone:** 1080x1920, 24-bit PNG, no alpha, 8 images (the maximum).
+- **Tablets:** `screenshots/sevenInchTablet/` (1920x1080) and
+  `screenshots/tenInchTablet/` (2560x1440) cover the **7-inch** and **10-inch
+  tablet** slots, under "Large screens" in Play Console. They are 16:9 landscape,
+  with both dimensions between 1080 and 7680px, 8 images each.
 
-`screenshots/sevenInchTablet/*.png` (1920x1080) and `screenshots/tenInchTablet/*.png`
-(2560x1440) cover Play Console's **7-inch tablet** and **10-inch tablet**
-upload slots (grouped under "Large screens" in the current Console UI, which
-also covers Chromebooks). The app has no dedicated tablet layout, so instead
-of stretching the phone UI across a much bigger canvas, each image reuses the
-*same rendered phone screen* from `screenshots/phone/`, recomposed into a
-landscape 16:9 promotional frame with a large headline — the same visual
-language as the feature graphic, and an honest representation of what the UI
-actually looks like on a bigger screen.
+The app has no tablet layout, so the tablet images show the same phone screens
+beside the headline rather than a stretched UI. Uploading them is optional (Play
+only requires phone screenshots), but recommended: the app isn't restricted to
+phones, since `AndroidManifest.xml` has no `<supports-screens>` or
+`<compatible-screens>` restriction.
 
-They meet Play's current requirements for large-screen screenshots: 16:9
-landscape, both dimensions between 1080 and 7680px, 24-bit PNG with no alpha,
-and 8 images each (Play recommends a minimum of 4, allows up to 8). Uploading
-them is optional — Play only requires phone screenshots to publish — but
-recommended if the app is listed as tablet-compatible, since it isn't
-restricted to phones (no `<supports-screens>` or `<compatible-screens>`
-restriction in `AndroidManifest.xml`).
-
-To tweak colors/copy and regenerate every graphic (phone + both tablet sizes):
+To change copy, layout or colors, edit `store.html`, then regenerate everything:
 
 ```bash
-pip install pillow
-python3 store-listing/scripts/generate_assets.py
+store-listing/scripts/store_assets/build.sh                   # all graphics and screenshots
+store-listing/scripts/store_assets/build.sh --only 02-restore # one screenshot, all three sizes
 ```
+
+`build.sh` needs Node with Playwright (Chromium), and Python 3 with Pillow.
 
 ## Promo video
 
