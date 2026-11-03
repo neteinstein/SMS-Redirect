@@ -1,1 +1,1 @@
-Back up and restore SMS with Gmail. Plus forwarding rules and scheduled texts.
+Back up & restore your SMS with your own Gmail. Plus forwarding and scheduling.

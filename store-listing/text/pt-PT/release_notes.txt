@@ -1,1 +1,3 @@
-O backup no Gmail passa a incluir as mensagens que envia, e não só as que recebe. Uma mensagem enviada é guardada em cerca de dois minutos, e um restauro devolve-a às mensagens enviadas. Restaurar do Gmail: traga as suas mensagens de volta para um telemóvel novo com um toque. As mensagens que já estão no telemóvel são ignoradas.
+• O backup passa a incluir as mensagens que envia, e não só as que recebe. Uma mensagem enviada chega ao Gmail em cerca de dois minutos.
+• Restaurar do Gmail: traga as suas mensagens de volta para um telemóvel novo com um toque. As recebidas e as enviadas voltam ao sítio certo, e o que já está no telemóvel é ignorado.
+• Um novo visual para a página da loja.

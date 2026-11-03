@@ -1,54 +1,47 @@
-SMS Toolbox backs up your text messages to your own Gmail account, restores them to a new phone, forwards the messages you choose to another number, and sends your own messages on a schedule — with no account to create and no server of ours in between.
+Your texts live on one phone. SMS Toolbox keeps them safe in your own Gmail, brings them back on a new phone, forwards the ones that matter, and sends messages for you on schedule. No account to create, and no server of ours in between.
 
-WHY SMS TOOLBOX?
-Your texts live only on your phone. Lose it or switch devices and years of conversations go with it. SMS Toolbox keeps them in your own Gmail, searchable and safe, and brings them back on a new phone.
+BACKUP TO YOUR OWN GMAIL
+• Backs up every SMS you receive and every SMS you send, automatically, as it happens
+• Files them under a Gmail label you choose (default: "SMS"), searchable like any email
+• Each contact gets a single Gmail conversation, and original dates are kept
+• Customise the email subject with the contact's name and number
+• Back up your whole history, or only messages from now on
+• Never uploads the same message twice, and picks up where it left off if interrupted
+• Goes straight from your phone to Google over an encrypted connection
 
-BACKUP — Your messages, safe in your own Gmail
-• Backs up the SMS you receive and the ones you send to a Gmail account you own, using an app password you create
-• Choose the Gmail label they are filed under (default: "SMS")
-• Customise the email subject, with placeholders for the contact name and number
-• Each contact's messages are grouped into a single Gmail conversation
-• Original message dates are preserved, so your history reads correctly
-• Back up everything you already have, or just messages from now on
-• Picks up where it left off if interrupted, and never uploads the same message twice
-• Your messages go straight from your phone to Google over an encrypted connection — we never see them
+RESTORE TO ANY PHONE
+• Brings your backed-up texts back from Gmail, received and sent, each in the right place
+• Skips messages that are already on the phone, so it is safe to run again
+• Android only lets the default SMS app add messages, so SMS Toolbox borrows that role while the restore runs, then reminds you to switch back
 
-RESTORE — Your history on a new phone
-• Copies your backed-up texts from Gmail back to your phone, received and sent messages each in the right place
-• Messages already on the phone are skipped, so it is safe to run more than once
-• Android only lets the default SMS app add messages, so SMS Toolbox borrows that role during the restore and reminds you to switch back
+FORWARD WHAT MATTERS
+• Simple rules: match a sender by contact, number or text, and choose where to send it
+• Made for one-time codes, a second SIM, delivery alerts, or family
+• First matching rule wins: drag to reorder, and group rules by category
+• Optional prefix on forwarded messages, and your choice whether to forward while roaming
+• History of the last 50 forwards, with the rule that matched
+• Optional notification every time a message is forwarded
 
-REDIRECT — Forward messages by rule
-• Create simple rules: match a sender (by text or contact) and pick a target number
-• First matching rule wins — drag to reorder your rules
-• Optional custom prefix added to every forwarded message (e.g. "SMS Toolbox:")
-• Choose whether forwarding is allowed while roaming
-• History of the last 50 forwarded messages, with sender, target, and matched rule
-
-SCHEDULE — Send texts automatically, later
-• Compose a message once, pick a contact, a date, and a time — the app sends it for you
-• Repeat daily, on work-week days, bi-weekly, monthly, or yearly, with an optional stop date
-• Organize scheduled messages into categories
-• History of every scheduled message that was sent
+SCHEDULE MESSAGES
+• Write a message once, pick a contact, a date and a time, and it is sent for you
+• Repeat daily, on work-week days, bi-weekly, monthly or yearly, with an optional stop date
+• Organise schedules by category, with a history of everything sent
+• Sent from your own SIM, through your carrier
 
 PRIVATE BY DESIGN
-• No account with us, no login, no backend server — we run nothing that could receive your data
-• Rules, schedules, contacts, and history are stored only on your device
-• Backup goes directly from your phone to YOUR Gmail account over an encrypted connection. It is off until you turn it on, and we never see a single message
-• Your Gmail app password is encrypted on your device and sent only to Google. You can revoke it at any time from your Google account
-• Forwarded and scheduled messages are sent directly through your own carrier's SMS network — never through a server of ours, because we don't have one
-• Only anonymous crash and usage data is collected to help fix bugs — never phone numbers, contact names, or message content
-• The full source code is public, so every claim here can be verified: github.com/neteinstein/SMS-Redirect
+• No account, no login, and no server of ours: nothing we run can receive your messages
+• Rules, schedules and history stay on your phone
+• Gmail backup is off until you turn it on. It uses an app password you create, stored encrypted with the Android Keystore and sent only to Google
+• Crash reports and usage statistics (Firebase) never include phone numbers, contact names or message text
+• Fully open source, so every claim here can be checked: github.com/neteinstein/SMS-Redirect
 
-ALSO INCLUDES
-• Contact picker for senders and targets
-• Drag-and-drop reordering and category grouping for both rules and schedules
-• Light & dark mode with Material You dynamic color
-• Export and import your rules and schedules as a settings file, anytime
-• Choose which tab opens first: Backup, Redirect, or Schedule
-• Available in English and Portuguese
+ALSO INCLUDED
+• Material You design, in light and dark mode
+• Export and import your rules and schedules as a file
+• Choose which tab opens first: Backup, Redirect or Schedule
+• In English and Portuguese
 
 PERMISSIONS, EXPLAINED
-SMS Toolbox only asks for what it needs: SMS permissions (to back up, detect and send messages), Contacts (to pick numbers by name), Phone State (to detect roaming), and Internet (to reach Gmail when backup is on). Default SMS app role: only while a restore you started runs. See exactly how each permission is used in the in-app Privacy Policy and in the public source code.
+Each permission is asked for only when a feature needs it. SMS: back up, detect, forward and send messages. Contacts: pick people by name. Notifications: progress and confirmations. Battery exemption: on-time forwarding and scheduled sends. Internet: reach Gmail when backup is on. Default SMS app: only while a restore you started is running.
 
-Questions or feedback? Contact play-store-neteinstein@googlegroups.com or open an issue on GitHub.
+Questions or feedback? Email play-store-neteinstein@googlegroups.com or open an issue on GitHub.

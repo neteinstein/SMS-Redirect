@@ -13,7 +13,7 @@ own.
 
 **Answer: Yes, provide access instructions.** `com.neteinstein.smsredirect`
 has no developer-operated account system and no login screen (see
-[PrivacyPolicy.md](../PrivacyPolicy.md), §7), so every screen is reachable
+[PrivacyPolicy.md](../PrivacyPolicy.md), §10), so every screen is reachable
 without a special "unlock" step — but the app's **declared core use case is
 "Backup and restore"** (see the
 [README's permissions-declaration section](README.md#before-this-can-go-live-the-sms-permissions-declaration)),
@@ -137,7 +137,7 @@ reasons, not incidental).
       next backup run does not upload it again.
 - [ ] Confirm in Gmail: each backed-up message is a separate email under the
       configured label, and re-running backup doesn't duplicate already-backed-up
-      messages (the local hash record dedupes — see `PrivacyPolicy.md` §3a).
+      messages (the local hash record dedupes — see `PrivacyPolicy.md` §1).
 - [ ] Turn backup off, then back on — it should resume, not re-upload everything.
 - [ ] Gmail → open a backed-up email → "Show original": the `X-SMS-Toolbox-Format`,
       `X-SMS-Type`, `X-SMS-Address` and `X-SMS-Date` headers are present.
@@ -199,7 +199,7 @@ reasons, not incidental).
 
 **Cross-cutting**
 - [ ] Revoke SMS permission from Android Settings mid-use; confirm the
-      affected feature degrades gracefully (per `PrivacyPolicy.md` §10)
+      affected feature degrades gracefully (per `PrivacyPolicy.md` §13)
       instead of crashing.
 - [ ] Deep link `smsredirect://app` opens the app (used by any external
       trigger, e.g. a notification action).

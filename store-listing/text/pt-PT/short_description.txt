@@ -1,1 +1,1 @@
-Backup e restauro de SMS no Gmail. Com reencaminhamento e envio agendado.
+Backup e restauro das suas SMS no seu Gmail. Com reencaminhamento e agendamento.

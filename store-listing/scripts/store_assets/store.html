@@ -1,0 +1,495 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!--
+  Play Store graphics for SMS Toolbox: icon, feature graphic, phone and tablet screenshots.
+  render.js opens this page once per asset and calls window.renderAsset(kind, index).
+
+  The app screens are rebuilt in HTML from the real Compose layouts (presentation/**),
+  strings (res/values/strings.xml) and brand colors (presentation/theme/Color.kt), using
+  Roboto (the app's default font) and the official Material Icons. Every name, number and
+  message shown is fictional.
+-->
+<style>
+@font-face { font-family: Roboto; src: url(fonts/roboto-latin-400-normal.woff2); font-weight: 400; }
+@font-face { font-family: Roboto; src: url(fonts/roboto-latin-500-normal.woff2); font-weight: 500; }
+@font-face { font-family: Roboto; src: url(fonts/roboto-latin-700-normal.woff2); font-weight: 700; }
+@font-face { font-family: Inter; src: url(fonts/inter-latin-500-normal.woff2); font-weight: 500; }
+@font-face { font-family: Inter; src: url(fonts/inter-latin-700-normal.woff2); font-weight: 700; }
+@font-face { font-family: Inter; src: url(fonts/inter-latin-800-normal.woff2); font-weight: 800; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { overflow: hidden; background: #0B2A63; }
+body { font-family: Roboto, "Noto Color Emoji", sans-serif; -webkit-font-smoothing: antialiased; }
+svg.i { width: 24px; height: 24px; fill: currentColor; flex: none; display: block; }
+
+/* ---------------- marketing canvas ---------------- */
+#stage { position: relative; overflow: hidden; }
+.bg { position: absolute; inset: 0; }
+.orb { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .55; }
+.grain { position: absolute; inset: 0; opacity: .05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+.rings { position: absolute; border-radius: 50%; border: 2px solid rgba(255,255,255,.08); }
+.copy { position: absolute; color: white; font-family: Inter, "Noto Color Emoji", sans-serif; }
+.eyebrow { display: inline-flex; align-items: center; gap: 12px; padding: 10px 22px 10px 12px; border-radius: 999px;
+  background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.22); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+.eyebrow .dot { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; }
+.eyebrow .dot svg { fill: white; width: 24px; height: 24px; }
+.headline { font-weight: 800; letter-spacing: -0.035em; line-height: 1.04; text-wrap: balance; }
+.headline em { font-style: normal; background: linear-gradient(90deg, #8AB4F8, #C4EED0); -webkit-background-clip: text; color: transparent; }
+.sub { font-weight: 500; color: rgba(255,255,255,.82); line-height: 1.3; text-wrap: balance; }
+
+/* ---------------- device ---------------- */
+.device-wrap { position: absolute; transform-origin: 0 0; }
+.device { position: relative; width: 440px; height: 943px; border-radius: 58px; padding: 13px;
+  background: linear-gradient(145deg, #3a3d44 0%, #15161a 35%, #0b0c0e 70%, #2a2c31 100%);
+  box-shadow: 0 0 0 1.5px #4b4f57 inset, 0 0 0 3px #0a0a0c, 0 60px 120px rgba(2,10,40,.55), 0 20px 40px rgba(2,10,40,.35); }
+.device .sidebtn { position: absolute; right: -4px; width: 5px; border-radius: 0 3px 3px 0; background: linear-gradient(90deg,#1b1c20,#55585f); }
+.screen { position: relative; width: 414px; height: 917px; border-radius: 46px; overflow: hidden; }
+.screen .glare { position: absolute; inset: 0; pointer-events: none; z-index: 50;
+  background: linear-gradient(115deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,0) 32%); }
+.cam { position: absolute; top: 12px; left: 50%; margin-left: -6px; width: 12px; height: 12px; border-radius: 50%; background: #050506; z-index: 60;
+  box-shadow: 0 0 0 1.5px #1c1d21; }
+
+/* ---------------- app (Material 3) ---------------- */
+.app { --primary:#1A73E8; --on-primary:#fff; --primary-c:#D3E3FD; --on-primary-c:#001A41;
+  --secondary:#188038; --on-secondary:#fff; --secondary-c:#C4EED0; --on-secondary-c:#072711;
+  --error:#D93025; --bg:#FAFBFF; --on-surface:#1A1C1E; --on-variant:#43474E; --outline:#73777F; --outline-v:#C3C6CF;
+  --s-lo:#F3F5FB; --s-c:#ECEFF7; --s-hi:#E6E9F2; --s-hst:#E0E4EE; --scrim: rgba(0,0,0,.32);
+  position: absolute; inset: 0; background: var(--bg); color: var(--on-surface); font-size: 14px; display: flex; flex-direction: column; }
+.app.dark { --primary:#A8C7FA; --on-primary:#062E6F; --primary-c:#0842A0; --on-primary-c:#D3E3FD;
+  --secondary:#C4EED0; --on-secondary:#072711; --secondary-c:#0F5223; --on-secondary-c:#C4EED0;
+  --error:#F2B8B5; --bg:#111318; --on-surface:#E2E2E9; --on-variant:#C3C6CF; --outline:#8D9199; --outline-v:#43474E;
+  --s-lo:#191C21; --s-c:#1D2025; --s-hi:#272A30; --s-hst:#32353B; }
+.sbar { height: 40px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 26px 0 30px; font-size: 14px; font-weight: 500; }
+.sbar .r { display: flex; gap: 6px; align-items: center; } .sbar svg { width: 17px; height: 17px; }
+.topbar { height: 64px; flex: none; display: flex; align-items: center; padding: 0 4px 0 16px; gap: 4px; }
+.topbar.back { padding-left: 4px; }
+.topbar h1 { font-size: 22px; font-weight: 500; flex: 1; letter-spacing: 0; white-space: nowrap; overflow: hidden; }
+.ib { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; color: var(--on-variant); }
+.ib.on { color: var(--on-surface); }
+.content { flex: 1; overflow: hidden; position: relative; padding: 4px 16px 0; }
+.nav { height: 80px; flex: none; background: var(--s-c); display: flex; justify-content: space-around; padding-top: 12px; }
+.nav .it { width: 100px; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; color: var(--on-variant); }
+.nav .pill { width: 64px; height: 32px; border-radius: 16px; display: grid; place-items: center; }
+.nav .it.sel { color: var(--on-surface); } .nav .it.sel .pill { background: var(--secondary-c); color: var(--on-secondary-c); }
+.gesture { height: 18px; flex: none; background: var(--s-c); display: grid; place-items: center; }
+.gesture i { width: 108px; height: 4px; border-radius: 2px; background: var(--on-surface); opacity: .55; display: block; }
+.gesture.plain { background: var(--bg); }
+
+.tf { position: relative; margin-top: 14px; border: 1px solid var(--outline); border-radius: 4px; min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 0 12px; font-size: 16px; }
+.tf.focus { border: 2px solid var(--primary); padding: 0 11px; }
+.tf label { position: absolute; top: -9px; left: 10px; padding: 0 4px; font-size: 12px; background: var(--bg); color: var(--on-variant); }
+.tf.focus label { color: var(--primary); }
+.tf .v { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tf .ph { color: var(--on-variant); }
+.tf svg.lead { color: var(--on-variant); }
+.tf.multi { align-items: flex-start; padding-top: 16px; min-height: 96px; } .tf.multi .v { white-space: normal; line-height: 1.4; }
+.caret { display: inline-block; width: 2px; height: 20px; background: var(--primary); vertical-align: -4px; margin-left: 1px; }
+.fib { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--primary); color: var(--on-primary); flex: none; }
+.fib svg { width: 20px; height: 20px; }
+.btn { height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 500; padding: 0 24px;
+  background: var(--primary); color: var(--on-primary); letter-spacing: .1px; }
+.btn svg { width: 18px; height: 18px; }
+.btn.big { height: 48px; border-radius: 24px; font-size: 15px; }
+.btn.green { background: var(--secondary); color: var(--on-secondary); }
+.btn.text { background: none; color: var(--primary); padding: 0 12px; }
+.btn.tonal { background: var(--secondary-c); color: var(--on-secondary-c); }
+.row { display: flex; align-items: center; gap: 12px; }
+.sw { width: 52px; height: 32px; border-radius: 16px; background: var(--primary); position: relative; flex: none; }
+.sw::after { content: ""; position: absolute; right: 4px; top: 4px; width: 24px; height: 24px; border-radius: 50%; background: var(--on-primary); }
+.sw.off { background: var(--s-hst); border: 2px solid var(--outline); } .sw.off::after { left: 6px; top: 6px; width: 16px; height: 16px; background: var(--outline); }
+.muted { color: var(--on-variant); }
+.small { font-size: 12px; line-height: 16px; } .body { font-size: 14px; line-height: 20px; }
+.lpi { height: 4px; border-radius: 2px; background: var(--primary-c); position: relative; overflow: hidden; }
+.lpi i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--primary); border-radius: 2px; }
+.card { background: var(--s-hst); border-radius: 16px; overflow: hidden; }
+.card.el { background: var(--s-lo); box-shadow: 0 1px 2px rgba(0,0,0,.18), 0 1px 3px 1px rgba(0,0,0,.08); }
+.cathead { margin-top: 12px; border-radius: 16px; padding: 8px 12px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; }
+.cathead .bar { width: 4px; height: 20px; border-radius: 2px; }
+.cathead .n { margin-left: auto; font-size: 12px; color: var(--on-variant); }
+.cathead svg { color: var(--on-variant); }
+.rcard { margin-top: 8px; display: flex; background: var(--s-hst); border-radius: 16px; overflow: hidden; }
+.rcard .acc { width: 4px; flex: none; }
+.rcard .in { flex: 1; display: flex; align-items: center; padding: 14px 4px 14px 16px; gap: 12px; }
+.rcard .in > svg.lead { width: 28px; height: 28px; }
+.rcard .t { font-size: 16px; font-weight: 700; line-height: 24px; }
+.rcard .l { font-size: 14px; line-height: 20px; }
+.rcard .trail { display: flex; align-items: center; color: var(--on-variant); }
+.rcard.hl { box-shadow: 0 0 0 2px var(--primary) inset; background: color-mix(in srgb, var(--primary-c) 70%, var(--s-hst)); }
+.fab { position: absolute; right: 16px; bottom: 16px; width: 56px; height: 56px; border-radius: 16px; background: var(--primary-c); color: var(--on-primary-c);
+  display: grid; place-items: center; box-shadow: 0 3px 6px rgba(0,0,0,.18), 0 1px 3px rgba(0,0,0,.12); }
+.menu { position: absolute; background: var(--s-c); border-radius: 4px; box-shadow: 0 6px 14px rgba(0,0,0,.18), 0 2px 4px rgba(0,0,0,.12); padding: 8px 0; z-index: 5; }
+.menu div { height: 48px; display: flex; align-items: center; padding: 0 16px; font-size: 16px; }
+.menu div.sel { background: color-mix(in srgb, var(--on-surface) 10%, transparent); }
+.section-t { font-size: 14px; font-weight: 500; color: var(--primary); margin: 18px 0 2px; }
+.divider { height: 1px; background: var(--outline-v); margin: 12px -16px; }
+.sline { display: flex; align-items: center; gap: 16px; min-height: 56px; font-size: 16px; }
+.sline svg { color: var(--on-variant); }
+.sline .grow { flex: 1; }
+
+/* ---------------- floating callouts ---------------- */
+.float { position: absolute; z-index: 20; font-family: Roboto, "Noto Color Emoji", sans-serif; transform-origin: 50% 50%; }
+.glass { background: rgba(255,255,255,.96); border-radius: 28px; box-shadow: 0 30px 70px rgba(4,20,60,.38), 0 8px 18px rgba(4,20,60,.18); color: #1A1C1E; }
+.notif { display: flex; gap: 14px; padding: 18px 22px; width: 100%; }
+.notif .ic { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: white; font-weight: 700; flex: none; font-size: 19px; }
+.notif .ic svg { width: 24px; height: 24px; fill: white; }
+.notif .app { all: unset; font-size: 14px; color: #43474E; display: block; }
+.notif b { font-size: 18px; display: block; margin-top: 2px; } .notif p { font-size: 17px; color: #43474E; margin-top: 2px; line-height: 1.35; }
+.mail { width: 100%; overflow: hidden; }
+.mail .hd { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 14px; border-bottom: 1px solid #ECEEF4; }
+.mail .hd b { font-size: 20px; }
+.lbl { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 8px; background: #D3E3FD; color: #001A41; font-weight: 700; font-size: 15px; }
+.lbl svg { width: 18px; height: 18px; }
+.mrow { display: flex; gap: 14px; padding: 14px 24px; border-bottom: 1px solid #F0F2F7; align-items: flex-start; }
+.mrow:last-child { border-bottom: none; }
+.mrow .av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: white; font-weight: 700; font-size: 17px; flex: none; }
+.mrow .tx { flex: 1; min-width: 0; } .mrow .s { font-size: 15.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mrow .p { font-size: 14.5px; color: #43474E; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mrow .d { font-size: 13px; color: #43474E; font-weight: 500; }
+.mrow.new { background: #EEF4FE; }
+.chip { display: inline-flex; align-items: center; gap: 12px; padding: 14px 24px 14px 14px; border-radius: 999px; font-size: 19px; font-weight: 500; white-space: nowrap; }
+.chip .ic { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.chip .ic svg { width: 22px; height: 22px; fill: white; }
+.bubble { padding: 22px; }
+.bubble .who { display: flex; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid #ECEEF4; margin-bottom: 16px; }
+.bubble .who .av { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: #1A73E8; }
+.bubble .who .av svg { fill: white; }
+.bubble .who b { font-size: 17px; display: block; } .bubble .who span { font-size: 14px; color: #43474E; }
+.msg { padding: 14px 18px; font-size: 18px; line-height: 1.4; border-radius: 22px 22px 22px 6px; background: #EEF1F8; }
+.msg.out { background: #1A73E8; color: white; border-radius: 22px 22px 6px 22px; margin-left: auto; }
+.msg small { display: block; font-size: 13px; opacity: .75; margin-top: 6px; }
+.contacts { padding: 10px 0; width: 100%; }
+.contacts .hd { padding: 10px 22px 12px; font-size: 18px; font-weight: 700; }
+.contacts .c { display: flex; align-items: center; gap: 14px; padding: 10px 22px; font-size: 17px; }
+.contacts .c .av { width: 40px; height: 40px; border-radius: 50%; color: white; display: grid; place-items: center; font-weight: 700; }
+.contacts .c.sel { background: #EEF4FE; font-weight: 700; }
+.contacts .c.sel svg { margin-left: auto; fill: #1A73E8; }
+.stat { padding: 22px 26px; }
+.stat .big { font-family: Inter, sans-serif; font-weight: 800; font-size: 44px; letter-spacing: -1px; line-height: 1; }
+.stat .lab { font-size: 16px; color: #43474E; margin-top: 6px; }
+.trust { display: flex; flex-direction: column; gap: 14px; }
+.trust .chip { background: rgba(255,255,255,.96); color: #1A1C1E; box-shadow: 0 20px 50px rgba(4,20,60,.35); }
+
+/* ---------------- icon & feature graphic ---------------- */
+.appicon { position: relative; overflow: hidden; }
+.appicon svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script src="icons.js"></script>
+<script>
+const ic = (n, cls = "", style = "") => `<svg class="i ${cls}" viewBox="0 0 24 24" style="${style}">${ICONS[n]}</svg>`;
+const ACCENTS = ["#1A73E8", "#34A853", "#FBBC05", "#EA4335", "#12B5CB", "#9334E6"]; // CategoryAccentColors
+
+// Status bar icons
+const SIGNAL = `<svg class="i" viewBox="0 0 24 24"><path d="M2 22h20V2z"/></svg>`;
+const WIFI = `<svg class="i" viewBox="0 0 24 24">${ICONS.wifi}</svg>`;
+const BATT = `<svg class="i" viewBox="0 0 24 24" style="transform:rotate(90deg)">${ICONS.battery_full}</svg>`;
+
+function statusBar() {
+  return `<div class="sbar"><span>9:41</span><span class="r">${WIFI}${SIGNAL}${BATT}</span></div>`;
+}
+function topBar(title, actions = [], back = false) {
+  return `<div class="topbar ${back ? "back" : ""}">${back ? `<div class="ib on">${ic("arrow_back")}</div>` : ""}<h1>${title}</h1>${actions.map(a => `<div class="ib">${ic(a)}</div>`).join("")}</div>`;
+}
+function navBar(sel) {
+  const items = [["backup", "Backup"], ["forward", "Redirect"], ["schedule", "Schedule"]];
+  return `<div class="nav">${items.map(([i, l], k) => `<div class="it ${k === sel ? "sel" : ""}"><div class="pill">${ic(i)}</div>${l}</div>`).join("")}</div><div class="gesture"><i></i></div>`;
+}
+function app(inner, { dark = false, nav = null, title = "", actions = [], back = false, fab = false } = {}) {
+  return `<div class="app ${dark ? "dark" : ""}">${statusBar()}${topBar(title, actions, back)}<div class="content">${inner}${fab ? `<div class="fab">${ic("add")}</div>` : ""}</div>${nav === null ? `<div class="gesture plain"><i></i></div>` : navBar(nav)}</div>`;
+}
+function tf(label, value, { lead = null, trail = null, focus = false, ph = false, multi = false, caret = false } = {}) {
+  return `<div class="tf ${focus ? "focus" : ""} ${multi ? "multi" : ""}"><label>${label}</label>${lead ? ic(lead, "lead") : ""}<span class="v ${ph ? "ph" : ""}">${value}${caret ? '<i class="caret"></i>' : ""}</span>${trail || ""}</div>`;
+}
+
+// ---------------- app screens ----------------
+const SCREENS = {
+  backup: () => app(`
+    ${tf("Gmail label", "SMS", { lead: "label", trail: `<div class="fib">${ic("save")}</div>` })}
+    ${tf("Email subject", "SMS with $CONTACT_NAME ($PHONE_NUMBER)", { lead: "subject", trail: `<div class="fib">${ic("save")}</div>` })}
+    <div class="row" style="margin-top:14px;min-height:48px">${ic("sync", "", "color:var(--on-variant)")}<span style="flex:1;font-size:16px">Backup all previous SMS</span><div class="sw"></div></div>
+    <div class="btn big green" style="margin-top:14px">${ic("check")}Backup to Gmail enabled</div>
+    <p class="body muted" style="margin-top:12px">Messages are backed up as they arrive. With “Backup all previous SMS” on, your existing messages are backed up immediately first, then new ones as they arrive.</p>
+    <div style="margin-top:18px" class="body">Backing up 3,104 of 3,214</div>
+    <div class="lpi" style="margin-top:8px"><i style="width:96.6%"></i></div>
+    <div class="card" style="margin-top:22px;padding:16px">
+      <div class="row" style="font-size:16px;font-weight:500">${ic("restore", "", "color:var(--on-variant)")}Restore from Gmail</div>
+      <p class="body muted" style="margin-top:8px">Copy the messages backed up under the Gmail label “SMS” back to this phone.</p>
+    </div>`,
+    { nav: 0, title: "Backup to Gmail", actions: ["settings"] }),
+
+  restore: () => app(`
+    <div class="row" style="min-height:48px">${ic("sync", "", "color:var(--on-variant)")}<span style="flex:1;font-size:16px">Backup all previous SMS</span><div class="sw"></div></div>
+    <div class="btn big green" style="margin-top:10px">${ic("check")}Backup to Gmail enabled</div>
+    <div class="card" style="margin-top:20px;padding:18px 16px 10px">
+      <div class="row" style="font-size:16px;font-weight:500">${ic("restore", "", "color:var(--on-variant)")}Restore from Gmail</div>
+      <p class="body muted" style="margin-top:10px">Copy the messages backed up under the Gmail label “SMS” back to this phone. Messages already on the phone are skipped, so it is safe to run more than once.</p>
+      <div class="body" style="margin-top:18px;font-weight:500">Checking 2,180 of 3,214</div>
+      <div class="lpi" style="margin-top:8px"><i style="width:67.8%"></i></div>
+      <div class="body muted" style="margin-top:10px">2,176 messages restored so far</div>
+      <div class="body muted" style="margin-top:6px">You can leave the app — the restore continues in the background.</div>
+      <div class="btn text" style="margin-top:6px;width:max-content">Stop</div>
+    </div>
+    <div class="card" style="margin-top:14px;padding:14px 16px;background:var(--primary-c);color:var(--on-primary-c)">
+      <div class="row body">${ic("phonelink_ring")}<span>SMS Toolbox is your default SMS app until the restore is done. You switch back right after.</span></div>
+    </div>`,
+    { nav: 0, title: "Backup to Gmail", actions: ["settings"] }),
+
+  rules: () => app(`
+    ${catHead("Work", "2 rules", 0)}
+    ${ruleCard("Work OTP", "WorkBank", "Me (+351 912 345 ***)", 0, true)}
+    ${ruleCard("Delivery codes", "DHL", "Me (+351 912 345 ***)", 0)}
+    ${catHead("Family", "1 rule", 1)}
+    ${ruleCard("Mom's phone", "Mom (+351 933 111 ***)", "Ana (+351 961 222 ***)", 1)}
+    ${catHead("Alerts", "1 rule", 4)}
+    ${ruleCard("Power outage", "EDP", "+351 960 123 456", 4)}`,
+    { nav: 1, title: "Redirect Rules", actions: ["history", "settings"], fab: true }),
+
+  ruleForm: () => app(`
+    ${tf("Rule Name", "Work OTP")}
+    <div class="row">${tf("Sender", "WorkBank", { focus: true }).replace('class="tf', 'style="flex:1" class="tf')}<div class="ib" style="margin-top:14px;color:var(--primary)">${ic("contact_phone")}</div></div>
+    <div class="row">${tf("Target Number", "+351 912 345 678").replace('class="tf', 'style="flex:1" class="tf')}<div class="ib" style="margin-top:14px;color:var(--primary)">${ic("contact_phone")}</div></div>
+    ${tf("Category", "Work", { trail: ic("arrow_drop_down", "", "color:var(--on-variant)") })}
+    <div class="btn big" style="margin-top:24px">Save Rule</div>
+    <p class="small muted" style="margin-top:14px;text-align:center">Matches a sender's name or number. The first matching rule wins.</p>`,
+    { nav: null, title: "Create Rule", back: true }),
+
+  scheduleList: () => app(`
+    ${catHead("Birthdays", "1 scheduled SMS", 5)}
+    ${schedCard("Ana's birthday", "Ana (+351 961 222 ***)", "Sep 3, 2027 08:00", "Yearly", 5)}
+    ${catHead("Reminders", "2 scheduled SMS", 2)}
+    ${schedCard("Pay the rent", "Rita (+351 914 555 ***)", "Dec 1, 2026 09:00", "Monthly", 2)}
+    ${schedCard("Gym tonight?", "Rui (+351 936 777 ***)", "Nov 4, 2026 18:00", "Work week days", 2)}`,
+    { nav: 2, title: "Scheduled SMS Rules", actions: ["history", "settings"], fab: true }),
+
+  scheduleForm: () => app(`
+    ${tf("Scheduled SMS Name", "Ana's birthday")}
+    ${tf("Category", "Birthdays", { trail: ic("arrow_drop_down", "", "color:var(--on-variant)") })}
+    <div class="row">${tf("Contact", "Ana Silva").replace('class="tf', 'style="flex:1" class="tf')}<div class="ib" style="margin-top:14px;color:var(--primary)">${ic("contact_phone")}</div></div>
+    ${tf("Message", "Happy birthday, Ana! 🎂 Have the best day.", { multi: true })}
+    <div class="row">${tf("Date", "Sep 3, 2027").replace('class="tf', 'style="flex:1.2" class="tf')}${tf("Time", "08:00").replace('class="tf', 'style="flex:1" class="tf')}</div>
+    <div style="position:relative">${tf("Repeat", "Yearly", { focus: true, trail: ic("arrow_drop_down", "", "color:var(--primary);transform:rotate(180deg)") })}
+      <div class="menu" style="left:0;right:0;top:66px">
+        ${["None", "Daily", "Work week days", "Bi-weekly", "Monthly", "Yearly"].map(o => `<div class="${o === "Yearly" ? "sel" : ""}">${o}</div>`).join("")}
+      </div></div>`,
+    { nav: null, title: "Create Schedule SMS", back: true }),
+
+  history: () => app(`
+    <div class="row" style="justify-content:space-between;min-height:56px;font-size:16px">Keep history<div class="sw"></div></div>
+    ${histCard("WorkBank → +351 912 345 678", "Today, 9:47", "Work OTP", "Your code is 482913")}
+    ${histCard("DHL → +351 912 345 678", "Today, 8:12", "Delivery codes", "Your parcel arrives today 14:00–16:00")}
+    ${histCard("Mom (+351 933 111 222) → +351 961 222 333", "Yesterday, 20:11", "Mom's phone", "Can you call me later? ❤️")}
+    ${histCard("EDP → +351 960 123 456", "Yesterday, 7:03", "Power outage", "Scheduled maintenance tomorrow 10:00–12:00")}`,
+    { nav: null, title: "Redirect History", actions: ["delete_sweep"], back: true }),
+
+  settings: (dark = true) => app(`
+    <div class="sline">${ic("signal_cellular_alt")}<span class="grow">Send while roaming</span><div class="sw off"></div></div>
+    <div class="sline">${ic("notifications_active")}<span class="grow">Show notifications</span><div class="sw"></div></div>
+    <div class="divider"></div>
+    <div class="section-t">Gmail backup</div>
+    ${tf("Gmail address", "you@gmail.com", { lead: "email" })}
+    ${tf("App password", "••••••••••••••••", { lead: "key", trail: ic("visibility_off", "", "color:var(--on-variant)") })}
+    <div class="row body" style="margin-top:12px;color:var(--primary);font-weight:500">${ic("check_circle")}Connected to Gmail</div>
+    <div class="row" style="margin-top:12px"><div class="btn">Save and verify</div><div class="btn text">Remove</div></div>
+    <p class="body muted" style="margin-top:12px">SMS Toolbox connects straight to Gmail with an app password. It is stored encrypted on this device and is never sent anywhere else.</p>`,
+    { dark, nav: null, title: "Settings", back: true }),
+};
+
+function catHead(name, count, a) {
+  const c = ACCENTS[a];
+  return `<div class="cathead" style="background:${c}1A"><span class="bar" style="background:${c}"></span><span style="color:${c};font-weight:700">${name}</span><span class="n">${count}</span>${ic("arrow_drop_down")}</div>`;
+}
+function ruleCard(name, sender, target, a, hl = false) {
+  const c = ACCENTS[a];
+  return `<div class="rcard ${hl ? "hl" : ""}"><div class="acc" style="background:${c}"></div><div class="in">${ic("folder", "lead", `color:${c}`)}<div style="flex:1;min-width:0"><div class="t">${name}</div><div class="l">Sender: ${sender}</div><div class="l">Target: ${target}</div></div><div class="trail">${ic("drag_handle")}<div class="ib">${ic("delete")}</div></div></div></div>`;
+}
+function schedCard(name, contact, next, repeat, a) {
+  const c = ACCENTS[a];
+  return `<div class="rcard"><div class="acc" style="background:${c}"></div><div class="in">${ic("schedule", "lead", `color:${c}`)}<div style="flex:1;min-width:0"><div class="t">${name}</div><div class="l">Contact: ${contact}</div><div class="l">Next send: ${next}</div><div class="l">Repeat: ${repeat}</div></div><div class="trail">${ic("drag_handle")}<div class="ib">${ic("delete")}</div></div></div></div>`;
+}
+function histCard(head, when, rule, body) {
+  return `<div class="card" style="margin-top:10px;padding:12px;display:flex;gap:12px">${ic("forward", "", "color:var(--primary)")}<div style="flex:1;min-width:0">
+    <div style="font-size:14px;font-weight:600;line-height:20px">${head}</div><div class="small muted">${when}</div><div class="small muted">Rule: ${rule}</div><div class="body" style="margin-top:4px">${body}</div></div></div>`;
+}
+
+// ---------------- device + floats ----------------
+function device(screenHtml, { x, y, scale, rot = 0 }) {
+  return `<div class="device-wrap" style="left:${x}px;top:${y}px;transform:scale(${scale}) rotate(${rot}deg)">
+    <div class="device"><span class="sidebtn" style="top:170px;height:70px"></span><span class="sidebtn" style="top:270px;height:110px"></span>
+    <div class="screen">${screenHtml}<div class="glare"></div></div><div class="cam"></div></div></div>`;
+}
+const F = {
+  notif: (appName, title, body, color, icon) => `<div class="glass notif"><div class="ic" style="background:${color}">${icon.length === 1 ? icon : ic(icon)}</div><div><span class="app">${appName}</span><b>${title}</b><p>${body}</p></div></div>`,
+  mail: (rows) => `<div class="glass mail"><div class="hd"><b>Gmail</b><span class="lbl">${ic("label")}SMS</span></div>${rows.map(([a, c, s, p, d, isNew]) =>
+    `<div class="mrow ${isNew ? "new" : ""}"><div class="av" style="background:${c}">${a}</div><div class="tx"><div class="s">${s}</div><div class="p">${p}</div></div><div class="d">${d}</div></div>`).join("")}</div>`,
+  chip: (icon, text, color, dark = false) => `<div class="chip glass" style="${dark ? "background:rgba(17,19,24,.9);color:#fff" : ""}"><span class="ic" style="background:${color}">${ic(icon)}</span>${text}</div>`,
+  convo: (who, num, msgs) => `<div class="glass bubble"><div class="who"><div class="av">${ic("person")}</div><div><b>${who}</b><span>${num}</span></div></div>${msgs.map(([t, m, out]) => `<div class="msg ${out ? "out" : ""}" style="margin-top:10px;max-width:92%">${t}<small>${m}</small></div>`).join("")}</div>`,
+  contacts: (list, sel) => `<div class="glass contacts"><div class="hd">Choose a contact</div>${list.map(([n, c]) => `<div class="c ${n === sel ? "sel" : ""}"><div class="av" style="background:${c}">${n[0]}</div>${n}${n === sel ? ic("check_circle") : ""}</div>`).join("")}</div>`,
+  stat: (big, lab, color) => `<div class="glass stat"><div class="big" style="color:${color}">${big}</div><div class="lab">${lab}</div></div>`,
+};
+const MAIL_ROWS = [
+  ["M", "#188038", "SMS with Mom (+351 933 111 222)", "Landed safely! Call you tonight ❤️", "now", true],
+  ["A", "#9334E6", "SMS with Ana Silva (+351 961 222 333)", "To: Ana · On my way, 10 minutes", "9:12"],
+  ["D", "#F29900", "SMS with DHL (DHL)", "Your parcel arrives today 14:00–16:00", "8:47"],
+  ["W", "#1A73E8", "SMS with WorkBank (WorkBank)", "Your code is 771204", "Mon"],
+];
+
+// ---------------- shots ----------------
+// Each: eyebrow, headline (html), sub, accent color for glows, screen, floats per layout.
+// Float positions: [html, {phone:{x,y,w,rot}, tablet:{x,y,w,rot}}]
+const SHOTS = [
+  { key: "01-backup", eye: ["backup", "Backup", "#1A73E8"], head: "Every text, safe in <em>your own Gmail</em>", sub: "Received and sent, backed up as they arrive.",
+    glow: ["#1A73E8", "#34A853"], screen: () => SCREENS.backup(),
+    floats: [
+      [F.notif("Messages · now", "Mom", "Landed safely! Call you tonight ❤️", "#188038", "M"), { phone: { x: 30, y: 1610, w: 400, rot: -2 }, tablet: { x: 790, y: 760, w: 400, rot: -2 } }],
+      [F.mail(MAIL_ROWS), { phone: { x: 450, y: 1080, w: 420, rot: 2 }, tablet: { x: 1400, y: 400, w: 410, rot: 2 } }],
+    ] },
+  { key: "02-restore", eye: ["restore", "Restore", "#188038"], head: "New phone? <em>Bring every text back</em>", sub: "Restore from your Gmail in one tap. Nothing is duplicated.",
+    glow: ["#12B5CB", "#34A853"], screen: () => SCREENS.restore(),
+    floats: [
+      [F.stat("2,176", "messages restored so far", "#188038"), { phone: { x: 30, y: 1460, w: 280, rot: -3 }, tablet: { x: 800, y: 640, w: 280, rot: -3 } }],
+      [F.chip("done_all", "Already on the phone? Skipped.", "#188038"), { phone: { x: 420, y: 1700, w: 0, rot: 2 }, tablet: { x: 1360, y: 880, w: 0, rot: 2 } }],
+    ] },
+  { key: "03-redirect-rules", eye: ["forward", "Redirect", "#E37400"], head: "Forward <em>the texts that matter</em>", sub: "Codes, deliveries, family: simple rules, first match wins.",
+    glow: ["#FBBC05", "#EA4335"], screen: () => SCREENS.rules(),
+    floats: [
+      [F.notif("Messages · now", "WorkBank", "Your code is 482913", "#1A73E8", "W"), { phone: { x: 30, y: 1560, w: 400, rot: -2 }, tablet: { x: 790, y: 760, w: 400, rot: -2 } }],
+      [F.convo("Your work phone", "+351 912 345 678", [["SMS Toolbox: (WorkBank) - Your code is 482913", "now · forwarded by “Work OTP”", false]]), { phone: { x: 470, y: 1110, w: 400, rot: 2 }, tablet: { x: 1420, y: 420, w: 400, rot: 2 } }],
+    ] },
+  { key: "04-create-rule", eye: ["contact_phone", "Rules", "#E37400"], head: "Pick a sender. <em>Pick a target.</em>", sub: "By name from your contacts, or by number or text.",
+    glow: ["#FBBC05", "#1A73E8"], screen: () => SCREENS.ruleForm(),
+    floats: [
+      [F.contacts([["Ana Silva", "#9334E6"], ["DHL", "#F29900"], ["Mom", "#188038"], ["WorkBank", "#1A73E8"]], "WorkBank"), { phone: { x: 620, y: 1180, w: 300, rot: 2 }, tablet: { x: 1450, y: 400, w: 300, rot: 2 } }],
+      [F.chip("check_circle", "First matching rule wins", "#E37400"), { phone: { x: 40, y: 1650, w: 0, rot: -2 }, tablet: { x: 800, y: 860, w: 0, rot: -2 } }],
+    ] },
+  { key: "05-schedule-list", eye: ["schedule", "Schedule", "#9334E6"], head: "Write now, <em>send later</em>", sub: "Birthdays, reminders, rent day: sent from your own SIM.",
+    glow: ["#9334E6", "#1A73E8"], screen: () => SCREENS.scheduleList(),
+    floats: [
+      [F.convo("Ana Silva", "+351 961 222 333", [["Happy birthday, Ana! 🎂 Have the best day.", "Sep 3 · 08:00 · sent automatically ✓", true]]), { phone: { x: 470, y: 1330, w: 400, rot: 2 }, tablet: { x: 1420, y: 560, w: 400, rot: 2 } }],
+      [F.chip("calendar_month", "Every year on Sep 3", "#9334E6"), { phone: { x: 30, y: 1600, w: 0, rot: -3 }, tablet: { x: 800, y: 820, w: 0, rot: -3 } }],
+    ] },
+  { key: "06-schedule-form", eye: ["event_repeat", "Repeat", "#9334E6"], head: "Once, daily, monthly <em>or every year</em>", sub: "Work-week days and bi-weekly too, with an optional stop date.",
+    glow: ["#9334E6", "#12B5CB"], screen: () => SCREENS.scheduleForm(),
+    floats: [
+      [F.chip("send", "Sent from your SIM, on time", "#9334E6"), { phone: { x: 420, y: 1740, w: 0, rot: 2 }, tablet: { x: 1400, y: 890, w: 0, rot: 2 } }],
+    ] },
+  { key: "07-history", eye: ["history", "History", "#1A73E8"], head: "Every forward, <em>on record</em>", sub: "The last 50, with the rule that matched. Stored on your phone only.",
+    glow: ["#1A73E8", "#9334E6"], screen: () => SCREENS.history(),
+    floats: [
+      [F.stat("50", "latest forwards kept, on this phone", "#1A73E8"), { phone: { x: 30, y: 1500, w: 300, rot: -3 }, tablet: { x: 790, y: 680, w: 300, rot: -3 } }],
+      [F.chip("delete_sweep", "Clear it any time", "#EA4335"), { phone: { x: 600, y: 1720, w: 0, rot: 2 }, tablet: { x: 1440, y: 870, w: 0, rot: 2 } }],
+    ] },
+  { key: "08-privacy", eye: ["shield", "Private", "#188038"], head: "No account. No server. <em>Just your Gmail.</em>", sub: "Your app password stays encrypted on your phone.",
+    glow: ["#188038", "#1A73E8"], screen: () => SCREENS.settings(true), dark: true,
+    floats: [
+      [`<div class="trust">${F.chip("person", "No account to create", "#1A73E8")}${F.chip("cloud_done", "Phone → your Gmail, nothing in between", "#188038")}${F.chip("key", "Password encrypted with Android Keystore", "#E37400")}${F.chip("code", "Open source: check every claim", "#9334E6")}</div>`,
+        { phone: { x: 110, y: 1420, w: 0, rot: 0 }, tablet: { x: 1380, y: 520, w: 0, rot: 0 } }],
+    ] },
+];
+
+function background(w, h, glow, dark = false) {
+  const base = dark ? "radial-gradient(1200px 900px at 30% 10%, #12305F 0%, #0A1733 55%, #050B19 100%)"
+                    : "radial-gradient(1400px 1000px at 25% 0%, #2B7FF0 0%, #1554C4 40%, #0B2E7A 80%, #071C4E 100%)";
+  const s = Math.max(w, h);
+  return `<div class="bg" style="background:${base}"></div>
+    <div class="orb" style="width:${s * .7}px;height:${s * .7}px;left:${w * .55}px;top:${h * .05}px;background:${glow[0]}"></div>
+    <div class="orb" style="width:${s * .6}px;height:${s * .6}px;left:${-w * .25}px;top:${h * .6}px;background:${glow[1]};opacity:.4"></div>
+    <div class="rings" style="width:${s * 1.1}px;height:${s * 1.1}px;left:${w / 2 - s * .55}px;top:${h * .62 - s * .55}px"></div>
+    <div class="rings" style="width:${s * .8}px;height:${s * .8}px;left:${w / 2 - s * .4}px;top:${h * .62 - s * .4}px"></div>
+    <div class="grain"></div>`;
+}
+function eyebrow([icon, label, color], size) {
+  return `<span class="eyebrow" style="font-size:${size}px"><span class="dot" style="background:${color}">${ic(icon)}</span>${label}</span>`;
+}
+function floatsHtml(floats, layout) {
+  return floats.map(([html, pos]) => {
+    const p = pos[layout];
+    const k = layout === "phone" ? 1.4 : 1.15;
+    return `<div class="float" style="left:${p.x}px;top:${p.y}px;${p.w ? `width:${p.w}px;` : ""}transform-origin:0 0;transform:rotate(${p.rot}deg) scale(${k})">${html}</div>`;
+  }).join("");
+}
+
+function renderShot(i, layout) {
+  const s = SHOTS[i];
+  const stage = document.getElementById("stage");
+  if (layout === "phone") {
+    const W = 1080, H = 1920;
+    stage.style.cssText = `width:${W}px;height:${H}px`;
+    stage.innerHTML = background(W, H, s.glow, s.dark) +
+      `<div class="copy" style="left:70px;right:70px;top:96px;text-align:center">${eyebrow(s.eye, 22)}
+        <div class="headline" style="font-size:86px;margin-top:30px">${s.head}</div>
+        <div class="sub" style="font-size:36px;margin-top:24px">${s.sub}</div></div>` +
+      device(s.screen(), { x: 240, y: 560, scale: 1.364 }) + floatsHtml(s.floats, "phone");
+  } else {
+    const W = 1920, H = 1080;
+    stage.style.cssText = `width:${W}px;height:${H}px`;
+    stage.innerHTML = background(W, H, s.glow, s.dark) +
+      `<div class="copy" style="left:130px;width:680px;top:50%;transform:translateY(-50%)">${eyebrow(s.eye, 22)}
+        <div class="headline" style="font-size:92px;margin-top:32px">${s.head}</div>
+        <div class="sub" style="font-size:36px;margin-top:28px">${s.sub}</div>
+        <div style="margin-top:48px;display:flex;align-items:center;gap:18px;font-size:28px;font-weight:700">${appIcon(64)}SMS Toolbox</div></div>` +
+      device(s.screen(), { x: 1000, y: 70, scale: 0.997 }) + floatsHtml(s.floats, "tablet");
+  }
+}
+
+// ---------------- icon ----------------
+// Glyph path data from app/src/main/res/drawable/ic_launcher_foreground.xml (108dp viewport).
+const GLYPH_BUBBLE = "M30,36 L78,36 C80.2,36 82,37.8 82,40 L82,62 C82,64.2 80.2,66 78,66 L44,66 L36,74 L36,66 L30,66 C27.8,66 26,64.2 26,62 L26,40 C26,37.8 27.8,36 30,36 Z";
+const GLYPH_ARROW1 = "M48,46 L60,51 L48,56 L48,53 L42,53 L42,49 L48,49 Z";
+const GLYPH_ARROW2 = "M56,46 L68,51 L56,56 L56,53 L52,53 L52,49 L56,49 Z";
+function iconSvg(rounded) {
+  // Full-bleed square for Play (Play applies its own mask); `rounded` for in-graphic use.
+  return `<svg viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="bgG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3D8BFD"/><stop offset=".55" stop-color="#1A73E8"/><stop offset="1" stop-color="#0F4FB8"/></linearGradient>
+      <radialGradient id="hl" cx=".3" cy=".18" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+      <linearGradient id="bub" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E4EEFF"/></linearGradient>
+      <filter id="sh" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="2.6" stdDeviation="2.6" flood-color="#06275E" flood-opacity=".38"/></filter>
+      <clipPath id="clip"><rect width="108" height="108" rx="${rounded ? 24 : 0}"/></clipPath>
+    </defs>
+    <g clip-path="url(#clip)">
+      <rect width="108" height="108" fill="url(#bgG)"/>
+      <rect width="108" height="108" fill="url(#hl)"/>
+      <g transform="translate(54 55) scale(1.12) translate(-54 -55)">
+        <path d="${GLYPH_BUBBLE}" fill="url(#bub)" filter="url(#sh)"/>
+        <path d="${GLYPH_ARROW1}" fill="#1A73E8"/><path d="${GLYPH_ARROW2}" fill="#1A73E8"/>
+      </g>
+    </g></svg>`;
+}
+function appIcon(size) {
+  return `<div class="appicon" style="width:${size}px;height:${size}px;border-radius:${size * .225}px;box-shadow:0 ${size * .15}px ${size * .35}px rgba(3,20,60,.45)">${iconSvg(true)}</div>`;
+}
+function renderIcon() {
+  const stage = document.getElementById("stage");
+  stage.style.cssText = "width:512px;height:512px";
+  stage.innerHTML = `<div class="appicon" style="width:512px;height:512px">${iconSvg(false)}</div>`;
+}
+
+// ---------------- feature graphic ----------------
+function renderFeature() {
+  const W = 1024, H = 500;
+  const stage = document.getElementById("stage");
+  stage.style.cssText = `width:${W}px;height:${H}px`;
+  stage.innerHTML = background(W, H, ["#1A73E8", "#34A853"]) +
+    `<div class="copy" style="left:64px;top:84px;width:470px">
+      <div style="display:flex;align-items:center;gap:22px">${appIcon(96)}<div class="headline" style="font-size:58px">SMS Toolbox</div></div>
+      <div class="headline" style="font-size:40px;margin-top:30px;line-height:1.12">Back up &amp; restore your texts <em>with your own Gmail</em></div>
+      <div class="sub" style="font-size:21px;margin-top:18px">Plus forwarding rules and scheduled SMS.</div>
+    </div>` +
+    device(SCREENS.rules(), { x: 560, y: 70, scale: 0.53, rot: -6 }) +
+    device(SCREENS.backup(), { x: 760, y: 40, scale: 0.56, rot: 5 });
+}
+
+window.renderAsset = function (kind, i) {
+  if (kind === "icon") renderIcon();
+  else if (kind === "feature") renderFeature();
+  else renderShot(i, kind);
+};
+window.SHOT_KEYS = SHOTS.map(s => s.key);
+</script>
+</body>
+</html>

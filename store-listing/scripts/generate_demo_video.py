@@ -18,7 +18,7 @@ It covers, in the order a new user hits them:
   7. Schedule: a text sent later via SEND_SMS
   8. A summary card listing every permission and what it's for
 
-Like generate_assets.py this is a *concept* render built from the app's real
+Like the store graphics this is a *concept* render built from the app's real
 brand colors and UI strings (app/src/main/res/values/strings.xml) and the
 permission flow in MainActivity.kt, not a screen recording. No emulator was
 available where it was made. The permission order and dialog wording match
@@ -47,7 +47,7 @@ from typing import Callable
 from PIL import Image, ImageDraw, ImageFilter
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import generate_assets as ga  # noqa: E402  (reuses the palette, fonts and phone-frame helpers)
+import demo_video_drawing as ga  # noqa: E402  (palette, fonts and phone-frame helpers)
 
 ROOT = Path(__file__).resolve().parent.parent
 VIDEO_DIR = ROOT / "video"

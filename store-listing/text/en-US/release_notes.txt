@@ -1,1 +1,3 @@
-Gmail backup now includes the messages you send, not just the ones you receive. A sent message is backed up within about two minutes, and a restore puts it back in your sent messages. Restore from Gmail: bring your backed-up texts back to a new phone in one tap. Messages already on the phone are skipped.
+• Backups now include the messages you send, not just the ones you receive. A sent message reaches Gmail within about two minutes.
+• Restore from Gmail: bring your backed-up texts back to a new phone in one tap. Received and sent messages each go back to the right place, and anything already on the phone is skipped.
+• A fresh new look for the store listing.
