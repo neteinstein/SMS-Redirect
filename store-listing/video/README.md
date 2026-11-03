@@ -13,6 +13,11 @@ A 24-second launch video (1920x1080, 30 fps, H.264 with AAC music) covering all
 four features. `sms-toolbox-launch.jpg` is its poster, and is also baked in as
 frame 0 so platforms that thumbnail the first frame show it.
 
+`sms-toolbox-launch-preview.gif` is a silent 720px, 12 fps loop of the same video
+for the root README. GitHub does not play an `.mp4` committed to the repository
+inline (a link only opens the file page, and `<video>` tags pointing at repo files
+are stripped), so the README shows the GIF and links it to the MP4.
+
 | Time | Scene | On screen |
 |---|---|---|
 | 0:00 | Hook | A chat bubble: "Lose the phone, lose the texts?" |
@@ -42,6 +47,8 @@ Rebuild it (needs Node + Playwright with Chromium, Python 3 + numpy, ffmpeg, and
 ```bash
 store-listing/scripts/launch_video/build.sh
 ```
+
+The build script also regenerates the README preview GIF.
 
 ## Permissions demo: `sms-toolbox-demo.mp4`
 
