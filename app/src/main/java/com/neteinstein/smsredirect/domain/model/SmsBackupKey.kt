@@ -52,14 +52,27 @@ object SmsBackupKey {
 
     private const val SUFFIX_DIGITS = 9
 
+    /**
+     * The key for one message. [box] is folded in for sent messages only.
+     *
+     * An inbox message keeps the original `address|body|date` input, so every key already in
+     * `sms_backup_state` stays valid and an app update does not re-upload a user's whole inbox.
+     * A sent message gets a distinct prefix so that it can never share a key with a received one:
+     * texting your own number puts the same address and body in both boxes, and if the two
+     * timestamps ever coincided, one of them would be silently skipped as "already backed up".
+     * No sent message was backed up before this prefix existed, so it cannot orphan any record.
+     */
     fun of(
         address: String?,
         body: String,
         dateEpochMs: Long,
-    ): String =
-        sha256Hex(
-            normalizeAddress(address) + FIELD_SEPARATOR + body + FIELD_SEPARATOR + dateEpochMs,
+        box: SmsBox = SmsBox.INBOX,
+    ): String {
+        val prefix = if (box == SmsBox.INBOX) "" else box.headerValue + FIELD_SEPARATOR
+        return sha256Hex(
+            prefix + normalizeAddress(address) + FIELD_SEPARATOR + body + FIELD_SEPARATOR + dateEpochMs,
         )
+    }
 
     fun sha256Hex(value: String): String =
         MessageDigest

@@ -157,7 +157,9 @@ class RunSmsRestoreUseCase(
     private suspend fun restore(message: SmsMessageToRestore): Boolean {
         if (!smsMessageWriter.insert(message)) return false
         backupStateRepository.markBackedUp(
-            listOf(SmsBackupKey.of(message.address, message.body, message.dateEpochMs)),
+            // The box must match what the backup scan derives for the restored row, or a restored
+            // sent message would look new and be uploaded a second time.
+            listOf(SmsBackupKey.of(message.address, message.body, message.dateEpochMs, message.box)),
             now(),
         )
         return true

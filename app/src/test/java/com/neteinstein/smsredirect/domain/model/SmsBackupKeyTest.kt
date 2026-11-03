@@ -99,4 +99,31 @@ class SmsBackupKeyTest {
     fun `two blank addresses are not the same sender`() {
         assertEquals(false, SmsBackupKey.sameAddress("", " "))
     }
+
+    @Test
+    fun `an inbox key is unchanged from before sent messages were backed up`() {
+        // Keys already stored in sms_backup_state were derived from address|body|date alone. If
+        // the inbox key moved, an app update would re-upload every user's whole inbox.
+        val legacy = SmsBackupKey.sha256Hex("+351912345678|Hello|1700000000000")
+
+        assertEquals(legacy, SmsBackupKey.of("+351 912 345 678", "Hello", 1_700_000_000_000))
+        assertEquals(legacy, SmsBackupKey.of("+351 912 345 678", "Hello", 1_700_000_000_000, SmsBox.INBOX))
+    }
+
+    @Test
+    fun `a sent message never shares a key with an identical received one`() {
+        // Texting your own number puts the same address and body in both boxes.
+        val received = SmsBackupKey.of("+351912345678", "Hello", 1_700_000_000_000, SmsBox.INBOX)
+        val sent = SmsBackupKey.of("+351912345678", "Hello", 1_700_000_000_000, SmsBox.SENT)
+
+        assertNotEquals(received, sent)
+    }
+
+    @Test
+    fun `a sent key is as stable as an inbox key`() {
+        assertEquals(
+            SmsBackupKey.of("+351 912 345 678", "Hello", 1L, SmsBox.SENT),
+            SmsBackupKey.of("+351912345678", "Hello", 1L, SmsBox.SENT),
+        )
+    }
 }

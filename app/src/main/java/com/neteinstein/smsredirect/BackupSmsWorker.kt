@@ -16,11 +16,12 @@ import com.neteinstein.smsredirect.domain.usecase.SmsBackupRunOutcome
 import java.util.concurrent.TimeUnit
 
 /**
- * Backs up everything in the SMS inbox that has not reached Gmail yet.
+ * Backs up every received and sent SMS that has not reached Gmail yet.
  *
- * One worker serves both paths -- the historical backfill and each newly received message --
- * because both simply scan the content provider for un-backed-up messages. There is no separate
- * "live" payload to keep in sync.
+ * One worker serves every path -- the historical backfill, each newly received message, and each
+ * provider change seen by [SmsBackupProviderWatchWorker] (which is how sent messages arrive) --
+ * because all of them simply scan the content provider for un-backed-up messages. There is no
+ * separate "live" payload to keep in sync.
  *
  * Each run is bounded and re-enqueues itself while work remains, which keeps every execution
  * inside WorkManager's ten-minute ceiling. That is why no foreground service is needed:
@@ -46,6 +47,19 @@ class BackupSmsWorker(
                     },
                     isStopped = { isStopped },
                 )
+
+            // Backup is configured whenever a run gets past NotConfigured and AuthFailed. That
+            // keeps the sent-message trigger armed for users who enabled backup before it
+            // existed: the next run, from any trigger, arms it.
+            when (outcome) {
+                is SmsBackupRunOutcome.NotConfigured, is SmsBackupRunOutcome.AuthFailed -> {
+                    SmsBackupProviderWatchWorker.disarm(applicationContext)
+                }
+
+                else -> {
+                    SmsBackupProviderWatchWorker.arm(applicationContext)
+                }
+            }
 
             when (outcome) {
                 is SmsBackupRunOutcome.Completed -> {

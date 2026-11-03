@@ -20,6 +20,11 @@ developer. **Declare it anyway.** An under-declaration that a reviewer
 disagrees with is an app-removal risk; an over-declaration is not. The rows
 below take the conservative reading.
 
+**Backing up sent SMS does not change these answers.** Gmail backup covers
+messages the user sent as well as received ones. Both are the same data type
+("SMS or MMS content") going to the same destination, so the row below
+already covers them.
+
 **Restore from Gmail does not change these answers.** A restore moves data *onto*
 the device: from the user's own Gmail label into the phone's SMS store, over
 read-only IMAP. Nothing new is transmitted off the device. The backup emails

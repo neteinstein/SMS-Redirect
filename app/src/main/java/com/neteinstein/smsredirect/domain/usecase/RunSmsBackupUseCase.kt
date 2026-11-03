@@ -30,7 +30,7 @@ sealed interface SmsBackupRunOutcome {
 }
 
 /**
- * Backs up every SMS not yet in Gmail, in one bounded chunk.
+ * Backs up every received and sent SMS not yet in Gmail, in one bounded chunk.
  *
  * Bounded on purpose. A run stops after [maxMessages] and re-enqueues itself, which keeps every
  * execution inside WorkManager's ten-minute ceiling without needing a foreground service — and
@@ -68,10 +68,16 @@ class RunSmsBackupUseCase(
         val alreadyDone = backupStateRepository.count()
         val total = smsMessageSource.count(since)
 
+        // Look for something to upload before logging in. Most runs started by the provider
+        // trigger (a message marked read, a thread deleted, an incoming SMS a scan already
+        // covered) find nothing, and an IMAP login for each would spend battery and data for
+        // nothing. The scan starts where the first pending message was found, not from zero.
+        val start = findFirstPendingBatch(since) ?: return SmsBackupRunOutcome.Completed
+
         var done = alreadyDone
         var sentThisRun = 0
-        var cursorDate = 0L
-        var cursorId = 0L
+        var cursorDate = start.first
+        var cursorId = start.second
         var outcome: SmsBackupRunOutcome = SmsBackupRunOutcome.Completed
         val startElapsedMs = elapsedNowMs()
 
@@ -171,6 +177,26 @@ class RunSmsBackupUseCase(
         }
 
         return outcome
+    }
+
+    /**
+     * The keyset cursor just before the first batch that holds a message not yet backed up, or
+     * null when nothing is pending. Reads the provider and the local hash table only.
+     */
+    private suspend fun findFirstPendingBatch(since: Long): Pair<Long, Long>? {
+        var cursorDate = 0L
+        var cursorId = 0L
+        var batch = smsMessageSource.readBatch(since, cursorDate, cursorId, BATCH_SIZE)
+        while (batch.isNotEmpty()) {
+            val alreadyBackedUp = backupStateRepository.filterAlreadyBackedUp(batch.map { it.stableKey })
+            if (batch.any { it.stableKey !in alreadyBackedUp }) return cursorDate to cursorId
+            batch.last().let { last ->
+                cursorDate = last.dateEpochMs
+                cursorId = last.providerId
+            }
+            batch = smsMessageSource.readBatch(since, cursorDate, cursorId, BATCH_SIZE)
+        }
+        return null
     }
 
     companion object {

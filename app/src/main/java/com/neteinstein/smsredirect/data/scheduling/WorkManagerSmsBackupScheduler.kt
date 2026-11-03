@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.neteinstein.smsredirect.BackupSmsWorker
+import com.neteinstein.smsredirect.SmsBackupProviderWatchWorker
 import com.neteinstein.smsredirect.domain.model.SmsBackupProgress
 import com.neteinstein.smsredirect.domain.scheduling.SmsBackupScheduler
 import kotlinx.coroutines.flow.Flow
@@ -15,9 +16,15 @@ import kotlinx.coroutines.flow.map
 class WorkManagerSmsBackupScheduler(
     private val context: Context,
 ) : SmsBackupScheduler {
-    override fun requestBackup() = BackupSmsWorker.enqueue(context)
+    override fun requestBackup() {
+        BackupSmsWorker.enqueue(context)
+        SmsBackupProviderWatchWorker.arm(context)
+    }
 
-    override fun cancelBackup() = BackupSmsWorker.cancel(context)
+    override fun cancelBackup() {
+        BackupSmsWorker.cancel(context)
+        SmsBackupProviderWatchWorker.disarm(context)
+    }
 
     override fun observeProgress(): Flow<SmsBackupProgress?> =
         WorkManager

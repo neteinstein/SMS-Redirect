@@ -25,18 +25,20 @@ on — the declaration has to match what the app visibly is.
 ## SMS Backup to Gmail Pipeline
 
 ```
-[ Incoming SMS ]                        [ Backup tab: "Enable" / "Backup all previous" ]
- │                                       │
- └─► SmsReceiver                         └─► SmsBackupScheduler
-      │  (also enqueues ForwardSmsWorker)      │
-      ▼                                        ▼
+[ Incoming SMS ]           [ Any change to content://sms ]     [ Backup tab: "Enable" / "Backup all previous" ]
+ │                          │  (a sent SMS turning "sent")       │
+ └─► SmsReceiver            └─► SmsBackupProviderWatchWorker     └─► SmsBackupScheduler
+      │  (also enqueues          │  (content-URI trigger,              │  (arms the watch too)
+      │   ForwardSmsWorker)      │   re-arms itself)                   │
+      ▼                          ▼                                     ▼
    BackupSmsWorker  ◄────────────── re-enqueues itself while work remains
       │
       ▼
    RunSmsBackupUseCase
       │
-      ├─► SmsMessageSource ──► content://sms/inbox  (keyset paging on date,_id)
+      ├─► SmsMessageSource ──► content://sms, type IN (inbox, sent)  (keyset paging on date,_id)
       ├─► SmsBackupStateRepository ──► filter out anything already dealt with
+      │      (nothing pending → stop here, no IMAP connection)
       │
       └─► MailTransport.withFolder(label)   ── one IMAP connection per run
              │
@@ -58,9 +60,20 @@ carries the SMSC timestamp while the provider stores the device receive time, an
 seconds to minutes. Hashing one against the other would give the same message two identities and
 back it up twice. Reading only the provider means one code path and one key.
 
-`SmsBackupKey` is `SHA-256(normalizedAddress | body | dateEpochMs)` — not the provider `_id`, which
-SQLite reuses after a delete and which does not survive a device restore. Only the hash is stored,
-never the message text.
+`SmsBackupKey` is `SHA-256(normalizedAddress | body | dateEpochMs)` for a received message and
+`SHA-256("sent" | normalizedAddress | body | dateEpochMs)` for a sent one — not the provider `_id`,
+which SQLite reuses after a delete and which does not survive a device restore. Only the hash is
+stored, never the message text. The box prefix exists so that texting your own number, which puts
+the same address and body in both boxes, can never make one copy look "already backed up". Inbox
+keys deliberately keep the original input: changing them would orphan every row in
+`sms_backup_state` and re-upload every user's whole inbox. No sent message was backed up before
+the prefix existed, so it orphans nothing. A restore marks each message with the key of its own
+box, so a restored sent message is not uploaded again.
+
+**Received and sent, never drafts.** The source reads `content://sms` filtered to
+`MESSAGE_TYPE_INBOX` and `MESSAGE_TYPE_SENT`, in one ordered scan, and tags each row with its
+`SmsBox`. Drafts, outbox, queued and failed rows are excluded: they were never delivered, and an
+outgoing message qualifies once the messaging app updates its row to "sent". MMS is out of scope.
 
 ### Components
 
@@ -85,8 +98,44 @@ never the message text.
 - Unlike `SmsForwarder`, it does not swallow exceptions: retry/backoff only works if a failure is
   actually reported
 
+#### 2a. SmsBackupProviderWatchWorker (the sent-message trigger)
+Nothing is broadcast when the user *sends* an SMS, so `SmsReceiver` cannot cover outgoing
+messages. Instead a one-time WorkManager request carries a **content-URI trigger** on
+`content://sms` (descendants included). When the provider changes, it enqueues `BackupSmsWorker`
+(`APPEND_OR_REPLACE`, the same coalescing as an incoming SMS) and then re-arms itself, since the
+trigger is one-shot.
+
+Alternatives considered:
+- **`ContentObserver` registered while backup is enabled.** It lives only as long as the process,
+  so it misses everything sent while the app is not running. Keeping the process alive would need
+  the foreground service this app deliberately does not have.
+- **Periodic WorkManager scan.** It wakes the device on a schedule whether or not anything was
+  sent, and still lags by up to its 15-minute minimum interval.
+- **Content-URI trigger (chosen).** JobScheduler holds the observer outside the app process,
+  WorkManager keeps it across reboots, and nothing runs until the provider actually changes.
+
+Battery and cost:
+- The trigger waits for **15s of quiet** (`setTriggerContentUpdateDelay`), capped at **2 min**
+  (`setTriggerContentMaxDelay`). An outgoing SMS is first written as an outbox row and updated to
+  "sent" a few seconds later. The quiet period lets that settle, and it coalesces a burst of
+  changes into a single run.
+- It fires on *every* provider change: incoming messages, read flags, deletes. `RunSmsBackupUseCase`
+  therefore checks for pending messages **before** it connects. A firing with nothing new costs a
+  local provider scan and a hash lookup, with no network and no IMAP login.
+- **Armed** by `SmsBackupScheduler.requestBackup()` (enabling backup) and by every `BackupSmsWorker`
+  run that finds backup configured (`KEEP`, so it is a no-op when already armed). The second path
+  covers users who enabled backup before the trigger existed: their next backup run arms it.
+  Until then nothing is lost, because every run scans both boxes in full.
+- **Disarmed** by `cancelBackup()`, and by a run that ends `NotConfigured` or `AuthFailed`. A
+  stale trigger that fires after backup was switched off does not re-arm, so it dies after at
+  most one firing.
+- No new permissions: the trigger needs `READ_SMS`, which backup already holds.
+
 #### 3. RunSmsBackupUseCase
 - No-ops when backup is off or no usable credentials are stored
+- Scans for the first pending message before opening an IMAP connection, and returns `Completed`
+  without connecting when there is none. The scan then resumes from that batch rather than from
+  zero
 - Pages the provider on `(date, _id)` rather than an offset, so the scan stays stable while new
   messages arrive mid-backfill
 - The cursor advances across the whole batch including skipped messages, so a fully-backed-up batch
@@ -125,7 +174,7 @@ Every backup email carries what a restore needs to rebuild the provider row exac
 | Header | Value |
 |---|---|
 | `X-SMS-Toolbox-Format` | `1`. Bump on any incompatible change; the parser keeps accepting older values |
-| `X-SMS-Type` | `inbox` or `sent` (only `inbox` is backed up today; carried now so sent support needs no format revision) |
+| `X-SMS-Type` | `inbox` or `sent`. Sent messages also get a `To:` / `Sent:` body preamble instead of `From:` / `Received:`. Restore puts each message back in the matching box |
 | `X-SMS-Address` | The raw provider address, not the normalized one, so restored messages thread exactly as before. RFC 2047-encoded only if non-ASCII |
 | `X-SMS-Date` | Provider `date`, epoch **milliseconds** |
 | `X-SMS-Date-Sent` | Provider `date_sent`, omitted when unknown (0 on many OEMs) |
@@ -377,7 +426,7 @@ mean "unset" and `SmsBackupSettingsRepositoryImpl` applies the real defaults, mi
 | `gmailAppPasswordCipher` | `""` | App password, encrypted by `SecretCipher`. Never stored or logged in plaintext, and deliberately absent from `ExportBackupUseCase` |
 | `subjectTemplate` | `SMS with $CONTACT_NAME ($PHONE_NUMBER)` | Email subject; both placeholders are substituted per message |
 | `gmailLabel` | `SMS` | IMAP folder, which Gmail surfaces as a label. Created on first use |
-| `backupPreviousEnabled` | `false` | Whether the whole inbox is eligible, or only messages from when backup was switched on |
+| `backupPreviousEnabled` | `false` | Whether every received and sent SMS is eligible, or only messages from when backup was switched on |
 | `backupEnabled` | `false` | Master switch |
 | `backupStartedAtMillis` | `0` | Watermark. Zero means "no watermark, back up everything" |
 

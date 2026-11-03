@@ -1,6 +1,6 @@
 # Privacy Policy for SMS Toolbox
 
-**Effective date:** November 2, 2026
+**Effective date:** November 3, 2026
 
 SMS Toolbox ("the App", "we", "us", "our") is developed and maintained by [neteinstein](https://github.com/neteinstein). This Privacy Policy explains what data the App accesses, how it is used, and the choices you have. **We operate no backend server and have no account system** — your rules, contacts, and messages are processed and stored on your device. If you turn on Gmail backup, your device connects **directly to Google's Gmail servers** using credentials you supply; that content goes to your own mailbox and never passes through us. The App's full source code is public at [github.com/neteinstein/SMS-Redirect](https://github.com/neteinstein/SMS-Redirect), so every claim below can be verified directly in the code.
 
@@ -22,7 +22,7 @@ The App requests the following Android permissions. Each is used only for the st
 
 | Permission | Purpose |
 |---|---|
-| `READ_SMS` / `RECEIVE_SMS` | Read your SMS inbox so messages can be backed up to your Gmail account, and detect incoming SMS so they can be checked against your forwarding rules |
+| `READ_SMS` / `RECEIVE_SMS` | Read your received and sent SMS so they can be backed up to your Gmail account, and detect incoming SMS so they can be checked against your forwarding rules |
 | `SEND_SMS` | Send a forwarded message, or a scheduled message, to the number you configured |
 | `READ_CONTACTS` | Let you pick a contact when creating a rule or scheduled message, and show a contact's name instead of a raw number in notifications/history |
 | `POST_NOTIFICATIONS` | Show backup progress, and a notification after a message is forwarded or a scheduled message is sent |
@@ -52,13 +52,15 @@ When an SMS message matches one of your rules, the App reads the sender and mess
 
 This feature is **off until you turn it on**, and it does nothing until you supply a Gmail address and an app password in Settings.
 
-When enabled, the App reads messages from your device's SMS inbox and uploads them to your own Gmail account using IMAP over TLS (`imap.gmail.com:993`), filing them under the label you choose (default: `SMS`). Each backed-up message becomes an email in **your** mailbox, addressed from and to your own address. We never see this traffic: the connection is between your device and Google, and there is no server of ours in the path.
+When enabled, the App reads the text messages (SMS) you have received and the ones you have sent, and uploads them to your own Gmail account using IMAP over TLS (`imap.gmail.com:993`), filing them under the label you choose (default: `SMS`). Each backed-up message becomes an email in **your** mailbox, addressed from and to your own address. We never see this traffic: the connection is between your device and Google, and there is no server of ours in the path.
 
 **Your Gmail credentials.** The address and app password you enter are stored on your device, with the password encrypted using a key held in the Android Keystore. The password is transmitted only to Google's IMAP servers as your login. We never receive it, and it is never written to logs, analytics, or crash reports. Because the encryption key lives in the Keystore and does not leave the device, a cloud backup or device transfer cannot carry the password with it — you will be asked to enter it again on a new device.
 
 An app password grants access to your whole Gmail mailbox, not just the backup label. You can revoke it at any time at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords), which immediately stops the App from connecting. You can also remove it from within the App (Settings → Gmail backup → Remove).
 
-**What each backup email contains.** The email body is a readable transcript: the sender's name (if they are in your contacts) and number, the time the message was received, and the message text. A few hidden email headers repeat the sender's number and the exact received/sent timestamps in a machine-readable form, so the message can be restored exactly. These headers add no new kind of information beyond what the body already shows, and they stay inside your own mailbox like the rest of the email.
+Drafts, messages that failed to send, and picture messages (MMS) are not backed up.
+
+**What each backup email contains.** The email body is a readable transcript: the other person's name (if they are in your contacts) and number, the time the message was received or sent, and the message text. A few hidden email headers repeat that number, whether the message was received or sent, and the exact received/sent timestamps in a machine-readable form, so the message can be restored exactly. These headers add no new kind of information beyond what the body already shows, and they stay inside your own mailbox like the rest of the email.
 
 **What the App records locally.** To avoid backing the same message up twice, the App stores a one-way hash of each backed-up message plus a timestamp. It does **not** keep a second copy of your message text.
 
