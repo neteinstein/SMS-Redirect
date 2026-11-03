@@ -10,10 +10,13 @@ It covers, in the order a new user hits them:
   3. Enable backup: SMS rationale, then the system READ_SMS / RECEIVE_SMS /
      SEND_SMS prompt, then POST_NOTIFICATIONS
   4. Existing SMS upload, then a new incoming SMS that ends up in Gmail
-  5. Redirect: contact picker (READ_CONTACTS rationale + prompt), save the
+  5. Restore: the 3-step explanation, Android's default-SMS-app prompt (the
+     role is held only while the restore runs), progress, then switching the
+     usual messaging app back in Android's Default apps settings
+  6. Redirect: contact picker (READ_CONTACTS rationale + prompt), save the
      rule, battery-optimization exemption, an SMS forwarded via SEND_SMS
-  6. Schedule: a text sent later via SEND_SMS
-  7. A summary card listing every permission and what it's for
+  7. Schedule: a text sent later via SEND_SMS
+  8. A summary card listing every permission and what it's for
 
 Like generate_assets.py this is a *concept* render built from the app's real
 brand colors and UI strings (app/src/main/res/values/strings.xml) and the
@@ -291,6 +294,7 @@ def title_card() -> Image.Image:
         "Notifications",
         "Run in background (battery)",
         "Internet: your Gmail only",
+        "Default SMS app: only while restoring",
     ):
         draw.ellipse((150, y + 14, 170, y + 34), fill=AMBER)
         draw.text((196, y), line, font=ga.regular(38), fill=ga.WHITE)
@@ -434,6 +438,110 @@ def gmail_inbox(highlight: bool):
     return img
 
 
+def restore_screen(state: str, progress: float = 0.0, caption=None, badge=None):
+    """The Restore card on the Backup tab. Copy from strings.xml (restore_*).
+    state: "idle" | "running" | "done"."""
+    img, draw, sb, y, t = app_chrome(caption or ["Restore: bring your texts", "back to a new phone"], badge, "Backup to Gmail", 0)
+    x0, _, x1, _ = sb
+    y = ga.draw_enabled_banner(draw, x0, x1, y, "Backup to Gmail enabled")
+    box_x0, box_x1 = x0 + 24, x1 - 24
+    inner = box_x1 - box_x0 - 60
+    top = y
+    # Measure, then draw the card behind the text.
+    probe = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+    desc = "Copy the messages backed up under the Gmail label “SMS” back to this phone. Messages already on the phone are skipped, so it is safe to run more than once."
+    n_desc = len(ga.wrap_text(probe, desc, ga.regular(24), inner))
+    extra = {"idle": 120, "running": 200, "done": 60 + 36 * len(ga.wrap_text(probe, SWITCH_BACK_EXPLANATION, ga.regular(24), inner)) + 120}[state]
+    draw.rounded_rectangle((box_x0, top, box_x1, top + 30 + 50 + n_desc * 34 + 20 + extra), radius=22, fill=ga.WHITE, outline=ga.BRAND_OUTLINE, width=2)
+    ty = top + 26
+    draw.text((box_x0 + 30, ty), "Restore from Gmail", font=ga.bold(30), fill=ga.BRAND_ON_SURFACE)
+    ty = wrapped(draw, (box_x0 + 30, ty + 50), desc, ga.regular(24), ga.BRAND_ON_SURFACE_VARIANT, inner, 34) + 20
+    total = 3214
+    if state == "idle":
+        t["restore"] = button(draw, (box_x0 + 30, ty, box_x1 - 30, ty + 86), "Restore messages")
+    elif state == "running":
+        checked = max(1, int(total * progress))
+        restored = max(0, checked - 3)
+        ty = progress_bar(draw, box_x0 - 6, box_x1 + 6, ty, progress, f"Checking {checked:,} of {total:,}")
+        draw.text((box_x0 + 30, ty - 20), f"{restored:,} messages restored so far", font=ga.regular(24), fill=ga.BRAND_ON_SURFACE_VARIANT)
+        wrapped(draw, (box_x0 + 30, ty + 20), "You can leave the app — the restore continues in the background.", ga.regular(24), ga.BRAND_ON_SURFACE_VARIANT, inner, 34)
+    else:
+        r, cx, cy = 18, box_x0 + 48, ty + 18
+        draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=ga.BRAND_SECONDARY)
+        draw.text((cx + 34, ty), f"{total:,} messages restored", font=ga.bold(28), fill=ga.BRAND_SECONDARY)
+        ty = wrapped(draw, (box_x0 + 30, ty + 60), SWITCH_BACK_EXPLANATION, ga.regular(24), ga.BRAND_ON_SURFACE_VARIANT, inner, 36) + 16
+        t["switch_back"] = button(draw, (box_x0 + 30, ty, box_x1 - 30, ty + 86), "Switch back to your messaging app")
+    return img, sb, t
+
+
+SWITCH_BACK_EXPLANATION = (
+    "Last step: make your usual messaging app the default again, so you keep getting all messages, "
+    "including picture messages (MMS)."
+)
+
+
+def restore_dialog(img: Image.Image, screen_box: Box) -> Point:
+    """The 3-step explanation shown before the role is requested (restore_dialog_* strings)."""
+    draw = scrim(img, screen_box)
+    x0, y0, x1, y1 = screen_box
+    dx0, dx1 = x0 + 44, x1 - 44
+    inner = dx1 - dx0 - 80
+    tf, mf = ga.bold(34), ga.regular(26)
+    intro = "SMS Toolbox will copy the messages in the Gmail label “SMS” back to this phone. It takes three steps:"
+    steps = [
+        "Make SMS Toolbox your default SMS app for now. Android only lets the default SMS app add messages.",
+        "Wait while your messages are restored. You can keep using your phone.",
+        "Switch back to your usual messaging app. We will remind you.",
+    ]
+    note = "Meanwhile, new text messages are still saved, but picture messages (MMS) cannot be received. Only text messages are restored."
+    probe = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+    n = len(ga.wrap_text(probe, intro, mf, inner)) + sum(len(ga.wrap_text(probe, st, mf, inner - 50)) for st in steps) + len(ga.wrap_text(probe, note, ga.regular(23), inner))
+    h = 50 + 90 + n * 36 + 3 * 16 + 40 + 70
+    cy = (y0 + y1) / 2
+    box = (dx0, cy - h / 2, dx1, cy + h / 2)
+    draw.rounded_rectangle(box, radius=36, fill=ga.BRAND_SURFACE)
+    ty = wrapped(draw, (box[0] + 40, box[1] + 44), "Restore messages from Gmail?", tf, ga.BRAND_ON_SURFACE, inner, 44) + 14
+    ty = wrapped(draw, (box[0] + 40, ty), intro, mf, ga.BRAND_ON_SURFACE_VARIANT, inner, 36) + 10
+    for i, st in enumerate(steps, 1):
+        r, cx, cy2 = 17, box[0] + 57, ty + 17
+        draw.ellipse((cx - r, cy2 - r, cx + r, cy2 + r), fill=ga.BRAND_PRIMARY_CONTAINER)
+        ga.draw_centered_text(draw, cx, cy2 - 15, str(i), ga.bold(24), ga.BRAND_PRIMARY)
+        ty = wrapped(draw, (box[0] + 90, ty), st, mf, ga.BRAND_ON_SURFACE, inner - 50, 36) + 16
+    ty = wrapped(draw, (box[0] + 40, ty), note, ga.regular(23), ga.BRAND_ON_SURFACE_VARIANT, inner, 32)
+    bf = ga.bold(30)
+    by = box[3] - 76
+    cw = ga.text_width(draw, "Continue", bf)
+    confirm_x = box[2] - 40 - cw
+    draw.text((confirm_x, by), "Continue", font=bf, fill=ga.BRAND_PRIMARY)
+    dw = ga.text_width(draw, "Cancel", bf)
+    draw.text((confirm_x - 50 - dw, by), "Cancel", font=bf, fill=ga.BRAND_PRIMARY)
+    return (confirm_x + cw / 2, by + 18)
+
+
+def default_apps_settings(selected: str):
+    """Android's Settings > Default apps > SMS app, where "Switch back" lands."""
+    img, draw, sb = canvas(["Pick your usual app again:", "the role goes back"], "Android Settings · Default apps")
+    ga.draw_status_bar(draw, sb)
+    x0, y0, x1, _ = sb
+    top = y0 + ga.STATUS_BAR_H
+    draw.text((x0 + 36, top + 40), "SMS app", font=ga.bold(44), fill=ga.BRAND_ON_SURFACE)
+    y = top + 150
+    targets = {}
+    for name, color in (("Messages", ga.BRAND_SECONDARY), ("SMS Toolbox", ga.BRAND_PRIMARY)):
+        r, cx, cy = 34, x0 + 80, y + 50
+        draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=color)
+        ga.draw_centered_text(draw, cx, cy - 20, name[0], ga.bold(30), ga.WHITE)
+        draw.text((x0 + 140, y + 30), name, font=ga.regular(34), fill=ga.BRAND_ON_SURFACE)
+        rx = x1 - 80
+        draw.ellipse((rx - 22, cy - 22, rx + 22, cy + 22), outline=ga.BRAND_PRIMARY if name == selected else ga.BRAND_ON_SURFACE_VARIANT, width=4)
+        if name == selected:
+            draw.ellipse((rx - 11, cy - 11, rx + 11, cy + 11), fill=ga.BRAND_PRIMARY)
+        targets[name] = (rx, cy)
+        draw.line((x0 + 140, y + 100, x1 - 30, y + 100), fill=ga.BRAND_OUTLINE, width=2)
+        y += 110
+    return img, targets
+
+
 def redirect_list(with_rule: bool, caption, badge=None):
     img, draw, sb, y, t = app_chrome(caption, badge, "Redirect Rules", 1, icons=2, fab=True)
     x0, _, x1, _ = sb
@@ -529,14 +637,15 @@ def summary_card() -> Image.Image:
         ("POST_NOTIFICATIONS", "Show backup progress and confirm forwards and scheduled sends."),
         ("Battery exemption", "Keep forwarding and scheduled sends on time while the phone sleeps."),
         ("INTERNET", "Connect only to imap.gmail.com, using your own app password."),
+        ("Default SMS app (role)", "Only while a restore you started runs, to write your texts back. Then you switch back."),
     ]
-    y = 320
+    y = 300
     for name, why in rows:
-        draw.rounded_rectangle((60, y, W - 60, y + 190), radius=24, fill=ga.WHITE, outline=ga.BRAND_OUTLINE, width=2)
-        draw.rounded_rectangle((60, y, 76, y + 190), radius=8, fill=AMBER)
-        draw.text((106, y + 24), name, font=ga.bold(36), fill=ga.BRAND_PRIMARY)
-        wrapped(draw, (106, y + 78), why, ga.regular(28), ga.BRAND_ON_SURFACE_VARIANT, W - 220, 38)
-        y += 210
+        draw.rounded_rectangle((60, y, W - 60, y + 172), radius=24, fill=ga.WHITE, outline=ga.BRAND_OUTLINE, width=2)
+        draw.rounded_rectangle((60, y, 76, y + 172), radius=8, fill=AMBER)
+        draw.text((106, y + 20), name, font=ga.bold(36), fill=ga.BRAND_PRIMARY)
+        wrapped(draw, (106, y + 72), why, ga.regular(28), ga.BRAND_ON_SURFACE_VARIANT, W - 220, 38)
+        y += 186
     for i, line in enumerate(("Your messages never pass through our servers.", "Analytics are anonymous and exclude SMS content.")):
         ga.draw_centered_text(draw, W / 2, y + 10 + i * 38, line, ga.regular(28), ga.BRAND_ON_SURFACE_VARIANT)
     return img
@@ -656,7 +765,25 @@ def build_timeline() -> list[Shot]:
     shots.append(Shot(3.5, render=incoming, label="Incoming SMS"))
     shots.append(Shot(4.5, gmail_inbox(True), label="Gmail: SMS label"))
 
-    # 5. Redirect: contacts, rule, battery exemption, forward.
+    # 5. Restore: explanation, temporary default-SMS role, progress, switch back.
+    img, sb_rs, t = restore_screen("idle")
+    shots.append(Shot(3.5, img, tap=t["restore"], tap_at=0.75, label="Restore"))
+    base, sb_rs, _ = restore_screen("idle", caption=["Restore explains first:", "three steps, role is temporary"], badge="Default SMS app · only while restoring")
+    img, pt = with_dialog(base, sb_rs, restore_dialog)
+    shots.append(Shot(7.0, img, tap=pt, tap_at=0.88, label="Restore dialog"))
+    base, sb_rs, _ = restore_screen("idle", caption=["Android asks to make it", "the default SMS app for now"], badge="ROLE_SMS · restore only")
+    img, pt = with_dialog(base, sb_rs, lambda i, s: system_prompt(i, s, "✉", "Set SMS Toolbox as your default SMS app?", allow="Set as default", deny="Cancel"))
+    shots.append(Shot(5.0, img, tap=pt, tap_at=0.8, label="Role prompt"))
+    cap_run, badge_run = ["Your texts are written", "back to this phone"], "Default SMS app (temporary)"
+    shots.append(Shot(4.0, render=lambda p: restore_screen("running", min(1.0, 0.02 + p), cap_run, badge_run)[0], label="Restoring"))
+    img, sb_rs, t = restore_screen("done", caption=["Done: now hand the role", "back to your usual app"], badge="Default SMS app (temporary)")
+    shots.append(Shot(4.5, img, tap=t["switch_back"], tap_at=0.8, label="Switch back"))
+    img, picks = default_apps_settings("SMS Toolbox")
+    shots.append(Shot(3.0, img, tap=picks["Messages"], tap_at=0.7, label="Default apps"))
+    img, _ = default_apps_settings("Messages")
+    shots.append(Shot(2.5, img, fade_in=False))
+
+    # 6. Redirect: contacts, rule, battery exemption, forward.
     img, sb_r, t = redirect_list(False, ["Redirect: forward SMS", "from a sender to you"])
     shots.append(Shot(3.0, img, tap=t["fab"], tap_at=0.75, label="Redirect tab"))
     img, sb_r, t = rule_form(0, ["Tap the contact icon", "to pick the sender"])
@@ -712,7 +839,7 @@ def build_timeline() -> list[Shot]:
     shots.append(Shot(3.5, render=forward, label="Forward"))
     shots.append(Shot(3.5, history_screen(), label="History"))
 
-    # 6. Schedule.
+    # 7. Schedule.
     img, _, t = schedule_list(False, ["Schedule: send a text", "later, even on repeat"])
     shots.append(Shot(3.0, img, tap=t["fab"], tap_at=0.75, label="Schedule tab"))
     img, _, t = schedule_form(False)
@@ -722,7 +849,7 @@ def build_timeline() -> list[Shot]:
     img, _, _ = schedule_list(True, ["Sent at 08:00 on 3 Sep", "from your SIM (SEND_SMS)"], "SEND_SMS")
     shots.append(Shot(3.5, img, label="Scheduled"))
 
-    # 7. Summary.
+    # 8. Summary.
     shots.append(Shot(9.0, summary_card(), label="Summary"))
     shots.append(Shot(3.0, title_card(), label="End"))
     return shots
