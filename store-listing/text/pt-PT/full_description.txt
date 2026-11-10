@@ -1,4 +1,4 @@
-As suas mensagens vivem num só telemóvel. O SMS Toolbox guarda-as no seu próprio Gmail, devolve-as num telemóvel novo, reencaminha as que importam e envia mensagens por si à hora marcada. Sem criar conta e sem nenhum servidor nosso pelo meio.
+As suas mensagens vivem num só telemóvel. O SMS Toolbox guarda-as no seu próprio Gmail e devolve-as num telemóvel novo. Sem criar conta e sem nenhum servidor nosso pelo meio.
 
 BACKUP NO SEU PRÓPRIO GMAIL
 • Guarda todas as SMS que recebe e todas as que envia, automaticamente, à medida que acontecem
@@ -14,34 +14,18 @@ RESTAURO EM QUALQUER TELEMÓVEL
 • Ignora as mensagens que já estão no telemóvel, por isso pode repetir sem duplicar
 • O Android só deixa a app de SMS predefinida adicionar mensagens: o SMS Toolbox assume esse papel durante o restauro e depois lembra-o de voltar à sua app
 
-REENCAMINHE O QUE IMPORTA
-• Regras simples: escolha um remetente por contacto, número ou texto, e para onde enviar
-• Ideal para códigos de acesso, um segundo SIM, avisos de entregas ou a família
-• A primeira regra que corresponde é aplicada: arraste para reordenar e agrupe por categorias
-• Prefixo opcional nas mensagens reencaminhadas, e escolha se reencaminha em roaming
-• Histórico dos últimos 50 reencaminhamentos, com a regra aplicada
-• Notificação opcional sempre que uma mensagem é reencaminhada
-
-AGENDE MENSAGENS
-• Escreva a mensagem uma vez, escolha o contacto, a data e a hora, e ela é enviada por si
-• Repita diariamente, em dias úteis, quinzenalmente, mensalmente ou anualmente, com data de fim opcional
-• Organize os agendamentos por categorias, com histórico de tudo o que foi enviado
-• Enviadas pelo seu próprio SIM, através da sua operadora
-
 PRIVACIDADE DESDE A ORIGEM
 • Sem conta, sem login e sem servidor nosso: nada do que gerimos pode receber as suas mensagens
-• Regras, agendamentos e histórico ficam no seu telemóvel
+• As suas definições ficam no seu telemóvel
 • O backup no Gmail está desligado até o ativar. Usa uma palavra-passe de app criada por si, guardada encriptada com o Android Keystore e enviada apenas para a Google
 • Os relatórios de falhas e as estatísticas de utilização (Firebase) nunca incluem números, nomes de contactos ou o texto das mensagens
 • Código aberto, para que cada afirmação possa ser verificada: github.com/neteinstein/SMS-Redirect
 
 TAMBÉM INCLUI
 • Design Material You, em modo claro e escuro
-• Exporte e importe as suas regras e agendamentos num ficheiro
-• Escolha o separador que abre primeiro: Backup, Redirecionar ou Agendar
 • Em português e inglês
 
 PERMISSÕES, EXPLICADAS
-Cada permissão só é pedida quando uma funcionalidade precisa dela. SMS: guardar, detetar, reencaminhar e enviar mensagens. Contactos: escolher pessoas pelo nome. Notificações: progresso e confirmações. Exceção de bateria: reencaminhamentos e envios agendados a tempo. Internet: aceder ao Gmail com o backup ativo. App de SMS predefinida: só durante um restauro iniciado por si.
+Cada permissão só é pedida quando uma funcionalidade precisa dela. SMS: ler as suas mensagens para as guardar, e detetar as novas quando chegam. Notificações: progresso do backup e do restauro. Exceção de bateria: guardar as mensagens assim que chegam. Internet: aceder ao Gmail com o backup ativo. App de SMS predefinida: só durante um restauro iniciado por si.
 
 Perguntas ou sugestões? Escreva para play-store-neteinstein@googlegroups.com ou abra uma issue no GitHub.

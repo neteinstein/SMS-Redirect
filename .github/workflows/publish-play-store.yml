@@ -1,11 +1,8 @@
 name: Publish to Play Store
 
+# Manual only. Every merge to main already uploads the Play bundle to the internal track from
+# release.yml; use this to upload the current main to another track.
 on:
-  workflow_run:
-    workflows: ["Build & Release APK"]
-    types: [completed]
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       track:
@@ -18,6 +15,13 @@ on:
           - alpha
           - beta
           - production
+      build_number:
+        description: >-
+          0-99, added to the versionCode. Play rejects a versionCode it has already seen, and
+          release.yml already uploaded this version with 0, so use 1 (or higher on repeats).
+        required: true
+        default: '1'
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}
@@ -25,17 +29,12 @@ concurrency:
 
 jobs:
   publish:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          # release.yml pushes a version-bump commit to main *after* it starts, so
-          # head_sha (the commit that triggered it) no longer has the bumped
-          # versionName. Checking out main's tip picks up that bump commit, which
-          # is already pushed by the time this workflow_run fires.
           ref: main
 
       - name: Set up JDK 17
@@ -52,13 +51,14 @@ jobs:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: echo "$KEYSTORE_BASE64" | base64 -d > app/keystore.jks
 
-      - name: Build signed release bundle
+      - name: Build signed Play bundle (Backup & Restore only)
         env:
           KEYSTORE_FILE: ${{ github.workspace }}/app/keystore.jks
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew bundleRelease -PVERSION_CODE=${{ github.run_number }}
+          BUILD_NUMBER: ${{ inputs.build_number }}
+        run: ./gradlew bundlePlayRelease -PVERSION_CODE_BUILD="$BUILD_NUMBER"
 
       - name: Decode Play Store service account key
         env:
@@ -70,8 +70,8 @@ jobs:
         with:
           serviceAccountJson: play-store-key.json
           packageName: com.neteinstein.smsredirect
-          releaseFiles: app/build/outputs/bundle/release/app-release.aab
-          tracks: ${{ github.event_name == 'workflow_dispatch' && inputs.track || 'internal' }}
+          releaseFiles: app/build/outputs/bundle/playRelease/app-play-release.aab
+          tracks: ${{ inputs.track }}
           changesNotSentForReview: true
 
       - name: Cleanup secrets

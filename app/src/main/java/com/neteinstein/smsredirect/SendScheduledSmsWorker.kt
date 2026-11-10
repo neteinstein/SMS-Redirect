@@ -24,8 +24,16 @@ class SendScheduledSmsWorker(
             return Result.success()
         }
 
+        val app = applicationContext as SmsRedirectApplication
+        // A user moving from the GitHub build to the Play build keeps their database and any
+        // already-enqueued work, but the Play build has no SEND_SMS. Drop the send rather than
+        // fail it and retry forever.
+        if (!app.appContainer.features.scheduling) {
+            Log.i(TAG, "Skipping: scheduling is not part of this build")
+            return Result.success()
+        }
+
         return try {
-            val app = applicationContext as SmsRedirectApplication
             app.appContainer.scheduledSmsSender.send(applicationContext, id)
             Result.success()
         } catch (e: Exception) {

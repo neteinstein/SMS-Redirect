@@ -25,6 +25,23 @@ val releaseKeystoreFilePath =
             ?: keystoreProperties.getProperty("storeFile")
     )?.takeIf { it.isNotBlank() }
 
+// The versionCode is derived from versionName, so the Play bundle and the GitHub APK of one
+// release always share it. Both are signed with the same key under the same applicationId, so
+// a user can move between the two channels; Android refuses a downgrade, so the codes must
+// agree. major.minor.patch -> MMmmmppp00 + build, e.g. 2.0.11 -> 20001100. `build` (0-99,
+// -PVERSION_CODE_BUILD) is only for re-uploading the same version to Play, which rejects a
+// reused versionCode.
+val versionCodeBuild = (project.findProperty("VERSION_CODE_BUILD") as String?)?.toInt() ?: 0
+
+fun versionCodeFor(
+    versionName: String,
+    build: Int,
+): Int {
+    val (major, minor, patch) = versionName.split('.').map(String::toInt)
+    require(minor < 100 && patch < 1000 && build in 0..99) { "Version $versionName+$build does not fit the versionCode scheme" }
+    return major * 10_000_000 + minor * 100_000 + patch * 100 + build
+}
+
 // Room exports the schema JSON so a migration can be diffed in review. There is no
 // androidTest source set, so this is the only artifact that makes a schema change visible.
 ksp {
@@ -39,8 +56,9 @@ android {
         applicationId = "com.neteinstein.smsredirect"
         minSdk = 33
         targetSdk = 37
-        versionCode = (project.findProperty("VERSION_CODE") as String?)?.toInt() ?: 1
+        // release.yml bumps the patch number in this line on every merge to main.
         versionName = "2.0.10"
+        versionCode = versionCodeFor(versionName!!, versionCodeBuild)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -55,6 +73,20 @@ android {
                 keyPassword = System.getenv("KEY_PASSWORD")
                     ?: keystoreProperties.getProperty("keyPassword")
             }
+        }
+    }
+
+    // Two distributions of one app: same applicationId and same signing key, so Android treats
+    // them as one app and either can update the other. See domain/model/AppFeatures.kt.
+    //   play   -> Google Play bundle. Backup & Restore only; no SEND_SMS, no self-update.
+    //   github -> APK on GitHub releases. Every feature, plus the in-app update check.
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("play") {
+            dimension = "distribution"
+        }
+        create("github") {
+            dimension = "distribution"
         }
     }
 

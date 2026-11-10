@@ -22,10 +22,13 @@ import com.neteinstein.smsredirect.data.security.AndroidKeystoreSecretCipher
 import com.neteinstein.smsredirect.data.sms.AndroidDefaultSmsAppChecker
 import com.neteinstein.smsredirect.data.sms.ContentProviderSmsMessageSource
 import com.neteinstein.smsredirect.data.sms.ContentProviderSmsMessageWriter
+import com.neteinstein.smsredirect.data.update.SharedPreferencesAppUpdateRepository
+import com.neteinstein.smsredirect.distribution.DistributionModule
 import com.neteinstein.smsredirect.domain.analytics.AnalyticsTracker
 import com.neteinstein.smsredirect.domain.analytics.CrashReporter
 import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
 import com.neteinstein.smsredirect.domain.mail.SmsMailFactory
+import com.neteinstein.smsredirect.domain.model.AppFeatures
 import com.neteinstein.smsredirect.domain.repository.ForwardHistoryRepository
 import com.neteinstein.smsredirect.domain.repository.RuleRepository
 import com.neteinstein.smsredirect.domain.repository.ScheduledSmsHistoryRepository
@@ -36,10 +39,12 @@ import com.neteinstein.smsredirect.domain.scheduling.SmsBackupScheduler
 import com.neteinstein.smsredirect.domain.scheduling.SmsRestoreScheduler
 import com.neteinstein.smsredirect.domain.sms.DefaultSmsAppChecker
 import com.neteinstein.smsredirect.domain.sms.SmsMessageWriter
+import com.neteinstein.smsredirect.domain.update.AppUpdateInstaller
 import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.AddScheduledSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.BackupSmsMessageUseCase
 import com.neteinstein.smsredirect.domain.usecase.CanForwardSmsUseCase
+import com.neteinstein.smsredirect.domain.usecase.CheckForAppUpdateUseCase
 import com.neteinstein.smsredirect.domain.usecase.ClearGmailCredentialsUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteAllHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteAllScheduledSmsHistoryUseCase
@@ -47,6 +52,7 @@ import com.neteinstein.smsredirect.domain.usecase.DeleteRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteScheduledSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ExportBackupUseCase
 import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetAvailableAppUpdateUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetCategoriesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
@@ -136,8 +142,24 @@ class SmsRedirectApplication : Application() {
                 backupStateRepository = smsBackupStateRepository,
                 contactNameResolver = contactNameResolver,
             )
+        val appUpdate =
+            DistributionModule.createAppUpdateServices(this)?.let { services ->
+                val updateRepository =
+                    SharedPreferencesAppUpdateRepository(
+                        getSharedPreferences(SharedPreferencesAppUpdateRepository.PREFS_NAME, MODE_PRIVATE),
+                    )
+                AppUpdateContainer(
+                    currentVersionName = BuildConfig.VERSION_NAME,
+                    checkForAppUpdateUseCase =
+                        CheckForAppUpdateUseCase(services.releaseSource, updateRepository, BuildConfig.VERSION_NAME),
+                    getAvailableAppUpdateUseCase = GetAvailableAppUpdateUseCase(updateRepository, BuildConfig.VERSION_NAME),
+                    installer = services.installer,
+                )
+            }
         appContainer =
             AppContainer(
+                features = DistributionModule.features,
+                appUpdate = appUpdate,
                 ruleRepository = repository,
                 forwardHistoryRepository = forwardHistoryRepository,
                 scheduledSmsRepository = scheduledSmsRepository,
@@ -251,6 +273,10 @@ class SmsRedirectApplication : Application() {
 }
 
 data class AppContainer(
+    /** What this distribution ships; see [AppFeatures]. */
+    val features: AppFeatures,
+    /** The self-update feature, or null in builds that do not have it (Play, debug). */
+    val appUpdate: AppUpdateContainer?,
     val ruleRepository: RuleRepository,
     val forwardHistoryRepository: ForwardHistoryRepository,
     val scheduledSmsRepository: ScheduledSmsRepository,
@@ -312,4 +338,11 @@ data class AppContainer(
     val defaultSmsAppChecker: DefaultSmsAppChecker,
     val smsMessageWriter: SmsMessageWriter,
     val runSmsRestoreUseCase: RunSmsRestoreUseCase,
+)
+
+data class AppUpdateContainer(
+    val currentVersionName: String,
+    val checkForAppUpdateUseCase: CheckForAppUpdateUseCase,
+    val getAvailableAppUpdateUseCase: GetAvailableAppUpdateUseCase,
+    val installer: AppUpdateInstaller,
 )

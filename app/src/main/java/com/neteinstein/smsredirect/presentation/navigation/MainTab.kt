@@ -7,6 +7,8 @@ import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.neteinstein.smsredirect.R
+import com.neteinstein.smsredirect.domain.model.AppFeatures
+import com.neteinstein.smsredirect.domain.model.LandingScreen
 
 /**
  * The top-level destinations in the home screen's bottom navigation bar.
@@ -22,3 +24,13 @@ enum class MainTab(
     REDIRECT(R.string.main_tab_redirect, Icons.AutoMirrored.Filled.Forward),
     SCHEDULE(R.string.main_tab_schedule, Icons.Default.Schedule),
 }
+
+/** The tabs [this] build ships, in display order. */
+fun AppFeatures.availableTabs(): List<MainTab> = availableLandingScreens.map { it.toMainTab() }
+
+fun LandingScreen.toMainTab(): MainTab =
+    when (this) {
+        LandingScreen.BACKUP -> MainTab.BACKUP
+        LandingScreen.REDIRECT -> MainTab.REDIRECT
+        LandingScreen.SCHEDULE -> MainTab.SCHEDULE
+    }

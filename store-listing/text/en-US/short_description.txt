@@ -1,1 +1,1 @@
-Back up & restore your SMS with your own Gmail. Plus forwarding and scheduling.
+Back up your SMS to your own Gmail and restore them on any phone. No account.

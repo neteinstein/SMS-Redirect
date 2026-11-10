@@ -7,8 +7,8 @@
     <uses-permission android:name="android.permission.RECEIVE_SMS"
         tools:ignore="SmsAndCallLogPolicy" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
-    <uses-permission android:name="android.permission.SEND_SMS"
-        tools:ignore="SmsAndCallLogPolicy" />
+    <!-- SEND_SMS is declared only by the github flavor (src/github/AndroidManifest.xml): the Play
+         build ships Backup and Restore only and must not request it. -->
     <!-- Gmail SMS backup connects directly to imap.gmail.com. Both of these otherwise
          arrive only via manifest merge from the Firebase and WorkManager AARs; declaring
          them explicitly keeps the app working if those deps ever change, and keeps the

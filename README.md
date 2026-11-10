@@ -4,6 +4,17 @@ Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean archit
 
 Three features, as bottom-navigation tabs: **Backup** SMS to your own Gmail account (and **restore** them to a new phone), **Redirect** incoming SMS by rule, and **Schedule** messages to send later.
 
+## Two versions
+
+| | Google Play (`play` flavor) | GitHub APK (`github` flavor) |
+|---|---|---|
+| Backup & Restore | ✅ | ✅ |
+| Redirect & Schedule | — | ✅ |
+| `SEND_SMS` permission | not declared | declared |
+| Updates | by Google Play | in-app: checks GitHub releases once a day, banner → Settings → Updates |
+
+Both are the same app: same `applicationId` (`com.neteinstein.smsredirect`), same signing key and the same `versionCode` for a given release, so either one installs over the other. Every merge to `main` publishes both from [`release.yml`](.github/workflows/release.yml). Get the APK from the [latest release](https://github.com/neteinstein/SMS-Redirect/releases/latest); [**how to install an APK**](docs/install-apk.md) walks through Developer options, "install unknown apps", Play Protect and restricted settings, with pictures.
+
 [![SMS Toolbox launch video: Backup, Restore, Redirect, Schedule](store-listing/video/sms-toolbox-launch-preview.gif)](store-listing/video/sms-toolbox-launch.mp4)
 
 *Silent preview. The full 24-second launch video, with music, is [`store-listing/video/sms-toolbox-launch.mp4`](store-listing/video/sms-toolbox-launch.mp4) (download it to watch).*
@@ -19,15 +30,16 @@ Three features, as bottom-navigation tabs: **Backup** SMS to your own Gmail acco
 ### Build, test, and lint
 
 ```bash
-./gradlew assembleDebug
-./gradlew test
+./gradlew assembleGithubDebug   # every feature
+./gradlew assemblePlayDebug     # Backup & Restore only, as on Google Play
+./gradlew test                  # unit tests for both flavors
 ./gradlew lint
 ```
 
 ### Install on a connected device
 
 ```bash
-./gradlew installDebug
+./gradlew installGithubDebug   # or installPlayDebug
 ```
 
 ## Features

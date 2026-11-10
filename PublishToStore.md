@@ -59,10 +59,18 @@ Before the automated workflow can publish updates, you must:
 
 ### 5. Running the Workflow
 
-The **Publish to Play Store** workflow runs in two ways:
+Google Play gets the **play** flavor only: Backup and Restore, no `SEND_SMS`, no self-update
+(see `app/build.gradle.kts` and `domain/model/AppFeatures.kt`). The **github** flavor, with every
+feature, goes to GitHub releases. Both come from the same commit, with the same `applicationId`,
+signing key and `versionCode`.
 
-- **Automatically after a GitHub release** — on merge to `main`, the **Build & Release APK** workflow runs first (`ktlintCheck` and `test` have already passed as part of PR checks before the merge). Once that workflow successfully creates the GitHub Release, it triggers **Publish to Play Store**, which builds the AAB and publishes it to the **internal** track. If the release workflow fails, nothing is published to the Play Store.
-- **Manually, for other tracks** — to publish to `alpha`, `beta`, or `production`, trigger it by hand:
+- **Automatically on merge to `main`** — the **Build & Release** workflow (`release.yml`) bumps the
+  patch version, builds the signed GitHub APK and Play bundle, checks that the Play bundle's merged
+  manifest does not request `SEND_SMS` or `REQUEST_INSTALL_PACKAGES`, creates the GitHub Release with
+  the APK, and uploads the bundle to the **internal** track. (`ktlintCheck` and `test` already passed
+  as PR checks.) If any step fails, nothing reaches the Play Store.
+- **Manually, for other tracks** — the **Publish to Play Store** workflow rebuilds the Play bundle
+  from `main` and uploads it to `alpha`, `beta`, or `production`:
   1. Go to the repository's **Actions** tab on GitHub.
   2. Select the **Publish to Play Store** workflow.
   3. Click **Run workflow**.
@@ -71,15 +79,18 @@ The **Publish to Play Store** workflow runs in two ways:
      - `alpha` — Closed testing
      - `beta` — Open testing
      - `production` — Public release
-  5. Click **Run workflow** to start the publish process.
+  5. Leave **build_number** at `1` (raise it if you upload the same version again): the automatic
+     upload already used this version's `versionCode`, and Play rejects a repeated one.
+  6. Click **Run workflow** to start the publish process.
 
 ## Troubleshooting
 
 - **403 Forbidden** — The service account does not have sufficient permissions in the Play Console. Verify the permissions from Step 2.
 - **APK/AAB not found** — Ensure the build step completes successfully before the upload step.
-- **Version code already exists** — Version codes are derived from the GitHub Actions run number, which always increases, so this should only happen if a version was also uploaded manually or from another source. Increment `versionCode` in `app/build.gradle.kts` if needed.
+- **Version code already exists** — Version codes are derived from `versionName` (`major*10000000 + minor*100000 + patch*100 + build`, see `app/build.gradle.kts`), so the automatic upload of a version uses `build` 0. A manual upload of the same version needs a higher **build_number** input.
 - **First upload error** — Google requires the very first upload to be done manually through the Play Console.
-- **Publish job skipped** — The **Build & Release APK** workflow failed (or hasn't finished yet) for that push to `main`, so **Publish to Play Store** was never triggered. Check the **Build & Release APK** run logs; nothing is published to the Play Store until it succeeds.
+- **Play upload failed but the GitHub release exists** — The upload is the last step of **Build & Release**. Re-run that job, or run **Publish to Play Store** by hand for the `internal` track with **build_number** `1`.
+- **"Play bundle manifest declares a forbidden permission"** — Something (an edit to `src/main/AndroidManifest.xml` or a new library) added `SEND_SMS` or `REQUEST_INSTALL_PACKAGES` to the Play build. Move it to `app/src/github/AndroidManifest.xml`, or add a `tools:node="remove"` entry to `app/src/play/AndroidManifest.xml`.
 
 ## Security Notes
 

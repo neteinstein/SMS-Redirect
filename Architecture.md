@@ -8,6 +8,16 @@ SMS Toolbox is an Android app with three independent features, presented as bott
 - **Redirect** — intercepts incoming SMS messages matching user-defined rules and forwards them to a configured target phone number via SMS.
 - **Schedule** — lets the user compose a message once and have it sent automatically at a future date/time, optionally repeating on a recurring pattern.
 
+**Two distributions.** The `distribution` flavor dimension (`app/build.gradle.kts`) builds the app twice from one codebase, with the same `applicationId`, signing key and `versionCode`:
+
+| | `play` (Google Play) | `github` (GitHub release APK) |
+|---|---|---|
+| Features | Backup & Restore only | All three |
+| `SEND_SMS` | not declared (`src/play/AndroidManifest.xml` removes it as a guard) | declared in `src/github/AndroidManifest.xml` |
+| Self-update | none (Play forbids it) | daily GitHub release check + in-app install (`REQUEST_INSTALL_PACKAGES`) |
+
+Each flavor has a `distribution/DistributionModule` (`src/play/…`, `src/github/…`) exposing an `AppFeatures` (`domain/model/`) and, in the github flavor only, the update source and installer. `AppFeatures` reaches everything through `AppContainer.features`: `MainActivity` filters the tabs (a single tab hides the bottom bar), the landing screen, the SMS permission set and the deep links; `SettingsScreen` hides the Redirect/Schedule settings; `SmsReceiver` skips forwarding; `SendScheduledSmsWorker` drops sends left over from a previous full install. The Play flavor also overrides the strings that mention forwarding or scheduling (`src/play/res/`). No code outside `DistributionModule` checks the flavor.
+
 All three share the same app shell (permissions flow, Settings screen, deep-link handling) but are otherwise independent end-to-end: separate domain models, separate Room tables, separate use cases, separate WorkManager jobs.
 
 > **A note on the word "backup".** It means two different things in this codebase.
@@ -441,17 +451,28 @@ mean "unset" and `SmsBackupSettingsRepositoryImpl` applies the real defaults, mi
 | `forwardPrefix` | `SMS Toolbox:` | Text prepended to forwarded message body |
 | `showNotifications` | `false` | Show a notification after each successful forward or scheduled send |
 
+## In-app update (github flavor)
+
+- `domain/update/`: `AppReleaseSource`, `AppUpdateRepository`, `AppUpdateInstaller` interfaces and `AppVersions` (numeric dotted-version comparison).
+- `CheckForAppUpdateUseCase`: fetches the latest release at most once per 24 h unless forced ("Check for updates"); a failed fetch is not recorded, so the next launch retries. `GetAvailableAppUpdateUseCase` emits the stored latest release only while it is newer than `BuildConfig.VERSION_NAME`, so the banner disappears once the update is installed without another request.
+- `data/update/SharedPreferencesAppUpdateRepository`: last-check time and latest-release metadata, in SharedPreferences (a disposable cache; no Room migration).
+- `src/github/.../distribution/`: `GitHubReleaseSource` (unauthenticated `GET api.github.com/repos/neteinstein/SMS-Redirect/releases/latest`), `GitHubReleaseParser` (accepts only APK URLs under this repository's `releases/download/`), `ApkUpdateInstaller` (asks for "install unknown apps" if needed, downloads to `cacheDir/updates`, checks the archive's package name, opens the system installer via `FileProvider`).
+- `presentation/update/AppUpdateViewModel`: activity-scoped in `MainActivity`; creating it runs the launch check. `UpdateAvailableBanner` sits in each home tab's `topBanner` slot and opens Settings, where `UpdatesSection` is the first section.
+
+Debug builds disable it (`.test` applicationId suffix: a release APK could never install over them).
+
 ## Permissions
 
 Permissions are requested contextually rather than upfront at first launch — there is no onboarding screen that gates the app behind granting everything. Each permission is requested the first time its feature is used, after a rationale dialog (Proceed/Cancel) explains why it's needed:
 
 | Permission | Requested when | Purpose |
 |---|-----------|---------|
-| `READ_SMS` / `RECEIVE_SMS` / `SEND_SMS` | Adding the first rule or scheduled SMS | Read the inbox for backup; detect and forward/send SMS (MMS/RCS are out of scope). `READ_SMS` was declared but unused before the Backup feature — it is now genuinely exercised |
+| `READ_SMS` / `RECEIVE_SMS` / `SEND_SMS` (github flavor only) | Adding the first rule or scheduled SMS, or enabling backup | Read the inbox for backup; detect and forward/send SMS (MMS/RCS are out of scope). `READ_SMS` was declared but unused before the Backup feature — it is now genuinely exercised |
 | `READ_CONTACTS` | Tapping "pick contact" for the first time | Pick contacts for rules and scheduled SMS |
 | `POST_NOTIFICATIONS` | Turning on "Show notifications" in Settings, **or** enabling Gmail backup | Backup progress; notify after a successful forward or scheduled send. The Backup tab requests it too, because otherwise a user who never opens the notification toggle would silently never see backup progress |
 | `INTERNET` / `ACCESS_NETWORK_STATE` | Not runtime-requested (install-time) | Reach `imap.gmail.com`. Both previously arrived only via manifest merge from the Firebase/WorkManager AARs; they are now declared explicitly |
 | Battery optimization exemption | Right after creating a new rule or scheduled SMS | Prevent Doze from throttling background delivery; declining shows a persistent warning banner on Home until enabled |
+| `REQUEST_INSTALL_PACKAGES` (github flavor only) | Not runtime-requested; the user allows "install unknown apps" for SMS Toolbox the first time they install an update | Hand the downloaded update APK to the system installer |
 | Default SMS app role (`RoleManager.ROLE_SMS`) | Confirming "Restore messages", after a dialog explaining the three steps | Write restored messages to `content://sms`. Held only for the restore; the Backup tab prompts the user to switch back as soon as no restore needs it |
 
 WorkManager's own scheduling permissions were already present for the Redirect feature — Schedule required no new manifest permissions.
@@ -460,7 +481,7 @@ WorkManager's own scheduling permissions were already present for the Redirect f
 
 Uses Jetpack Compose with a simple NavHost. The `Home` route hosts a bottom navigation bar (`MainBottomBar`) with three tabs (`MainTab.BACKUP` / `REDIRECT` / `SCHEDULE`, in that order); switching tabs swaps the body between `BackupScreen`, `HomeScreen` and `ScheduleListScreen` while the `bottomBar` and the `Home` back-stack entry itself stay put, so the selected tab survives round-trips to any child screen. **`BACKUP` is the initial tab.**
 
-`MainBottomBar` iterates `MainTab.entries` rather than hardcoding items, and shows a label only for the selected tab — three icon+label pairs plus the FAB do not fit a narrow phone, and the Portuguese labels are longer. The FAB has no "create" action on the Backup tab, so it is hidden there (`showFab = false`) and the pill takes the full width.
+`MainBottomBar` iterates the tabs the build ships (`AppFeatures.availableTabs()`), rather than hardcoding items; with a single tab (the Play build) `MainActivity` omits the bar entirely. It shows a label only for the selected tab — three icon+label pairs plus the FAB do not fit a narrow phone, and the Portuguese labels are longer. The FAB has no "create" action on the Backup tab, so it is hidden there (`showFab = false`) and the pill takes the full width.
 
 - **SplashScreen** → **BackupScreen** (`Home` route, Backup tab — the landing screen: Gmail config, enable toggle, progress; or an empty state prompting for credentials when none are stored)
   - **BackupScreen** → **SettingsScreen** (where the Gmail address and app password are entered)

@@ -41,6 +41,8 @@ fun MainBottomBar(
     fabContentDescription: String,
     /** The Backup tab has no "create" action, so it hides the FAB and takes the full width. */
     showFab: Boolean = true,
+    /** The tabs this build ships, in order. */
+    tabs: List<MainTab> = MainTab.entries,
 ) {
     Row(
         modifier =
@@ -63,7 +65,7 @@ fun MainBottomBar(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                MainTab.entries.forEach { tab ->
+                tabs.forEach { tab ->
                     FloatingTabItem(
                         selected = selectedTab == tab,
                         onClick = { onTabSelected(tab) },

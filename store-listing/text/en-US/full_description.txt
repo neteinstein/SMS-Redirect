@@ -1,4 +1,4 @@
-Your texts live on one phone. SMS Toolbox keeps them safe in your own Gmail, brings them back on a new phone, forwards the ones that matter, and sends messages for you on schedule. No account to create, and no server of ours in between.
+Your texts live on one phone. SMS Toolbox keeps them safe in your own Gmail and brings them back on a new phone. No account to create, and no server of ours in between.
 
 BACKUP TO YOUR OWN GMAIL
 • Backs up every SMS you receive and every SMS you send, automatically, as it happens
@@ -14,34 +14,18 @@ RESTORE TO ANY PHONE
 • Skips messages that are already on the phone, so it is safe to run again
 • Android only lets the default SMS app add messages, so SMS Toolbox borrows that role while the restore runs, then reminds you to switch back
 
-FORWARD WHAT MATTERS
-• Simple rules: match a sender by contact, number or text, and choose where to send it
-• Made for one-time codes, a second SIM, delivery alerts, or family
-• First matching rule wins: drag to reorder, and group rules by category
-• Optional prefix on forwarded messages, and your choice whether to forward while roaming
-• History of the last 50 forwards, with the rule that matched
-• Optional notification every time a message is forwarded
-
-SCHEDULE MESSAGES
-• Write a message once, pick a contact, a date and a time, and it is sent for you
-• Repeat daily, on work-week days, bi-weekly, monthly or yearly, with an optional stop date
-• Organise schedules by category, with a history of everything sent
-• Sent from your own SIM, through your carrier
-
 PRIVATE BY DESIGN
 • No account, no login, and no server of ours: nothing we run can receive your messages
-• Rules, schedules and history stay on your phone
+• Your settings stay on your phone
 • Gmail backup is off until you turn it on. It uses an app password you create, stored encrypted with the Android Keystore and sent only to Google
 • Crash reports and usage statistics (Firebase) never include phone numbers, contact names or message text
 • Fully open source, so every claim here can be checked: github.com/neteinstein/SMS-Redirect
 
 ALSO INCLUDED
 • Material You design, in light and dark mode
-• Export and import your rules and schedules as a file
-• Choose which tab opens first: Backup, Redirect or Schedule
 • In English and Portuguese
 
 PERMISSIONS, EXPLAINED
-Each permission is asked for only when a feature needs it. SMS: back up, detect, forward and send messages. Contacts: pick people by name. Notifications: progress and confirmations. Battery exemption: on-time forwarding and scheduled sends. Internet: reach Gmail when backup is on. Default SMS app: only while a restore you started is running.
+Each permission is asked for only when a feature needs it. SMS: read your messages to back them up, and detect new ones as they arrive. Notifications: backup and restore progress. Battery exemption: back up messages as soon as they arrive. Internet: reach Gmail when backup is on. Default SMS app: only while a restore you started is running.
 
 Questions or feedback? Email play-store-neteinstein@googlegroups.com or open an issue on GitHub.

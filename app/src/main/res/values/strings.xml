@@ -279,4 +279,23 @@
     <string name="default_sms_notification_title">New message received</string>
     <string name="default_sms_notification_sms_text">It was saved. SMS Toolbox is still your default SMS app — switch back to your messaging app to read it.</string>
     <string name="default_sms_notification_mms_text">A picture message (MMS) could not be received because SMS Toolbox is still your default SMS app. Switch back to your messaging app.</string>
+
+    <!-- In-app update (GitHub build only) -->
+    <string name="update_banner_message">SMS Toolbox %1$s is available.</string>
+    <string name="update_banner_action">Update</string>
+    <string name="settings_updates_section">Updates</string>
+    <string name="settings_updates_current_version">Installed version: %1$s</string>
+    <string name="settings_updates_available">Version %1$s is available.</string>
+    <string name="settings_updates_install">Download and install</string>
+    <string name="settings_updates_release_notes">What\'s new</string>
+    <string name="settings_updates_downloading">Downloading…</string>
+    <string name="settings_updates_downloading_percent">Downloading… %1$d%%</string>
+    <string name="settings_updates_installer_opened">Confirm the installation on the Android screen that opened. Your settings and backups are kept.</string>
+    <string name="settings_updates_needs_permission">Allow SMS Toolbox to install apps on the screen that opened, then come back and tap Download and install again.</string>
+    <string name="settings_updates_failed">The update could not be downloaded. Check your connection and try again.</string>
+    <string name="settings_updates_checking">Checking for updates…</string>
+    <string name="settings_updates_up_to_date">You have the latest version.</string>
+    <string name="settings_updates_check_failed">Could not check for updates. Check your connection and try again.</string>
+    <string name="settings_updates_check_now">Check for updates</string>
+    <string name="settings_updates_install_guide">How to install the APK manually</string>
 </resources>

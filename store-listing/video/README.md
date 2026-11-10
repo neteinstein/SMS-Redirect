@@ -2,6 +2,13 @@
 
 This folder holds two videos with different jobs:
 
+> ⚠️ **Out of date for Google Play.** Both videos show Redirect and Schedule and the
+> `SEND_SMS` grant. Since the Play build became Backup and Restore only (the
+> **play** flavor, no `SEND_SMS`), they describe the GitHub APK, not the Play app.
+> Re-record or re-render them without the Redirect/Schedule scenes before using
+> them in Play Console, especially the permissions demonstration video, which must
+> match the permissions the submitted build actually requests.
+
 | File | Use it for |
 |---|---|
 | `sms-toolbox-launch.mp4` | The store listing's promo video, social posts, the README. 24 s, with music |

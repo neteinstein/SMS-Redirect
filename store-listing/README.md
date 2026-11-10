@@ -1,5 +1,11 @@
 # Play Store listing assets
 
+> **This listing is for the Play build only: Backup and Restore.** The app is built
+> in two flavors (`app/build.gradle.kts`). The **play** flavor, uploaded to Google
+> Play, has no Redirect or Schedule, does not declare `SEND_SMS`, and never updates
+> itself. The **github** flavor, attached to each GitHub release, has every feature.
+> Nothing in this folder should mention forwarding or scheduling.
+
 Everything needed to fill in the **Main store listing** (and get a head start on
 **App content > Data safety**) for `com.neteinstein.smsredirect` in the
 [Google Play Console](https://play.google.com/console) lives in this folder.
@@ -15,9 +21,9 @@ store-listing/
 │   ├── icon-512.png                  512x512 hi-res icon
 │   └── feature-graphic-1024x500.png  1024x500 feature graphic
 ├── screenshots/
-│   ├── phone/                        8 captioned 1080x1920 screenshots
-│   ├── sevenInchTablet/              same 8 moments, 1920x1080 "large screen" layout
-│   └── tenInchTablet/                same 8 moments, 2560x1440 "large screen" layout
+│   ├── phone/                        3 captioned 1080x1920 screenshots
+│   ├── sevenInchTablet/              same 3 moments, 1920x1080 "large screen" layout
+│   └── tenInchTablet/                same 3 moments, 2560x1440 "large screen" layout
 ├── scripts/store_assets/build.sh     regenerates everything under graphics/ + screenshots/ (needs Playwright)
 ├── scripts/generate_demo_video.py    regenerates the permissions demo video (needs Pillow + ffmpeg)
 ├── scripts/launch_video/build.sh     regenerates the launch video (needs Playwright + ffmpeg)
@@ -66,10 +72,10 @@ its own rounded mask, so the corners are left square.
 
 **Feature graphic** (`graphics/feature-graphic-1024x500.png`). The icon, the app
 name and the backup-and-restore promise, next to two phones showing the real
-Redirect and Backup screens.
+Restore and Backup screens.
 
 **Screenshots.** Each one pairs a headline with the real screen in a phone frame,
-plus a few floating callouts (a notification, the Gmail label, a forwarded text)
+plus a few floating callouts (a notification, the Gmail label, a restore counter)
 that show the result of the feature. Upload them in this order, so the listing
 leads with the declared core use case, backup and restore:
 
@@ -77,12 +83,7 @@ leads with the declared core use case, backup and restore:
 |---|---|---|---|
 | 1 | `01-backup.png` | Every text, safe in your own Gmail | Backup tab, running (the landing screen) |
 | 2 | `02-restore.png` | New phone? Bring every text back | Restore from Gmail, mid-run |
-| 3 | `03-redirect-rules.png` | Forward the texts that matter | Redirect Rules, a code being forwarded |
-| 4 | `04-create-rule.png` | Pick a sender. Pick a target. | Create Rule, with the contact picker |
-| 5 | `05-schedule-list.png` | Write now, send later | Scheduled SMS Rules |
-| 6 | `06-schedule-form.png` | Once, daily, monthly or every year | Create Schedule SMS, repeat menu open |
-| 7 | `07-history.png` | Every forward, on record | Redirect History |
-| 8 | `08-privacy.png` | No account. No server. Just your Gmail. | Settings → Gmail backup, dark theme |
+| 3 | `03-privacy.png` | No account. No server. Just your Gmail. | Settings → Gmail backup, dark theme |
 
 **How they are made.** `scripts/store_assets/store.html` rebuilds each screen in
 HTML from the real Compose layouts (`app/src/main/java/.../presentation/`), the
@@ -94,11 +95,11 @@ made, and the surface colors follow Material You with a blue wallpaper. Every
 name, number and message in them is fictional.
 
 They meet Play's requirements:
-- **Phone:** 1080x1920, 24-bit PNG, no alpha, 8 images (the maximum).
+- **Phone:** 1080x1920, 24-bit PNG, no alpha, 3 images (Play needs at least 2).
 - **Tablets:** `screenshots/sevenInchTablet/` (1920x1080) and
   `screenshots/tenInchTablet/` (2560x1440) cover the **7-inch** and **10-inch
   tablet** slots, under "Large screens" in Play Console. They are 16:9 landscape,
-  with both dimensions between 1080 and 7680px, 8 images each.
+  with both dimensions between 1080 and 7680px, 3 images each.
 
 The app has no tablet layout, so the tablet images show the same phone screens
 beside the headline rather than a stretched UI. Uploading them is optional (Play
@@ -117,6 +118,11 @@ store-listing/scripts/store_assets/build.sh --only 02-restore # one screenshot, 
 
 ## Promo video
 
+> ⚠️ **Both videos predate the Backup-only Play build.** They still show the
+> Redirect and Schedule tabs and the `SEND_SMS` grant, so do not link them from
+> the Play listing or the permissions declaration until they are re-recorded or
+> re-rendered without those scenes (see [`video/README.md`](video/README.md)).
+
 `video/sms-toolbox-launch.mp4` is a 24-second launch video (1920x1080, 30 fps,
 H.264 + AAC, with music) that walks through Backup, Restore, Redirect and
 Schedule. Play Console's **Video** field on the main store listing takes a
@@ -130,7 +136,7 @@ that one is `video/sms-toolbox-demo.mp4` and has to show the permission flow.
 ## Suggested Play Console fields not covered by a file
 
 - **App category:** Tools (Communication is a reasonable alternate)
-- **Tags:** SMS, forwarding, automation, productivity
+- **Tags:** SMS, backup, restore, Gmail
 - **Content rating:** Everyone (run the questionnaire — no user-generated
   content, no ads, no unrestricted web access)
 - **Contact email:** `play-store-neteinstein@googlegroups.com` (from
@@ -142,7 +148,7 @@ that one is `video/sms-toolbox-demo.mp4` and has to show the permission flow.
 
 ## ⚠️ Before this can go live: the SMS permissions declaration
 
-This app requests `READ_SMS` / `RECEIVE_SMS` / `SEND_SMS`. Play Console will
+The Play build requests `READ_SMS` / `RECEIVE_SMS` (not `SEND_SMS`). Play Console will
 block publishing until you complete **App content > Permissions declaration
 form** and justify these under one of Google's allowed core-use categories.
 
@@ -158,10 +164,12 @@ Notes for the submission:
   enter Gmail address + app password → Save (it verifies against Gmail) → Backup
   tab → Enable → messages appearing under the Gmail label. Show that backup is
   the app's purpose, not a side feature.
-- `SEND_SMS` is **not** one of the declaration-gated permissions — that set is
-  `READ_SMS`, `RECEIVE_SMS`, `RECEIVE_WAP_PUSH`, `RECEIVE_MMS` plus the call-log
-  ones — so keeping Redirect and Schedule alongside backup should be compatible.
-  Confirm on the form itself; policy wording shifts.
+- The Play build no longer declares `SEND_SMS` at all, and has no Redirect or
+  Schedule features: everything a reviewer can find in it is backup and restore.
+  `release.yml` fails the release if the Play bundle's merged manifest ever
+  requests `SEND_SMS` or `REQUEST_INSTALL_PACKAGES`. While SMS Toolbox holds the
+  default-SMS role during a restore, the quick-reply ("respond via message")
+  service therefore cannot send; the user replies from their own app.
 - `READ_SMS` was declared but never actually used before this feature. It is now
   genuinely exercised by the backup scan, so the declared use and the observed
   behaviour finally agree — a mismatch between the two is one of the most common

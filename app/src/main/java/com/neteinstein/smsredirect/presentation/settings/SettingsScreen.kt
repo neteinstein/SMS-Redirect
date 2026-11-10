@@ -86,6 +86,15 @@ fun SettingsScreen(
     onImportBackup: () -> Unit,
     onOpenLanguageSettings: () -> Unit,
     onBack: () -> Unit,
+    /** The landing screens this build ships; the picker is hidden when there is only one. */
+    availableLandingScreens: List<LandingScreen> = LandingScreen.entries,
+    /**
+     * Whether Redirect/Schedule settings (roaming, notifications, prefixes, configuration
+     * export/import) are shown. False in the Play build, which has neither feature.
+     */
+    showMessagingSettings: Boolean = true,
+    /** The Updates section, shown first; null in builds without the self-update. */
+    updatesSection: (@Composable () -> Unit)? = null,
 ) {
     Scaffold(
         topBar = {
@@ -109,43 +118,38 @@ fun SettingsScreen(
                     .padding(padding)
                     .verticalScroll(rememberScrollState()),
         ) {
+            if (updatesSection != null) {
+                updatesSection()
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            }
+
             LanguageRow(
                 currentLanguageLabel = currentLanguageLabel,
                 onClick = onOpenLanguageSettings,
             )
 
-            LandingScreenDropdown(
-                selected = landingScreen,
-                onSelected = onLandingScreenChanged,
-            )
+            if (availableLandingScreens.size > 1) {
+                LandingScreenDropdown(
+                    options = availableLandingScreens,
+                    selected = landingScreen,
+                    onSelected = onLandingScreenChanged,
+                )
+            }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-            SettingSwitchRow(
-                icon = Icons.Default.SignalCellularAlt,
-                title = stringResource(R.string.settings_send_while_roaming),
-                checked = sendWhileRoaming,
-                onCheckedChange = onSendWhileRoamingChanged,
-            )
-
-            SettingSwitchRow(
-                icon = Icons.Default.NotificationsActive,
-                title = stringResource(R.string.settings_show_notifications),
-                checked = showNotifications,
-                onCheckedChange = onShowNotificationsChanged,
-            )
-
-            ForwardPrefixRow(
-                currentPrefix = forwardPrefix,
-                onSave = onForwardPrefixSaved,
-            )
-
-            DefaultPrefixDropdown(
-                selectedPrefix = defaultPrefix,
-                onPrefixSelected = onDefaultPrefixChanged,
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            if (showMessagingSettings) {
+                MessagingSettings(
+                    sendWhileRoaming = sendWhileRoaming,
+                    showNotifications = showNotifications,
+                    forwardPrefix = forwardPrefix,
+                    defaultPrefix = defaultPrefix,
+                    onSendWhileRoamingChanged = onSendWhileRoamingChanged,
+                    onShowNotificationsChanged = onShowNotificationsChanged,
+                    onForwardPrefixSaved = onForwardPrefixSaved,
+                    onDefaultPrefixChanged = onDefaultPrefixChanged,
+                )
+            }
 
             GmailAccountSection(
                 gmailAddress = gmailAddress,
@@ -156,52 +160,106 @@ fun SettingsScreen(
                 onOpenHelp = onOpenAppPasswordHelp,
             )
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Button(
-                    onClick = onExportBackup,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CloudUpload,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_export_rules),
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
-                }
-                Button(
-                    onClick = onImportBackup,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CloudDownload,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_import_rules),
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
-                }
+            if (showMessagingSettings) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                ConfigurationExportImport(
+                    onExportBackup = onExportBackup,
+                    onImportBackup = onImportBackup,
+                )
             }
-
-            Text(
-                text = stringResource(R.string.settings_export_import_gmail_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
         }
+    }
+}
+
+@Composable
+private fun MessagingSettings(
+    sendWhileRoaming: Boolean,
+    showNotifications: Boolean,
+    forwardPrefix: String,
+    defaultPrefix: String,
+    onSendWhileRoamingChanged: (Boolean) -> Unit,
+    onShowNotificationsChanged: (Boolean) -> Unit,
+    onForwardPrefixSaved: (String) -> Unit,
+    onDefaultPrefixChanged: (String) -> Unit,
+) {
+    Column {
+        SettingSwitchRow(
+            icon = Icons.Default.SignalCellularAlt,
+            title = stringResource(R.string.settings_send_while_roaming),
+            checked = sendWhileRoaming,
+            onCheckedChange = onSendWhileRoamingChanged,
+        )
+
+        SettingSwitchRow(
+            icon = Icons.Default.NotificationsActive,
+            title = stringResource(R.string.settings_show_notifications),
+            checked = showNotifications,
+            onCheckedChange = onShowNotificationsChanged,
+        )
+
+        ForwardPrefixRow(
+            currentPrefix = forwardPrefix,
+            onSave = onForwardPrefixSaved,
+        )
+
+        DefaultPrefixDropdown(
+            selectedPrefix = defaultPrefix,
+            onPrefixSelected = onDefaultPrefixChanged,
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+    }
+}
+
+@Composable
+private fun ConfigurationExportImport(
+    onExportBackup: () -> Unit,
+    onImportBackup: () -> Unit,
+) {
+    Column {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Button(
+                onClick = onExportBackup,
+                modifier = Modifier.weight(1f),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CloudUpload,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    text = stringResource(R.string.settings_export_rules),
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+            Button(
+                onClick = onImportBackup,
+                modifier = Modifier.weight(1f),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CloudDownload,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    text = stringResource(R.string.settings_import_rules),
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+        }
+
+        Text(
+            text = stringResource(R.string.settings_export_import_gmail_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
     }
 }
 
@@ -246,17 +304,19 @@ private fun ForwardPrefixRow(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LandingScreenDropdown(
+    options: List<LandingScreen>,
     selected: LandingScreen,
     onSelected: (LandingScreen) -> Unit,
 ) {
-    val options =
-        listOf(
+    val labels =
+        mapOf(
             LandingScreen.BACKUP to stringResource(R.string.settings_landing_screen_backup),
             LandingScreen.REDIRECT to stringResource(R.string.settings_landing_screen_redirect),
             LandingScreen.SCHEDULE to stringResource(R.string.settings_landing_screen_schedule),
         )
+    val options = options.map { it to labels.getValue(it) }
     var expanded by remember { mutableStateOf(false) }
-    val selectedLabel = options.first { it.first == selected }.second
+    val selectedLabel = options.firstOrNull { it.first == selected }?.second ?: labels.getValue(selected)
 
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
         ExposedDropdownMenuBox(

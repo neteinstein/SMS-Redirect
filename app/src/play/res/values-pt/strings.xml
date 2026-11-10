@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Versão Play (apenas Backup e Restauro): ver values/strings.xml desta pasta. -->
+<resources>
+    <string name="splash_subtitle">Guarde e restaure as suas SMS</string>
+    <string name="battery_optimization_message">O SMS Toolbox precisa de continuar em execução em segundo plano para guardar as suas mensagens à medida que chegam. Desative a otimização de bateria para esta app para que o Android não a interrompa.</string>
+    <string name="sms_permission_rationale_message">O SMS Toolbox precisa de permissões de SMS para ler as suas mensagens de texto e guardá-las no seu Gmail. Mensagens MMS e RCS não são suportadas e não serão guardadas.</string>
+    <string name="sms_permission_denied_message">O SMS Toolbox não pode guardar as suas mensagens sem permissão de SMS. Conceda a permissão para continuar.</string>
+    <string name="notifications_permission_rationale_message">O SMS Toolbox pode mostrar uma notificação enquanto as mensagens são guardadas ou restauradas, para que possa acompanhar o progresso.</string>
+    <string name="battery_banner_message">A execução em segundo plano não está ativada. As mensagens podem não ser guardadas à medida que chegam.</string>
+</resources>

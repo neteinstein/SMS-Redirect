@@ -1,3 +1,2 @@
-• O backup passa a incluir as mensagens que envia, e não só as que recebe. Uma mensagem enviada chega ao Gmail em cerca de dois minutos.
-• Restaurar do Gmail: traga as suas mensagens de volta para um telemóvel novo com um toque. As recebidas e as enviadas voltam ao sítio certo, e o que já está no telemóvel é ignorado.
-• Um novo visual para a página da loja.
+• O SMS Toolbox no Google Play passa a dedicar-se a uma só coisa: guardar as suas mensagens no seu Gmail e restaurá-las em qualquer telemóvel. O reencaminhamento e o agendamento deixam de fazer parte da versão Play, e a app deixa de pedir permissão para enviar SMS.
+• O backup e o restauro funcionam como antes, e as suas definições do Gmail são mantidas.
