@@ -90,6 +90,8 @@ fun ScheduleListScreen(
     onDragEnd: () -> Unit,
     bottomBar: @Composable () -> Unit = {},
     showBackgroundWarning: Boolean = false,
+    /** Shown above the content, e.g. the "update available" banner. */
+    topBanner: @Composable () -> Unit = {},
     onFixBackgroundWarning: () -> Unit = {},
 ) {
     var itemToDelete by remember { mutableStateOf<ScheduledSms?>(null) }
@@ -157,6 +159,9 @@ fun ScheduleListScreen(
                     onActionClick = onFixBackgroundWarning,
                 )
             }
+
+            topBanner()
+
             if (scheduledSmsList.isEmpty()) {
                 Column(
                     modifier =

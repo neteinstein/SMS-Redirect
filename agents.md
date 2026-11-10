@@ -4,6 +4,8 @@
 
 SMS Toolbox is a native Android app (Kotlin) with three features: backing up received and sent SMS to the user's own Gmail account over IMAP and restoring them to a phone (the primary feature and landing tab), forwarding incoming SMS that match user-defined rules, and sending scheduled messages. See `Architecture.md` for the full system design.
 
+It ships as two product flavors of the `distribution` dimension: **`play`** (Google Play — Backup & Restore only, no `SEND_SMS`, no self-update) and **`github`** (APK on GitHub releases — every feature, plus a daily in-app update check against GitHub releases). Both share the `applicationId`, signing key and `versionCode` so either can install over the other. See `Architecture.md` → "Two distributions".
+
 The app is named "SMS Toolbox" but the `applicationId` and Kotlin package remain `com.neteinstein.smsredirect`, and the deep link remains `smsredirect://app` — changing them would create a new Play listing and cut existing users off from updates.
 
 ## Tech Stack
@@ -83,7 +85,8 @@ Do **not** introduce Hilt, Dagger, or Koin unless explicitly requested.
 ### Guidelines
 
 - Unit tests live in `app/src/test/`.
-- Use **Fake** implementations (not mocks) for repository interfaces. Existing fakes are in the test root package: `FakeRuleRepository`, `FakeSettingsRepository`, `FakeContactNameResolver`, `FakeForwardHistoryRepository`, `FakeScheduledSmsRepository`, `FakeScheduledSmsHistoryRepository`, `FakeScheduledSmsScheduler`, `FakeMailTransport`, `FakeSmsMessageSource`, `FakeSmsBackupStateRepository`, `FakeSmsBackupSettingsRepository`, `FakeSmsBackupScheduler`, `FakeSecretCipher`, `FakeSmsMessageWriter`, `FakeSmsRestoreScheduler`, `FakeDefaultSmsAppChecker`.
+- Use **Fake** implementations (not mocks) for repository interfaces. Existing fakes are in the test root package: `FakeRuleRepository`, `FakeSettingsRepository`, `FakeContactNameResolver`, `FakeForwardHistoryRepository`, `FakeScheduledSmsRepository`, `FakeScheduledSmsHistoryRepository`, `FakeScheduledSmsScheduler`, `FakeMailTransport`, `FakeSmsMessageSource`, `FakeSmsBackupStateRepository`, `FakeSmsBackupSettingsRepository`, `FakeSmsBackupScheduler`, `FakeSecretCipher`, `FakeSmsMessageWriter`, `FakeSmsRestoreScheduler`, `FakeDefaultSmsAppChecker`, `FakeAppReleaseSource`, `FakeAppUpdateRepository`, `FakeAppUpdateInstaller`.
+- Tests for code that lives only in the `github` flavor source set (e.g. `GitHubReleaseParser`) go in `app/src/testGithub/`.
 - Keep Android and third-party types (`Context`, `SmsManager`, `javax.mail`, WorkManager) behind a domain interface so the logic in front of it is testable. `SmsForwarder` is untested precisely because this was not done.
 - Test use cases in isolation with their respective fakes.
 - Test ViewModels using `kotlinx-coroutines-test` (`runTest`, `UnconfinedTestDispatcher`) and Turbine for Flow assertions.
@@ -128,8 +131,9 @@ Both must pass before merging. Always run these locally before pushing.
 # Run unit tests
 ./gradlew test
 
-# Build debug APK
-./gradlew assembleDebug
+# Build debug APKs (every feature / Play's Backup-only build)
+./gradlew assembleGithubDebug
+./gradlew assemblePlayDebug
 ```
 
 ## Common Patterns
@@ -160,6 +164,15 @@ Both must pass before merging. Always run these locally before pushing.
 - Handle retries via `Result.retry()`.
 
 ## Traps (read before touching these areas)
+
+- **The Play build must never declare `SEND_SMS` or self-update.** Play's SMS declaration covers
+  "Backup and restore" only, and Play forbids updates outside Play. `SEND_SMS` and
+  `REQUEST_INSTALL_PACKAGES` live in `app/src/github/AndroidManifest.xml`, the play manifest
+  removes them as a guard, and `release.yml` fails if the Play bundle's merged manifest has
+  either. Gate features through `AppContainer.features` (`AppFeatures`), never by checking
+  `BuildConfig.FLAVOR`; put update/install code in `app/src/github/` only.
+- **`versionCode` is derived from `versionName`** in `app/build.gradle.kts`, so the Play bundle
+  and GitHub APK of a release match. Do not set it by hand or from a CI run number.
 
 - **"Backup" is an overloaded word here.** `ExportBackupUseCase` / `ImportBackupUseCase` /
   `BackupUseCasesTest` predate the Gmail feature and mean the local JSON export of rules,

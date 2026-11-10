@@ -283,4 +283,23 @@
     <string name="default_sms_notification_title">Nova mensagem recebida</string>
     <string name="default_sms_notification_sms_text">Foi guardada. O SMS Toolbox continua a ser a sua app de SMS predefinida — volte à sua app de mensagens para a ler.</string>
     <string name="default_sms_notification_mms_text">Não foi possível receber uma mensagem com imagem (MMS) porque o SMS Toolbox continua a ser a sua app de SMS predefinida. Volte à sua app de mensagens.</string>
+
+    <!-- Atualização na app (apenas versão do GitHub) -->
+    <string name="update_banner_message">Está disponível o SMS Toolbox %1$s.</string>
+    <string name="update_banner_action">Atualizar</string>
+    <string name="settings_updates_section">Atualizações</string>
+    <string name="settings_updates_current_version">Versão instalada: %1$s</string>
+    <string name="settings_updates_available">Está disponível a versão %1$s.</string>
+    <string name="settings_updates_install">Transferir e instalar</string>
+    <string name="settings_updates_release_notes">Novidades</string>
+    <string name="settings_updates_downloading">A transferir…</string>
+    <string name="settings_updates_downloading_percent">A transferir… %1$d%%</string>
+    <string name="settings_updates_installer_opened">Confirme a instalação no ecrã do Android que abriu. As suas definições e backups são mantidos.</string>
+    <string name="settings_updates_needs_permission">Permita que o SMS Toolbox instale apps no ecrã que abriu, depois volte e toque novamente em Transferir e instalar.</string>
+    <string name="settings_updates_failed">Não foi possível transferir a atualização. Verifique a ligação e tente novamente.</string>
+    <string name="settings_updates_checking">A procurar atualizações…</string>
+    <string name="settings_updates_up_to_date">Tem a versão mais recente.</string>
+    <string name="settings_updates_check_failed">Não foi possível procurar atualizações. Verifique a ligação e tente novamente.</string>
+    <string name="settings_updates_check_now">Procurar atualizações</string>
+    <string name="settings_updates_install_guide">Como instalar o APK manualmente</string>
 </resources>

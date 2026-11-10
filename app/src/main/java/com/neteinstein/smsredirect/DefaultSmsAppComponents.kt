@@ -100,7 +100,12 @@ class ComposeSmsActivity : Activity() {
     }
 }
 
-/** "Respond via message" from the incoming-call screen: sends the quick reply as an SMS. */
+/**
+ * "Respond via message" from the incoming-call screen: sends the quick reply as an SMS.
+ *
+ * The Play build does not declare SEND_SMS, so there the send throws a SecurityException,
+ * which the catch below absorbs: the user sends the reply from their usual messaging app.
+ */
 class HeadlessSmsSendService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 

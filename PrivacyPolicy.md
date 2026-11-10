@@ -1,8 +1,15 @@
 # Privacy Policy for SMS Toolbox
 
-**Effective date:** November 3, 2026
+**Effective date:** November 10, 2026
 
 SMS Toolbox ("the App", "we", "us") is an Android app developed by [neteinstein](https://github.com/neteinstein). It backs up your text messages to your own Gmail account, restores them to a phone, forwards the messages you choose, and sends messages on a schedule.
+
+**Two versions.** The App is published in two versions built from the same source code:
+
+- **Google Play version:** Gmail backup and restore only. It does not forward or schedule messages, does not have the `SEND_SMS` permission, and does not check for updates itself (Google Play updates it). Sections 3 and 8, and the forwarding and scheduling parts of other sections, do not apply to it.
+- **GitHub version** (the APK attached to each release on GitHub): every feature in this policy, plus the update check described in Section 9.
+
+Everything else in this policy applies to both.
 
 **The short version:** we run no server and have no account system. Your messages, rules and schedules are processed on your phone. If you turn on Gmail backup, your phone talks **directly to Google's Gmail servers**, using credentials you create, and your messages go to **your own** mailbox. They never pass through us. The App's source code is public at [github.com/neteinstein/SMS-Redirect](https://github.com/neteinstein/SMS-Redirect), so every statement in this policy can be checked against the code.
 
@@ -16,7 +23,7 @@ SMS Toolbox ("the App", "we", "us") is an Android app developed by [neteinstein]
 | Where are your rules, schedules and history kept? | On your phone only |
 | Where is your Gmail app password kept? | On your phone, encrypted with a key held in the Android Keystore. It is sent only to Google, as your login |
 | Is your data sold, rented or used for advertising? | **No** |
-| What else leaves your phone? | Crash reports and usage statistics (Firebase), which never include phone numbers, contact names or message text. Messages you forward or schedule, sent by your carrier to the numbers **you** chose. A settings file, only if you export and share one |
+| What else leaves your phone? | Crash reports and usage statistics (Firebase), which never include phone numbers, contact names or message text. Messages you forward or schedule, sent by your carrier to the numbers **you** chose. A settings file, only if you export and share one. In the GitHub version, a once-a-day anonymous update check to GitHub |
 
 ## 1. Gmail backup
 
@@ -73,6 +80,7 @@ This is the complete list:
 | Messages you forward or schedule | The phone numbers **you** chose, via your carrier's SMS network | When a rule matches, or at the scheduled time |
 | Crash reports and usage statistics | Google Firebase (see Section 6) | Automatically |
 | A settings file (rules, schedules, settings) | Wherever **you** send it from Android's share sheet | Only if you tap Export |
+| An update check (GitHub version only) | GitHub's public API (`api.github.com`), and GitHub's download servers if you install an update | At most once a day when you open the App, when you tap Check for updates, and when you tap Download and install |
 | Your App data, as part of an Android device backup | Your own Google account, encrypted by Android | Only if Android device backup or transfer is on (see Section 7) |
 
 ## 6. Diagnostics and analytics (Firebase)
@@ -94,14 +102,21 @@ The App allows Android's built-in backup and device-to-device transfer. If you h
 
 Separately from Gmail backup, Settings → Export Configurations creates a file with your rules, scheduled messages (including their text and phone numbers) and settings. It **never includes your Gmail address or app password**. The file is created on your phone and handed to Android's share sheet, and **you** choose where it goes. We never receive a copy. Import Configurations reads a file you pick back into the App.
 
-## 9. Permissions and why the App needs them
+## 9. Update check (GitHub version only)
+
+The GitHub version checks whether a newer release has been published, so it can tell you about it. When you open the App, at most once every 24 hours, it asks GitHub's public API (`api.github.com`) for the latest release of this repository. If you tap **Download and install**, it downloads the APK from GitHub and hands it to Android's installer, which asks you to confirm.
+
+These requests carry no information about you, your messages or your settings. Like any connection to a website, GitHub sees your IP address and a generic app identifier (`SMS-Toolbox-Android`), under [GitHub's privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement). The App remembers on your phone only when it last checked and which version was the latest. The Google Play version does none of this.
+
+## 10. Permissions and why the App needs them
 
 Each permission is requested only when a feature needs it, and none of them gives **us** access to your data.
 
 | Permission | Why |
 |---|---|
 | `READ_SMS` / `RECEIVE_SMS` | Read your received and sent messages to back them up to Gmail, and detect new messages to back up or check against your forwarding rules |
-| `SEND_SMS` | Send forwarded and scheduled messages to the numbers you chose |
+| `SEND_SMS` (GitHub version only) | Send forwarded and scheduled messages to the numbers you chose |
+| `REQUEST_INSTALL_PACKAGES` (GitHub version only) | Hand a downloaded update to Android's installer, which asks you to confirm |
 | `READ_CONTACTS` | Let you pick a contact for a rule or a scheduled message, and show names instead of numbers |
 | `POST_NOTIFICATIONS` | Show backup and restore progress, and confirm forwarded and scheduled messages |
 | `INTERNET` / `ACCESS_NETWORK_STATE` | Connect to Gmail for backup and restore, and wait for a connection before trying |
@@ -109,22 +124,22 @@ Each permission is requested only when a feature needs it, and none of them give
 | Default SMS app (only while a restore runs) | Write restored messages to the phone's SMS storage, which Android allows only for the default SMS app |
 | `AD_ID` | Used by Firebase Analytics (see Section 6); never for advertising |
 
-## 10. What we do not do
+## 11. What we do not do
 
 - We do not run a server, and there is no account or login.
 - We do not receive your messages, contacts, Gmail address or app password.
 - We do not include advertising SDKs or show ads.
 - We do not sell, rent or share your data for marketing.
 
-## 11. Security
+## 12. Security
 
 Gmail connections use TLS with server identity checks. Your app password is encrypted with a key held in the Android Keystore. The App never logs message content or credentials. The backup record keeps only one-way hashes, not message text.
 
-## 12. Keeping and deleting data
+## 13. Keeping and deleting data
 
 Data on your phone stays until you delete it in the App, clear the App's storage or uninstall it, subject to any Android device backup you have turned on (Section 7). Backups in Gmail stay until you delete them in Gmail. Firebase data is kept by Google under its own retention policies, and we do not link it to your identity.
 
-## 13. Your choices and rights
+## 14. Your choices and rights
 
 - **Permissions:** revoke any permission in Android Settings. The feature that needs it stops working until you grant it again, and the rest of the App keeps working. If background running is not allowed, the App shows a banner until you allow it.
 - **Gmail backup:** turn it off on the Backup tab, remove your credentials in Settings, or revoke the app password in your Google account.
@@ -134,14 +149,14 @@ Data on your phone stays until you delete it in the App, clear the App's storage
 
 Depending on where you live (for example under the GDPR or the CCPA), you may have rights to access, correct, export or delete your data. Everything the App stores is already on your phone and under your control. For questions about the diagnostic data processed by Firebase, contact us using the details below.
 
-## 14. Children
+## 15. Children
 
 The App is not directed at children under 13, and we do not knowingly collect personal data from children.
 
-## 15. Changes to this policy
+## 16. Changes to this policy
 
 We may update this policy as the App changes. Updates are published at this same address with a new effective date.
 
-## 16. Contact
+## 17. Contact
 
 Questions about this policy or your data? Email **play-store-neteinstein@googlegroups.com**.

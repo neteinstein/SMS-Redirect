@@ -220,7 +220,7 @@ const SCREENS = {
       <div class="row" style="font-size:16px;font-weight:500">${ic("restore", "", "color:var(--on-variant)")}Restore from Gmail</div>
       <p class="body muted" style="margin-top:8px">Copy the messages backed up under the Gmail label “SMS” back to this phone.</p>
     </div>`,
-    { nav: 0, title: "Backup to Gmail", actions: ["settings"] }),
+    { nav: null, title: "Backup to Gmail", actions: ["settings"] }),
 
   restore: () => app(`
     <div class="row" style="min-height:48px">${ic("sync", "", "color:var(--on-variant)")}<span style="flex:1;font-size:16px">Backup all previous SMS</span><div class="sw"></div></div>
@@ -237,7 +237,7 @@ const SCREENS = {
     <div class="card" style="margin-top:14px;padding:14px 16px;background:var(--primary-c);color:var(--on-primary-c)">
       <div class="row body">${ic("phonelink_ring")}<span>SMS Toolbox is your default SMS app until the restore is done. You switch back right after.</span></div>
     </div>`,
-    { nav: 0, title: "Backup to Gmail", actions: ["settings"] }),
+    { nav: null, title: "Backup to Gmail", actions: ["settings"] }),
 
   rules: () => app(`
     ${catHead("Work", "2 rules", 0)}
@@ -287,8 +287,7 @@ const SCREENS = {
     { nav: null, title: "Redirect History", actions: ["delete_sweep"], back: true }),
 
   settings: (dark = true) => app(`
-    <div class="sline">${ic("signal_cellular_alt")}<span class="grow">Send while roaming</span><div class="sw off"></div></div>
-    <div class="sline">${ic("notifications_active")}<span class="grow">Show notifications</span><div class="sw"></div></div>
+    <div class="sline">${ic("language")}<span class="grow">Language<br><span class="muted" style="font-size:14px">System default</span></span>${ic("chevron_right")}</div>
     <div class="divider"></div>
     <div class="section-t">Gmail backup</div>
     ${tf("Gmail address", "you@gmail.com", { lead: "email" })}
@@ -354,36 +353,7 @@ const SHOTS = [
       [F.stat("2,176", "messages restored so far", "#188038"), { phone: { x: 30, y: 1460, w: 280, rot: -3 }, tablet: { x: 800, y: 640, w: 280, rot: -3 } }],
       [F.chip("done_all", "Already on the phone? Skipped.", "#188038"), { phone: { x: 420, y: 1700, w: 0, rot: 2 }, tablet: { x: 1360, y: 880, w: 0, rot: 2 } }],
     ] },
-  { key: "03-redirect-rules", eye: ["forward", "Redirect", "#E37400"], head: "Forward <em>the texts that matter</em>", sub: "Codes, deliveries, family: simple rules, first match wins.",
-    glow: ["#FBBC05", "#EA4335"], screen: () => SCREENS.rules(),
-    floats: [
-      [F.notif("Messages · now", "WorkBank", "Your code is 482913", "#1A73E8", "W"), { phone: { x: 30, y: 1560, w: 400, rot: -2 }, tablet: { x: 790, y: 760, w: 400, rot: -2 } }],
-      [F.convo("Your work phone", "+351 912 345 678", [["SMS Toolbox: (WorkBank) - Your code is 482913", "now · forwarded by “Work OTP”", false]]), { phone: { x: 470, y: 1110, w: 400, rot: 2 }, tablet: { x: 1420, y: 420, w: 400, rot: 2 } }],
-    ] },
-  { key: "04-create-rule", eye: ["contact_phone", "Rules", "#E37400"], head: "Pick a sender. <em>Pick a target.</em>", sub: "By name from your contacts, or by number or text.",
-    glow: ["#FBBC05", "#1A73E8"], screen: () => SCREENS.ruleForm(),
-    floats: [
-      [F.contacts([["Ana Silva", "#9334E6"], ["DHL", "#F29900"], ["Mom", "#188038"], ["WorkBank", "#1A73E8"]], "WorkBank"), { phone: { x: 620, y: 1180, w: 300, rot: 2 }, tablet: { x: 1450, y: 400, w: 300, rot: 2 } }],
-      [F.chip("check_circle", "First matching rule wins", "#E37400"), { phone: { x: 40, y: 1650, w: 0, rot: -2 }, tablet: { x: 800, y: 860, w: 0, rot: -2 } }],
-    ] },
-  { key: "05-schedule-list", eye: ["schedule", "Schedule", "#9334E6"], head: "Write now, <em>send later</em>", sub: "Birthdays, reminders, rent day: sent from your own SIM.",
-    glow: ["#9334E6", "#1A73E8"], screen: () => SCREENS.scheduleList(),
-    floats: [
-      [F.convo("Ana Silva", "+351 961 222 333", [["Happy birthday, Ana! 🎂 Have the best day.", "Sep 3 · 08:00 · sent automatically ✓", true]]), { phone: { x: 470, y: 1330, w: 400, rot: 2 }, tablet: { x: 1420, y: 560, w: 400, rot: 2 } }],
-      [F.chip("calendar_month", "Every year on Sep 3", "#9334E6"), { phone: { x: 30, y: 1600, w: 0, rot: -3 }, tablet: { x: 800, y: 820, w: 0, rot: -3 } }],
-    ] },
-  { key: "06-schedule-form", eye: ["event_repeat", "Repeat", "#9334E6"], head: "Once, daily, monthly <em>or every year</em>", sub: "Work-week days and bi-weekly too, with an optional stop date.",
-    glow: ["#9334E6", "#12B5CB"], screen: () => SCREENS.scheduleForm(),
-    floats: [
-      [F.chip("send", "Sent from your SIM, on time", "#9334E6"), { phone: { x: 420, y: 1740, w: 0, rot: 2 }, tablet: { x: 1400, y: 890, w: 0, rot: 2 } }],
-    ] },
-  { key: "07-history", eye: ["history", "History", "#1A73E8"], head: "Every forward, <em>on record</em>", sub: "The last 50, with the rule that matched. Stored on your phone only.",
-    glow: ["#1A73E8", "#9334E6"], screen: () => SCREENS.history(),
-    floats: [
-      [F.stat("50", "latest forwards kept, on this phone", "#1A73E8"), { phone: { x: 30, y: 1500, w: 300, rot: -3 }, tablet: { x: 790, y: 680, w: 300, rot: -3 } }],
-      [F.chip("delete_sweep", "Clear it any time", "#EA4335"), { phone: { x: 600, y: 1720, w: 0, rot: 2 }, tablet: { x: 1440, y: 870, w: 0, rot: 2 } }],
-    ] },
-  { key: "08-privacy", eye: ["shield", "Private", "#188038"], head: "No account. No server. <em>Just your Gmail.</em>", sub: "Your app password stays encrypted on your phone.",
+  { key: "03-privacy", eye: ["shield", "Private", "#188038"], head: "No account. No server. <em>Just your Gmail.</em>", sub: "Your app password stays encrypted on your phone.",
     glow: ["#188038", "#1A73E8"], screen: () => SCREENS.settings(true), dark: true,
     floats: [
       [`<div class="trust">${F.chip("person", "No account to create", "#1A73E8")}${F.chip("cloud_done", "Phone → your Gmail, nothing in between", "#188038")}${F.chip("key", "Password encrypted with Android Keystore", "#E37400")}${F.chip("code", "Open source: check every claim", "#9334E6")}</div>`,
@@ -478,9 +448,9 @@ function renderFeature() {
     `<div class="copy" style="left:64px;top:84px;width:470px">
       <div style="display:flex;align-items:center;gap:22px">${appIcon(96)}<div class="headline" style="font-size:58px">SMS Toolbox</div></div>
       <div class="headline" style="font-size:40px;margin-top:30px;line-height:1.12">Back up &amp; restore your texts <em>with your own Gmail</em></div>
-      <div class="sub" style="font-size:21px;margin-top:18px">Plus forwarding rules and scheduled SMS.</div>
+      <div class="sub" style="font-size:21px;margin-top:18px">Received and sent, as they arrive. Back on any phone.</div>
     </div>` +
-    device(SCREENS.rules(), { x: 560, y: 70, scale: 0.53, rot: -6 }) +
+    device(SCREENS.restore(), { x: 560, y: 70, scale: 0.53, rot: -6 }) +
     device(SCREENS.backup(), { x: 760, y: 40, scale: 0.56, rot: 5 });
 }
 

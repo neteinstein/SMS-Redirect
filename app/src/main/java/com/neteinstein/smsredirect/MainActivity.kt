@@ -61,6 +61,8 @@ import com.neteinstein.smsredirect.presentation.home.HomeViewModelFactory
 import com.neteinstein.smsredirect.presentation.navigation.MainBottomBar
 import com.neteinstein.smsredirect.presentation.navigation.MainTab
 import com.neteinstein.smsredirect.presentation.navigation.Routes
+import com.neteinstein.smsredirect.presentation.navigation.availableTabs
+import com.neteinstein.smsredirect.presentation.navigation.toMainTab
 import com.neteinstein.smsredirect.presentation.rule.RuleScreen
 import com.neteinstein.smsredirect.presentation.rule.RuleViewModel
 import com.neteinstein.smsredirect.presentation.rule.RuleViewModelFactory
@@ -78,18 +80,26 @@ import com.neteinstein.smsredirect.presentation.settings.SettingsViewModel
 import com.neteinstein.smsredirect.presentation.settings.SettingsViewModelFactory
 import com.neteinstein.smsredirect.presentation.splash.SplashScreen
 import com.neteinstein.smsredirect.presentation.theme.SmsRedirectTheme
+import com.neteinstein.smsredirect.presentation.update.AppUpdateViewModel
+import com.neteinstein.smsredirect.presentation.update.AppUpdateViewModelFactory
+import com.neteinstein.smsredirect.presentation.update.UpdateAvailableBanner
+import com.neteinstein.smsredirect.presentation.update.UpdatesSection
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import java.io.File
 
 class MainActivity : ComponentActivity() {
-    private val smsPermissions =
-        arrayOf(
+    // SEND_SMS is requested only by builds that declare it (github). Asking for an undeclared
+    // permission is reported as denied, which would make the Play build's grant check always fail.
+    private val smsPermissions by lazy {
+        val features = (application as SmsRedirectApplication).appContainer.features
+        listOfNotNull(
             Manifest.permission.RECEIVE_SMS,
             Manifest.permission.READ_SMS,
-            Manifest.permission.SEND_SMS,
-        )
+            Manifest.permission.SEND_SMS.takeIf { features.sendsSms },
+        ).toTypedArray()
+    }
 
     private val newIntentFlow = MutableStateFlow<Intent?>(null)
 
@@ -102,9 +112,34 @@ class MainActivity : ComponentActivity() {
         setContent {
             SmsRedirectTheme {
                 val appContainer = (application as SmsRedirectApplication).appContainer
+                val features = appContainer.features
                 val navController = rememberNavController()
                 val landingScreen by
                     appContainer.getLandingScreenUseCase().collectAsState(initial = LandingScreen.BACKUP)
+
+                // Activity-scoped so the home banner and the Settings section share one state.
+                // Creating it runs the launch-time update check (at most once a day).
+                val appUpdateViewModel: AppUpdateViewModel? =
+                    appContainer.appUpdate?.let { update ->
+                        viewModel(
+                            factory =
+                                AppUpdateViewModelFactory(
+                                    update.currentVersionName,
+                                    update.getAvailableAppUpdateUseCase,
+                                    update.checkForAppUpdateUseCase,
+                                    update.installer,
+                                ),
+                        )
+                    }
+                val appUpdateState = appUpdateViewModel?.uiState?.collectAsState()
+                val updateBanner: @Composable () -> Unit = {
+                    appUpdateState?.value?.availableUpdate?.let { update ->
+                        UpdateAvailableBanner(
+                            versionName = update.versionName,
+                            onOpenUpdates = { navController.navigate(Routes.Settings) },
+                        )
+                    }
+                }
 
                 LaunchedEffect(Unit) {
                     newIntentFlow.collectLatest { intent ->
@@ -209,15 +244,10 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable(Routes.Home) {
+                        val tabs = remember(features) { features.availableTabs() }
                         var selectedTab by
                             rememberSaveable {
-                                mutableStateOf(
-                                    when (landingScreen) {
-                                        LandingScreen.BACKUP -> MainTab.BACKUP
-                                        LandingScreen.REDIRECT -> MainTab.REDIRECT
-                                        LandingScreen.SCHEDULE -> MainTab.SCHEDULE
-                                    },
-                                )
+                                mutableStateOf(features.resolveLandingScreen(landingScreen).toMainTab())
                             }
 
                         var pendingSmsAction by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -294,24 +324,28 @@ class MainActivity : ComponentActivity() {
                         }
 
                         val bottomBar: @Composable () -> Unit = {
-                            MainBottomBar(
-                                selectedTab = selectedTab,
-                                onTabSelected = { selectedTab = it },
-                                onFabClick = {
-                                    when (selectedTab) {
-                                        MainTab.BACKUP -> Unit
-                                        MainTab.REDIRECT -> requestCreate(Routes.ruleRoute())
-                                        MainTab.SCHEDULE -> requestCreate(Routes.scheduleRoute())
-                                    }
-                                },
-                                fabContentDescription =
-                                    when (selectedTab) {
-                                        MainTab.BACKUP -> ""
-                                        MainTab.REDIRECT -> stringResource(R.string.home_cd_add_rule)
-                                        MainTab.SCHEDULE -> stringResource(R.string.schedule_cd_add)
+                            // A single-tab build (Play: Backup only) has nothing to switch between.
+                            if (tabs.size > 1) {
+                                MainBottomBar(
+                                    selectedTab = selectedTab,
+                                    onTabSelected = { selectedTab = it },
+                                    onFabClick = {
+                                        when (selectedTab) {
+                                            MainTab.BACKUP -> Unit
+                                            MainTab.REDIRECT -> requestCreate(Routes.ruleRoute())
+                                            MainTab.SCHEDULE -> requestCreate(Routes.scheduleRoute())
+                                        }
                                     },
-                                showFab = selectedTab != MainTab.BACKUP,
-                            )
+                                    fabContentDescription =
+                                        when (selectedTab) {
+                                            MainTab.BACKUP -> ""
+                                            MainTab.REDIRECT -> stringResource(R.string.home_cd_add_rule)
+                                            MainTab.SCHEDULE -> stringResource(R.string.schedule_cd_add)
+                                        },
+                                    showFab = selectedTab != MainTab.BACKUP,
+                                    tabs = tabs,
+                                )
+                            }
                         }
 
                         when (selectedTab) {
@@ -394,6 +428,7 @@ class MainActivity : ComponentActivity() {
                                     onOpenSettings = { navController.navigate(Routes.Settings) },
                                     bottomBar = bottomBar,
                                     showBackgroundWarning = showBatteryBanner,
+                                    topBanner = updateBanner,
                                     onFixBackgroundWarning = { openBatteryOptimizationSettings() },
                                     defaultSmsRoleDenied = defaultSmsRoleDenied,
                                     onRestoreConfirmed = {
@@ -443,6 +478,7 @@ class MainActivity : ComponentActivity() {
                                     onDragEnd = homeViewModel::commitReorder,
                                     bottomBar = bottomBar,
                                     showBackgroundWarning = showBatteryBanner,
+                                    topBanner = updateBanner,
                                     onFixBackgroundWarning = { openBatteryOptimizationSettings() },
                                 )
                             }
@@ -472,6 +508,7 @@ class MainActivity : ComponentActivity() {
                                     onDragEnd = scheduleListViewModel::commitReorder,
                                     bottomBar = bottomBar,
                                     showBackgroundWarning = showBatteryBanner,
+                                    topBanner = updateBanner,
                                     onFixBackgroundWarning = { openBatteryOptimizationSettings() },
                                 )
                             }
@@ -661,6 +698,21 @@ class MainActivity : ComponentActivity() {
                             onImportBackup = { importLauncher.launch("application/json") },
                             onOpenLanguageSettings = { openAppLocaleSettings() },
                             onBack = { navController.popBackStack() },
+                            availableLandingScreens = features.availableLandingScreens,
+                            showMessagingSettings = features.sendsSms,
+                            updatesSection =
+                                appUpdateViewModel?.let { updateViewModel ->
+                                    {
+                                        val updateState by updateViewModel.uiState.collectAsState()
+                                        UpdatesSection(
+                                            state = updateState,
+                                            onCheckNow = updateViewModel::checkNow,
+                                            onInstall = updateViewModel::installUpdate,
+                                            onOpenReleaseNotes = { url -> openUrl(url) },
+                                            onOpenInstallGuide = { openUrl(INSTALL_GUIDE_URL) },
+                                        )
+                                    }
+                                },
                         )
                     }
 
@@ -1139,8 +1191,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun openGoogleAppPasswordsPage() {
-        val intent = Intent(Intent.ACTION_VIEW, GOOGLE_APP_PASSWORDS_URL.toUri())
-        runCatching { startActivity(intent) }
+        openUrl(GOOGLE_APP_PASSWORDS_URL)
+    }
+
+    private fun openUrl(url: String) {
+        runCatching { startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) }
     }
 
     private fun openAppLocaleSettings() {
@@ -1173,9 +1228,10 @@ class MainActivity : ComponentActivity() {
     private fun resolveDeepLinkRoute(intent: Intent?): String? {
         val uri = intent?.data ?: return null
         if (uri.scheme != "smsredirect" || uri.host != "app") return null
+        val features = (application as SmsRedirectApplication).appContainer.features
         return when (uri.path) {
-            "/${Routes.History}" -> Routes.History
-            "/${Routes.ScheduleHistory}" -> Routes.ScheduleHistory
+            "/${Routes.History}" -> Routes.History.takeIf { features.forwarding }
+            "/${Routes.ScheduleHistory}" -> Routes.ScheduleHistory.takeIf { features.scheduling }
             else -> null
         }
     }
@@ -1184,6 +1240,8 @@ class MainActivity : ComponentActivity() {
         private const val TAG = "MainActivity"
         private const val PREFS_NAME = "sms_redirect_prefs"
         private const val GOOGLE_APP_PASSWORDS_URL = "https://myaccount.google.com/apppasswords"
+        private const val INSTALL_GUIDE_URL =
+            "https://github.com/neteinstein/SMS-Redirect/blob/main/docs/install-apk.md"
         private const val KEY_SIDELOAD_DISMISSED = "sideload_warning_dismissed"
         private const val KEY_BATTERY_BANNER_ENABLED = "battery_banner_enabled"
     }

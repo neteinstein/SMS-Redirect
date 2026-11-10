@@ -13,7 +13,7 @@ own.
 
 **Answer: Yes, provide access instructions.** `com.neteinstein.smsredirect`
 has no developer-operated account system and no login screen (see
-[PrivacyPolicy.md](../PrivacyPolicy.md), §10), so every screen is reachable
+[PrivacyPolicy.md](../PrivacyPolicy.md), §11), so every screen is reachable
 without a special "unlock" step — but the app's **declared core use case is
 "Backup and restore"** (see the
 [README's permissions-declaration section](README.md#before-this-can-go-live-the-sms-permissions-declaration)),
@@ -80,8 +80,8 @@ device (not an emulator, so the SMS flow is real):
    show the progress → tap **Switch back to your messaging app** and pick the
    original app again. This shows the reviewer that the default-SMS role is
    used only for the restore.
-7. Optionally show that Redirect and Schedule are separate, secondary tabs —
-   the reviewer should come away with backup as the app's obvious purpose.
+7. There is nothing else to show: the Play build is Backup and Restore only
+   (no Redirect or Schedule tabs, no bottom navigation, no `SEND_SMS`).
 
 ## 2. Internal testing track (pre-release QA)
 
@@ -108,13 +108,15 @@ build before promoting to `alpha`/`beta`/`production`.
 
 ### Manual test script
 
-Run through all three tabs — the bottom nav order is Backup → Redirect →
-Schedule, and Backup is intentionally the tab the app opens on (Play policy
-reasons, not incidental).
+This is the **play** flavor: Backup and Restore only. It has no bottom
+navigation, no Redirect or Schedule tab, and must not request `SEND_SMS`.
+Redirect and Schedule ship only in the GitHub APK (**github** flavor); test
+those with `./gradlew installGithubDebug` (see "GitHub build" below).
 
 **Backup tab**
 - [ ] Permissions are requested contextually, not on first launch: enabling
-      Backup prompts for `READ_SMS`/`RECEIVE_SMS`/`SEND_SMS` and, separately,
+      Backup prompts for `READ_SMS`/`RECEIVE_SMS` (and **not** for sending
+      SMS) and, separately,
       `POST_NOTIFICATIONS`; denying one doesn't crash the app, just disables
       the dependent feature.
 - [ ] Settings (gear icon) → Gmail backup: entering a bad app password fails
@@ -174,6 +176,27 @@ reasons, not incidental).
       backup's headers, under the label. Restore skips both, writes neither,
       and the result says "N emails … were not SMS backups and were skipped".
 
+**Play build specifics**
+- [ ] App info → Permissions lists no "send SMS" permission, and Settings shows
+      no roaming / notification / prefix / export-import options and no
+      Updates section.
+- [ ] Upgrading from an older build that had rules or schedules: the app opens
+      on Backup, and no forwarded or scheduled SMS is ever sent.
+
+### GitHub build (APK on GitHub releases)
+
+Not distributed through Play, but released from the same pipeline with the same
+versionCode and signing key. Before a release, on a device with the GitHub APK:
+
+**Updates**
+- [ ] Install an older release APK, open the app: an "SMS Toolbox X is
+      available" banner appears; Update opens Settings → Updates.
+- [ ] Download and install: the first time, Android asks to allow installs
+      from SMS Toolbox; after allowing, the download shows progress and the
+      system installer opens. After updating, the banner is gone.
+- [ ] Reopen the app within 24 hours: no second network check (watch
+      `adb logcat` or a proxy); "Check for updates" forces one.
+
 **Redirect tab**
 - [ ] Create two rules that could both match the same incoming sender; the
       rule earlier in the list order (`sortOrder`) must be the one that fires
@@ -199,7 +222,7 @@ reasons, not incidental).
 
 **Cross-cutting**
 - [ ] Revoke SMS permission from Android Settings mid-use; confirm the
-      affected feature degrades gracefully (per `PrivacyPolicy.md` §13)
+      affected feature degrades gracefully (per `PrivacyPolicy.md` §14)
       instead of crashing.
 - [ ] Deep link `smsredirect://app` opens the app (used by any external
       trigger, e.g. a notification action).

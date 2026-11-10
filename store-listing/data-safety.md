@@ -5,6 +5,14 @@ This is a starting point for the **Data safety** questionnaire, derived from
 **not legal advice** — always complete the live questionnaire in Play Console
 yourself; wording and categories change over time.
 
+**This form covers the Play build only.** The app ships in two flavors from one
+codebase (see `app/build.gradle.kts`): the **play** flavor uploaded to Google Play
+is Backup and Restore only (no forwarding, no scheduling, no `SEND_SMS`, no
+self-update), and the **github** flavor is an APK attached to GitHub releases that
+also forwards and schedules SMS and checks GitHub for updates. Only the Play
+build is distributed through Play, so only its behaviour is declared here. The
+GitHub build's extras are covered by [`PrivacyPolicy.md`](../PrivacyPolicy.md).
+
 The key rule Google uses: **"collected" means transmitted off the device**
 to the developer or a third party. Data the app only reads/writes locally
 (contacts) and never transmits is **not** "collected" for this form, even
@@ -41,17 +49,17 @@ address when the user enables Gmail backup.
 
 | Data type | Collected (transmitted off-device)? | Shared with 3rd parties? | Purpose | Notes |
 |---|---|---|---|---|
-| SMS or MMS content | **Yes — only when the user enables Gmail backup** | No | App functionality | Uploaded over TLS (IMAPS) to **the user's own Gmail account**, using an app password the user supplies. Not to any server the developer operates, and the developer cannot read it. Off by default. Separately, rule-matched messages are forwarded via the *user's own carrier* to a number the user configured — also not via a developer server. |
-| Contacts | No | No | — | Used only for the in-app contact picker and name resolution; never transmitted. |
+| SMS or MMS content | **Yes — only when the user enables Gmail backup** | No | App functionality | Uploaded over TLS (IMAPS) to **the user's own Gmail account**, using an app password the user supplies. Not to any server the developer operates, and the developer cannot read it. Off by default. |
+| Contacts | No | No | — | Used only to put a contact's name in a backup email (if the user has granted the permission); never transmitted to the developer. |
 | Device or other IDs | **Yes**, via Firebase SDKs | No (processed by Firebase under Google's data processing terms, not sold/shared for ads) | Analytics, Crash reporting | Firebase attaches an installation identifier, and Firebase Analytics may read the **advertising ID**: the manifest declares `com.google.android.gms.permission.AD_ID` for it. It is used for analytics only, never ads. Declare it; leaving it out while the permission is in the manifest is a mismatch Play flags. To stop collecting it instead, remove the `AD_ID` permission (or set `google_analytics_adid_collection_enabled` to `false`) and update this row and `PrivacyPolicy.md` §6. |
-| Phone number | No | No | — | Phone numbers never leave the device except to the user's own Gmail (backup) and to numbers the user chose (forward/schedule, via the carrier). |
-| App activity (app interactions) | Yes | No | Analytics | Rule created/updated/deleted, SMS forwarded, scheduled SMS sent, setting toggled — see `domain/analytics/AnalyticsEvents.kt`. No phone numbers, names, or message text included. |
+| Phone number | No | No | — | Phone numbers never leave the device except to the user's own Gmail (backup). |
+| App activity (app interactions) | Yes | No | Analytics | A setting was changed (for example Gmail backup turned on or off) — see `domain/analytics/AnalyticsEvents.kt`. No phone numbers, names, or message text included. |
 | Crash logs / diagnostics | Yes | No | Crash reporting (Crashlytics) | Device model, OS version, stack traces. |
 | Location | No | No | — | App never requests location permissions. |
 | Personal info — email address | **Yes — only when the user enables Gmail backup** | No | App functionality, Account management | The user's own Gmail address, entered by them. Stored on-device (the app password alongside it is encrypted with an Android Keystore key) and transmitted only to Google as the IMAP login. Never sent to the developer. |
 | Personal info (name, other profile data) | No | No | — | No account/login system operated by the developer exists. |
 | Financial info | No | No | — | Not applicable. |
-| Photos, videos, audio, files | No | No | — | Not applicable (Export/Import Backup is a user-initiated local file the app writes/reads via the share sheet — it never uploads anywhere itself). |
+| Photos, videos, audio, files | No | No | — | Not applicable. |
 
 ## Security practices section
 
@@ -63,8 +71,7 @@ address when the user enables Gmail backup.
   the Gmail label (or individual messages) in their own Gmail account; revoke
   the app password at myaccount.google.com/apppasswords, which immediately
   cuts the app's access; remove the credentials in-app via Settings → Gmail
-  backup → Remove; delete/edit rules & schedules in-app; clear app storage or
-  uninstall. Put this in the "data deletion" free-text field.
+  backup → Remove; clear app storage or uninstall. Put this in the "data deletion" free-text field.
 - **Committed to the Play Families Policy / independent security review:**
   Answer per your actual practices; not assessed here.
 

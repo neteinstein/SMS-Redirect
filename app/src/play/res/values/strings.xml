@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Play build (Backup and Restore only): overrides the src/main strings that mention
+     forwarding or scheduling, which this build does not have. Keep values-pt in step. -->
+<resources>
+    <string name="splash_subtitle">Back up and restore your SMS</string>
+    <string name="battery_optimization_message">SMS Toolbox needs to keep running in the background to back up your messages as they arrive. Disable battery optimization for this app so Android does not stop it.</string>
+    <string name="sms_permission_rationale_message">SMS Toolbox needs SMS permissions to read your text messages and back them up to your Gmail. MMS and RCS messages are out of scope and will not be backed up.</string>
+    <string name="sms_permission_denied_message">SMS Toolbox can\'t back up your messages without SMS permission. Grant the permission to continue.</string>
+    <string name="notifications_permission_rationale_message">SMS Toolbox can show a notification while messages are backed up or restored, so you can follow the progress.</string>
+    <string name="battery_banner_message">Background running is not enabled. Messages might not be backed up as they arrive.</string>
+</resources>

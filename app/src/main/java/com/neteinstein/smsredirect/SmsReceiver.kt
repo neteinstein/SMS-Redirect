@@ -33,7 +33,10 @@ class SmsReceiver : BroadcastReceiver() {
 
         Log.i(TAG, "SMS received from='$sender', bodyLength=${body.length}")
 
-        ForwardSmsWorker.enqueue(context, sender, body)
+        val features = (context.applicationContext as SmsRedirectApplication).appContainer.features
+        if (features.forwarding) {
+            ForwardSmsWorker.enqueue(context, sender, body)
+        }
 
         // Backup is triggered for every incoming SMS, independent of whether a redirect rule
         // matched -- SmsForwarder early-returns on missing SEND_SMS, on roaming and on no rule

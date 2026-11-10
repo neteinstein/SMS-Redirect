@@ -1,3 +1,2 @@
-• Backups now include the messages you send, not just the ones you receive. A sent message reaches Gmail within about two minutes.
-• Restore from Gmail: bring your backed-up texts back to a new phone in one tap. Received and sent messages each go back to the right place, and anything already on the phone is skipped.
-• A fresh new look for the store listing.
+• SMS Toolbox on Google Play now focuses on one thing: backing up your texts to your own Gmail and restoring them on any phone. Message forwarding and scheduling are no longer part of the Play version, and the app no longer asks for permission to send SMS.
+• Backup and restore work exactly as before, and your Gmail settings are kept.

@@ -57,6 +57,8 @@ fun BackupScreen(
     onOpenSettings: () -> Unit,
     bottomBar: @Composable () -> Unit = {},
     showBackgroundWarning: Boolean = false,
+    /** Shown above the content, e.g. the "update available" banner. */
+    topBanner: @Composable () -> Unit = {},
     onFixBackgroundWarning: () -> Unit = {},
     defaultSmsRoleDenied: Boolean = false,
     onRestoreConfirmed: () -> Unit = {},
@@ -93,6 +95,8 @@ fun BackupScreen(
                     onActionClick = onFixBackgroundWarning,
                 )
             }
+
+            topBanner()
 
             // The restore card already carries this prompt once a restore has finished; the
             // banner covers every other way of ending up still holding the SMS role (a failed

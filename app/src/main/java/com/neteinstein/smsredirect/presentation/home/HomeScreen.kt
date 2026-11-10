@@ -86,6 +86,8 @@ fun HomeScreen(
     onDragEnd: () -> Unit,
     bottomBar: @Composable () -> Unit = {},
     showBackgroundWarning: Boolean = false,
+    /** Shown above the content, e.g. the "update available" banner. */
+    topBanner: @Composable () -> Unit = {},
     onFixBackgroundWarning: () -> Unit = {},
 ) {
     var ruleToDelete by remember { mutableStateOf<Rule?>(null) }
@@ -146,6 +148,9 @@ fun HomeScreen(
                     onActionClick = onFixBackgroundWarning,
                 )
             }
+
+            topBanner()
+
             if (rules.isEmpty()) {
                 Column(
                     modifier =
