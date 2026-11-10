@@ -13,247 +13,73 @@ Three features, as bottom-navigation tabs: **Backup** SMS to your own Gmail acco
 | `SEND_SMS` permission | not declared | declared |
 | Updates | by Google Play | in-app: checks GitHub releases once a day, banner → Settings → Updates |
 
-Both are the same app: same `applicationId` (`com.neteinstein.smsredirect`), same signing key and the same `versionCode` for a given release, so either one installs over the other. Every merge to `main` publishes both from [`release.yml`](.github/workflows/release.yml). Get the APK from the [latest release](https://github.com/neteinstein/SMS-Redirect/releases/latest); [**how to install an APK**](docs/install-apk.md) walks through Developer options, "install unknown apps", Play Protect and restricted settings, with pictures.
+Both are the same app: same `applicationId` (`com.neteinstein.smsredirect`), same signing key and the same `versionCode` for a given release, so either one installs over the other. Every merge to `main` publishes both from [`release.yml`](.github/workflows/release.yml). Get the APK from the [latest release](https://github.com/neteinstein/SMS-Redirect/releases/latest); see [Install the APK](#install-the-apk-outside-google-play) below.
 
 [![SMS Toolbox launch video: Backup, Restore, Redirect, Schedule](store-listing/video/sms-toolbox-launch-preview.gif)](store-listing/video/sms-toolbox-launch.mp4)
 
 *Silent preview. The full 24-second launch video, with music, is [`store-listing/video/sms-toolbox-launch.mp4`](store-listing/video/sms-toolbox-launch.mp4) (download it to watch).*
 
-## Quick start
+## Install the APK (outside Google Play)
 
-### Prerequisites
+The GitHub APK has every feature (Backup & Restore, Redirect, Schedule). Installing it takes about five minutes the first time; after that the app updates itself from GitHub. If you only need Backup & Restore, the [Google Play version](https://play.google.com/store/apps/details?id=com.neteinstein.smsredirect) is simpler.
 
-- Android Studio (latest stable)
-- Android SDK for API 33+
-- JDK 17 (used by modern Android Gradle builds)
+> The pictures are illustrations of stock Android 14–16. Wording and menu locations differ a little between phone makers (Samsung, Xiaomi, OnePlus…), but the steps are the same.
 
-### Build, test, and lint
+### 1. Download the APK
 
-```bash
-./gradlew assembleGithubDebug   # every feature
-./gradlew assemblePlayDebug     # Backup & Restore only, as on Google Play
-./gradlew test                  # unit tests for both flavors
-./gradlew lint
-```
+On your phone, open the [latest release](https://github.com/neteinstein/SMS-Redirect/releases/latest) and, under **Assets**, tap **`SMS-Toolbox_v….apk`**. Only download it from this page. If your browser warns that *"this type of file can harm your device"*, tap **Download anyway**.
 
-### Install on a connected device
+<img src="docs/images/install-apk/01-download.png" alt="The GitHub release page with the SMS-Toolbox APK under Assets" width="300">
 
-```bash
-./gradlew installGithubDebug   # or installPlayDebug
-```
+### 2. Turn on Developer options
 
-## Features
+1. Open **Settings → About phone**.
+2. Tap **Build number** seven times. Enter your PIN if asked.
+3. You see **"You are now a developer!"**
 
-### SMS Backup to Gmail
-- Copies SMS messages to your own Gmail account over IMAP (`imap.gmail.com:993`, TLS)
-- Authenticates with a Gmail **app password** you supply; verified on save, stored encrypted with an Android Keystore key
-- Files messages under a Gmail label of your choice (default: `SMS`), created on first use
-- Configurable email subject template with `$CONTACT_NAME` and `$PHONE_NUMBER` placeholders
-- Groups each contact's messages into one Gmail conversation, and preserves each message's original timestamp
-- Backs up both received and sent SMS (not drafts, failed sends or MMS). A sent message is picked up within about two minutes
-- "Backup all previous SMS" backfills your existing messages; otherwise only messages received or sent after you enable it
-- Resumable: progress is stored in the database, so a killed app continues where it left off and never uploads a message twice
-- Progress notification while a backup runs
+<img src="docs/images/install-apk/02-build-number.png" alt="About phone, with Build number highlighted and the message You are now a developer" width="300">
 
-### SMS Restore from Gmail
-- **Restore messages** on the Backup tab copies everything under your Gmail label back to the phone, received and sent messages each into the right box
-- Messages already on the phone are skipped, so a restore is safe to run more than once, and restored messages are not uploaded again by the next backup
-- Android only lets the default SMS app write messages, so the app asks for the default-SMS role for the length of a user-started restore, then asks you to switch back to your usual messaging app
-- Runs in the background in bounded, resumable chunks; MMS is not restored
+Then open **Settings → System → Developer options** and make sure **Use developer options** is on. Nothing else in there needs changing.
 
-> **Why IMAP APPEND and not SMTP:** a Gmail label *is* an IMAP folder, so APPEND can file messages under your chosen label. SMTP can only deliver to the inbox, stamps everything with the send time (so years of history would all be dated today), and would hit Gmail's ~500/day sending cap during a backfill.
+<img src="docs/images/install-apk/03-developer-options.png" alt="Developer options with Use developer options turned on" width="300">
 
-### Message Capture & Forwarding
-- Background SMS forwarding via BroadcastReceiver (high priority 999)
-- WorkManager-based forwarding with expedited execution and retry on failure
-- Roaming-aware forwarding (configurable "Send while roaming" setting)
-- Configurable forward prefix prepended to forwarded messages (default: `SMS Toolbox:`)
-- Multipart SMS support for long messages
+> Some phones only allow installing apps from outside Google Play with Developer options on. On many phones this step is not needed; it does no harm, and you can turn Developer options off again once the app is installed.
 
-### Rule Management
-- Home screen to list, add, edit, and delete rules with drag-and-drop reordering
-- Rule screen to define a rule name, sender (text or contact), and target number (with contact picker)
-- Dual rule matching: sender text substring match (case-insensitive) OR exact digit match
-- First matching rule wins (evaluated in sort order)
-- Auto-generated rule names ("Rule #N") when left blank
-- Duplicate rule prevention (same sender + target blocked)
-- Phone number validation (minimum 4 digits, restricted to `0-9 + - ( )`)
-- Rule deletion with confirmation dialog
-- Default +351 country code for numbers without a country prefix
+### 3. Allow your browser to install apps
 
-### Settings
-- Send while roaming toggle (default: off)
-- Keep history toggle (default: on)
-- Show notifications toggle (default: off) — posts a system notification after each successful forward
-- Forward prefix text field (default: `SMS Toolbox:`)
-- Gmail account section — address and app password, verified against Gmail when saved
-- Default country prefix dropdown (None / +351 Portugal)
-- Forward history viewer (last 50 forwarded messages with sender, target, rule, timestamp, and body)
+Open the downloaded file (from the download notification, or **Files → Downloads**). The first time, Android says your phone *"isn't allowed to install unknown apps from this source"*. Tap **Settings**, turn on **Allow from this source**, then go back.
 
-### General
-- Splash screen with app emoji and name
-- Contextual runtime permission requests (SMS, Contacts, Notifications) with a rationale dialog shown before each system prompt, rather than an upfront onboarding screen
-- Battery optimization exemption prompt shown after creating your first rule or scheduled SMS, with a persistent warning banner on Home if declined
-- Deep link support (`smsredirect://app` URI scheme)
-- Contact name resolution for forwarded-message notifications
-- Message deduplication (30-second window prevents double-forwards)
-- Dark mode support (Material3 dynamic colors)
-- Android 13+ support (min SDK 33, target SDK 37)
+<img src="docs/images/install-apk/04-unknown-source.png" alt="Install unknown apps, with Allow from this source turned on for Chrome" width="300">
 
-## Testing on a device (sideloaded via ADB)
+### 4. Install, and accept the warnings
 
-When deploying the app from Android Studio or ADB, it is considered **sideloaded**. On Android 13+, the system restricts SMS permissions for sideloaded apps by default — the permission toggle may be grayed out, or may appear to grant successfully but not actually take effect, in both cases.
+1. Android asks **"Do you want to install this app?"**: tap **Install**.
 
-### Required setup after install
+   <img src="docs/images/install-apk/05-install.png" alt="The Android installer asking Do you want to install this app" width="300">
 
-1. Go to **Settings > Apps > SMS Toolbox**
-2. Tap the **three-dot menu** (top right)
-3. Select **"Allow restricted settings"**
-4. Back in the app, add a rule or scheduled SMS to trigger the SMS permission dialog, then grant RECEIVE_SMS, SEND_SMS, and READ_SMS when prompted
-5. Tap "pick contact" from a rule or scheduled SMS to trigger and grant **Contacts** permission if you want to use the contact picker
+2. **Google Play Protect** may stop the install because the app did not come from Play. Tap **More details**, then **Install anyway**. If it offers to scan the app, you can let it: the APK is built from the public source in this repository by [`release.yml`](.github/workflows/release.yml).
 
-### Verifying the receiver works
+   <img src="docs/images/install-apk/06-play-protect.png" alt="Play Protect's Unsafe app blocked dialog, with Install anyway highlighted" width="300">
 
-Filter logcat to the app's tags while sending a test SMS:
+### 5. Allow restricted settings (Android 13 and later)
 
-```bash
-adb logcat -s SmsReceiver ForwardSmsWorker SmsForwarder FindMatchingRule
-```
+Android blocks SMS permissions for apps installed outside an app store until you allow them once. The app shows a reminder the first time you open it.
 
-You should see output like:
+1. Open **Settings → Apps → SMS Toolbox**.
+2. Tap the **⋮** menu in the top-right corner, then **Allow restricted settings**, and confirm with your PIN or fingerprint.
 
-```
-SmsReceiver: onReceive triggered — action=android.provider.Telephony.SMS_RECEIVED
-SmsReceiver: SMS received from='+351...', bodyLength=12
-ForwardSmsWorker: Enqueued forwarding work for sender='+351...'
-ForwardSmsWorker: doWork() — sender='+351...', bodyLength=12
-SmsForwarder: forward() called — sender='+351...', bodyLength=12
-FindMatchingRule: Checking 1 rules against sender='...'
-FindMatchingRule:   Rule id=1 name='...': senderText='...' matchesText=true
-SmsForwarder: Matched rule id=1 — forwarding to '...'
-SmsForwarder: SMS forwarded successfully to '...'
-SmsForwarder: Forward saved to history
-```
+<img src="docs/images/install-apk/07-restricted-settings.png" alt="App info for SMS Toolbox with the menu open on Allow restricted settings" width="300">
 
-### Troubleshooting
+Now open SMS Toolbox. It asks for each permission only when a feature needs it.
 
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| No `SmsReceiver` log at all | Restricted settings not enabled | Follow "Allow restricted settings" steps above |
-| `Skipping: SEND_SMS permission not granted` | Missing SEND_SMS permission | Grant in system settings |
-| `Skipping: no matching rule found` | Rule sender doesn't match incoming SMS | Check rule sender text matches the originating address |
-| `Skipping: forwarding disabled while roaming` | Device is roaming and setting is off | Enable "Send while roaming" in app settings |
-| `Failed: SmsManager is null` | No default SIM/subscription | Ensure a SIM is active |
+### 6. Updates
 
-### Test on the Emulator
+Once a day, when you open it, the app checks this repository for a new release. When there is one, a banner appears at the top of the main screen: tap **Update**, then **Download and install** in **Settings → Updates**. The first time, Android asks you to allow SMS Toolbox to install apps (like step 3). Your settings and backups are kept.
 
-#### How to test SMS broadcasts on the emulator
+<img src="docs/images/install-apk/08-in-app-update.png" alt="Settings, Updates section with Download and install, and the update banner" width="300">
 
-##### Method 1: Emulator Extended Controls (easiest)
+Moving between the Play and GitHub versions, and what the update check sends, are covered in the [full install guide](docs/install-apk.md).
 
-1. Launch your emulator from Android Studio and make sure your app is installed.
-2. Ensure SMS permissions are granted in emulator app settings (or via runtime permission prompt).
-3. In the emulator sidebar, click the three dots (`...`) to open **Extended Controls**.
-4. In the left menu, select **Phone**.
-5. Type a mock number in the **From** field (for example `555-1234`).
-6. Type your test message in the SMS message field.
-7. Click **Send Message**.
+## Development
 
-You should see a native Android SMS notification in the emulator and `onReceive()` should execute. You can place a breakpoint in `SmsReceiver` to inspect the intent payload.
-
-##### Method 2: Terminal using ADB/telnet
-
-1. List active devices/emulators:
-
-```bash
-adb devices
-```
-
-2. Connect to the emulator modem console (typically port `5554`):
-
-```bash
-telnet localhost 5554
-```
-
-If asked for an auth token, run:
-
-```bash
-cat ~/.emulator_console_auth_token
-```
-
-Then authenticate in telnet with:
-
-```text
-auth <token>
-```
-
-3. Send an inbound SMS:
-
-```text
-sms send 5551234 "This is a test message"
-```
-
-## Run tests
-
-```bash
-./gradlew test
-```
-
-## Firebase (Crashlytics, Analytics & Performance Monitoring)
-
-The app integrates [Firebase](https://firebase.google.com/) for:
-
-- **Crashlytics** — automatic crash reporting, plus non-fatal exception
-  reporting for forwarding/sending failures.
-- **Analytics** — anonymous, aggregate usage events for relevant app actions
-  (e.g. a rule was created/updated/deleted, an SMS was forwarded, a scheduled
-  SMS was sent, a setting was toggled). **No personal data is ever logged**
-  (no phone numbers, contact names, or message contents) — see
-  `domain/analytics/AnalyticsEvents.kt` for the full event catalog.
-
-- **Performance Monitoring** — automatic app-start and rendering traces via
-  the `com.google.firebase.firebase-perf` Gradle plugin. This was previously
-  disabled because the plugin didn't support Android Gradle Plugin 9 (it
-  relied on the removed legacy `Transform` API — see
-  [firebase-android-sdk#7293](https://github.com/firebase/firebase-android-sdk/issues/7293)),
-  but a compatible plugin release has since shipped, so it's re-enabled.
-
-### Setup
-
-The repository ships with `app/google-services.json` wired to the
-`sms-redirect-schedule` Firebase project (package name
-`com.neteinstein.smsredirect`), so Crashlytics/Analytics/Performance
-Monitoring report out of the box after building the app.
-
-To point the app at a different Firebase project instead:
-
-1. Create a Firebase project at the [Firebase console](https://console.firebase.google.com/).
-2. Add an Android app with package name `com.neteinstein.smsredirect`.
-3. Download the generated `google-services.json` and replace
-   `app/google-services.json` with it.
-4. Rebuild the app — Crashlytics and Analytics start reporting automatically.
-
-The analytics/crash abstractions (`domain/analytics/AnalyticsTracker.kt` and
-`domain/analytics/CrashReporter.kt`) decouple the rest of the app from
-Firebase, so the backend could be swapped without touching call sites.
-
-## Architecture
-
-See [Architecture.md](Architecture.md) for detailed system design documentation including the message capture pipeline, rule matching logic, data layer, and dependency wiring.
-
-## Privacy
-
-See [PrivacyPolicy.md](PrivacyPolicy.md) for the app's privacy policy — all rules, schedules, and history stay on-device; only anonymous Firebase crash/analytics data ever leaves it.
-
-## Tech Stack
-
-- **Language:** Kotlin
-- **Build:** Gradle Kotlin DSL
-- **UI:** Jetpack Compose + Material3
-- **Navigation:** Jetpack Navigation Compose
-- **Database:** Room (SQLite)
-- **Background work:** WorkManager (expedited)
-- **Analytics/Crash reporting:** Firebase (Analytics, Crashlytics)
-- **Architecture:** MVVM + Clean Architecture (Use Cases / Repository pattern)
-- **DI:** Manual (AppContainer)
-- **Min SDK:** 33 (Android 13)
+Building, testing, the feature list, on-device and emulator testing, Firebase setup, and the tech stack are in [Development.md](Development.md). The system design is in [Architecture.md](Architecture.md) and the privacy policy in [PrivacyPolicy.md](PrivacyPolicy.md).
