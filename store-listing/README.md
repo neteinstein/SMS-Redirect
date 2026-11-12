@@ -27,9 +27,17 @@ store-listing/
 | Play Console field | File | Limit | Current length |
 |---|---|---|---|
 | App name | `text/<locale>/title.txt` | 30 chars | 11 (en-US) / 11 (pt-PT) |
-| Short description | `text/<locale>/short_description.txt` | 80 chars | 72 (en-US) / 77 (pt-PT) |
-| Full description | `text/<locale>/full_description.txt` | 4000 chars | 3787 (en-US) / 3931 (pt-PT) |
-| What's new (this release) | `text/<locale>/release_notes.txt` | 500 chars | 355 (en-US) / 381 (pt-PT) |
+| Short description | `text/<locale>/short_description.txt` | 80 chars | 77 (en-US) / 80 (pt-PT) |
+| Full description | `text/<locale>/full_description.txt` | 4000 chars | 3090 (en-US) / 3267 (pt-PT) |
+| What's new (this release) | `text/<locale>/release_notes.txt` | 500 chars | 340 (en-US) / 356 (pt-PT) |
+
+The text describes the **`play` flavor** (Backup only). Redirect and Schedule ship only in the
+GitHub `full` APK and must not be advertised here — the listing has to match the
+"Backup and restore" SMS permissions declaration.
+
+⚠️ The **RESTORE** section and release notes describe restoring SMS from Gmail to the phone
+(temporarily becoming the default SMS app). Do not publish this text until that feature ships —
+a listing that promises a missing feature is itself a policy violation.
 
 Paste each file's contents verbatim into the matching field for that locale.
 `pt-PT` matches the tone/wording already used in `app/src/main/res/values-pt/strings.xml`
@@ -122,7 +130,8 @@ python3 store-listing/scripts/generate_assets.py
 
 ## ⚠️ Before this can go live: the SMS permissions declaration
 
-This app requests `READ_SMS` / `RECEIVE_SMS` / `SEND_SMS`. Play Console will
+The Play build (`play` flavor) requests `READ_SMS` / `RECEIVE_SMS` only —
+`SEND_SMS`, Redirect and Schedule exist only in the GitHub (`full`) APK. Play Console will
 block publishing until you complete **App content > Permissions declaration
 form** and justify these under one of Google's allowed core-use categories.
 
@@ -138,10 +147,9 @@ Notes for the submission:
   enter Gmail address + app password → Save (it verifies against Gmail) → Backup
   tab → Enable → messages appearing under the Gmail label. Show that backup is
   the app's purpose, not a side feature.
-- `SEND_SMS` is **not** one of the declaration-gated permissions — that set is
-  `READ_SMS`, `RECEIVE_SMS`, `RECEIVE_WAP_PUSH`, `RECEIVE_MMS` plus the call-log
-  ones — so keeping Redirect and Schedule alongside backup should be compatible.
-  Confirm on the form itself; policy wording shifts.
+- Redirect and Schedule (and `SEND_SMS`) are **not** in the Play build; Play does
+  not allow them alongside the "Backup and restore" declaration. The Settings
+  screen of the Play build says so. Don't describe them in the store listing.
 - `READ_SMS` was declared but never actually used before this feature. It is now
   genuinely exercised by the backup scan, so the declared use and the observed
   behaviour finally agree — a mismatch between the two is one of the most common

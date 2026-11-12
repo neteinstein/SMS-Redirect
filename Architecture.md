@@ -8,6 +8,19 @@ SMS Toolbox is an Android app with three independent features, presented as bott
 - **Redirect** — intercepts incoming SMS messages matching user-defined rules and forwards them to a configured target phone number via SMS.
 - **Schedule** — lets the user compose a message once and have it sent automatically at a future date/time, optionally repeating on a recurring pattern.
 
+### Distributions (`distribution` flavor dimension)
+
+| Flavor | Shipped to | Tabs | `SEND_SMS` |
+|---|---|---|---|
+| `play` | Google Play (`bundlePlayRelease`) | Backup only | Removed from the merged manifest by `src/play/AndroidManifest.xml` (`tools:node="remove"`) |
+| `full` | GitHub release APK (`assembleFullRelease`) | Backup, Redirect, Schedule | Declared |
+
+Both share the `com.neteinstein.smsredirect` applicationId and all of `src/main`. Code branches on
+`BuildConfig.SMS_SENDING_ENABLED`: `MainTab.available()` filters the tabs, `SmsReceiver` skips
+`ForwardSmsWorker`, the send-history deep links resolve to nothing, and Settings hides the
+roaming/prefix rows and shows a notice explaining the Play build is a subset. The Play publish
+workflow fails if `SEND_SMS` reappears in the play merged manifest.
+
 All three share the same app shell (permissions flow, Settings screen, deep-link handling) but are otherwise independent end-to-end: separate domain models, separate Room tables, separate use cases, separate WorkManager jobs.
 
 > **A note on the word "backup".** It means two different things in this codebase.
@@ -308,7 +321,8 @@ Permissions are requested contextually rather than upfront at first launch — t
 
 | Permission | Requested when | Purpose |
 |---|-----------|---------|
-| `READ_SMS` / `RECEIVE_SMS` / `SEND_SMS` | Adding the first rule or scheduled SMS | Read the inbox for backup; detect and forward/send SMS (MMS/RCS are out of scope). `READ_SMS` was declared but unused before the Backup feature — it is now genuinely exercised |
+| `READ_SMS` / `RECEIVE_SMS` | Enabling Backup, or adding the first rule or scheduled SMS | Read the inbox for backup; detect incoming SMS (MMS/RCS are out of scope) |
+| `SEND_SMS` (full flavor only) | Adding the first rule or scheduled SMS — never by Backup | Forward / send SMS. Not declared at all in the `play` flavor |
 | `READ_CONTACTS` | Tapping "pick contact" for the first time | Pick contacts for rules and scheduled SMS |
 | `POST_NOTIFICATIONS` | Turning on "Show notifications" in Settings, **or** enabling Gmail backup | Backup progress; notify after a successful forward or scheduled send. The Backup tab requests it too, because otherwise a user who never opens the notification toggle would silently never see backup progress |
 | `INTERNET` / `ACCESS_NETWORK_STATE` | Not runtime-requested (install-time) | Reach `imap.gmail.com`. Both previously arrived only via manifest merge from the Firebase/WorkManager AARs; they are now declared explicitly |

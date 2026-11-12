@@ -128,8 +128,8 @@ Both must pass before merging. Always run these locally before pushing.
 # Run unit tests
 ./gradlew test
 
-# Build debug APK
-./gradlew assembleDebug
+# Build debug APK (flavors: play = Backup only, no SEND_SMS; full = everything)
+./gradlew assembleFullDebug   # or assemblePlayDebug
 ```
 
 ## Common Patterns

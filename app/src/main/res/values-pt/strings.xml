@@ -10,7 +10,7 @@
     <string name="action_proceed">Continuar</string>
 
     <string name="sideload_warning_title">Permitir definições restritas</string>
-    <string name="sideload_warning_message">Esta app não foi instalada pela Play Store. É necessário um passo extra:\n\n1. Vá a Definições > Apps > SMS Toolbox\n2. Toque no menu de três pontos (canto superior direito)\n3. Selecione \"Permitir definições restritas\"\n\nPrima OK para abrir o ecrã de definições da app.</string>
+    <string name="sideload_warning_message">O Android bloqueou o acesso às SMS porque esta app não foi instalada pela Play Store. Para o permitir:\n\n1. Prima OK para abrir as Informações da app\n2. Toque no menu de três pontos (canto superior direito)\n3. Selecione \"Permitir definições restritas\"\n4. Volte e tente novamente</string>
 
     <string name="sms_permission_rationale_title">Permissão de SMS necessária</string>
     <string name="sms_permission_rationale_message">O SMS Toolbox precisa de permissões de SMS para ler mensagens de texto recebidas, criar cópias de segurança e reencaminhá-las ou enviá-las por si. Mensagens MMS e RCS não são suportadas e não serão reencaminhadas nem agendadas.</string>
@@ -66,6 +66,7 @@
     <string name="rule_default_name_format">Regra #%1$d</string>
 
     <string name="settings_title">Definições</string>
+    <string name="settings_play_subset_notice">Esta é uma versão reduzida da aplicação, que também suporta Reencaminhamento de SMS e Mensagens agendadas. Essas funcionalidades não são permitidas na Play Store, por isso foram removidas da versão da Play Store.</string>
     <string name="settings_language">Idioma</string>
     <string name="settings_language_system_default">Predefinição do sistema</string>
     <string name="settings_landing_screen_label">Ecrã inicial</string>

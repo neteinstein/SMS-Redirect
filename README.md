@@ -14,8 +14,11 @@ Three features, as bottom-navigation tabs: **Backup** SMS to your own Gmail acco
 
 ### Build, test, and lint
 
+There are two flavors: `play` (Backup only, no `SEND_SMS` — what Google Play gets) and
+`full` (Backup + Redirect + Schedule — the GitHub release APK).
+
 ```bash
-./gradlew assembleDebug
+./gradlew assembleFullDebug   # or assemblePlayDebug
 ./gradlew test
 ./gradlew lint
 ```
@@ -23,7 +26,7 @@ Three features, as bottom-navigation tabs: **Backup** SMS to your own Gmail acco
 ### Install on a connected device
 
 ```bash
-./gradlew installDebug
+./gradlew installFullDebug   # or installPlayDebug
 ```
 
 ## Features
@@ -77,17 +80,14 @@ Three features, as bottom-navigation tabs: **Backup** SMS to your own Gmail acco
 - Dark mode support (Material3 dynamic colors)
 - Android 13+ support (min SDK 33, target SDK 37)
 
-## Testing on a device (sideloaded via ADB)
+## Installing outside the Play Store
 
-When deploying the app from Android Studio or ADB, it is considered **sideloaded**. On Android 13+, the system restricts SMS permissions for sideloaded apps by default — the permission toggle may be grayed out, or may appear to grant successfully but not actually take effect, in both cases.
-
-### Required setup after install
-
-1. Go to **Settings > Apps > SMS Toolbox**
-2. Tap the **three-dot menu** (top right)
-3. Select **"Allow restricted settings"**
-4. Back in the app, add a rule or scheduled SMS to trigger the SMS permission dialog, then grant RECEIVE_SMS, SEND_SMS, and READ_SMS when prompted
-5. Tap "pick contact" from a rule or scheduled SMS to trigger and grant **Contacts** permission if you want to use the contact picker
+The Play Store version is Backup only. To install the full version (Redirect + Schedule) from
+GitHub Releases, follow **[Install.md](Install.md)**. It covers allowing unknown sources, Play
+Protect, the **"Allow restricted settings"** step Android requires before granting SMS
+permissions to a sideloaded app, and installing via ADB. Builds deployed from Android Studio or
+`adb install` are **not** restricted (verified on Android 17); only APKs opened from a
+browser or file manager are.
 
 ### Verifying the receiver works
 

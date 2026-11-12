@@ -35,6 +35,7 @@ import com.neteinstein.smsredirect.presentation.theme.Dimens
 
 @Composable
 fun MainBottomBar(
+    tabs: List<MainTab>,
     selectedTab: MainTab,
     onTabSelected: (MainTab) -> Unit,
     onFabClick: () -> Unit,
@@ -42,6 +43,8 @@ fun MainBottomBar(
     /** The Backup tab has no "create" action, so it hides the FAB and takes the full width. */
     showFab: Boolean = true,
 ) {
+    // A one-tab bar with no FAB (the Play build, which only has Backup) is pure chrome.
+    if (tabs.size <= 1 && !showFab) return
     Row(
         modifier =
             Modifier
@@ -63,7 +66,7 @@ fun MainBottomBar(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                MainTab.entries.forEach { tab ->
+                tabs.forEach { tab ->
                     FloatingTabItem(
                         selected = selectedTab == tab,
                         onClick = { onTabSelected(tab) },

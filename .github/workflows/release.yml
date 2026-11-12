@@ -80,11 +80,12 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew assembleRelease -PVERSION_CODE=${{ github.run_number }}
+        run: ./gradlew assembleFullRelease -PVERSION_CODE=${{ github.run_number }}
 
       - name: Rename APK
         run: |
-          mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/SMS-Toolbox_v${{ steps.bump.outputs.new_version }}.apk
+          mkdir -p app/build/outputs/apk/release
+          mv app/build/outputs/apk/full/release/app-full-release.apk app/build/outputs/apk/release/SMS-Toolbox_v${{ steps.bump.outputs.new_version }}.apk
 
       - name: Generate release notes
         env:
@@ -114,6 +115,9 @@ jobs:
             fi
             sleep $((attempt * 5))
           done
+          # Every release links the sideload guide: the APK is useless without its step 4.
+          printf '**Installing:** see the [installation guide](https://github.com/${{ github.repository }}/blob/main/Install.md), including the "Allow restricted settings" step SMS access needs.\n\n%s\n' "$(cat release_notes.md)" > release_notes.md.tmp
+          mv release_notes.md.tmp release_notes.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3

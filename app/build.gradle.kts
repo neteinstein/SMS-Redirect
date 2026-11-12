@@ -58,6 +58,23 @@ android {
         }
     }
 
+    // Two distributions of the same app (same applicationId, so they replace each other):
+    //  - play: what Google Play gets. Backup only. SEND_SMS is stripped from the merged manifest
+    //    (src/play/AndroidManifest.xml) and the Redirect / Schedule tabs are hidden, because Play's
+    //    review is far stricter about an app that can send SMS than one that only reads them.
+    //  - full: the GitHub release APK. Backup + Redirect + Schedule.
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("play") {
+            dimension = "distribution"
+            buildConfigField("boolean", "SMS_SENDING_ENABLED", "false")
+        }
+        create("full") {
+            dimension = "distribution"
+            buildConfigField("boolean", "SMS_SENDING_ENABLED", "true")
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".test"

@@ -10,7 +10,7 @@
     <string name="action_proceed">Proceed</string>
 
     <string name="sideload_warning_title">Allow restricted settings</string>
-    <string name="sideload_warning_message">This app was not installed via the Play Store. An extra step is required:\n\n1. Go to Settings > Apps > SMS Toolbox\n2. Tap the three-dot menu (top right)\n3. Select \"Allow restricted settings\"\n\nPress OK to open the app settings screen.</string>
+    <string name="sideload_warning_message">Android blocked SMS access because this app was not installed from the Play Store. To allow it:\n\n1. Press OK to open App info\n2. Tap the three-dot menu (top right)\n3. Select \"Allow restricted settings\"\n4. Come back and try again</string>
 
     <string name="sms_permission_rationale_title">SMS permission needed</string>
     <string name="sms_permission_rationale_message">SMS Toolbox needs SMS permissions to read incoming text messages, back them up and forward or send them for you. MMS and RCS messages are out of scope and will not be forwarded or scheduled.</string>
@@ -65,6 +65,7 @@
     <string name="rule_default_name_format">Rule #%1$d</string>
 
     <string name="settings_title">Settings</string>
+    <string name="settings_play_subset_notice">This is a subset of the app, which also supports SMS Redirect and Scheduled messages. Those features are not allowed on the Play Store, so they were removed from the Play Store version.</string>
     <string name="settings_language">Language</string>
     <string name="settings_language_system_default">System default</string>
     <string name="settings_landing_screen_label">Landing screen</string>

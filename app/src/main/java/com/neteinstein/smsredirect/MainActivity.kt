@@ -83,12 +83,15 @@ import kotlinx.coroutines.flow.collectLatest
 import java.io.File
 
 class MainActivity : ComponentActivity() {
-    private val smsPermissions =
+    // Backup only reads SMS. SEND_SMS is asked for only by the features that send (Redirect,
+    // Schedule), and never in the Play build, whose manifest does not declare it at all.
+    private val readSmsPermissions =
         arrayOf(
             Manifest.permission.RECEIVE_SMS,
             Manifest.permission.READ_SMS,
-            Manifest.permission.SEND_SMS,
         )
+    private val sendSmsPermissions = readSmsPermissions + Manifest.permission.SEND_SMS
+    private val availableTabs = MainTab.available(BuildConfig.SMS_SENDING_ENABLED)
 
     private val newIntentFlow = MutableStateFlow<Intent?>(null)
 
@@ -118,7 +121,11 @@ class MainActivity : ComponentActivity() {
                 }
 
                 var showBatteryDialog by remember { mutableStateOf(false) }
-                val showSideloadDialog = remember { mutableStateOf(shouldShowSideloadWarning()) }
+                // Shown only after Android has denied SMS to a sideloaded install. Android adds the
+                // App info "Allow restricted settings" entry only after that first denial, so
+                // showing these instructions any earlier (e.g. at launch) points at a menu item
+                // that does not exist yet.
+                val showSideloadDialog = remember { mutableStateOf(false) }
 
                 val lifecycleOwnerTop = LocalLifecycleOwner.current
                 var appResumeTick by remember { mutableIntStateOf(0) }
@@ -141,15 +148,11 @@ class MainActivity : ComponentActivity() {
 
                 if (showSideloadDialog.value) {
                     AlertDialog(
-                        onDismissRequest = {
-                            dismissSideloadWarning()
-                            showSideloadDialog.value = false
-                        },
+                        onDismissRequest = { showSideloadDialog.value = false },
                         title = { Text(stringResource(R.string.sideload_warning_title)) },
                         text = { Text(stringResource(R.string.sideload_warning_message)) },
                         confirmButton = {
                             TextButton(onClick = {
-                                dismissSideloadWarning()
                                 showSideloadDialog.value = false
                                 openAppSettings()
                             }) {
@@ -211,15 +214,19 @@ class MainActivity : ComponentActivity() {
                         var selectedTab by
                             rememberSaveable {
                                 mutableStateOf(
+                                    // A REDIRECT/SCHEDULE preference can reach the Play build
+                                    // via an imported configuration from the full build; fall
+                                    // back to Backup rather than open a tab it doesn't have.
                                     when (landingScreen) {
                                         LandingScreen.BACKUP -> MainTab.BACKUP
                                         LandingScreen.REDIRECT -> MainTab.REDIRECT
                                         LandingScreen.SCHEDULE -> MainTab.SCHEDULE
-                                    },
+                                    }.takeIf { it in availableTabs } ?: MainTab.BACKUP,
                                 )
                             }
 
                         var pendingSmsAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+                        var pendingSmsPermissions by remember { mutableStateOf(readSmsPermissions) }
                         var showSmsRationale by remember { mutableStateOf(false) }
                         var showSmsDenied by remember { mutableStateOf(false) }
 
@@ -231,6 +238,10 @@ class MainActivity : ComponentActivity() {
                                 pendingSmsAction = null
                                 if (results.values.all { it } && action != null) {
                                     action()
+                                } else if (!isInstalledFromPlayStore()) {
+                                    // Most likely Android's restricted-settings block, not the
+                                    // user saying no: explain how to lift it.
+                                    showSideloadDialog.value = true
                                 } else {
                                     showSmsDenied = true
                                 }
@@ -239,17 +250,18 @@ class MainActivity : ComponentActivity() {
                         // Gates any action that needs READ_SMS/RECEIVE_SMS behind the same
                         // rationale/request flow, whether it navigates to a create screen or (for
                         // Backup) simply flips a toggle in place.
-                        val requestSmsPermission: (() -> Unit) -> Unit = { action ->
-                            if (hasSmsPermissions()) {
+                        val requestSmsPermission: (Array<String>, () -> Unit) -> Unit = { permissions, action ->
+                            if (hasPermissions(permissions)) {
                                 action()
                             } else {
                                 pendingSmsAction = action
+                                pendingSmsPermissions = permissions
                                 showSmsRationale = true
                             }
                         }
 
                         val requestCreate: (String) -> Unit = { route ->
-                            requestSmsPermission { navController.navigate(route) }
+                            requestSmsPermission(sendSmsPermissions) { navController.navigate(route) }
                         }
 
                         if (showSmsRationale) {
@@ -271,7 +283,7 @@ class MainActivity : ComponentActivity() {
                                 confirmButton = {
                                     TextButton(onClick = {
                                         showSmsRationale = false
-                                        smsPermissionLauncher.launch(smsPermissions)
+                                        smsPermissionLauncher.launch(pendingSmsPermissions)
                                     }) {
                                         Text(stringResource(R.string.action_proceed))
                                     }
@@ -294,6 +306,7 @@ class MainActivity : ComponentActivity() {
 
                         val bottomBar: @Composable () -> Unit = {
                             MainBottomBar(
+                                tabs = availableTabs,
                                 selectedTab = selectedTab,
                                 onTabSelected = { selectedTab = it },
                                 onFabClick = {
@@ -346,9 +359,8 @@ class MainActivity : ComponentActivity() {
                                     onBackupPreviousChanged = backupViewModel::onBackupPreviousChanged,
                                     onToggleBackupEnabled = {
                                         // Backup reads the SMS content provider directly, so it
-                                        // needs the same READ_SMS/RECEIVE_SMS grant Redirect and
-                                        // Schedule require before they can create anything.
-                                        requestSmsPermission {
+                                        // needs READ_SMS/RECEIVE_SMS -- but not SEND_SMS.
+                                        requestSmsPermission(readSmsPermissions) {
                                             if (!backupState.settings.backupEnabled &&
                                                 ContextCompat.checkSelfPermission(
                                                     this@MainActivity,
@@ -612,6 +624,7 @@ class MainActivity : ComponentActivity() {
                             onImportBackup = { importLauncher.launch("application/json") },
                             onOpenLanguageSettings = { openAppLocaleSettings() },
                             onBack = { navController.popBackStack() },
+                            smsSendingEnabled = BuildConfig.SMS_SENDING_ENABLED,
                         )
                     }
 
@@ -1019,8 +1032,8 @@ class MainActivity : ComponentActivity() {
         return if (number.isNotBlank()) Pair(number, displayName) else null
     }
 
-    private fun hasSmsPermissions(): Boolean =
-        smsPermissions.all {
+    private fun hasPermissions(permissions: Array<String>): Boolean =
+        permissions.all {
             ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
 
@@ -1054,23 +1067,11 @@ class MainActivity : ComponentActivity() {
         runCatching { startActivity(intent) }
     }
 
-    private fun shouldShowSideloadWarning(): Boolean {
-        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        if (prefs.getBoolean(KEY_SIDELOAD_DISMISSED, false)) return false
-        return !isInstalledFromPlayStore()
-    }
-
     private fun isInstalledFromPlayStore(): Boolean =
         runCatching {
             val sourceInfo = packageManager.getInstallSourceInfo(packageName)
             sourceInfo.installingPackageName == "com.android.vending"
         }.getOrDefault(false)
-
-    private fun dismissSideloadWarning() {
-        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit {
-            putBoolean(KEY_SIDELOAD_DISMISSED, true)
-        }
-    }
 
     private fun openAppSettings() {
         val intent =
@@ -1115,6 +1116,8 @@ class MainActivity : ComponentActivity() {
     private fun resolveDeepLinkRoute(intent: Intent?): String? {
         val uri = intent?.data ?: return null
         if (uri.scheme != "smsredirect" || uri.host != "app") return null
+        // Both deep-linkable screens are send-feature history, which the Play build does not have.
+        if (!BuildConfig.SMS_SENDING_ENABLED) return null
         return when (uri.path) {
             "/${Routes.History}" -> Routes.History
             "/${Routes.ScheduleHistory}" -> Routes.ScheduleHistory
@@ -1126,7 +1129,6 @@ class MainActivity : ComponentActivity() {
         private const val TAG = "MainActivity"
         private const val PREFS_NAME = "sms_redirect_prefs"
         private const val GOOGLE_APP_PASSWORDS_URL = "https://myaccount.google.com/apppasswords"
-        private const val KEY_SIDELOAD_DISMISSED = "sideload_warning_dismissed"
         private const val KEY_BATTERY_BANNER_ENABLED = "battery_banner_enabled"
     }
 }

@@ -21,4 +21,16 @@ enum class MainTab(
     BACKUP(R.string.main_tab_backup, Icons.Default.Backup),
     REDIRECT(R.string.main_tab_redirect, Icons.AutoMirrored.Filled.Forward),
     SCHEDULE(R.string.main_tab_schedule, Icons.Default.Schedule),
+    ;
+
+    /** Whether this tab's feature sends SMS, and so needs `SEND_SMS`. */
+    val sendsSms: Boolean get() = this != BACKUP
+
+    companion object {
+        /**
+         * The tabs this build shows. The Play distribution does not declare `SEND_SMS`, so it
+         * shows Backup only; see the `distribution` flavor dimension in `app/build.gradle.kts`.
+         */
+        fun available(smsSendingEnabled: Boolean): List<MainTab> = entries.filter { smsSendingEnabled || !it.sendsSms }
+    }
 }

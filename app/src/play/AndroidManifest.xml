@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Play distribution: Backup only. SEND_SMS is declared in src/main for the full (GitHub)
+     build's Redirect and Schedule features; remove it here so the Play bundle never declares
+     or requests it. Verify with:
+     ./gradlew processPlayReleaseMainManifest and grep the merged manifest for SEND_SMS. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.SEND_SMS" tools:node="remove" />
+
+</manifest>

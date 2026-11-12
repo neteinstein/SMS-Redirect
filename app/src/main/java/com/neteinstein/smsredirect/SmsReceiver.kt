@@ -33,7 +33,10 @@ class SmsReceiver : BroadcastReceiver() {
 
         Log.i(TAG, "SMS received from='$sender', bodyLength=${body.length}")
 
-        ForwardSmsWorker.enqueue(context, sender, body)
+        // The Play build has no Redirect feature and no SEND_SMS, so there is nothing to forward.
+        if (BuildConfig.SMS_SENDING_ENABLED) {
+            ForwardSmsWorker.enqueue(context, sender, body)
+        }
 
         // Backup is triggered for every incoming SMS, independent of whether a redirect rule
         // matched -- SmsForwarder early-returns on missing SEND_SMS, on roaming and on no rule

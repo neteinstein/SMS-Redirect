@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.NotificationsActive
@@ -40,6 +41,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -86,6 +88,8 @@ fun SettingsScreen(
     onImportBackup: () -> Unit,
     onOpenLanguageSettings: () -> Unit,
     onBack: () -> Unit,
+    /** False in the Play build: no Redirect/Schedule, so their settings are hidden and explained. */
+    smsSendingEnabled: Boolean = true,
 ) {
     Scaffold(
         topBar = {
@@ -109,24 +113,33 @@ fun SettingsScreen(
                     .padding(padding)
                     .verticalScroll(rememberScrollState()),
         ) {
+            if (!smsSendingEnabled) {
+                PlayStoreSubsetNotice()
+            }
+
             LanguageRow(
                 currentLanguageLabel = currentLanguageLabel,
                 onClick = onOpenLanguageSettings,
             )
 
-            LandingScreenDropdown(
-                selected = landingScreen,
-                onSelected = onLandingScreenChanged,
-            )
+            // With Backup as the only tab (Play build) there is nothing to choose between.
+            if (smsSendingEnabled) {
+                LandingScreenDropdown(
+                    selected = landingScreen,
+                    onSelected = onLandingScreenChanged,
+                )
+            }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-            SettingSwitchRow(
-                icon = Icons.Default.SignalCellularAlt,
-                title = stringResource(R.string.settings_send_while_roaming),
-                checked = sendWhileRoaming,
-                onCheckedChange = onSendWhileRoamingChanged,
-            )
+            if (smsSendingEnabled) {
+                SettingSwitchRow(
+                    icon = Icons.Default.SignalCellularAlt,
+                    title = stringResource(R.string.settings_send_while_roaming),
+                    checked = sendWhileRoaming,
+                    onCheckedChange = onSendWhileRoamingChanged,
+                )
+            }
 
             SettingSwitchRow(
                 icon = Icons.Default.NotificationsActive,
@@ -135,15 +148,17 @@ fun SettingsScreen(
                 onCheckedChange = onShowNotificationsChanged,
             )
 
-            ForwardPrefixRow(
-                currentPrefix = forwardPrefix,
-                onSave = onForwardPrefixSaved,
-            )
+            if (smsSendingEnabled) {
+                ForwardPrefixRow(
+                    currentPrefix = forwardPrefix,
+                    onSave = onForwardPrefixSaved,
+                )
 
-            DefaultPrefixDropdown(
-                selectedPrefix = defaultPrefix,
-                onPrefixSelected = onDefaultPrefixChanged,
-            )
+                DefaultPrefixDropdown(
+                    selectedPrefix = defaultPrefix,
+                    onPrefixSelected = onDefaultPrefixChanged,
+                )
+            }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -238,6 +253,30 @@ private fun ForwardPrefixRow(
             Icon(
                 imageVector = Icons.Default.Check,
                 contentDescription = stringResource(R.string.settings_forward_prefix_save),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayStoreSubsetNotice() {
+    Surface(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(imageVector = Icons.Default.Info, contentDescription = null)
+            Text(
+                text = stringResource(R.string.settings_play_subset_notice),
+                style = MaterialTheme.typography.bodyMedium,
             )
         }
     }

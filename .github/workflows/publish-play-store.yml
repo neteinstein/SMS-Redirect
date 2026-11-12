@@ -58,7 +58,16 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew bundleRelease -PVERSION_CODE=${{ github.run_number }}
+        run: ./gradlew bundlePlayRelease -PVERSION_CODE=${{ github.run_number }}
+
+      - name: Verify Play bundle does not declare SEND_SMS
+        run: |
+          manifest=app/build/intermediates/merged_manifest/playRelease/processPlayReleaseMainManifest/AndroidManifest.xml
+          test -f "$manifest"
+          if grep -q 'android.permission.SEND_SMS' "$manifest"; then
+            echo "::error::SEND_SMS found in the play flavor's merged manifest"
+            exit 1
+          fi
 
       - name: Decode Play Store service account key
         env:
@@ -70,7 +79,7 @@ jobs:
         with:
           serviceAccountJson: play-store-key.json
           packageName: com.neteinstein.smsredirect
-          releaseFiles: app/build/outputs/bundle/release/app-release.aab
+          releaseFiles: app/build/outputs/bundle/playRelease/app-play-release.aab
           tracks: ${{ github.event_name == 'workflow_dispatch' && inputs.track || 'internal' }}
 
       - name: Cleanup secrets

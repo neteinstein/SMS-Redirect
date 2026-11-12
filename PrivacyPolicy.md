@@ -22,7 +22,7 @@ The App requests the following Android permissions. Each is used only for the st
 | Permission | Purpose |
 |---|---|
 | `READ_SMS` / `RECEIVE_SMS` | Read your SMS inbox so messages can be backed up to your Gmail account, and detect incoming SMS so they can be checked against your forwarding rules |
-| `SEND_SMS` | Send a forwarded message, or a scheduled message, to the number you configured |
+| `SEND_SMS` | Send a forwarded message, or a scheduled message, to the number you configured. **Only in the GitHub release** — the Google Play version does not include forwarding or scheduling and does not request this permission |
 | `READ_CONTACTS` | Let you pick a contact when creating a rule or scheduled message, and show a contact's name instead of a raw number in notifications/history |
 | `POST_NOTIFICATIONS` | Show backup progress, and a notification after a message is forwarded or a scheduled message is sent |
 | `INTERNET` / `ACCESS_NETWORK_STATE` | Connect to Gmail to upload backed-up messages, and wait for a working connection before trying |
