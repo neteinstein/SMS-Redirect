@@ -1,19 +1,16 @@
 # SMS Toolbox
 
+[![Latest release](https://img.shields.io/github/v/release/neteinstein/SMS-Redirect?label=release&logo=github&color=1A73E8)](https://github.com/neteinstein/SMS-Redirect/releases/latest)
+[![Release downloads](https://img.shields.io/github/downloads/neteinstein/SMS-Redirect/total?label=downloads&logo=github&color=188038)](https://github.com/neteinstein/SMS-Redirect/releases)
+[![Build](https://img.shields.io/github/actions/workflow/status/neteinstein/SMS-Redirect/release.yml?branch=main&label=build&logo=githubactions&logoColor=white)](https://github.com/neteinstein/SMS-Redirect/actions/workflows/release.yml)
+[![Get it on Google Play](https://img.shields.io/badge/Google_Play-get_it-01875F?logo=googleplay&logoColor=white)](https://play.google.com/store/apps/details?id=com.neteinstein.smsredirect)
+![Android 13+](https://img.shields.io/badge/Android-13%2B-3DDC84?logo=android&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?logo=kotlin&logoColor=white)
+![Jetpack Compose](https://img.shields.io/badge/Jetpack_Compose-4285F4?logo=jetpackcompose&logoColor=white)
+
 Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean architecture (domain use cases, repository, and Room database).
 
 Three features, as bottom-navigation tabs: **Backup** SMS to your own Gmail account (and **restore** them to a new phone), **Redirect** incoming SMS by rule, and **Schedule** messages to send later.
-
-## Two versions
-
-| | Google Play (`play` flavor) | GitHub APK (`github` flavor) |
-|---|---|---|
-| Backup & Restore | ✅ | ✅ |
-| Redirect & Schedule | — | ✅ |
-| `SEND_SMS` permission | not declared | declared |
-| Updates | by Google Play | in-app: checks GitHub releases once a day, banner → Settings → Updates |
-
-Both are the same app: same `applicationId` (`com.neteinstein.smsredirect`), same signing key and the same `versionCode` for a given release, so either one installs over the other. Every merge to `main` publishes both from [`release.yml`](.github/workflows/release.yml). Get the APK from the [latest release](https://github.com/neteinstein/SMS-Redirect/releases/latest); see [Install the APK](#install-the-apk-outside-google-play) below.
 
 [![SMS Toolbox launch video: Backup, Restore, Redirect, Schedule](store-listing/video/sms-toolbox-launch-preview.gif)](store-listing/video/sms-toolbox-launch.mp4)
 
