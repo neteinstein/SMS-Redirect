@@ -313,8 +313,8 @@
     <string name="default_sms_rationale_not_now">Agora não</string>
     <string name="default_sms_rationale_confirm">Continuar</string>
     <string name="default_sms_declined_title">O SMS Toolbox não é a sua app de SMS predefinida</string>
-    <string name="default_sms_declined_message">Enviar, receber e restaurar mensagens só funciona enquanto o SMS Toolbox for a sua app de SMS predefinida. Pode defini-la a qualquer momento no separador Mensagens.</string>
-    <string name="default_sms_declined_message_tools">O SMS Toolbox funciona melhor como a sua app de SMS predefinida. Também pode manter a sua app de mensagens atual e dar ao SMS Toolbox apenas permissões de SMS para esta funcionalidade.</string>
+    <string name="default_sms_declined_message">As Mensagens e o Restauro só funcionam enquanto o SMS Toolbox for a sua app de SMS predefinida; até lá aparecem desativados. Reencaminhar, Agendar e Cópia continuam a funcionar. Pode defini-la a qualquer momento nos separadores Mensagens ou Restaurar.</string>
+    <string name="default_sms_declined_message_tools">Pode manter a sua app de mensagens atual e dar ao SMS Toolbox apenas as permissões de SMS de que esta funcionalidade precisa. As Mensagens e o Restauro ficam desativados até o SMS Toolbox ser a sua app de SMS predefinida.</string>
     <string name="default_sms_declined_permissions_only">Usar só permissões de SMS</string>
     <string name="new_message_title">Nova mensagem</string>
     <string name="new_message_to">Para</string>
@@ -358,4 +358,8 @@
     <string name="messages_notification_mms_failed_text">Chegou uma mensagem com imagem (MMS), mas não foi possível transferi-la. Ative os dados móveis e toque em Tentar novamente.</string>
     <string name="messages_notification_retry">Tentar novamente</string>
     <string name="restore_no_credentials_title">Ligue o seu Gmail para restaurar</string>
+    <string name="messages_disabled_banner">As Mensagens estão desativadas: defina o SMS Toolbox como a sua app de SMS predefinida para enviar e receber mensagens.</string>
+    <string name="restore_disabled_banner">O Restauro está desativado: o Android só deixa a app de SMS predefinida adicionar mensagens. Defina o SMS Toolbox como a sua app de SMS predefinida para restaurar.</string>
+    <string name="default_sms_banner_action">Definir</string>
+    <string name="messages_disabled_placeholder">As suas conversas aparecem aqui quando o SMS Toolbox for a sua app de SMS predefinida. Reencaminhar, Agendar e Cópia funcionam sem isso.</string>
 </resources>

@@ -100,7 +100,7 @@ When deploying the app from Android Studio or ADB, it is considered **sideloaded
 1. Go to **Settings > Apps > SMS Toolbox**
 2. Tap the **three-dot menu** (top right)
 3. Select **"Allow restricted settings"**
-4. Back in the app, accept the "set as default SMS app" prompt (the SMS permissions come with the role); in the github build you can instead decline it and choose "Use SMS permissions only" when adding a rule or scheduled SMS
+4. Back in the app, accept the "set as default SMS app" prompt (the SMS permissions come with the role); you can instead decline it and choose "Use SMS permissions only" when adding a rule or scheduled SMS (Messages and Restore then stay disabled)
 5. Tap "pick contact" from a rule or scheduled SMS to trigger and grant **Contacts** permission if you want to use the contact picker
 
 ### Verifying the receiver works

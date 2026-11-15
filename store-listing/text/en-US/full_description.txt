@@ -33,6 +33,6 @@ PRIVATE BY DESIGN
 • Fully open source: github.com/neteinstein/SMS-Redirect
 
 PERMISSIONS, EXPLAINED
-SMS Toolbox first asks to become your default SMS app; Android then gives it access to your SMS and MMS, which it needs to show, send and receive them. Contacts: show names instead of numbers. Notifications: new messages, backup and restore progress. Battery exemption: deliver, forward and send scheduled messages on time. Internet: reach Gmail when backup is on.
+SMS Toolbox first asks to become your default SMS app; Android then gives it access to your SMS and MMS, which it needs to show, send and receive them. Prefer to keep your current messaging app? Redirect, Schedule and Backup still work with SMS permissions only; Messages and Restore stay disabled until SMS Toolbox is your default SMS app. Contacts: show names instead of numbers. Notifications: new messages, backup and restore progress. Battery exemption: deliver, forward and send scheduled messages on time. Internet: reach Gmail when backup is on.
 
 Questions or feedback? Email play-store-neteinstein@googlegroups.com or open an issue on GitHub.

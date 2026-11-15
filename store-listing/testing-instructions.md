@@ -107,9 +107,14 @@ Restore), no self-update. The **github** flavor adds only the update check
 - [ ] Fresh install: the first thing asked is to become the **default SMS app**
       (in-app explanation, then Android's role prompt). No SMS runtime
       permission dialog appears before it, ever.
-- [ ] Declining the role: Messages shows "Make SMS Toolbox your messaging app"
-      with a button, and no SMS permission prompt appears. Accepting later
-      from that button works.
+- [ ] Declining the role: no SMS permission prompt appears. Messages and
+      Restore are shown **disabled** (greyed out, no + button, Restore button
+      inactive) under a warning bar; its **Set as default** button brings the
+      role prompt back, and accepting enables both tabs.
+- [ ] Still without the role: adding a rule, a scheduled SMS or enabling
+      Backup offers the role again; declining → **Use SMS permissions only** →
+      grant → the feature works (forwarding, scheduled sends and backup run),
+      while Messages and Restore stay disabled.
 - [ ] Accepting: Contacts and Notifications are asked right after; the inbox
       lists existing conversations, newest first, unread ones bold.
 - [ ] New message (+): a typed number, a picked contact (no Contacts prompt —

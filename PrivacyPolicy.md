@@ -30,6 +30,8 @@ Everything else in this policy applies to both.
 
 SMS Toolbox is a messaging app. It works once you make it your **default SMS app**: the App asks for this first, using Android's own prompt, before it requests any SMS permission, and Android then gives it access to your messages. You can choose another default SMS app at any time in Android Settings; the App then stops receiving messages.
 
+**If you do not make it your default SMS app,** the Messages and Restore tabs are shown disabled, with a reminder and a button to change your mind. Redirect, Schedule and Backup can still work: when you use one of them, the App offers the default-SMS-app prompt again, and only if you decline it asks for the SMS permissions that feature needs (to read, receive and send SMS) on their own.
+
 **Reading.** The App shows the conversations and messages in your phone's SMS/MMS storage, with contact names from your phone's contacts. It reads them on your phone only, to display them to you.
 
 **Receiving.** Android delivers incoming SMS and MMS to the default SMS app. The App saves each one in your phone's message storage, as any messaging app does, and shows a notification with the sender and the text, with Reply and Mark as read buttons. On the lock screen the notification only says "New message", unless you change that in Android's notification settings. A picture message (MMS) is downloaded from your carrier's MMS server over mobile data, by Android's MMS service, and then saved on your phone.
@@ -131,8 +133,8 @@ Each permission is requested only when a feature needs it, and none of them give
 
 | Permission | Why |
 |---|---|
-| Default SMS app (role) | Be your messaging app: receive SMS and MMS, save them and the messages you send, and restore backups. Requested first, before any SMS permission. Android grants the SMS permissions below together with it |
-| `READ_SMS` / `RECEIVE_SMS` | Show your conversations, receive new messages, back them up to Gmail, and check them against your forwarding rules |
+| Default SMS app (role) | Be your messaging app: receive SMS and MMS, save them and the messages you send, and restore backups. Requested first, before any SMS permission. Android grants the SMS permissions below together with it. Messages and Restore need it; the other features can work without it |
+| `READ_SMS` / `RECEIVE_SMS` | Granted with the default SMS app role, or, if you declined the role, asked for on its own when you first use Redirect, Schedule or Backup. Show your conversations, receive new messages, back them up to Gmail, and check them against your forwarding rules |
 | `SEND_SMS` | Send the messages you write, forward and schedule |
 | `RECEIVE_MMS` / `RECEIVE_WAP_PUSH` | Receive picture and group messages (MMS) |
 | `REQUEST_INSTALL_PACKAGES` (GitHub version only) | Hand a downloaded update to Android's installer, which asks you to confirm |

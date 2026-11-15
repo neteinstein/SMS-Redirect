@@ -1,6 +1,7 @@
 package com.neteinstein.smsredirect.presentation.restore
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,6 +39,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -45,6 +47,8 @@ import androidx.compose.ui.unit.dp
 import com.neteinstein.smsredirect.R
 import com.neteinstein.smsredirect.domain.model.SmsRestoreFailure
 import com.neteinstein.smsredirect.domain.model.SmsRestoreState
+import com.neteinstein.smsredirect.presentation.components.WarningBanner
+import com.neteinstein.smsredirect.presentation.messages.DISABLED_ALPHA
 
 /** The Restore tab: copies the SMS backed up in the user's Gmail label back to this phone. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,6 +60,7 @@ fun RestoreScreen(
     onCancelRestore: () -> Unit,
     onRestoreResultDismissed: () -> Unit,
     onOpenSettings: () -> Unit,
+    onSetDefaultSmsApp: () -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
     /** Shown above the content, e.g. the "update available" banner. */
     topBanner: @Composable () -> Unit = {},
@@ -80,10 +85,20 @@ fun RestoreScreen(
                     .padding(padding),
         ) {
             topBanner()
+            if (!state.isDefaultSmsApp) {
+                // Android lets only the default SMS app write messages, so without the role the
+                // whole tab is shown disabled, with the way to enable it on top.
+                WarningBanner(
+                    message = stringResource(R.string.restore_disabled_banner),
+                    actionLabel = stringResource(R.string.default_sms_banner_action),
+                    onActionClick = onSetDefaultSmsApp,
+                )
+            }
+            val contentModifier = if (state.isDefaultSmsApp) Modifier else Modifier.alpha(DISABLED_ALPHA)
             if (!state.hasCredentials) {
-                NoCredentialsState(onOpenSettings)
+                Box(modifier = contentModifier) { NoCredentialsState(onOpenSettings, enabled = state.isDefaultSmsApp) }
             } else {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Column(modifier = contentModifier.verticalScroll(rememberScrollState())) {
                     RestoreCard(
                         state = state,
                         defaultSmsRoleDenied = defaultSmsRoleDenied,
@@ -98,7 +113,10 @@ fun RestoreScreen(
 }
 
 @Composable
-private fun NoCredentialsState(onOpenSettings: () -> Unit) {
+private fun NoCredentialsState(
+    onOpenSettings: () -> Unit,
+    enabled: Boolean,
+) {
     Column(
         modifier =
             Modifier
@@ -126,7 +144,7 @@ private fun NoCredentialsState(onOpenSettings: () -> Unit) {
             modifier = Modifier.padding(top = 8.dp),
             textAlign = TextAlign.Center,
         )
-        Button(onClick = onOpenSettings, modifier = Modifier.padding(top = 24.dp)) {
+        Button(onClick = onOpenSettings, enabled = enabled, modifier = Modifier.padding(top = 24.dp)) {
             Text(stringResource(R.string.backup_open_settings))
         }
     }
@@ -162,6 +180,7 @@ private fun RestoreCard(
                     IdleContent(
                         label = state.settings.gmailLabel,
                         defaultSmsRoleDenied = defaultSmsRoleDenied,
+                        enabled = state.isDefaultSmsApp,
                         onStart = { showConfirmation = true },
                     )
                 }
@@ -178,7 +197,7 @@ private fun RestoreCard(
                     FailedContent(
                         failure = restore.reason,
                         label = state.settings.gmailLabel,
-                        onRetry = { showConfirmation = true },
+                        onRetry = { if (state.isDefaultSmsApp) showConfirmation = true },
                         onDismiss = onRestoreResultDismissed,
                     )
                 }
@@ -203,6 +222,7 @@ private fun RestoreCard(
 private fun IdleContent(
     label: String,
     defaultSmsRoleDenied: Boolean,
+    enabled: Boolean,
     onStart: () -> Unit,
 ) {
     Text(
@@ -217,7 +237,7 @@ private fun IdleContent(
             color = MaterialTheme.colorScheme.error,
         )
     }
-    OutlinedButton(onClick = onStart, modifier = Modifier.fillMaxWidth()) {
+    OutlinedButton(onClick = onStart, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
         Icon(imageVector = Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
         Text(stringResource(R.string.restore_start))
     }

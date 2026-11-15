@@ -3,8 +3,9 @@
 > **This listing is for the Play build: an SMS/MMS messaging app** (Play core use
 > case "Default SMS handler") with Redirect, Schedule, Backup and Restore. The app
 > is built in two flavors (`app/build.gradle.kts`); the **play** flavor, uploaded to
-> Google Play, never updates itself. The **github** flavor, attached to each GitHub
-> release, adds an update check. Lead with messaging everywhere in this folder.
+> Google Play, and the **github** flavor, attached to each GitHub release, are
+> identical except for the **Updates** section in Settings (GitHub only: Play forbids
+> self-updates). Lead with messaging everywhere in this folder.
 
 Everything needed to fill in the **Main store listing** (and get a head start on
 **App content > Data safety**) for `com.neteinstein.smsredirect` in the
@@ -38,7 +39,7 @@ store-listing/
 |---|---|---|---|
 | App name | `text/<locale>/title.txt` | 30 chars | 26 (en-US) / 26 (pt-PT) |
 | Short description | `text/<locale>/short_description.txt` | 80 chars | 77 (en-US) / 80 (pt-PT) |
-| Full description | `text/<locale>/full_description.txt` | 4000 chars | 2504 (en-US) / 2905 (pt-PT) |
+| Full description | `text/<locale>/full_description.txt` | 4000 chars | 2693 (en-US) / 3124 (pt-PT) |
 | What's new (this release) | `text/<locale>/release_notes.txt` | 500 chars | 328 (en-US) / 368 (pt-PT) |
 
 Paste each file's contents verbatim into the matching field for that locale.
@@ -169,9 +170,16 @@ How the app satisfies the policy, so the form and the video can say so:
   explains itself and opens Android's role request (`RoleManager.ROLE_SMS`, the
   API-29+ replacement for `Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT`, which no
   longer does anything on Android 10+; this app's minSdk is 33). The SMS
-  permissions are granted *with* the role. The Play build never shows an SMS
-  runtime-permission prompt on its own: declining the role leaves the SMS
-  features off (`AppFeatures.smsPermissionsWithoutDefaultRole = false`).
+  permissions are granted *with* the role. Only when the user explicitly declines
+  the role, and then asks to use Redirect, Schedule or Backup anyway ("Use SMS
+  permissions only"), are the three SMS permissions those tools need requested
+  on their own. Messages and Restore are then shown **disabled**, with a warning
+  bar and a "Set as default" button: the messaging app and restore never work
+  without the role.
+  ⚠️ This fallback is a judgment call. Play's policy expects apps declaring
+  "Default SMS handler" to use SMS permissions *as* the default handler. If a
+  reviewer objects, removing the "Use SMS permissions only" button from the
+  decline dialog in `MainActivity` makes every SMS feature require the role.
 - **No prohibited use.** No OTP/account verification, no analytics on message
   content, no ad targeting, no keyboard. Firebase events never carry numbers,
   names or text (`domain/analytics/AnalyticsEvents.kt`).

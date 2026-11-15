@@ -12,6 +12,10 @@ Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean archit
 
 An SMS/MMS messaging app with a toolbox around it. Five bottom-navigation tabs: **Messages** (send and receive SMS, picture and group messages, as your default SMS app), **Redirect** incoming SMS by rule, **Schedule** messages to send later, **Backup** SMS to your own Gmail account, and **Restore** them to a new phone.
 
+On first launch the app asks to become your default SMS app. If you'd rather keep your current messaging app, Redirect, Schedule and Backup still work with SMS permissions only; Messages and Restore are then shown disabled, with a bar offering to make SMS Toolbox the default.
+
+The Google Play and GitHub versions are the same app with the same features. The only difference is the **Updates** section in Settings: the GitHub version checks GitHub releases and installs updates itself, while Google Play updates the Play version.
+
 [![SMS Toolbox launch video: Backup, Restore, Redirect, Schedule](store-listing/video/sms-toolbox-launch-preview.gif)](store-listing/video/sms-toolbox-launch.mp4)
 
 *Silent preview. The full 24-second launch video, with music, is [`store-listing/video/sms-toolbox-launch.mp4`](store-listing/video/sms-toolbox-launch.mp4) (download it to watch).*

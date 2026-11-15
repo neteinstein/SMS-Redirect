@@ -15,10 +15,9 @@ SMS Toolbox is an Android SMS/MMS messaging app with a toolbox around it, presen
 | | `play` (Google Play) | `github` (GitHub release APK) |
 |---|---|---|
 | Features | All five tabs | All five tabs |
-| SMS permissions | only via the default SMS role | the role, or (if declined) plain permissions for Redirect/Schedule/Backup |
 | Self-update | none (Play forbids it; `src/play/AndroidManifest.xml` removes `REQUEST_INSTALL_PACKAGES` as a guard) | daily GitHub release check + in-app install (`REQUEST_INSTALL_PACKAGES`) |
 
-Each flavor has a `distribution/DistributionModule` (`src/play/…`, `src/github/…`) exposing an `AppFeatures` (`domain/model/`) and, in the github flavor only, the update source and installer. `AppFeatures` reaches everything through `AppContainer.features`: `MainActivity` filters the tabs, the landing screen and the deep links, and decides whether declining the SMS role may fall back to plain permissions (`smsPermissionsWithoutDefaultRole`); `SettingsScreen` hides the Redirect/Schedule settings when neither ships; `SmsReceiver` skips forwarding and `SendScheduledSmsWorker` drops sends when their feature is off. No code outside `DistributionModule` checks the flavor.
+Each flavor has a `distribution/DistributionModule` (`src/play/…`, `src/github/…`) exposing an `AppFeatures` (`domain/model/`) and, in the github flavor only, the update source and installer. `AppFeatures` reaches everything through `AppContainer.features`: `MainActivity` filters the tabs, the landing screen and the deep links; `SettingsScreen` hides the Redirect/Schedule settings when neither ships; `SmsReceiver` skips forwarding and `SendScheduledSmsWorker` drops sends when their feature is off. No code outside `DistributionModule` checks the flavor.
 
 All five share the same app shell (permissions flow, Settings screen, deep-link handling) but are otherwise independent end-to-end: separate domain models, separate Room tables, separate use cases, separate WorkManager jobs.
 
@@ -43,10 +42,12 @@ Two rules from that policy shape the code:
   `Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT`, a no-op since Android 10; minSdk is 33). Android
   grants the SMS permissions with the role; only contacts and notifications are asked for after
   it. It runs once on first launch, and again whenever an SMS feature is used without the role.
-- **No SMS permission without the role in the Play build.** `AppFeatures.smsPermissionsWithoutDefaultRole`
-  is `false` for play: declining the role leaves the SMS features off. The github build offers
-  "Use SMS permissions only" for Redirect/Schedule/Backup, for people who keep another messaging
-  app; Messages and Restore always need the role.
+- **Without the role, Messages and Restore are disabled, the rest works.** Both tabs stay visible
+  but greyed out (`DISABLED_ALPHA`), with a warning bar whose "Set as default" action re-runs the
+  role request. Redirect, Schedule and Backup go through `requireSmsAccess`: the role is offered
+  first, and only if the user declines it does the decline dialog offer "Use SMS permissions
+  only", which requests `toolSmsPermissions` (`RECEIVE_SMS`, `READ_SMS`, `SEND_SMS`). Both builds
+  behave identically here.
 
 ## Messaging (SMS/MMS client)
 
@@ -563,7 +564,7 @@ Uses Jetpack Compose with a simple NavHost. The `Home` route hosts a bottom navi
 
 `MainBottomBar` iterates the tabs the build ships (`AppFeatures.availableTabs()`). It shows a label only for the selected tab — five icons plus the FAB do not fit labels on a narrow phone. The FAB is "new message" on Messages, "add" on Redirect/Schedule, and hidden on Backup and Restore.
 
-- **SplashScreen** → **ConversationListScreen** (`Home` route, Messages tab — the landing screen; shows `DefaultSmsAppPrompt` until the app holds the SMS role)
+- **SplashScreen** → **ConversationListScreen** (`Home` route, Messages tab — the landing screen; shown disabled, with a warning bar, until the app holds the SMS role)
   - → **NewMessageScreen** (`new_message`: recipients, contact picker) → **ConversationScreen**
   - → **ConversationScreen** (`conversation?threadId=…` or `?addresses=…&draft=…&attachment=…`: bubbles, attachments, composer, retry/delete). Also reached from a notification (`smsredirect://app/conversation?threadId=…`) and from `ComposeSmsActivity`
 - **SplashScreen** → **HomeScreen** (Redirect tab: rule list with drag-to-reorder)

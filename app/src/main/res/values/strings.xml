@@ -309,8 +309,8 @@
     <string name="default_sms_rationale_not_now">Not now</string>
     <string name="default_sms_rationale_confirm">Continue</string>
     <string name="default_sms_declined_title">SMS Toolbox is not your default SMS app</string>
-    <string name="default_sms_declined_message">Sending and receiving messages, and restoring them, only work while SMS Toolbox is your default SMS app. You can set it any time from the Messages tab.</string>
-    <string name="default_sms_declined_message_tools">SMS Toolbox works best as your default SMS app. You can also keep your current messaging app and only give SMS Toolbox SMS permissions for this feature.</string>
+    <string name="default_sms_declined_message">Messages and Restore only work while SMS Toolbox is your default SMS app; until then they are shown disabled. Redirect, Schedule and Backup still work. You can set it any time from the Messages or Restore tab.</string>
+    <string name="default_sms_declined_message_tools">You can keep your current messaging app and give SMS Toolbox only the SMS permissions this feature needs. Messages and Restore stay disabled until SMS Toolbox is your default SMS app.</string>
     <string name="default_sms_declined_permissions_only">Use SMS permissions only</string>
     <string name="new_message_title">New message</string>
     <string name="new_message_to">To</string>
@@ -354,4 +354,8 @@
     <string name="messages_notification_mms_failed_text">A picture message (MMS) arrived but could not be downloaded. Turn on mobile data and tap Retry.</string>
     <string name="messages_notification_retry">Retry</string>
     <string name="restore_no_credentials_title">Connect your Gmail to restore</string>
+    <string name="messages_disabled_banner">Messages is disabled: set SMS Toolbox as your default SMS app to send and receive messages.</string>
+    <string name="restore_disabled_banner">Restore is disabled: Android only lets the default SMS app add messages. Set SMS Toolbox as your default SMS app to restore.</string>
+    <string name="default_sms_banner_action">Set as default</string>
+    <string name="messages_disabled_placeholder">Your conversations will appear here once SMS Toolbox is your default SMS app. Redirect, Schedule and Backup work without it.</string>
 </resources>

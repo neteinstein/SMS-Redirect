@@ -33,6 +33,6 @@ PRIVADA DE RAIZ
 • Totalmente open source: github.com/neteinstein/SMS-Redirect
 
 PERMISSÕES, EXPLICADAS
-O SMS Toolbox pede primeiro para ser a sua app de SMS predefinida; o Android dá-lhe então acesso às suas SMS e MMS, de que precisa para as mostrar, enviar e receber. Contactos: mostrar nomes em vez de números. Notificações: novas mensagens e progresso da cópia e do restauro. Isenção de bateria: entregar, reencaminhar e enviar mensagens agendadas a horas. Internet: aceder ao Gmail quando a cópia está ligada.
+O SMS Toolbox pede primeiro para ser a sua app de SMS predefinida; o Android dá-lhe então acesso às suas SMS e MMS, de que precisa para as mostrar, enviar e receber. Prefere manter a sua app de mensagens atual? Reencaminhar, Agendar e Cópia continuam a funcionar só com permissões de SMS; as Mensagens e o Restauro ficam desativados até o SMS Toolbox ser a sua app de SMS predefinida. Contactos: mostrar nomes em vez de números. Notificações: novas mensagens e progresso da cópia e do restauro. Isenção de bateria: entregar, reencaminhar e enviar mensagens agendadas a horas. Internet: aceder ao Gmail quando a cópia está ligada.
 
 Perguntas ou sugestões? Envie um email para play-store-neteinstein@googlegroups.com ou abra um issue no GitHub.

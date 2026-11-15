@@ -106,7 +106,7 @@ import kotlinx.coroutines.flow.collectLatest
 import java.io.File
 
 class MainActivity : ComponentActivity() {
-    /** Granted together with the default SMS role; requested directly only as a github fallback. */
+    /** Granted together with the default SMS role. */
     private val smsPermissions =
         arrayOf(
             Manifest.permission.RECEIVE_SMS,
@@ -115,6 +115,13 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.RECEIVE_MMS,
             Manifest.permission.RECEIVE_WAP_PUSH,
         )
+
+    /**
+     * What Redirect, Schedule and Backup need. Requested on their own only after the user has
+     * declined the default SMS role; Messages and Restore need the role itself.
+     */
+    private val toolSmsPermissions =
+        arrayOf(Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS, Manifest.permission.SEND_SMS)
 
     /** Not SMS permissions; asked for right after the role is granted. */
     private val afterRolePermissions =
@@ -203,10 +210,11 @@ class MainActivity : ComponentActivity() {
                     }
 
                 // ---- Default SMS app gate -------------------------------------------------
-                // SMS Toolbox is a messaging app. Every SMS permission comes from the default SMS
-                // role, which is always requested *before* any SMS permission (Play's Default SMS
-                // handler policy). Only builds that allow it (github) fall back to plain SMS
-                // permissions for Redirect/Schedule/Backup when the user declines the role.
+                // SMS Toolbox is a messaging app. The default SMS role is always requested *before*
+                // any SMS permission (Play's Default SMS handler policy), and the SMS permissions
+                // come with it. Messages and Restore need the role itself and are shown disabled
+                // without it; only if the user declines it are the permissions Redirect, Schedule
+                // and Backup need requested on their own. Both builds behave the same.
                 val defaultSmsAppChecker = appContainer.defaultSmsAppChecker
                 var roleCheckTick by remember { mutableIntStateOf(0) }
                 val isDefaultSmsApp =
@@ -225,7 +233,7 @@ class MainActivity : ComponentActivity() {
                     }
                 val permissionsOnlyLauncher =
                     rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
-                        if (results.values.all { it }) {
+                        if (hasToolSmsPermissions()) {
                             runPendingSmsAction()
                         } else {
                             pendingSmsAction = null
@@ -263,14 +271,17 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                /** For Redirect, Schedule and Backup: the role, or plain permissions where allowed. */
+                /**
+                 * For Redirect, Schedule and Backup, which also work without the role: the role is
+                 * still offered first, and only if the user declines it are the SMS permissions
+                 * these tools need requested on their own.
+                 */
                 val requireSmsAccess: (() -> Unit) -> Unit = { action ->
-                    val allowed = defaultSmsAppChecker.isDefaultSmsApp() || features.smsPermissionsWithoutDefaultRole
-                    if (allowed && hasSmsPermissions()) {
+                    if (hasToolSmsPermissions()) {
                         action()
                     } else {
                         pendingSmsAction = action
-                        pendingAllowsPermissionsOnly = features.smsPermissionsWithoutDefaultRole
+                        pendingAllowsPermissionsOnly = true
                         showDefaultSmsRationale = true
                     }
                 }
@@ -322,7 +333,7 @@ class MainActivity : ComponentActivity() {
                                 {
                                     TextButton(onClick = {
                                         showDefaultSmsDeclined = false
-                                        permissionsOnlyLauncher.launch(smsPermissions)
+                                        permissionsOnlyLauncher.launch(toolSmsPermissions)
                                     }) { Text(stringResource(R.string.default_sms_declined_permissions_only)) }
                                 }
                             } else {
@@ -488,7 +499,12 @@ class MainActivity : ComponentActivity() {
                                             MainTab.SCHEDULE -> stringResource(R.string.schedule_cd_add)
                                             MainTab.BACKUP, MainTab.RESTORE -> ""
                                         },
-                                    showFab = selectedTab != MainTab.BACKUP && selectedTab != MainTab.RESTORE,
+                                    showFab =
+                                        when (selectedTab) {
+                                            MainTab.MESSAGES -> isDefaultSmsApp
+                                            MainTab.REDIRECT, MainTab.SCHEDULE -> true
+                                            MainTab.BACKUP, MainTab.RESTORE -> false
+                                        },
                                     tabs = tabs,
                                 )
                             }
@@ -507,8 +523,10 @@ class MainActivity : ComponentActivity() {
                                     )
                                 val conversationsState by conversationListViewModel.uiState.collectAsState()
                                 // Nothing is read from the SMS store until the app holds the role.
+                                // Without the role the list is shown disabled; it can still be read
+                                // when the user granted SMS access for the other tools.
                                 LaunchedEffect(isDefaultSmsApp) {
-                                    if (isDefaultSmsApp && isGranted(Manifest.permission.READ_SMS)) {
+                                    if (isGranted(Manifest.permission.READ_SMS)) {
                                         conversationListViewModel.start()
                                     }
                                 }
@@ -587,6 +605,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                     },
                                     onCancelRestore = restoreViewModel::onCancelRestore,
+                                    onSetDefaultSmsApp = { requireDefaultSmsApp { } },
                                     onRestoreResultDismissed = restoreViewModel::onRestoreResultDismissed,
                                     onOpenSettings = { navController.navigate(Routes.Settings) },
                                     bottomBar = bottomBar,
@@ -1420,6 +1439,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun hasSmsPermissions(): Boolean = smsPermissions.all(::isGranted)
+
+    private fun hasToolSmsPermissions(): Boolean = toolSmsPermissions.all(::isGranted)
 
     private fun isGranted(permission: String): Boolean =
         ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED

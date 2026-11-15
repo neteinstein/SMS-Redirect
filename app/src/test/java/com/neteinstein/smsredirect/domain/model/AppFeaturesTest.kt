@@ -17,10 +17,10 @@ class AppFeaturesTest {
     }
 
     @Test
-    fun `the play build never updates itself and never asks for SMS permissions without the role`() {
+    fun `the two builds differ only in the self-update`() {
         assertFalse(AppFeatures.PLAY.selfUpdate)
-        assertFalse(AppFeatures.PLAY.smsPermissionsWithoutDefaultRole)
-        assertTrue(AppFeatures.ALL.smsPermissionsWithoutDefaultRole)
+        assertTrue(AppFeatures.ALL.selfUpdate)
+        assertEquals(AppFeatures.ALL, AppFeatures.PLAY.copy(selfUpdate = true))
     }
 
     @Test

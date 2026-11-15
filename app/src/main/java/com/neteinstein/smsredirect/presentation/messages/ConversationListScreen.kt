@@ -39,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -94,11 +95,39 @@ fun ConversationListScreen(
                 )
             }
             topBanner()
-            when {
-                !isDefaultSmsApp -> {
-                    DefaultSmsAppPrompt(onSetDefaultSmsApp)
+            if (!isDefaultSmsApp) {
+                // Disabled, not hidden: the user sees what the tab is for and how to turn it on.
+                WarningBanner(
+                    message = stringResource(R.string.messages_disabled_banner),
+                    actionLabel = stringResource(R.string.default_sms_banner_action),
+                    onActionClick = onSetDefaultSmsApp,
+                )
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .alpha(DISABLED_ALPHA),
+                ) {
+                    if (state.loaded && state.conversations.isNotEmpty()) {
+                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            items(state.conversations, key = { it.threadId }) { conversation ->
+                                ConversationRow(
+                                    conversation = conversation,
+                                    contactNames = state.contactNames,
+                                    enabled = false,
+                                    onClick = {},
+                                    onLongClick = {},
+                                )
+                                HorizontalDivider(modifier = Modifier.padding(start = 80.dp))
+                            }
+                        }
+                    } else {
+                        DisabledState()
+                    }
                 }
-
+                return@Column
+            }
+            when {
                 !state.loaded -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                 }
@@ -183,6 +212,35 @@ fun DefaultSmsAppPrompt(
 }
 
 @Composable
+private fun DisabledState() {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.Chat,
+            contentDescription = null,
+            modifier = Modifier.size(72.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = stringResource(R.string.messages_disabled_placeholder),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 24.dp),
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/** Material's opacity for disabled content. */
+const val DISABLED_ALPHA = 0.38f
+
+@Composable
 private fun EmptyState() {
     Column(
         modifier =
@@ -221,6 +279,7 @@ private fun ConversationRow(
     contactNames: Map<String, String>,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    enabled: Boolean = true,
 ) {
     val title =
         conversation.addresses
@@ -236,7 +295,7 @@ private fun ConversationRow(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+                .combinedClickable(enabled = enabled, onClick = onClick, onLongClick = onLongClick)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

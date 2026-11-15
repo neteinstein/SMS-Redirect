@@ -4,7 +4,7 @@
 
 SMS Toolbox is a native Android app (Kotlin): a full SMS/MMS messaging app, used as the device's default SMS app (the primary feature, first tab and landing screen), with four tools on top, in tab order: forwarding incoming SMS that match user-defined rules (Redirect), sending scheduled messages (Schedule), backing up received and sent SMS to the user's own Gmail account over IMAP (Backup), and restoring them to a phone (Restore). See `Architecture.md` for the full system design.
 
-It ships as two product flavors of the `distribution` dimension: **`play`** (Google Play — every feature, no self-update, SMS permissions only via the default SMS role) and **`github`** (APK on GitHub releases — every feature, plus a daily in-app update check against GitHub releases). Both share the `applicationId`, signing key and `versionCode` so either can install over the other. See `Architecture.md` → "Two distributions".
+It ships as two product flavors of the `distribution` dimension: **`play`** (Google Play — every feature, no self-update) and **`github`** (APK on GitHub releases — every feature, plus a daily in-app update check against GitHub releases). Both share the `applicationId`, signing key and `versionCode` so either can install over the other. See `Architecture.md` → "Two distributions".
 
 The app is named "SMS Toolbox" but the `applicationId` and Kotlin package remain `com.neteinstein.smsredirect`, and the deep link remains `smsredirect://app` — changing them would create a new Play listing and cut existing users off from updates.
 
@@ -171,8 +171,10 @@ Both must pass before merging. Always run these locally before pushing.
   Never call a runtime-permission request for an SMS permission (`READ_SMS`, `RECEIVE_SMS`,
   `SEND_SMS`, `RECEIVE_MMS`, `RECEIVE_WAP_PUSH`) except through `MainActivity`'s gate
   (`requireDefaultSmsApp` / `requireSmsAccess`), which requests `RoleManager.ROLE_SMS` first.
-  In the Play build (`AppFeatures.smsPermissionsWithoutDefaultRole = false`) declining the role
-  means no SMS permission prompt at all. Never use SMS permissions for OTP/verification,
+  Messages and Restore need the role itself and are shown disabled (warning bar + "Set as
+  default") without it; Redirect, Schedule and Backup may fall back to `toolSmsPermissions`, but
+  only after the user declined the role. Both builds behave the same; they differ only in the
+  self-update. Never use SMS permissions for OTP/verification,
   analytics on message content, or ads, and do not add a library that declares SMS permissions.
   Keep the four default-SMS components (`SMS_DELIVER`, `WAP_PUSH_DELIVER`, `SENDTO`,
   `RESPOND_VIA_MESSAGE`) working: `release.yml` fails the Play release without them.
