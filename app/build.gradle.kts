@@ -57,7 +57,7 @@ android {
         minSdk = 33
         targetSdk = 37
         // release.yml bumps the patch number in this line on every merge to main.
-        versionName = "2.0.13"
+        versionName = "2.0.14"
         versionCode = versionCodeFor(versionName!!, versionCodeBuild)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
