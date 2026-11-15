@@ -28,7 +28,10 @@ object MessageNotifications {
     private const val FAILURE_CHANNEL_ID = "messages_failure_channel"
     private const val ID_OFFSET = 300_000
     private const val SEND_FAILED_ID = 299_998
-    private const val MMS_DOWNLOAD_FAILED_ID = 299_999
+
+    /** One notification per undownloaded MMS, so a second failure never hides the first's Retry. */
+    private const val MMS_DOWNLOAD_FAILED_ID_BASE = 400_000
+    private const val MMS_DOWNLOAD_FAILED_ID_RANGE = 100_000
     const val KEY_REPLY_TEXT = "reply_text"
 
     /** The conversation the user is looking at right now; its messages need no notification. */
@@ -105,12 +108,14 @@ object MessageNotifications {
                 .setContentTitle(context.getString(R.string.messages_notification_send_failed))
                 .setContentText(context.getString(R.string.messages_notification_send_failed_text))
                 .setAutoCancel(true)
-        threadId?.let { builder.setContentIntent(openConversation(context, it)) }
+        // The conversation when it is known, otherwise the app (the Messages tab).
+        builder.setContentIntent(threadId?.let { openConversation(context, it) } ?: openApp(context))
         manager.notify(SEND_FAILED_ID, builder.build())
     }
 
     fun showMmsDownloadFailed(
         context: Context,
+        contentLocation: String,
         retry: PendingIntent,
     ) {
         val manager = notificationManagerOrNull(context) ?: return
@@ -120,18 +125,29 @@ object MessageNotifications {
                 .setContentTitle(context.getString(R.string.messages_notification_mms_failed))
                 .setContentText(context.getString(R.string.messages_notification_mms_failed_text))
                 .setStyle(NotificationCompat.BigTextStyle().bigText(context.getString(R.string.messages_notification_mms_failed_text)))
-                .setAutoCancel(true)
+                // Not auto-cancelled: this notification is the only way back to the message.
+                .setContentIntent(retry)
                 .addAction(0, context.getString(R.string.messages_notification_retry), retry)
                 .build()
-        manager.notify(MMS_DOWNLOAD_FAILED_ID, notification)
+        manager.notify(mmsDownloadFailedId(contentLocation), notification)
     }
 
-    fun cancelMmsDownloadFailed(context: Context) {
-        context.getSystemService(NotificationManager::class.java)?.cancel(MMS_DOWNLOAD_FAILED_ID)
+    fun cancelMmsDownloadFailed(
+        context: Context,
+        contentLocation: String,
+    ) {
+        context.getSystemService(NotificationManager::class.java)?.cancel(mmsDownloadFailedId(contentLocation))
     }
 
-    /** True for the notifications opening the app should leave alone (unread conversations). */
-    fun isMessageNotification(notification: Notification): Boolean = notification.channelId == CHANNEL_ID
+    private fun mmsDownloadFailedId(contentLocation: String): Int =
+        MMS_DOWNLOAD_FAILED_ID_BASE + Math.floorMod(contentLocation.hashCode(), MMS_DOWNLOAD_FAILED_ID_RANGE)
+
+    /**
+     * True for the notifications opening the app must leave alone: unread conversations, and
+     * message failures -- an undownloaded MMS exists nowhere but in its Retry notification.
+     */
+    fun isMessageNotification(notification: Notification): Boolean =
+        notification.channelId == CHANNEL_ID || notification.channelId == FAILURE_CHANNEL_ID
 
     private fun replyAction(
         context: Context,
@@ -185,6 +201,12 @@ object MessageNotifications {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+    }
+
+    private fun openApp(context: Context): PendingIntent {
+        val intent =
+            Intent(context, MainActivity::class.java).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP }
+        return PendingIntent.getActivity(context, SEND_FAILED_ID, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }
 
     private fun notificationId(threadId: Long): Int = ID_OFFSET + (threadId % Int.MAX_VALUE.minus(ID_OFFSET)).toInt()

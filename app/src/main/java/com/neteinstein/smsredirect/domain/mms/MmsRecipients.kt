@@ -1,6 +1,6 @@
 package com.neteinstein.smsredirect.domain.mms
 
-import com.neteinstein.smsredirect.domain.model.SmsBackupKey
+import com.neteinstein.smsredirect.domain.messaging.MessagingAddresses
 
 /** Who a received MMS's conversation is with. */
 object MmsRecipients {
@@ -20,8 +20,8 @@ object MmsRecipients {
         val candidates = listOfNotNull(from?.takeIf { it.isNotBlank() }) + if (isGroup) others else emptyList()
         val result = mutableListOf<String>()
         for (address in candidates) {
-            if (ownNumbers.any { own -> own.isNotBlank() && SmsBackupKey.sameAddress(own, address) }) continue
-            if (result.any { SmsBackupKey.sameAddress(it, address) }) continue
+            if (ownNumbers.any { own -> MessagingAddresses.same(own, address) }) continue
+            if (result.any { MessagingAddresses.same(it, address) }) continue
             result += address
         }
         return result

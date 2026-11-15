@@ -15,6 +15,7 @@ import com.neteinstein.smsredirect.domain.usecase.GetConversationMessagesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetOrCreateConversationUseCase
 import com.neteinstein.smsredirect.domain.usecase.MarkConversationReadUseCase
 import com.neteinstein.smsredirect.domain.usecase.SendMessageUseCase
+import com.neteinstein.smsredirect.domain.usecase.requiresMms
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,8 +43,8 @@ data class ConversationUiState(
 
     val canSend: Boolean get() = !sending && addresses.isNotEmpty() && (draft.isNotBlank() || attachments.isNotEmpty())
 
-    /** Shown under the composer so the user knows a picture or group message uses MMS. */
-    val sendsAsMms: Boolean get() = attachments.isNotEmpty() || isGroup
+    /** Shown in the composer so the user knows a picture, group or email message uses MMS. */
+    val sendsAsMms: Boolean get() = requiresMms(addresses, attachments.isNotEmpty())
 }
 
 /**
@@ -126,7 +127,15 @@ class ConversationViewModel(
         viewModelScope.launch {
             when (val outcome = sendMessageUseCase(state.addresses, state.draft, state.attachments)) {
                 is SendOutcome.Queued -> {
-                    _uiState.value = _uiState.value.copy(sending = false, draft = "", attachments = emptyList())
+                    // Reading and resizing attachments takes a moment and the composer stays
+                    // editable; clear only what was sent, keep anything typed or added meanwhile.
+                    val current = _uiState.value
+                    _uiState.value =
+                        current.copy(
+                            sending = false,
+                            draft = if (current.draft == state.draft) "" else current.draft,
+                            attachments = current.attachments - state.attachments.toSet(),
+                        )
                     if (outcome.threadId != threadIdFlow.value) {
                         _uiState.value = _uiState.value.copy(threadId = outcome.threadId)
                         threadIdFlow.value = outcome.threadId
@@ -140,11 +149,16 @@ class ConversationViewModel(
         }
     }
 
-    /** Resends a failed SMS: the failed copy is removed so the conversation shows it once. */
+    /**
+     * Resends a failed SMS or MMS: same text, same attachments (read back from the stored MMS
+     * parts), same recipients. The failed copy is removed only once the new one is queued, by
+     * which time the sender has already copied the attachments.
+     */
     fun retry(message: ConversationMessage) {
-        if (message.status != MessageStatus.FAILED || message.isMms) return
+        if (message.status != MessageStatus.FAILED) return
         viewModelScope.launch {
-            val outcome = sendMessageUseCase(_uiState.value.addresses, message.body)
+            val attachments = message.attachments.map { OutgoingAttachment(it.uri, it.contentType, it.name) }
+            val outcome = sendMessageUseCase(_uiState.value.addresses, message.body, attachments)
             if (outcome is SendOutcome.Queued) {
                 deleteMessageUseCase(message)
             } else if (outcome is SendOutcome.Failed) {

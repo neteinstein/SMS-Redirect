@@ -2,7 +2,7 @@ package com.neteinstein.smsredirect.presentation.newmessage
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.neteinstein.smsredirect.domain.model.SmsBackupKey
+import com.neteinstein.smsredirect.domain.messaging.MessagingAddresses
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -65,7 +65,7 @@ class NewMessageViewModel : ViewModel() {
 
     private fun add(recipient: Recipient) {
         val current = _uiState.value.recipients
-        if (current.any { SmsBackupKey.sameAddress(it.address, recipient.address) || it.address == recipient.address }) return
+        if (current.any { MessagingAddresses.same(it.address, recipient.address) }) return
         _uiState.value = _uiState.value.copy(recipients = current + recipient)
     }
 }

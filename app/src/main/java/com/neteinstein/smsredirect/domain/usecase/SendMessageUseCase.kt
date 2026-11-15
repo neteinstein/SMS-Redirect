@@ -1,16 +1,17 @@
 package com.neteinstein.smsredirect.domain.usecase
 
 import com.neteinstein.smsredirect.domain.messaging.MessageSender
+import com.neteinstein.smsredirect.domain.messaging.MessagingAddresses
 import com.neteinstein.smsredirect.domain.messaging.SendFailure
 import com.neteinstein.smsredirect.domain.messaging.SendOutcome
 import com.neteinstein.smsredirect.domain.model.OutgoingAttachment
-import com.neteinstein.smsredirect.domain.model.SmsBackupKey
 import com.neteinstein.smsredirect.domain.sms.DefaultSmsAppChecker
 
 /**
  * Sends what the user typed in a conversation. Chooses the transport the way the stock Messages
- * app does: plain text to one person is an SMS; anything with an attachment, or to more than one
- * person, is an MMS (a group message, so replies stay in one conversation).
+ * app does: plain text to one phone number is an SMS; anything with an attachment, to more than
+ * one person (a group message, so replies stay in one conversation), or to an email address --
+ * which only MMS can reach -- is an MMS.
  */
 class SendMessageUseCase(
     private val messageSender: MessageSender,
@@ -29,7 +30,7 @@ class SendMessageUseCase(
         val text = body.trim()
         if (text.isEmpty() && attachments.isEmpty()) return SendOutcome.Failed(SendFailure.EMPTY_MESSAGE)
 
-        return if (attachments.isNotEmpty() || recipients.size > 1) {
+        return if (requiresMms(recipients, attachments.isNotEmpty())) {
             messageSender.sendMms(recipients, text, attachments)
         } else {
             messageSender.sendSms(recipients.single(), text)
@@ -37,13 +38,19 @@ class SendMessageUseCase(
     }
 }
 
+/** See [SendMessageUseCase]: the one rule for SMS versus MMS, shared with the composer's hint. */
+fun requiresMms(
+    recipients: List<String>,
+    hasAttachments: Boolean,
+): Boolean = hasAttachments || recipients.size > 1 || recipients.any(MessagingAddresses::isEmail)
+
 /** Trims, drops blanks and removes duplicates that differ only in formatting or country code. */
 internal fun normalizeRecipients(addresses: List<String>): List<String> {
     val result = mutableListOf<String>()
     for (raw in addresses) {
         val address = raw.trim()
         if (address.isEmpty()) continue
-        if (result.any { it == address || SmsBackupKey.sameAddress(it, address) }) continue
+        if (result.any { MessagingAddresses.same(it, address) }) continue
         result += address
     }
     return result

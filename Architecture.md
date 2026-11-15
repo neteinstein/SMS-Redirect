@@ -79,9 +79,10 @@ Empty threads (created by "new message" and abandoned) are hidden by `message_co
 
 **As the default SMS app, the app writes what it sends.** Android auto-writes sent messages only
 for apps that are *not* the default. So `AndroidMessageSender` inserts an outbox row before
-sending, and `SmsForwarder` / `ScheduledSmsSender` record their sends through
-`SmsMessageWriter` when they can write (`canWrite()`); when another app is default, the system
-writes them and the app's insert is skipped.
+sending and moves it to sent/failed from the radio's result. `SmsForwarder` and
+`ScheduledSmsSender` send through that same `MessageSender` while the app is the default SMS app,
+so a forward or scheduled send that the radio rejects shows as failed rather than sent; when
+another app is default they call `SmsManager` directly and the system writes the sent row.
 
 **MMS codec.** The platform's PDU classes are hidden API, and third-party MMS libraries pull in
 legacy APN code and their own permissions. `domain/mms/` is a small pure-Kotlin WSP/MMS
@@ -90,9 +91,11 @@ bounds-checked (a truncated PDU parses to `null`) and unit-tested by round trips
 `MmsHeaders` value constants are whole octets (high bit set) and are written with
 `WspWriter.byte()`, not `shortInteger()`.
 
-**Transport choice** (`SendMessageUseCase`): text to one recipient → SMS; any attachment, or
-more than one recipient → MMS (a group conversation, so replies stay together), like the stock
-Messages app. Images over the carrier's `MMS_CONFIG_MAX_MESSAGE_SIZE` budget are re-encoded as
+**Transport choice** (`requiresMms`, shared by `SendMessageUseCase` and the composer hint): text
+to one phone number → SMS; any attachment, more than one recipient (a group conversation, so
+replies stay together), or an email recipient → MMS, like the stock Messages app. Recipients are
+compared with `MessagingAddresses.same`, which, unlike the restore-time
+`SmsBackupKey.sameAddress`, never merges two numbers with different explicit country codes. Images over the carrier's `MMS_CONFIG_MAX_MESSAGE_SIZE` budget are re-encoded as
 JPEG (quality, then dimensions) in `AndroidMessageSender`. A group MMS's conversation is the
 sender plus the other recipients (`MmsRecipients`); this phone's own number is not known without
 `READ_PHONE_NUMBERS`, which the app does not request, so a group can include it.
@@ -100,8 +103,14 @@ sender plus the other recipients (`MmsRecipients`); this phone's own number is n
 **Status.** Every send gets an explicit, mutable `PendingIntent` to the non-exported
 `MessageStatusReceiver` (mutable so the platform can fill in the MMSC response). Each SMS part
 reports; any failure marks the row failed, the last part marks it sent unless already failed.
-Failed messages show "Not sent. Tap to retry"; retry deletes the failed copy after a successful
-resend.
+Failed messages show "Not sent. Tap to retry"; retry resends the same text and attachments
+(an MMS's stored parts are read back) and deletes the failed copy once the new one is queued. The
+failure notification opens the message's conversation (`threadIdOf`).
+
+**MMS that cannot be downloaded** (no mobile data, or the download could not even start) get
+one "not downloaded" notification each, keyed by content location, with a Retry action. Opening
+the app does not clear them (`isMessageNotification` keeps the failure channel), because until
+the download succeeds that notification is the only record of the message.
 
 **Notifications** (`MessageNotifications`): one MessagingStyle notification per thread
 (appended to, not replaced), `VISIBILITY_PRIVATE` with a content-free public version, inline

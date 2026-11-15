@@ -42,14 +42,20 @@ class AndroidMmsDownloader(
     private val composer: MmsPduComposer = MmsPduComposer(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
-    /** Returns the announcement, or null when the push was not an MMS notification. */
+    /** An MMS announcement, and whether its download could be started. */
+    data class Announced(
+        val notification: MmsPdu.NotificationInd,
+        val started: Boolean,
+    )
+
+    /** Starts the download of an announced MMS. Null when the push was not an MMS notification. */
     fun onWapPush(
         pdu: ByteArray,
         subscriptionId: Int,
-    ): MmsPdu.NotificationInd? {
+    ): Announced? {
         val notification = parser.parse(pdu) as? MmsPdu.NotificationInd ?: return null
-        download(notification.contentLocation, notification.transactionId, notification.from, subscriptionId)
-        return notification
+        val started = download(notification.contentLocation, notification.transactionId, notification.from, subscriptionId)
+        return Announced(notification, started)
     }
 
     /** Starts (or retries) a download. Returns false if the platform refused to start it. */

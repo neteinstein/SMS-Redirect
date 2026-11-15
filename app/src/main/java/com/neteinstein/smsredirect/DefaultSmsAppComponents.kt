@@ -88,7 +88,19 @@ class MmsDeliverReceiver : BroadcastReceiver() {
         if (intent.action != Telephony.Sms.Intents.WAP_PUSH_DELIVER_ACTION) return
         val pdu = intent.getByteArrayExtra("data") ?: return
         val container = (context.applicationContext as SmsRedirectApplication).appContainer
-        container.mmsDownloader.onWapPush(pdu, intent.subscriptionId())
+        val subscriptionId = intent.subscriptionId()
+        val announced = container.mmsDownloader.onWapPush(pdu, subscriptionId) ?: return
+        // The download could not even start: no callback will come, so offer Retry now.
+        if (!announced.started) {
+            val notification = announced.notification
+            MessageStatusReceiver.showMmsDownloadFailed(
+                context,
+                notification.contentLocation,
+                notification.transactionId,
+                notification.from,
+                subscriptionId,
+            )
+        }
     }
 }
 
@@ -109,7 +121,7 @@ class ComposeSmsActivity : Activity() {
         val body =
             source.getStringExtra("sms_body")
                 ?: source.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()
-                ?: source.data?.getQueryParameterOrNull("body")
+                ?: composeLinkBody(source.data?.encodedSchemeSpecificPart)
         val attachment =
             if (source.action == Intent.ACTION_SEND) source.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java) else null
 
@@ -119,7 +131,7 @@ class ComposeSmsActivity : Activity() {
                 .putStringArrayListExtra(MainActivity.EXTRA_COMPOSE_ADDRESSES, ArrayList(recipients))
                 .putExtra(MainActivity.EXTRA_COMPOSE_BODY, body)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        if (attachment != null && isShareableAttachment(attachment, packageName)) {
+        if (attachment != null && isShareableAttachment(attachment.scheme, attachment.encodedAuthority, packageName)) {
             // Pass our read grant on to the screen that will send it.
             forward.putExtra(MainActivity.EXTRA_COMPOSE_ATTACHMENT, attachment.toString())
             forward.putExtra(MainActivity.EXTRA_COMPOSE_ATTACHMENT_TYPE, source.type)
@@ -129,8 +141,6 @@ class ComposeSmsActivity : Activity() {
         startActivity(forward)
         finish()
     }
-
-    private fun Uri.getQueryParameterOrNull(name: String): String? = runCatching { getQueryParameter(name) }.getOrNull()
 
     private companion object {
         val COMPOSE_SCHEMES = setOf("sms", "smsto", "mms", "mmsto")

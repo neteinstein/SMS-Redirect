@@ -424,7 +424,7 @@ private fun MessageActionsDialog(
                         onDismiss()
                     }) { Text(stringResource(R.string.conversation_action_copy)) }
                 }
-                if (message.status == MessageStatus.FAILED && !message.isMms) {
+                if (message.status == MessageStatus.FAILED) {
                     TextButton(onClick = onRetry) { Text(stringResource(R.string.conversation_action_retry)) }
                 }
                 TextButton(onClick = onDelete) { Text(stringResource(R.string.action_delete)) }

@@ -59,6 +59,23 @@ class MessagingUseCasesTest {
         }
 
     @Test
+    fun `text to an email address is an MMS, since SMS cannot reach it`() =
+        runTest {
+            send(listOf("ana@example.com"), "hi")
+
+            assertEquals(listOf("ana@example.com"), sender.sentMms.single().addresses)
+            assertTrue(sender.sentSms.isEmpty())
+        }
+
+    @Test
+    fun `numbers sharing their last digits but not their country are two recipients`() =
+        runTest {
+            send(listOf("+12025550123", "+442025550123"), "hi")
+
+            assertEquals(listOf("+12025550123", "+442025550123"), sender.sentMms.single().addresses)
+        }
+
+    @Test
     fun `nothing is sent unless this app is the default SMS app`() =
         runTest {
             checker.isDefault = false

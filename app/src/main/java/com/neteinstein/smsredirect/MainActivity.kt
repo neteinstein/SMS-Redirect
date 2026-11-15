@@ -1475,7 +1475,7 @@ class MainActivity : ComponentActivity() {
         uri: Uri,
         knownType: String?,
     ): OutgoingAttachment? {
-        if (!isShareableAttachment(uri, packageName)) return null
+        if (!isShareableAttachment(uri.scheme, uri.encodedAuthority, packageName)) return null
         val type = knownType?.takeIf { it.contains('/') && !it.contains('*') } ?: contentResolver.getType(uri) ?: return null
         val name =
             runCatching {
@@ -1652,21 +1652,6 @@ class MainActivity : ComponentActivity() {
         const val EXTRA_COMPOSE_ATTACHMENT = "compose_attachment"
         const val EXTRA_COMPOSE_ATTACHMENT_TYPE = "compose_attachment_type"
     }
-}
-
-/**
- * Whether a URI handed in by another app may be attached to an outgoing message. MainActivity and
- * ComposeSmsActivity are exported, so a caller could name a URI only *this* app can read -- another
- * conversation's MMS part, or one of our own cache files -- hoping the user taps Send without
- * looking. Those are refused; everything else is readable by the caller anyway.
- */
-internal fun isShareableAttachment(
-    uri: Uri,
-    ownPackage: String,
-): Boolean {
-    if (uri.scheme != "content") return false
-    val authority = uri.authority ?: return false
-    return authority !in setOf("sms", "mms", "mms-sms", "$ownPackage.fileprovider")
 }
 
 /** A "send a message" request forwarded by [ComposeSmsActivity]. */

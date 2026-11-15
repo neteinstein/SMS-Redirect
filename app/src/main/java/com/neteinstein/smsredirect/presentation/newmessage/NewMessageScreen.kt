@@ -90,7 +90,8 @@ fun NewMessageScreen(
                         null
                     },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Done),
+                // Not KeyboardType.Phone: a dial pad has no letters or "@", and email recipients are valid.
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { onCommitInput() }),
                 trailingIcon = {
                     IconButton(onClick = onPickContact) {

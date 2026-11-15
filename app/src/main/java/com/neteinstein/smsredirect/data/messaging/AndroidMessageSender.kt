@@ -330,6 +330,16 @@ class AndroidMessageSender(
             !accepted
         }
 
+    /** The conversation a stored SMS or MMS belongs to, e.g. to open it from a failure notification. */
+    suspend fun threadIdOf(messageUri: Uri): Long? =
+        withContext(dispatcher) {
+            runCatching {
+                resolver.query(messageUri, arrayOf(Telephony.Sms.THREAD_ID), null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) cursor.getLong(0).takeIf { it > 0 } else null
+                }
+            }.getOrNull()
+        }
+
     private fun markSmsFailed(
         messageUri: Uri,
         errorCode: Int,

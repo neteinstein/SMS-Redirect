@@ -56,4 +56,14 @@ class NewMessageViewModelTest {
         assertTrue(vm.commitInput())
         assertEquals(listOf("ana@example.com"), vm.uiState.value.effectiveAddresses)
     }
+
+    @Test
+    fun `different international numbers with the same last digits are both kept`() {
+        val vm = NewMessageViewModel()
+
+        vm.onContactPicked("+12025550123", null)
+        vm.onContactPicked("+442025550123", null)
+
+        assertEquals(2, vm.uiState.value.recipients.size)
+    }
 }

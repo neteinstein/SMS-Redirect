@@ -180,7 +180,7 @@ object MmsHeaders {
             "multipart/*",
             "multipart/mixed",
             "multipart/form-data",
-            "multipart/byterantes",
+            "multipart/byteranges",
             "multipart/alternative",
             "application/*",
             "application/java-vm",

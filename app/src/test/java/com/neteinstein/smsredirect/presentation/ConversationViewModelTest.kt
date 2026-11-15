@@ -7,6 +7,7 @@ import com.neteinstein.smsredirect.FakeMessageStore
 import com.neteinstein.smsredirect.domain.messaging.SendFailure
 import com.neteinstein.smsredirect.domain.messaging.SendOutcome
 import com.neteinstein.smsredirect.domain.model.ConversationMessage
+import com.neteinstein.smsredirect.domain.model.MessageAttachment
 import com.neteinstein.smsredirect.domain.model.MessageStatus
 import com.neteinstein.smsredirect.domain.model.OutgoingAttachment
 import com.neteinstein.smsredirect.domain.usecase.DeleteMessageUseCase
@@ -179,6 +180,39 @@ class ConversationViewModelTest {
             advanceUntilIdle()
 
             assertEquals(listOf(FakeMessageSender.Sms(ana, "again")), sender.sentSms)
+            assertEquals(listOf(failed), store.deletedMessages)
+        }
+
+    @Test
+    fun `text typed while a send is being prepared is kept`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+            vm.onDraftChanged("first")
+
+            vm.send()
+            vm.onDraftChanged("second")
+            advanceUntilIdle()
+
+            assertEquals(listOf(FakeMessageSender.Sms(ana, "first")), sender.sentSms)
+            assertEquals("second", vm.uiState.value.draft)
+        }
+
+    @Test
+    fun `retrying a failed MMS resends its text and attachments`() =
+        runTest {
+            val photo = MessageAttachment("content://mms/part/5", "image/jpeg", "p.jpg")
+            val failed = ConversationMessage(9, true, 7, ana, "look", 3_000, MessageStatus.FAILED, attachments = listOf(photo))
+            store.messageList += failed
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.retry(failed)
+            advanceUntilIdle()
+
+            val resent = sender.sentMms.single()
+            assertEquals("look", resent.body)
+            assertEquals(listOf(OutgoingAttachment("content://mms/part/5", "image/jpeg", "p.jpg")), resent.attachments)
             assertEquals(listOf(failed), store.deletedMessages)
         }
 }
