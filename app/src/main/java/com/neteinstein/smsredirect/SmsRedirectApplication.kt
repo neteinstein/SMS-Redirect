@@ -6,6 +6,7 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.neteinstein.smsredirect.data.analytics.FirebaseAnalyticsTracker
 import com.neteinstein.smsredirect.data.analytics.FirebaseCrashReporter
 import com.neteinstein.smsredirect.data.contacts.AndroidContactNameResolver
+import com.neteinstein.smsredirect.data.hibernation.AndroidUnusedAppRestrictionChecker
 import com.neteinstein.smsredirect.data.local.AppDatabase
 import com.neteinstein.smsredirect.data.mail.JavaMailImapTransport
 import com.neteinstein.smsredirect.data.messaging.AndroidMessageSender
@@ -16,9 +17,11 @@ import com.neteinstein.smsredirect.data.repository.RuleRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.ScheduledSmsHistoryRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.ScheduledSmsRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.SettingsRepositoryImpl
+import com.neteinstein.smsredirect.data.repository.SharedPreferencesKeepAliveReminderRepository
 import com.neteinstein.smsredirect.data.repository.SharedPreferencesMessagingSettingsRepository
 import com.neteinstein.smsredirect.data.repository.SmsBackupSettingsRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.SmsBackupStateRepositoryImpl
+import com.neteinstein.smsredirect.data.scheduling.WorkManagerKeepAliveReminderScheduler
 import com.neteinstein.smsredirect.data.scheduling.WorkManagerScheduledSmsScheduler
 import com.neteinstein.smsredirect.data.scheduling.WorkManagerSmsBackupScheduler
 import com.neteinstein.smsredirect.data.scheduling.WorkManagerSmsRestoreScheduler
@@ -39,6 +42,7 @@ import com.neteinstein.smsredirect.domain.repository.RuleRepository
 import com.neteinstein.smsredirect.domain.repository.ScheduledSmsHistoryRepository
 import com.neteinstein.smsredirect.domain.repository.ScheduledSmsRepository
 import com.neteinstein.smsredirect.domain.repository.SmsBackupSettingsRepository
+import com.neteinstein.smsredirect.domain.scheduling.KeepAliveReminderScheduler
 import com.neteinstein.smsredirect.domain.scheduling.ScheduledSmsScheduler
 import com.neteinstein.smsredirect.domain.scheduling.SmsBackupScheduler
 import com.neteinstein.smsredirect.domain.scheduling.SmsRestoreScheduler
@@ -89,6 +93,7 @@ import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSmsBackupSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ImportBackupUseCase
 import com.neteinstein.smsredirect.domain.usecase.MarkConversationReadUseCase
+import com.neteinstein.smsredirect.domain.usecase.MarkUnusedAppInfoShownUseCase
 import com.neteinstein.smsredirect.domain.usecase.RecordForwardHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.RecordScheduledSmsHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.ReorderRulesUseCase
@@ -107,6 +112,8 @@ import com.neteinstein.smsredirect.domain.usecase.SetKeepScheduleHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetLandingScreenUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
+import com.neteinstein.smsredirect.domain.usecase.ShouldSendKeepAliveReminderUseCase
+import com.neteinstein.smsredirect.domain.usecase.ShouldShowUnusedAppInfoUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateMessagingSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateScheduledSmsUseCase
@@ -167,6 +174,11 @@ class SmsRedirectApplication : Application() {
             runCatching { runBlocking { messageStore.resetInterruptedMmsDownloads() } }
             runCatching { runBlocking { messageStore.resetInterruptedReadReports() } }
         }.start()
+        val unusedAppRestrictionChecker = AndroidUnusedAppRestrictionChecker(this)
+        val keepAliveReminderRepository =
+            SharedPreferencesKeepAliveReminderRepository(
+                getSharedPreferences(SharedPreferencesKeepAliveReminderRepository.PREFS_NAME, MODE_PRIVATE),
+            )
         val backupSmsMessageUseCase =
             BackupSmsMessageUseCase(
                 mailFactory = SmsMailFactory(),
@@ -317,6 +329,11 @@ class SmsRedirectApplication : Application() {
                 deleteMessageUseCase = DeleteMessageUseCase(messageStore),
                 sendMessageUseCase = SendMessageUseCase(messageSender, defaultSmsAppChecker),
                 downloadMmsUseCase = DownloadMmsUseCase(mmsDownloader),
+                keepAliveReminderScheduler = WorkManagerKeepAliveReminderScheduler(this),
+                shouldSendKeepAliveReminderUseCase = ShouldSendKeepAliveReminderUseCase(unusedAppRestrictionChecker),
+                shouldShowUnusedAppInfoUseCase =
+                    ShouldShowUnusedAppInfoUseCase(unusedAppRestrictionChecker, keepAliveReminderRepository),
+                markUnusedAppInfoShownUseCase = MarkUnusedAppInfoShownUseCase(keepAliveReminderRepository),
             )
     }
 }
@@ -402,6 +419,10 @@ data class AppContainer(
     val deleteMessageUseCase: DeleteMessageUseCase,
     val sendMessageUseCase: SendMessageUseCase,
     val downloadMmsUseCase: DownloadMmsUseCase,
+    val keepAliveReminderScheduler: KeepAliveReminderScheduler,
+    val shouldSendKeepAliveReminderUseCase: ShouldSendKeepAliveReminderUseCase,
+    val shouldShowUnusedAppInfoUseCase: ShouldShowUnusedAppInfoUseCase,
+    val markUnusedAppInfoShownUseCase: MarkUnusedAppInfoShownUseCase,
 )
 
 data class AppUpdateContainer(

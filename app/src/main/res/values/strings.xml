@@ -370,4 +370,12 @@
     <string name="conversation_receipt_delivered">Delivered</string>
     <string name="conversation_receipt_not_delivered">Not delivered</string>
     <string name="conversation_receipt_read">Read</string>
+    <string name="keep_alive_notification_channel_name">Open-the-app reminder</string>
+    <string name="keep_alive_notification_channel_description">A monthly reminder to open the app so Android does not treat it as unused</string>
+    <string name="keep_alive_notification_title">Open SMS Toolbox to keep it active</string>
+    <string name="keep_alive_notification_text">Android resets permissions of apps that go unused. Open the app now and then so your forwarding, schedules and backup keep working.</string>
+    <string name="unused_app_info_title">Stop these reminders?</string>
+    <string name="unused_app_info_message">Android resets the permissions of apps you do not open for a few months, which would stop forwarding, schedules and backup. This is why you get a monthly reminder.\n\nYou can switch off \"Manage app if unused\" (called \"Remove permissions and free up space\" on some phones) for this app instead. The reminders then stop on their own.</string>
+    <string name="unused_app_info_open_settings">Open settings</string>
+    <string name="unused_app_info_dismiss">Got it</string>
 </resources>

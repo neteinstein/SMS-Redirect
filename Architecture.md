@@ -582,6 +582,14 @@ mean "unset" and `SmsBackupSettingsRepositoryImpl` applies the real defaults, mi
 
 Debug builds disable it (`.test` applicationId suffix: a release APK could never install over them).
 
+## Keep-alive reminder
+
+Android resets the permissions of apps left unused for months ("Manage app if unused" / "Remove permissions and free up space"), which would silently stop Redirect, Schedule and Backup.
+
+- `KeepAliveReminderWorker`: a 30-day periodic WorkManager job that posts a low-importance notification (`KeepAliveNotifications`, silent no-op without `POST_NOTIFICATIONS`). `MainActivity.onStart` restarts the countdown (`CANCEL_AND_REENQUEUE`), so the reminder only fires after a full month without opening the app.
+- `UnusedAppRestrictionChecker` (domain) / `AndroidUnusedAppRestrictionChecker` (data) wraps `PackageManager.isAutoRevokeWhitelisted`. `ShouldSendKeepAliveReminderUseCase` skips the notification when the user already exempted the app; if the platform will not say, it sends.
+- First open from the notification: `ShouldShowUnusedAppInfoUseCase` (one-time flag in SharedPreferences, `KeepAliveReminderRepository`) decides whether `MainActivity` shows a dialog explaining the setting, with a button to `ACTION_AUTO_REVOKE_PERMISSIONS`. Nothing leaves the device.
+
 ## Permissions
 
 Permissions are requested contextually rather than upfront at first launch — there is no onboarding screen that gates the app behind granting everything. Each permission is requested the first time its feature is used, after a rationale dialog (Proceed/Cancel) explains why it's needed:

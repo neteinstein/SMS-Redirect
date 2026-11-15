@@ -374,4 +374,12 @@
     <string name="conversation_receipt_delivered">Entregue</string>
     <string name="conversation_receipt_not_delivered">Não entregue</string>
     <string name="conversation_receipt_read">Lida</string>
+    <string name="keep_alive_notification_channel_name">Lembrete para abrir a app</string>
+    <string name="keep_alive_notification_channel_description">Um lembrete mensal para abrir a app e o Android não a considerar sem uso</string>
+    <string name="keep_alive_notification_title">Abra o SMS Toolbox para o manter ativo</string>
+    <string name="keep_alive_notification_text">O Android repõe as permissões das apps que ficam sem uso. Abra a app de vez em quando para que o reencaminhamento, os agendamentos e o backup continuem a funcionar.</string>
+    <string name="unused_app_info_title">Parar estes lembretes?</string>
+    <string name="unused_app_info_message">O Android repõe as permissões das apps que não abre durante alguns meses, o que pararia o reencaminhamento, os agendamentos e o backup. É por isso que recebe um lembrete mensal.\n\nPode desativar \"Gerir app se não utilizada\" (em alguns telemóveis \"Remover permissões e libertar espaço\") para esta app. Os lembretes param automaticamente.</string>
+    <string name="unused_app_info_open_settings">Abrir definições</string>
+    <string name="unused_app_info_dismiss">Entendi</string>
 </resources>
