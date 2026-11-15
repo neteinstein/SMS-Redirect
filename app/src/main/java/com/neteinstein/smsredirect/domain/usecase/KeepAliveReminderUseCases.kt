@@ -16,8 +16,7 @@ class ShouldShowUnusedAppInfoUseCase(
     private val checker: UnusedAppRestrictionChecker,
     private val repository: KeepAliveReminderRepository,
 ) {
-    suspend operator fun invoke(): Boolean =
-        !repository.isUnusedAppInfoShown() && checker.status() != UnusedAppRestrictionStatus.DISABLED
+    suspend operator fun invoke(): Boolean = !repository.isUnusedAppInfoShown() && checker.status() != UnusedAppRestrictionStatus.DISABLED
 }
 
 class MarkUnusedAppInfoShownUseCase(
