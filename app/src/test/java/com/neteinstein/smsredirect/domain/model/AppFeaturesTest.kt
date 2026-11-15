@@ -7,30 +7,35 @@ import org.junit.Test
 
 class AppFeaturesTest {
     @Test
-    fun `backup only build offers just the Backup landing screen`() {
-        val features = AppFeatures.BACKUP_ONLY
+    fun `every build opens on Messages and ships all five tabs in order`() {
+        val expected =
+            listOf(LandingScreen.MESSAGES, LandingScreen.REDIRECT, LandingScreen.SCHEDULE, LandingScreen.BACKUP, LandingScreen.RESTORE)
 
-        assertEquals(listOf(LandingScreen.BACKUP), features.availableLandingScreens)
-        assertEquals(LandingScreen.BACKUP, features.resolveLandingScreen(LandingScreen.REDIRECT))
-        assertEquals(LandingScreen.BACKUP, features.resolveLandingScreen(LandingScreen.SCHEDULE))
+        assertEquals(expected, AppFeatures.ALL.availableLandingScreens)
+        assertEquals(expected, AppFeatures.PLAY.availableLandingScreens)
+        assertEquals(LandingScreen.MESSAGES, LandingScreen.entries.first())
+    }
+
+    @Test
+    fun `the two builds differ only in the self-update`() {
+        assertFalse(AppFeatures.PLAY.selfUpdate)
+        assertTrue(AppFeatures.ALL.selfUpdate)
+        assertEquals(AppFeatures.ALL, AppFeatures.PLAY.copy(selfUpdate = true))
+    }
+
+    @Test
+    fun `a build without a tool falls back to Messages`() {
+        val features = AppFeatures.PLAY.copy(forwarding = false, scheduling = false)
+
+        assertEquals(LandingScreen.MESSAGES, features.resolveLandingScreen(LandingScreen.REDIRECT))
+        assertEquals(LandingScreen.MESSAGES, features.resolveLandingScreen(LandingScreen.SCHEDULE))
+        assertEquals(LandingScreen.RESTORE, features.resolveLandingScreen(LandingScreen.RESTORE))
         assertFalse(features.sendsSms)
     }
 
     @Test
-    fun `full build keeps the chosen landing screen`() {
-        val features = AppFeatures.ALL
-
-        assertEquals(LandingScreen.entries, features.availableLandingScreens)
-        assertEquals(LandingScreen.SCHEDULE, features.resolveLandingScreen(LandingScreen.SCHEDULE))
-        assertTrue(features.sendsSms)
-    }
-
-    @Test
-    fun `either messaging feature needs SEND_SMS`() {
-        assertTrue(AppFeatures.BACKUP_ONLY.copy(scheduling = true).sendsSms)
-        assertEquals(
-            listOf(LandingScreen.BACKUP, LandingScreen.REDIRECT),
-            AppFeatures.BACKUP_ONLY.copy(forwarding = true).availableLandingScreens,
-        )
+    fun `either tool shows the messaging settings`() {
+        assertTrue(AppFeatures.PLAY.copy(forwarding = false).sendsSms)
+        assertTrue(AppFeatures.PLAY.copy(scheduling = false).sendsSms)
     }
 }

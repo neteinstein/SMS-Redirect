@@ -19,6 +19,9 @@ import com.neteinstein.smsredirect.domain.analytics.CrashReporter
 import com.neteinstein.smsredirect.domain.analytics.NoOpAnalyticsTracker
 import com.neteinstein.smsredirect.domain.analytics.NoOpCrashReporter
 import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
+import com.neteinstein.smsredirect.domain.messaging.MessageSender
+import com.neteinstein.smsredirect.domain.messaging.SendOutcome
+import com.neteinstein.smsredirect.domain.sms.DefaultSmsAppChecker
 import com.neteinstein.smsredirect.domain.usecase.CanForwardSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixNowUseCase
@@ -37,6 +40,14 @@ class SmsForwarder(
     private val getShowNotificationsNowUseCase: GetShowNotificationsNowUseCase,
     private val analyticsTracker: AnalyticsTracker = NoOpAnalyticsTracker,
     private val crashReporter: CrashReporter = NoOpCrashReporter,
+    /**
+     * Used instead of `SmsManager` directly while this app is the default SMS app. Android
+     * records sent messages itself only for apps that are *not* the default; as the default, the
+     * app must write an outbox row and move it to sent/failed from the radio's result, which is
+     * what [MessageSender] does. Null in tests.
+     */
+    private val messageSender: MessageSender? = null,
+    private val defaultSmsAppChecker: DefaultSmsAppChecker? = null,
 ) {
     companion object {
         private const val TAG = "SmsForwarder"
@@ -112,12 +123,18 @@ class SmsForwarder(
                 return
             }
 
-            val parts = smsManager.divideMessage(prefixedBody)
-            if (parts.size == 1) {
-                smsManager.sendTextMessage(rule.targetNumber, null, prefixedBody, null, null)
+            val defaultAppSender = messageSender?.takeIf { defaultSmsAppChecker?.isDefaultSmsApp() == true }
+            if (defaultAppSender != null) {
+                val outcome = defaultAppSender.sendSms(rule.targetNumber, prefixedBody)
+                if (outcome is SendOutcome.Failed) throw IllegalStateException("Send not queued: ${outcome.reason}")
             } else {
-                Log.d(TAG, "Message split into ${parts.size} parts")
-                smsManager.sendMultipartTextMessage(rule.targetNumber, null, parts, null, null)
+                val parts = smsManager.divideMessage(prefixedBody)
+                if (parts.size == 1) {
+                    smsManager.sendTextMessage(rule.targetNumber, null, prefixedBody, null, null)
+                } else {
+                    Log.d(TAG, "Message split into ${parts.size} parts")
+                    smsManager.sendMultipartTextMessage(rule.targetNumber, null, parts, null, null)
+                }
             }
             Log.i(TAG, "SMS forwarded successfully to '${rule.targetNumber}'")
             analyticsTracker.logEvent(

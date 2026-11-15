@@ -2,12 +2,13 @@
 
 This folder holds two videos with different jobs:
 
-> ⚠️ **Out of date for Google Play.** Both videos show Redirect and Schedule and the
-> `SEND_SMS` grant. Since the Play build became Backup and Restore only (the
-> **play** flavor, no `SEND_SMS`), they describe the GitHub APK, not the Play app.
-> Re-record or re-render them without the Redirect/Schedule scenes before using
-> them in Play Console, especially the permissions demonstration video, which must
-> match the permissions the submitted build actually requests.
+> ⚠️ **Out of date for Google Play.** Both videos predate SMS Toolbox becoming an
+> SMS/MMS messaging app: they have no Messages tab, show the old standalone SMS
+> permission prompt, and present the default-SMS role as temporary. The Play
+> declaration is now "Default SMS handler", whose demonstration video must show the
+> app sending and receiving messages and how it becomes the default handler. Record
+> it on a device following the shot list in
+> [`../testing-instructions.md`](../testing-instructions.md#demonstration-video-permissions-declaration-form).
 
 | File | Use it for |
 |---|---|

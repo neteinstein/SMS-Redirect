@@ -15,7 +15,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         BackupSettingsEntity::class,
         SmsBackupStateEntity::class,
     ],
-    version = 10,
+    version = 11,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -71,6 +71,18 @@ abstract class AppDatabase : RoomDatabase() {
             }
 
         /**
+         * Data only, no schema change: SMS Toolbox became a messaging app, and Messages became
+         * the first tab and the default landing screen. Every row still on the old default
+         * (Backup) moves to Messages; a user who picked Redirect or Schedule keeps that.
+         */
+        val MIGRATION_10_11 =
+            object : Migration(10, 11) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("UPDATE app_settings SET landingScreen = 'MESSAGES' WHERE landingScreen = 'BACKUP'")
+                }
+            }
+
+        /**
          * Adds the Gmail SMS backup feature and the landing-screen preference.
          *
          * Two new tables, plus a rebuild of `app_settings` -- the rebuild exists only to move the
@@ -84,6 +96,7 @@ abstract class AppDatabase : RoomDatabase() {
          * `MIGRATION_8_9` above is deliberately left alone: it reconstructs the historical v9
          * schema and must keep the old default to stay a faithful 8 -> 9 step.
          */
+
         val MIGRATION_9_10 =
             object : Migration(9, 10) {
                 override fun migrate(db: SupportSQLiteDatabase) {

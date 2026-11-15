@@ -7,11 +7,11 @@ yourself; wording and categories change over time.
 
 **This form covers the Play build only.** The app ships in two flavors from one
 codebase (see `app/build.gradle.kts`): the **play** flavor uploaded to Google Play
-is Backup and Restore only (no forwarding, no scheduling, no `SEND_SMS`, no
-self-update), and the **github** flavor is an APK attached to GitHub releases that
-also forwards and schedules SMS and checks GitHub for updates. Only the Play
-build is distributed through Play, so only its behaviour is declared here. The
-GitHub build's extras are covered by [`PrivacyPolicy.md`](../PrivacyPolicy.md).
+is the SMS/MMS messaging app (declared as the **Default SMS handler**) with
+Redirect, Schedule, Backup and Restore, and no self-update; the **github** flavor
+is an APK attached to GitHub releases that additionally checks GitHub for updates.
+Only the Play build is distributed through Play, so only its behaviour is declared
+here. The GitHub build's update check is covered by [`PrivacyPolicy.md`](../PrivacyPolicy.md).
 
 The key rule Google uses: **"collected" means transmitted off the device**
 to the developer or a third party. Data the app only reads/writes locally
@@ -19,6 +19,17 @@ to the developer or a third party. Data the app only reads/writes locally
 though the app requests the runtime permission for it (that's covered
 separately by the **Permissions declaration form** — see the README's warning
 about `SmsAndCallLogPolicy`).
+
+**Being the default SMS app does not by itself change these answers.** The
+messaging feature reads, shows and stores SMS/MMS in Android's own message
+store on the device. Messages the user sends go, at the user's request, to the
+recipients the user picked, through the carrier: Google's definition of
+"sharing" excludes transfers the user initiates and expects, so this is neither
+collection nor sharing. The same holds for photos/videos/audio the user attaches
+to an MMS and for incoming MMS, which Android's MMS service downloads from the
+carrier's MMSC onto the device. Nothing in the messaging feature reaches the
+developer or Firebase: notifications are local, and no analytics event or crash
+report carries a number, name, attachment or message text.
 
 ⚠️ **The Gmail backup feature changes this answer for SMS content.** When a
 user enables it, SMS content *is* transmitted off the device. The destination
@@ -50,16 +61,16 @@ address when the user enables Gmail backup.
 | Data type | Collected (transmitted off-device)? | Shared with 3rd parties? | Purpose | Notes |
 |---|---|---|---|---|
 | SMS or MMS content | **Yes — only when the user enables Gmail backup** | No | App functionality | Uploaded over TLS (IMAPS) to **the user's own Gmail account**, using an app password the user supplies. Not to any server the developer operates, and the developer cannot read it. Off by default. |
-| Contacts | No | No | — | Used only to put a contact's name in a backup email (if the user has granted the permission); never transmitted to the developer. |
-| Device or other IDs | **Yes**, via Firebase SDKs | No (processed by Firebase under Google's data processing terms, not sold/shared for ads) | Analytics, Crash reporting | Firebase attaches an installation identifier, and Firebase Analytics may read the **advertising ID**: the manifest declares `com.google.android.gms.permission.AD_ID` for it. It is used for analytics only, never ads. Declare it; leaving it out while the permission is in the manifest is a mismatch Play flags. To stop collecting it instead, remove the `AD_ID` permission (or set `google_analytics_adid_collection_enabled` to `false`) and update this row and `PrivacyPolicy.md` §6. |
-| Phone number | No | No | — | Phone numbers never leave the device except to the user's own Gmail (backup). |
+| Contacts | No | No | — | Used on-device to show names in conversations and notifications, and to put a contact's name in a backup email; never transmitted to the developer. |
+| Device or other IDs | **Yes**, via Firebase SDKs | No (processed by Firebase under Google's data processing terms, not sold/shared for ads) | Analytics, Crash reporting | Firebase attaches an installation identifier, and Firebase Analytics may read the **advertising ID**: the manifest declares `com.google.android.gms.permission.AD_ID` for it. It is used for analytics only, never ads. Declare it; leaving it out while the permission is in the manifest is a mismatch Play flags. To stop collecting it instead, remove the `AD_ID` permission (or set `google_analytics_adid_collection_enabled` to `false`) and update this row and `PrivacyPolicy.md` §7. |
+| Phone number | No | No | — | Phone numbers leave the device only as the recipients of messages the user sends (to the carrier, user-initiated) and inside the user's own Gmail backup. |
 | App activity (app interactions) | Yes | No | Analytics | A setting was changed (for example Gmail backup turned on or off) — see `domain/analytics/AnalyticsEvents.kt`. No phone numbers, names, or message text included. |
 | Crash logs / diagnostics | Yes | No | Crash reporting (Crashlytics) | Device model, OS version, stack traces. |
 | Location | No | No | — | App never requests location permissions. |
 | Personal info — email address | **Yes — only when the user enables Gmail backup** | No | App functionality, Account management | The user's own Gmail address, entered by them. Stored on-device (the app password alongside it is encrypted with an Android Keystore key) and transmitted only to Google as the IMAP login. Never sent to the developer. |
 | Personal info (name, other profile data) | No | No | — | No account/login system operated by the developer exists. |
 | Financial info | No | No | — | Not applicable. |
-| Photos, videos, audio, files | No | No | — | Not applicable. |
+| Photos, videos, audio, files | No | No | — | Only as MMS attachments the user picks and sends to recipients they chose (user-initiated, via the carrier), or receives by MMS. Stored only in Android's message store on the device; never sent to the developer. |
 
 ## Security practices section
 

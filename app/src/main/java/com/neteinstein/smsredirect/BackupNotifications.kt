@@ -27,7 +27,6 @@ object BackupNotifications {
     private const val PROGRESS_NOTIFICATION_ID = 200_000
     private const val AUTH_FAILED_NOTIFICATION_ID = 200_001
     private const val RESTORE_NOTIFICATION_ID = 200_002
-    private const val DEFAULT_SMS_APP_NOTIFICATION_ID = 200_003
 
     fun showProgress(
         context: Context,
@@ -101,22 +100,15 @@ object BackupNotifications {
         manager.notify(RESTORE_NOTIFICATION_ID, notification)
     }
 
-    /**
-     * Ends on the step users are most likely to forget: handing the SMS role back. Until they do,
-     * their usual app receives nothing and MMS cannot be delivered at all.
-     */
     fun showRestoreComplete(
         context: Context,
         restored: Int,
     ) {
         val manager = notificationManagerOrNull(context) ?: return
-        val text = context.getString(R.string.restore_notification_complete_text)
         val notification =
             baseBuilder(context)
                 .setSmallIcon(android.R.drawable.stat_sys_download_done)
                 .setContentTitle(context.resources.getQuantityString(R.plurals.restore_notification_complete, restored, restored))
-                .setContentText(text)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(text))
                 .setAutoCancel(true)
                 .setContentIntent(deepLink(context, Routes.Home))
                 .build()
@@ -136,32 +128,6 @@ object BackupNotifications {
 
     fun cancelRestoreProgress(context: Context) {
         notificationManagerOrNull(context)?.cancel(RESTORE_NOTIFICATION_ID)
-    }
-
-    /**
-     * Shown when something arrives that only a full messaging app could handle -- a new SMS (which
-     * is saved, but this app has no conversation view to show it in) or an MMS (which cannot be
-     * saved at all). Deliberately carries no sender or message text.
-     */
-    fun showStillDefaultSmsApp(
-        context: Context,
-        mmsMissed: Boolean,
-    ) {
-        val manager = notificationManagerOrNull(context) ?: return
-        val text =
-            context.getString(
-                if (mmsMissed) R.string.default_sms_notification_mms_text else R.string.default_sms_notification_sms_text,
-            )
-        val notification =
-            baseBuilder(context)
-                .setSmallIcon(android.R.drawable.stat_notify_chat)
-                .setContentTitle(context.getString(R.string.default_sms_notification_title))
-                .setContentText(text)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(text))
-                .setAutoCancel(true)
-                .setContentIntent(deepLink(context, Routes.Home))
-                .build()
-        manager.notify(DEFAULT_SMS_APP_NOTIFICATION_ID, notification)
     }
 
     private fun baseBuilder(context: Context): NotificationCompat.Builder =

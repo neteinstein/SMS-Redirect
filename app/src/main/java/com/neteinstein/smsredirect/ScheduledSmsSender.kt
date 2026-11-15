@@ -18,10 +18,13 @@ import com.neteinstein.smsredirect.domain.analytics.CrashReporter
 import com.neteinstein.smsredirect.domain.analytics.NoOpAnalyticsTracker
 import com.neteinstein.smsredirect.domain.analytics.NoOpCrashReporter
 import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
+import com.neteinstein.smsredirect.domain.messaging.MessageSender
+import com.neteinstein.smsredirect.domain.messaging.SendOutcome
 import com.neteinstein.smsredirect.domain.model.RepeatType
 import com.neteinstein.smsredirect.domain.model.ScheduledSms
 import com.neteinstein.smsredirect.domain.scheduling.RecurrenceCalculator
 import com.neteinstein.smsredirect.domain.scheduling.ScheduledSmsScheduler
+import com.neteinstein.smsredirect.domain.sms.DefaultSmsAppChecker
 import com.neteinstein.smsredirect.domain.usecase.GetKeepScheduleHistoryNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetScheduledSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsNowUseCase
@@ -37,6 +40,14 @@ class ScheduledSmsSender(
     private val scheduler: ScheduledSmsScheduler,
     private val analyticsTracker: AnalyticsTracker = NoOpAnalyticsTracker,
     private val crashReporter: CrashReporter = NoOpCrashReporter,
+    /**
+     * Used instead of `SmsManager` directly while this app is the default SMS app. Android
+     * records sent messages itself only for apps that are *not* the default; as the default, the
+     * app must write an outbox row and move it to sent/failed from the radio's result, which is
+     * what [MessageSender] does. Null in tests.
+     */
+    private val messageSender: MessageSender? = null,
+    private val defaultSmsAppChecker: DefaultSmsAppChecker? = null,
 ) {
     companion object {
         private const val TAG = "ScheduledSmsSender"
@@ -73,12 +84,18 @@ class ScheduledSmsSender(
                 return
             }
 
-            val parts = smsManager.divideMessage(scheduledSms.message)
-            if (parts.size == 1) {
-                smsManager.sendTextMessage(scheduledSms.contactNumber, null, scheduledSms.message, null, null)
+            val defaultAppSender = messageSender?.takeIf { defaultSmsAppChecker?.isDefaultSmsApp() == true }
+            if (defaultAppSender != null) {
+                val outcome = defaultAppSender.sendSms(scheduledSms.contactNumber, scheduledSms.message)
+                if (outcome is SendOutcome.Failed) throw IllegalStateException("Send not queued: ${outcome.reason}")
             } else {
-                Log.d(TAG, "Message split into ${parts.size} parts")
-                smsManager.sendMultipartTextMessage(scheduledSms.contactNumber, null, parts, null, null)
+                val parts = smsManager.divideMessage(scheduledSms.message)
+                if (parts.size == 1) {
+                    smsManager.sendTextMessage(scheduledSms.contactNumber, null, scheduledSms.message, null, null)
+                } else {
+                    Log.d(TAG, "Message split into ${parts.size} parts")
+                    smsManager.sendMultipartTextMessage(scheduledSms.contactNumber, null, parts, null, null)
+                }
             }
             Log.i(TAG, "Scheduled SMS sent successfully to '${scheduledSms.contactNumber}'")
             analyticsTracker.logEvent(

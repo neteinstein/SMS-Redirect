@@ -8,6 +8,9 @@ import com.neteinstein.smsredirect.data.analytics.FirebaseCrashReporter
 import com.neteinstein.smsredirect.data.contacts.AndroidContactNameResolver
 import com.neteinstein.smsredirect.data.local.AppDatabase
 import com.neteinstein.smsredirect.data.mail.JavaMailImapTransport
+import com.neteinstein.smsredirect.data.messaging.AndroidMessageSender
+import com.neteinstein.smsredirect.data.messaging.AndroidMmsDownloader
+import com.neteinstein.smsredirect.data.messaging.ContentProviderMessageStore
 import com.neteinstein.smsredirect.data.repository.ForwardHistoryRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.RuleRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.ScheduledSmsHistoryRepositoryImpl
@@ -28,6 +31,7 @@ import com.neteinstein.smsredirect.domain.analytics.AnalyticsTracker
 import com.neteinstein.smsredirect.domain.analytics.CrashReporter
 import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
 import com.neteinstein.smsredirect.domain.mail.SmsMailFactory
+import com.neteinstein.smsredirect.domain.messaging.MessageStore
 import com.neteinstein.smsredirect.domain.model.AppFeatures
 import com.neteinstein.smsredirect.domain.repository.ForwardHistoryRepository
 import com.neteinstein.smsredirect.domain.repository.RuleRepository
@@ -48,12 +52,18 @@ import com.neteinstein.smsredirect.domain.usecase.CheckForAppUpdateUseCase
 import com.neteinstein.smsredirect.domain.usecase.ClearGmailCredentialsUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteAllHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteAllScheduledSmsHistoryUseCase
+import com.neteinstein.smsredirect.domain.usecase.DeleteConversationUseCase
+import com.neteinstein.smsredirect.domain.usecase.DeleteMessageUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteScheduledSmsUseCase
+import com.neteinstein.smsredirect.domain.usecase.DownloadMmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ExportBackupUseCase
 import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetAvailableAppUpdateUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetCategoriesUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetConversationAddressesUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetConversationMessagesUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetConversationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardHistoryUseCase
@@ -64,6 +74,7 @@ import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepScheduleHistoryNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepScheduleHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetLandingScreenUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetOrCreateConversationUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetScheduledSmsCategoriesUseCase
@@ -75,12 +86,14 @@ import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSmsBackupSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ImportBackupUseCase
+import com.neteinstein.smsredirect.domain.usecase.MarkConversationReadUseCase
 import com.neteinstein.smsredirect.domain.usecase.RecordForwardHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.RecordScheduledSmsHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.ReorderRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.ReorderScheduledSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.RunSmsBackupUseCase
 import com.neteinstein.smsredirect.domain.usecase.RunSmsRestoreUseCase
+import com.neteinstein.smsredirect.domain.usecase.SendMessageUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetBackupEnabledUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetBackupGmailLabelUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetBackupPreviousEnabledUseCase
@@ -95,6 +108,7 @@ import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateScheduledSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.VerifyGmailCredentialsUseCase
+import kotlinx.coroutines.runBlocking
 
 class SmsRedirectApplication : Application() {
     lateinit var appContainer: AppContainer
@@ -109,7 +123,7 @@ class SmsRedirectApplication : Application() {
         val database =
             Room
                 .databaseBuilder(this, AppDatabase::class.java, "sms_redirect.db")
-                .addMigrations(AppDatabase.MIGRATION_8_9, AppDatabase.MIGRATION_9_10)
+                .addMigrations(AppDatabase.MIGRATION_8_9, AppDatabase.MIGRATION_9_10, AppDatabase.MIGRATION_10_11)
                 .fallbackToDestructiveMigration(dropAllTables = false)
                 .build()
         val repository = RuleRepositoryImpl(database.ruleDao())
@@ -136,6 +150,15 @@ class SmsRedirectApplication : Application() {
         val mailTransport = JavaMailImapTransport()
         val defaultSmsAppChecker = AndroidDefaultSmsAppChecker(this)
         val smsMessageWriter = ContentProviderSmsMessageWriter(contentResolver, defaultSmsAppChecker)
+        val messageStore = ContentProviderMessageStore(this)
+        val messageSender = AndroidMessageSender(this, messageStore)
+        val mmsDownloader = AndroidMmsDownloader(this, messageStore)
+        // Send/download PDU files whose platform callback never came (process killed, reboot).
+        // Downloads that were "in progress" when the process died are retryable again.
+        Thread {
+            runCatching { mmsDownloader.clearStaleFiles() }
+            runCatching { runBlocking { messageStore.resetInterruptedMmsDownloads() } }
+        }.start()
         val backupSmsMessageUseCase =
             BackupSmsMessageUseCase(
                 mailFactory = SmsMailFactory(),
@@ -213,6 +236,8 @@ class SmsRedirectApplication : Application() {
                         getShowNotificationsNowUseCase = getShowNotificationsNowUseCase,
                         analyticsTracker = analyticsTracker,
                         crashReporter = crashReporter,
+                        messageSender = messageSender,
+                        defaultSmsAppChecker = defaultSmsAppChecker,
                     ),
                 getScheduledSmsListUseCase = GetScheduledSmsListUseCase(scheduledSmsRepository),
                 getScheduledSmsCategoriesUseCase = GetScheduledSmsCategoriesUseCase(scheduledSmsRepository),
@@ -238,6 +263,8 @@ class SmsRedirectApplication : Application() {
                         scheduler = scheduledSmsScheduler,
                         analyticsTracker = analyticsTracker,
                         crashReporter = crashReporter,
+                        messageSender = messageSender,
+                        defaultSmsAppChecker = defaultSmsAppChecker,
                     ),
                 smsBackupSettingsRepository = smsBackupSettingsRepository,
                 smsBackupScheduler = WorkManagerSmsBackupScheduler(this),
@@ -268,6 +295,18 @@ class SmsRedirectApplication : Application() {
                         mailTransport = mailTransport,
                         smsMessageWriter = smsMessageWriter,
                     ),
+                messageStore = messageStore,
+                messageSender = messageSender,
+                mmsDownloader = mmsDownloader,
+                getConversationsUseCase = GetConversationsUseCase(messageStore),
+                getConversationMessagesUseCase = GetConversationMessagesUseCase(messageStore),
+                getConversationAddressesUseCase = GetConversationAddressesUseCase(messageStore),
+                getOrCreateConversationUseCase = GetOrCreateConversationUseCase(messageStore),
+                markConversationReadUseCase = MarkConversationReadUseCase(messageStore),
+                deleteConversationUseCase = DeleteConversationUseCase(messageStore),
+                deleteMessageUseCase = DeleteMessageUseCase(messageStore),
+                sendMessageUseCase = SendMessageUseCase(messageSender, defaultSmsAppChecker),
+                downloadMmsUseCase = DownloadMmsUseCase(mmsDownloader),
             )
     }
 }
@@ -338,6 +377,19 @@ data class AppContainer(
     val defaultSmsAppChecker: DefaultSmsAppChecker,
     val smsMessageWriter: SmsMessageWriter,
     val runSmsRestoreUseCase: RunSmsRestoreUseCase,
+    val messageStore: MessageStore,
+    /** Concrete: [MessageStatusReceiver] reports send results back to it. */
+    val messageSender: AndroidMessageSender,
+    val mmsDownloader: AndroidMmsDownloader,
+    val getConversationsUseCase: GetConversationsUseCase,
+    val getConversationMessagesUseCase: GetConversationMessagesUseCase,
+    val getConversationAddressesUseCase: GetConversationAddressesUseCase,
+    val getOrCreateConversationUseCase: GetOrCreateConversationUseCase,
+    val markConversationReadUseCase: MarkConversationReadUseCase,
+    val deleteConversationUseCase: DeleteConversationUseCase,
+    val deleteMessageUseCase: DeleteMessageUseCase,
+    val sendMessageUseCase: SendMessageUseCase,
+    val downloadMmsUseCase: DownloadMmsUseCase,
 )
 
 data class AppUpdateContainer(

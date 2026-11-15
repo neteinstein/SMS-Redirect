@@ -13,38 +13,29 @@ own.
 
 **Answer: Yes, provide access instructions.** `com.neteinstein.smsredirect`
 has no developer-operated account system and no login screen (see
-[PrivacyPolicy.md](../PrivacyPolicy.md), §11), so every screen is reachable
-without a special "unlock" step — but the app's **declared core use case is
-"Backup and restore"** (see the
-[README's permissions-declaration section](README.md#before-this-can-go-live-the-sms-permissions-declaration)),
-and that feature only does something once the user enters a Gmail address and
-app password in Settings. A reviewer with no credentials sees the Backup
-tab's empty/disabled state, not the feature actually working, which is enough
-to make the "Backup and restore" declaration look unsubstantiated. Mark the
-declaration as requiring access instructions and fill in the
-**"Instructions"** free-text field with something like:
+[PrivacyPolicy.md](../PrivacyPolicy.md), §12). The app's **declared core use
+case is "Default SMS handler"** (see the
+[README's permissions-declaration section](README.md#before-this-can-go-live-the-sms-permissions-declaration)):
+the Messages tab works as soon as the reviewer accepts Android's "set as
+default SMS app" prompt, with no credentials. Only the Backup and Restore tabs
+need a Gmail account, so give the reviewer one. Fill in the **"Instructions"**
+free-text field with something like:
 
-> No login is required to use most of this app — every screen is reachable
-> without special access. The app's primary feature (SMS backup to Gmail,
-> declared under "Backup and restore") requires the user to supply their own
-> Gmail address and a 16-character Gmail **app password** in Settings →
-> Gmail backup. We've provided a disposable test Gmail account below so you
-> can exercise this feature directly; app passwords require 2-Step
-> Verification to be enabled on the Google Account, which we've done for
-> this account:
+> SMS Toolbox is an SMS/MMS messaging app. No login is required. On first
+> launch it asks to become the default SMS app (Android's own prompt): accept
+> it, then grant Contacts and Notifications. The Messages tab (first tab)
+> shows every conversation on the device; tap + to write a new message, or
+> open a conversation to reply. Attach a picture with the photo button to send
+> an MMS. Incoming SMS/MMS appear in the list and as notifications with Reply
+> and Mark as read.
+>
+> The Backup and Restore tabs back up SMS to the user's own Gmail and restore
+> them. They need a Gmail address and a 16-character Gmail **app password** in
+> Settings → Gmail backup. We've provided a disposable test Gmail account
+> (2-Step Verification on, as app passwords require):
 >
 > - Email: *(disposable test Gmail address — do not use a real/personal account)*
 > - App password: *(generate at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) and paste here)*
->
-> Steps: open the app (it lands on the Backup tab) → tap the gear/settings
-> icon in the top app bar → "Gmail backup" → enter the address and app
-> password above → Save (this validates the login against Gmail) → turn on
-> "Backup all previous SMS" if you want existing messages included → back to
-> the Backup tab → toggle it on → grant the SMS and notification permission
-> prompts that appear → receive an SMS on the test device, or send one from
-> it → within a couple of minutes the message appears as an email in the
-> test account's Gmail, under the "SMS" label (sent messages are marked
-> `To:` / `Sent:` instead of `From:` / `Received:`).
 
 Generate a fresh app password for this specific submission, and treat it as
 a **standing** credential for as long as the App access entry lists it —
@@ -54,34 +45,34 @@ credentials here.
 
 ### Demonstration video (Permissions declaration form)
 
-The same **App content > Permissions declaration form** that requires the
-"Backup and restore" use case also asks for a short demonstration video.
-A rendered walkthrough of the full app, covering every permission prompt
-(SMS, contacts, notifications, battery exemption), is in
-[`video/`](video/README.md): use it as the shot list, or as a placeholder
-until you have a device recording. Record one take, screen-recorded on a real
-device (not an emulator, so the SMS flow is real):
+The **App content > Sensitive app permissions > Permissions declaration form**
+asks you to pick the core use case — choose **"Default SMS handler"** — and for
+a short video showing the app *working as a messaging app* and *how it becomes
+the default SMS handler*. Record one take, screen-recorded on a real device with
+a live SIM (not an emulator, so SMS and MMS are real):
 
-1. Fresh install → launch (the app opens directly on the Backup tab; no
-   permission prompt yet — this app requests permissions contextually, not
-   on launch).
-2. Tap the gear/settings icon in the top app bar → "Gmail backup" → enter
-   the test Gmail address + app password from above → Save → show the
-   success state (it verifies the login against Gmail before saving).
-   Optionally turn on "Backup all previous SMS" to include existing messages.
-3. Back to the Backup tab → toggle backup on → grant the SMS and
-   notification permission prompts that appear at this point.
-4. Receive an SMS on the test device, then send a reply from the usual
-   messaging app. Both are backed up: received and sent messages alike.
-5. Switch to the Gmail app/web on the same test account → show the message
-   arriving as an email under the configured label (default: `SMS`).
-6. Restore: on the Backup tab tap **Restore messages** → read the 3-step
-   dialog → Continue → accept the system "set as default SMS app" prompt →
-   show the progress → tap **Switch back to your messaging app** and pick the
-   original app again. This shows the reviewer that the default-SMS role is
-   used only for the restore.
-7. There is nothing else to show: the Play build is Backup and Restore only
-   (no Redirect or Schedule tabs, no bottom navigation, no `SEND_SMS`).
+1. Fresh install → launch. The splash hands over to the **Messages** tab, and
+   the app immediately explains that it is a messaging app and offers to
+   become the default SMS app → **Continue**.
+2. Android's own "Set SMS Toolbox as your default SMS app?" prompt → accept.
+   Point out that **no SMS permission was asked for before this**: the SMS
+   permissions arrive with the role. Grant Contacts and Notifications when
+   asked right after.
+3. The Messages tab now lists the device's existing conversations, with
+   contact names and unread markers.
+4. Tap **+** → type or pick a contact → **Next** → write a message → **Send**.
+   Show it going from "Sending…" to its timestamp.
+5. From a second phone, send an SMS to the test device: show the notification
+   (sender + text), reply from the notification, then open the conversation.
+6. Picture message: in the conversation, tap the photo button, pick a photo,
+   send it (the hint reads "Picture or group message (MMS)"). From the second
+   phone, send a picture back and show it arriving in the conversation.
+7. Briefly show the other tabs — Redirect, Schedule, Backup, Restore — as
+   features built on top of the messaging app.
+8. Optional: Android Settings → Apps → Default apps → SMS app shows SMS
+   Toolbox selected.
+
+Never show the test Gmail app password on screen.
 
 ## 2. Internal testing track (pre-release QA)
 
@@ -108,10 +99,48 @@ build before promoting to `alpha`/`beta`/`production`.
 
 ### Manual test script
 
-This is the **play** flavor: Backup and Restore only. It has no bottom
-navigation, no Redirect or Schedule tab, and must not request `SEND_SMS`.
-Redirect and Schedule ship only in the GitHub APK (**github** flavor); test
-those with `./gradlew installGithubDebug` (see "GitHub build" below).
+This is the **play** flavor: every tab (Messages, Redirect, Schedule, Backup,
+Restore), no self-update. The **github** flavor adds only the update check
+(test it with `./gradlew installGithubDebug`, see "GitHub build" below).
+
+**Default SMS app and Messages tab**
+- [ ] Fresh install: the first thing asked is to become the **default SMS app**
+      (in-app explanation, then Android's role prompt). No SMS runtime
+      permission dialog appears before it, ever.
+- [ ] Declining the role: no SMS permission prompt appears. Messages and
+      Restore are shown **disabled** (greyed out, no + button, Restore button
+      inactive) under a warning bar; its **Set as default** button brings the
+      role prompt back, and accepting enables both tabs.
+- [ ] Still without the role: adding a rule, a scheduled SMS or enabling
+      Backup offers the role again; declining → **Use SMS permissions only** →
+      grant → the feature works (forwarding, scheduled sends and backup run),
+      while Messages and Restore stay disabled.
+- [ ] Accepting: Contacts and Notifications are asked right after; the inbox
+      lists existing conversations, newest first, unread ones bold.
+- [ ] New message (+): a typed number, a picked contact (no Contacts prompt —
+      the picker grants the one number), and several recipients (group hint
+      shown) all open the right conversation.
+- [ ] Sending an SMS: "Sending…" then the time. Long text (over 160 chars) is
+      sent as one message. Airplane mode → "Not sent. Tap to retry"; retry
+      after re-enabling the radio sends it once.
+- [ ] Receiving an SMS: notification shows sender and text (lock screen: only
+      "New message"); Reply sends and clears it; Mark as read clears it; no
+      notification while that conversation is open.
+- [ ] MMS: send a photo (large photos are shrunk, not rejected); receive a
+      photo from another phone (needs mobile data).
+- [ ] MMS with mobile data off: the conversation shows "Picture message not
+      downloaded yet" with **Download**, and a notification appears. Dismiss
+      the notification, reboot, turn data on, open the conversation, tap
+      **Download**: the picture replaces the placeholder, exactly once.
+- [ ] Group: send to two numbers → one group conversation; a reply from either
+      lands in it.
+- [ ] From another app: a contact's message button and Share → "Message" open
+      a pre-filled conversation; nothing is sent until Send is tapped.
+- [ ] Long-press: copy text, delete a message, delete a conversation.
+- [ ] Redirect / Schedule: a forwarded or scheduled SMS also appears in the
+      target's conversation in Messages.
+- [ ] Switching the default SMS app away in Android settings: Messages shows
+      the prompt again; nothing crashes.
 
 **Backup tab**
 - [ ] Permissions are requested contextually, not on first launch: enabling
@@ -139,28 +168,25 @@ those with `./gradlew installGithubDebug` (see "GitHub build" below).
       next backup run does not upload it again.
 - [ ] Confirm in Gmail: each backed-up message is a separate email under the
       configured label, and re-running backup doesn't duplicate already-backed-up
-      messages (the local hash record dedupes — see `PrivacyPolicy.md` §1).
+      messages (the local hash record dedupes — see `PrivacyPolicy.md` §2).
 - [ ] Turn backup off, then back on — it should resume, not re-upload everything.
 - [ ] Gmail → open a backed-up email → "Show original": the `X-SMS-Toolbox-Format`,
       `X-SMS-Type`, `X-SMS-Address` and `X-SMS-Date` headers are present.
 
-**Restore (Backup tab → Restore from Gmail)**
+**Restore tab**
 - [ ] Delete a few SMS on the device, tap **Restore messages**, accept the
-      dialog and the system default-SMS prompt. The deleted messages come
+      dialog (and the system default-SMS prompt, if SMS Toolbox is not already
+      the default). The deleted messages come
       back in the right conversations with their original dates. Everything
       else counts as "already on this phone", with no duplicates.
 - [ ] Run the restore a second time: 0 restored, everything already on the phone.
-- [ ] Decline the system prompt: the card explains why it is needed, and nothing
-      runs.
+- [ ] With another app as default, decline the system prompt: a dialog explains
+      why it is needed, and nothing runs.
 - [ ] Mid-restore, switch the default SMS app back in system Settings: the
       restore stops with a clear message instead of reporting thousands of
       failures.
-- [ ] After a restore, the card and a notification both prompt you to switch
-      back. Until you do, a banner stays on the Backup tab. Once you switch
-      back, the banner disappears when you return to the app.
-- [ ] While SMS Toolbox is still the default SMS app, receive an SMS: it is saved
-      to the inbox (visible after switching back), and a notification without
-      any message content says it arrived.
+- [ ] Restored messages show up in the Messages tab straight away, in the
+      right conversations; there is no prompt to switch to another app.
 - [ ] Restore onto a fresh install (new device or cleared storage): after the
       restore, backup must **not** re-upload the restored messages to Gmail.
 - [ ] Restore from a label containing backups made **before** this release
@@ -177,11 +203,11 @@ those with `./gradlew installGithubDebug` (see "GitHub build" below).
       and the result says "N emails … were not SMS backups and were skipped".
 
 **Play build specifics**
-- [ ] App info → Permissions lists no "send SMS" permission, and Settings shows
-      no roaming / notification / prefix / export-import options and no
-      Updates section.
-- [ ] Upgrading from an older build that had rules or schedules: the app opens
-      on Backup, and no forwarded or scheduled SMS is ever sent.
+- [ ] Settings has no Updates section, and the app never offers to install an
+      APK.
+- [ ] Upgrading from the previous (Backup & Restore only) Play build: the app
+      opens on Messages and asks to become the default SMS app; Gmail backup
+      settings are kept, and the landing-screen setting now reads Messages.
 
 ### GitHub build (APK on GitHub releases)
 
@@ -222,7 +248,7 @@ versionCode and signing key. Before a release, on a device with the GitHub APK:
 
 **Cross-cutting**
 - [ ] Revoke SMS permission from Android Settings mid-use; confirm the
-      affected feature degrades gracefully (per `PrivacyPolicy.md` §14)
+      affected feature degrades gracefully (per `PrivacyPolicy.md` §15)
       instead of crashing.
 - [ ] Deep link `smsredirect://app` opens the app (used by any external
       trigger, e.g. a notification action).

@@ -10,7 +10,11 @@
 
 Android app built with Kotlin + Gradle Kotlin DSL implementing MVVM clean architecture (domain use cases, repository, and Room database).
 
-Three features, as bottom-navigation tabs: **Backup** SMS to your own Gmail account (and **restore** them to a new phone), **Redirect** incoming SMS by rule, and **Schedule** messages to send later.
+An SMS/MMS messaging app with a toolbox around it. Five bottom-navigation tabs: **Messages** (send and receive SMS, picture and group messages, as your default SMS app), **Redirect** incoming SMS by rule, **Schedule** messages to send later, **Backup** SMS to your own Gmail account, and **Restore** them to a new phone.
+
+On first launch the app asks to become your default SMS app. If you'd rather keep your current messaging app, Redirect, Schedule and Backup still work with SMS permissions only; Messages and Restore are then shown disabled, with a bar offering to make SMS Toolbox the default.
+
+The Google Play and GitHub versions are the same app with the same features. The only difference is the **Updates** section in Settings: the GitHub version checks GitHub releases and installs updates itself, while Google Play updates the Play version.
 
 [![SMS Toolbox launch video: Backup, Restore, Redirect, Schedule](store-listing/video/sms-toolbox-launch-preview.gif)](store-listing/video/sms-toolbox-launch.mp4)
 
@@ -18,7 +22,7 @@ Three features, as bottom-navigation tabs: **Backup** SMS to your own Gmail acco
 
 ## Install the APK (outside Google Play)
 
-The GitHub APK has every feature (Backup & Restore, Redirect, Schedule). Installing it takes about five minutes the first time; after that the app updates itself from GitHub. If you only need Backup & Restore, the [Google Play version](https://play.google.com/store/apps/details?id=com.neteinstein.smsredirect) is simpler.
+The GitHub APK and the [Google Play version](https://play.google.com/store/apps/details?id=com.neteinstein.smsredirect) have the same features; the GitHub APK also updates itself from GitHub releases. Installing it takes about five minutes the first time. If you can use Google Play, it is simpler.
 
 > The pictures are illustrations of stock Android 14–16. Wording and menu locations differ a little between phone makers (Samsung, Xiaomi, OnePlus…), but the steps are the same.
 

@@ -1,28 +1,37 @@
-package com.neteinstein.smsredirect.presentation.backup
+package com.neteinstein.smsredirect.presentation.restore
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,6 +39,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -37,29 +47,122 @@ import androidx.compose.ui.unit.dp
 import com.neteinstein.smsredirect.R
 import com.neteinstein.smsredirect.domain.model.SmsRestoreFailure
 import com.neteinstein.smsredirect.domain.model.SmsRestoreState
+import com.neteinstein.smsredirect.presentation.components.WarningBanner
+import com.neteinstein.smsredirect.presentation.messages.DISABLED_ALPHA
 
-/**
- * "Restore from Gmail" card on the Backup tab.
- *
- * A restore is a three-step journey -- lend SMS Toolbox the SMS role, restore, hand the role
- * back -- and the third step is the one people forget. So the card always shows where in that
- * journey the user is, and the hand-back is a primary button rather than a footnote.
- */
+/** The Restore tab: copies the SMS backed up in the user's Gmail label back to this phone. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RestoreSection(
-    state: BackupUiState,
+fun RestoreScreen(
+    state: RestoreUiState,
     defaultSmsRoleDenied: Boolean,
     onRestoreConfirmed: () -> Unit,
     onCancelRestore: () -> Unit,
     onRestoreResultDismissed: () -> Unit,
-    onSwitchBackToMessagingApp: () -> Unit,
-    modifier: Modifier = Modifier,
+    onOpenSettings: () -> Unit,
+    onSetDefaultSmsApp: () -> Unit = {},
+    bottomBar: @Composable () -> Unit = {},
+    /** Shown above the content, e.g. the "update available" banner. */
+    topBanner: @Composable () -> Unit = {},
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.restore_title)) },
+                actions = {
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(imageVector = Icons.Default.Settings, contentDescription = stringResource(R.string.home_cd_settings))
+                    }
+                },
+            )
+        },
+        bottomBar = bottomBar,
+    ) { padding ->
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+        ) {
+            topBanner()
+            if (!state.isDefaultSmsApp) {
+                // Android lets only the default SMS app write messages, so without the role the
+                // whole tab is shown disabled, with the way to enable it on top.
+                WarningBanner(
+                    message = stringResource(R.string.restore_disabled_banner),
+                    actionLabel = stringResource(R.string.default_sms_banner_action),
+                    onActionClick = onSetDefaultSmsApp,
+                )
+            }
+            val contentModifier = if (state.isDefaultSmsApp) Modifier else Modifier.alpha(DISABLED_ALPHA)
+            if (!state.hasCredentials) {
+                Box(modifier = contentModifier) { NoCredentialsState(onOpenSettings, enabled = state.isDefaultSmsApp) }
+            } else {
+                Column(modifier = contentModifier.verticalScroll(rememberScrollState())) {
+                    RestoreCard(
+                        state = state,
+                        defaultSmsRoleDenied = defaultSmsRoleDenied,
+                        onRestoreConfirmed = onRestoreConfirmed,
+                        onCancelRestore = onCancelRestore,
+                        onRestoreResultDismissed = onRestoreResultDismissed,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NoCredentialsState(
+    onOpenSettings: () -> Unit,
+    enabled: Boolean,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Default.CloudOff,
+            contentDescription = null,
+            modifier = Modifier.size(72.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = stringResource(R.string.restore_no_credentials_title),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(top = 24.dp),
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = stringResource(R.string.backup_no_credentials_restore_hint),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp),
+            textAlign = TextAlign.Center,
+        )
+        Button(onClick = onOpenSettings, enabled = enabled, modifier = Modifier.padding(top = 24.dp)) {
+            Text(stringResource(R.string.backup_open_settings))
+        }
+    }
+}
+
+@Composable
+private fun RestoreCard(
+    state: RestoreUiState,
+    defaultSmsRoleDenied: Boolean,
+    onRestoreConfirmed: () -> Unit,
+    onCancelRestore: () -> Unit,
+    onRestoreResultDismissed: () -> Unit,
 ) {
     // Local UI state only: whether the explanation dialog is open.
     var showConfirmation by rememberSaveable { mutableStateOf(false) }
 
     Card(
-        modifier = modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -77,6 +180,7 @@ fun RestoreSection(
                     IdleContent(
                         label = state.settings.gmailLabel,
                         defaultSmsRoleDenied = defaultSmsRoleDenied,
+                        enabled = state.isDefaultSmsApp,
                         onStart = { showConfirmation = true },
                     )
                 }
@@ -86,19 +190,14 @@ fun RestoreSection(
                 }
 
                 is SmsRestoreState.Finished -> {
-                    FinishedContent(
-                        result = restore,
-                        isDefaultSmsApp = state.isDefaultSmsApp,
-                        onSwitchBack = onSwitchBackToMessagingApp,
-                        onDone = onRestoreResultDismissed,
-                    )
+                    FinishedContent(result = restore, onDone = onRestoreResultDismissed)
                 }
 
                 is SmsRestoreState.Failed -> {
                     FailedContent(
                         failure = restore.reason,
                         label = state.settings.gmailLabel,
-                        onRetry = { showConfirmation = true },
+                        onRetry = { if (state.isDefaultSmsApp) showConfirmation = true },
                         onDismiss = onRestoreResultDismissed,
                     )
                 }
@@ -123,6 +222,7 @@ fun RestoreSection(
 private fun IdleContent(
     label: String,
     defaultSmsRoleDenied: Boolean,
+    enabled: Boolean,
     onStart: () -> Unit,
 ) {
     Text(
@@ -137,7 +237,7 @@ private fun IdleContent(
             color = MaterialTheme.colorScheme.error,
         )
     }
-    OutlinedButton(onClick = onStart, modifier = Modifier.fillMaxWidth()) {
+    OutlinedButton(onClick = onStart, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
         Icon(imageVector = Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
         Text(stringResource(R.string.restore_start))
     }
@@ -178,8 +278,6 @@ private fun RunningContent(
 @Composable
 private fun FinishedContent(
     result: SmsRestoreState.Finished,
-    isDefaultSmsApp: Boolean,
-    onSwitchBack: () -> Unit,
     onDone: () -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -216,7 +314,7 @@ private fun FinishedContent(
             color = MaterialTheme.colorScheme.error,
         )
     }
-    SwitchBackOrDone(isDefaultSmsApp = isDefaultSmsApp, onSwitchBack = onSwitchBack, onDone = onDone)
+    TextButton(onClick = onDone) { Text(stringResource(R.string.restore_done)) }
 }
 
 @Composable
@@ -255,36 +353,6 @@ private fun FailedContent(
         OutlinedButton(onClick = onRetry) { Text(stringResource(R.string.restore_try_again)) }
         TextButton(onClick = onDismiss) { Text(stringResource(R.string.restore_dismiss)) }
     }
-    // Switching back after a failure is prompted by the screen-level banner.
-}
-
-@Composable
-private fun SwitchBackOrDone(
-    isDefaultSmsApp: Boolean,
-    onSwitchBack: () -> Unit,
-    onDone: () -> Unit,
-) {
-    if (isDefaultSmsApp) {
-        Surface(
-            color = MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-            shape = MaterialTheme.shapes.medium,
-        ) {
-            Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
-                Icon(imageVector = Icons.Default.Info, contentDescription = null, modifier = Modifier.size(20.dp))
-                Text(
-                    text = stringResource(R.string.restore_switch_back_explanation),
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
-            }
-        }
-        Button(onClick = onSwitchBack, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.restore_switch_back))
-        }
-    } else {
-        TextButton(onClick = onDone) { Text(stringResource(R.string.restore_done)) }
-    }
 }
 
 @Composable
@@ -301,9 +369,12 @@ private fun RestoreConfirmationDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.restore_dialog_intro, label))
-                Step(1, stringResource(R.string.restore_dialog_step_role))
-                Step(2, stringResource(R.string.restore_dialog_step_restore))
-                Step(3, stringResource(R.string.restore_dialog_step_switch_back))
+                if (!alreadyDefault) {
+                    Step(1, stringResource(R.string.restore_dialog_step_role))
+                    Step(2, stringResource(R.string.restore_dialog_step_restore))
+                } else {
+                    Text(stringResource(R.string.restore_dialog_step_restore))
+                }
                 Text(
                     text = stringResource(R.string.restore_dialog_mms_note),
                     style = MaterialTheme.typography.bodySmall,

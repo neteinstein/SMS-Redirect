@@ -6,9 +6,16 @@
         tools:ignore="SmsAndCallLogPolicy" />
     <uses-permission android:name="android.permission.RECEIVE_SMS"
         tools:ignore="SmsAndCallLogPolicy" />
+    <!-- SMS Toolbox is a full SMS/MMS messaging app (Play core use case: "Default SMS handler").
+         These are granted together with the default SMS role, which the app always requests
+         before any of them; see MainActivity's default SMS app gate. -->
+    <uses-permission android:name="android.permission.SEND_SMS"
+        tools:ignore="SmsAndCallLogPolicy" />
+    <uses-permission android:name="android.permission.RECEIVE_MMS"
+        tools:ignore="SmsAndCallLogPolicy" />
+    <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH"
+        tools:ignore="SmsAndCallLogPolicy" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
-    <!-- SEND_SMS is declared only by the github flavor (src/github/AndroidManifest.xml): the Play
-         build ships Backup and Restore only and must not request it. -->
     <!-- Gmail SMS backup connects directly to imap.gmail.com. Both of these otherwise
          arrive only via manifest merge from the Firebase and WorkManager AARs; declaring
          them explicitly keeps the app working if those deps ever change, and keeps the
@@ -58,10 +65,9 @@
             </intent-filter>
         </receiver>
 
-        <!-- Restore from Gmail. Only the default SMS app may write to the SMS store, and Android
-             only offers that role to an app declaring all four components below. The user grants
-             the role just for the restore and is walked back to their usual app afterwards.
-             See DefaultSmsAppComponents.kt. MMS is intentionally not supported. -->
+        <!-- The default SMS app components (see DefaultSmsAppComponents.kt). Android only offers
+             the SMS role to an app declaring all four; SMS Toolbox uses each of them for real:
+             receiving SMS and MMS, composing from other apps, and quick replies. -->
         <receiver
             android:name=".SmsDeliverReceiver"
             android:permission="android.permission.BROADCAST_SMS"
@@ -86,12 +92,21 @@
             android:excludeFromRecents="true">
             <intent-filter>
                 <action android:name="android.intent.action.SENDTO" />
+                <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="sms" />
                 <data android:scheme="smsto" />
                 <data android:scheme="mms" />
                 <data android:scheme="mmsto" />
+            </intent-filter>
+            <!-- Share text or a picture "as a message". -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="video/*" />
             </intent-filter>
         </activity>
         <service
@@ -108,6 +123,14 @@
             </intent-filter>
         </service>
 
+        <!-- The app's own callbacks: send results, MMS downloads, notification reply / mark read.
+             Only ever reached through explicit PendingIntents this app creates. -->
+        <receiver
+            android:name=".MessageStatusReceiver"
+            android:exported="false" />
+
+        <!-- Also hands MMS PDU files (cache/mms/) to the platform's MMS service, which reads the
+             PDU to send and writes downloaded messages through a granted content URI. -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

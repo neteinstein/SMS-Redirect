@@ -177,11 +177,11 @@ class SettingsViewModelTest {
         }
 
     @Test
-    fun `init observes landingScreen defaults to backup`() =
+    fun `init observes landingScreen defaults to messages`() =
         runTest {
             val vm = createViewModel()
             advanceUntilIdle()
-            assertEquals(LandingScreen.BACKUP, vm.landingScreen.value)
+            assertEquals(LandingScreen.MESSAGES, vm.landingScreen.value)
         }
 
     @Test

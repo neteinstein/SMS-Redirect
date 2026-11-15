@@ -1,31 +1,48 @@
 # Privacy Policy for SMS Toolbox
 
-**Effective date:** November 10, 2026
+**Effective date:** November 15, 2026
 
-SMS Toolbox ("the App", "we", "us") is an Android app developed by [neteinstein](https://github.com/neteinstein). It backs up your text messages to your own Gmail account, restores them to a phone, forwards the messages you choose, and sends messages on a schedule.
+SMS Toolbox ("the App", "we", "us") is an Android app developed by [neteinstein](https://github.com/neteinstein). **Its primary purpose is SMS messaging:** it is a full SMS and MMS messaging app that you set as your phone's default SMS app, to read, send and receive your text and picture messages. Around that, it backs up your text messages to your own Gmail account, restores them to a phone, forwards the messages you choose, and sends messages on a schedule.
 
 **Two versions.** The App is published in two versions built from the same source code:
 
-- **Google Play version:** Gmail backup and restore only. It does not forward or schedule messages, does not have the `SEND_SMS` permission, and does not check for updates itself (Google Play updates it). Sections 3 and 8, and the forwarding and scheduling parts of other sections, do not apply to it.
-- **GitHub version** (the APK attached to each release on GitHub): every feature in this policy, plus the update check described in Section 9.
+- **Google Play version:** every feature in this policy except the update check in Section 10 (Google Play updates it).
+- **GitHub version** (the APK attached to each release on GitHub): every feature in this policy, plus the update check described in Section 10.
 
 Everything else in this policy applies to both.
 
-**The short version:** we run no server and have no account system. Your messages, rules and schedules are processed on your phone. If you turn on Gmail backup, your phone talks **directly to Google's Gmail servers**, using credentials you create, and your messages go to **your own** mailbox. They never pass through us. The App's source code is public at [github.com/neteinstein/SMS-Redirect](https://github.com/neteinstein/SMS-Redirect), so every statement in this policy can be checked against the code.
+**The short version:** we run no server and have no account system. Your messages, rules and schedules are processed and stored on your phone. If you turn on Gmail backup, your phone talks **directly to Google's Gmail servers**, using credentials you create, and your messages go to **your own** mailbox. They never pass through us. The App's source code is public at [github.com/neteinstein/SMS-Redirect](https://github.com/neteinstein/SMS-Redirect), so every statement in this policy can be checked against the code.
 
 ## At a glance
 
 | Question | Answer |
 |---|---|
 | Do we run a server that receives your messages, contacts or credentials? | **No.** We do not operate one |
+| Where are your messages kept? | On your phone, in Android's own SMS/MMS storage, as with any messaging app. The App keeps no other copy |
 | Does the App upload your text messages? | Only if **you** turn on Gmail backup. Then they go to **your own** Gmail account, encrypted in transit, using an app password you create |
 | Can we read your backups? | **No.** They live in your Gmail account, which only you control |
 | Where are your rules, schedules and history kept? | On your phone only |
 | Where is your Gmail app password kept? | On your phone, encrypted with a key held in the Android Keystore. It is sent only to Google, as your login |
 | Is your data sold, rented or used for advertising? | **No** |
-| What else leaves your phone? | Crash reports and usage statistics (Firebase), which never include phone numbers, contact names or message text. Messages you forward or schedule, sent by your carrier to the numbers **you** chose. A settings file, only if you export and share one. In the GitHub version, a once-a-day anonymous update check to GitHub |
+| What else leaves your phone? | Messages you send, forward or schedule, delivered by your carrier to the people **you** chose. Crash reports and usage statistics (Firebase), which never include phone numbers, contact names or message text. A settings file, only if you export and share one. In the GitHub version, a once-a-day anonymous update check to GitHub |
 
-## 1. Gmail backup
+## 1. Messaging (the App's main feature)
+
+SMS Toolbox is a messaging app. It works once you make it your **default SMS app**: the App asks for this first, using Android's own prompt, before it requests any SMS permission, and Android then gives it access to your messages. You can choose another default SMS app at any time in Android Settings; the App then stops receiving messages.
+
+**If you do not make it your default SMS app,** the Messages and Restore tabs are shown disabled, with a reminder and a button to change your mind. Redirect, Schedule and Backup can still work: when you use one of them, the App offers the default-SMS-app prompt again, and only if you decline it asks for the SMS permissions that feature needs (to read, receive and send SMS) on their own.
+
+**Reading.** The App shows the conversations and messages in your phone's SMS/MMS storage, with contact names from your phone's contacts. It reads them on your phone only, to display them to you.
+
+**Receiving.** Android delivers incoming SMS and MMS to the default SMS app. The App saves each one in your phone's message storage, as any messaging app does, and shows a notification with the sender and the text, with Reply and Mark as read buttons. On the lock screen the notification only says "New message", unless you change that in Android's notification settings. A picture message (MMS) is downloaded from your carrier's MMS server over mobile data, by Android's MMS service, and then saved on your phone.
+
+**Sending.** When you send a message, or reply from a notification or the incoming-call screen, the App hands it to Android, which sends it through your mobile carrier to the people you chose, and saves it in your phone's message storage. Text to one person is sent as SMS; a message with a picture or other attachment, or to several people, is sent as MMS. Large photos are resized on your phone first so the carrier accepts them. Your carrier may charge for messages as usual.
+
+**Sharing into the App.** Other apps can open a new message in the App (a contact's "message" button, an `sms:` link, or Share). Nothing is sent until you tap Send.
+
+**What the App does not do with your messages.** It does not send them to us, does not analyse them, does not use them for advertising, and does not keep a copy of them anywhere except your phone's message storage (and your own Gmail, only if you turn on backup, Section 2). It does not use SMS to verify an account.
+
+## 2. Gmail backup
 
 Gmail backup is **off until you turn it on**, and it needs a Gmail address and an app password, which you enter in Settings.
 
@@ -41,23 +58,23 @@ An app password gives access to your whole Gmail mailbox, not only the backup la
 
 **Deleting backups.** Backed-up messages are emails in your own Gmail account. Delete the label, or individual emails, in Gmail to remove them.
 
-## 2. Restoring from Gmail
+## 3. Restoring from Gmail
 
-A restore is **only ever started by you**, from the Backup tab, and uses the same Gmail address and app password as backup.
+A restore is **only ever started by you**, from the Restore tab, and uses the same Gmail address and app password as backup.
 
 Your phone connects directly to Gmail (IMAP with TLS, read-only) and reads the emails under your backup label. It restores only emails the App itself created. Anything else under that label, including email that imitates a backup, is skipped and never written to your phone. Each restored message is written to your phone's SMS storage, in the inbox or the sent box as it was originally. Messages already on the phone are skipped. Only text messages (SMS) are restored, not picture messages (MMS).
 
-Android lets only the default SMS app write messages, so during a restore the App asks you to make it your default SMS app. It asks you to switch back to your usual messaging app as soon as the restore is finished. While it holds that role, it saves new incoming SMS to your inbox, as your usual app would. Picture messages (MMS) cannot be received during that time.
+Android lets only the default SMS app write messages, so a restore needs the App to be your default SMS app, which, as a messaging app, it normally already is. If it is not, the App asks you first.
 
 For each restored message the App stores the same one-way hash it stores for a backup, so a restored message is not uploaded again. Nothing in a restore is sent anywhere except from your own mailbox to your own phone.
 
-## 3. Forwarding and scheduled messages
+## 4. Forwarding and scheduled messages
 
-When an incoming SMS matches one of your rules, the App reads its sender and text on your phone and sends it, with the prefix you configured, to the number you chose. It uses Android's standard SMS service, through your mobile carrier. Scheduled messages are sent the same way, at the time you chose. These messages go only to the numbers you specified. We do not relay, copy or store them on any server.
+When an incoming SMS matches one of your rules, the App reads its sender and text on your phone and sends it, with the prefix you configured, to the number you chose. It uses Android's standard SMS service, through your mobile carrier. Scheduled messages are sent the same way, at the time you chose. These messages go only to the numbers you specified, and appear in that conversation in the App like any other message you sent. We do not relay, copy or store them on any server.
 
-## 4. What stays on your phone
+## 5. What stays on your phone
 
-The App keeps the following in its local database. None of it is sent to us.
+Your SMS and MMS messages are kept in Android's own message storage on your phone, where every messaging app keeps them; deleting a message or conversation in the App deletes it there. In addition, the App keeps the following in its local database. None of it is sent to us.
 
 - **Redirect rules:** name, category, sender to match, target number and order
 - **Scheduled messages:** name, category, contact or number, message text, date and time, repeat pattern and stop date
@@ -69,21 +86,23 @@ The App keeps the following in its local database. None of it is sent to us.
 
 You can view, change or delete this data in the App at any time, and remove all of it by clearing the App's storage or uninstalling it.
 
-## 5. What leaves your phone
+## 6. What leaves your phone
 
 This is the complete list:
 
 | What | Where it goes | When |
 |---|---|---|
+| Messages you send (SMS and MMS, including attachments you add) | The people **you** chose, via your carrier's SMS/MMS network | When you tap Send, or reply from a notification or the call screen |
+| A request to download a picture message sent to you | Your carrier's MMS server, by Android's MMS service | When a picture message arrives |
 | Your SMS messages (received and sent) | **Your own** Gmail account, via Google's IMAP servers | Only while Gmail backup is on |
 | Your Gmail address and app password | Google's IMAP servers, as your login | Each time the App connects for a backup or restore |
 | Messages you forward or schedule | The phone numbers **you** chose, via your carrier's SMS network | When a rule matches, or at the scheduled time |
-| Crash reports and usage statistics | Google Firebase (see Section 6) | Automatically |
+| Crash reports and usage statistics | Google Firebase (see Section 7) | Automatically |
 | A settings file (rules, schedules, settings) | Wherever **you** send it from Android's share sheet | Only if you tap Export |
 | An update check (GitHub version only) | GitHub's public API (`api.github.com`), and GitHub's download servers if you install an update | At most once a day when you open the App, when you tap Check for updates, and when you tap Download and install |
-| Your App data, as part of an Android device backup | Your own Google account, encrypted by Android | Only if Android device backup or transfer is on (see Section 7) |
+| Your App data, as part of an Android device backup | Your own Google account, encrypted by Android | Only if Android device backup or transfer is on (see Section 8) |
 
-## 6. Diagnostics and analytics (Firebase)
+## 7. Diagnostics and analytics (Firebase)
 
 The App uses two Google [Firebase](https://firebase.google.com/) services to find bugs and understand which features are used:
 
@@ -94,53 +113,55 @@ These reports and events **never include phone numbers, contact names, email add
 
 Google may process this data on servers outside your country. [Google's Privacy Policy](https://policies.google.com/privacy) explains how Google handles it.
 
-## 7. Android device backup
+## 8. Android device backup
 
-The App allows Android's built-in backup and device-to-device transfer. If you have them turned on, the App's local data (rules, schedules, history and settings, which can include phone numbers and message text) may be included in your own encrypted backup in your Google account. Your Gmail app password cannot be recovered from such a backup (see Section 1). This is controlled by Android, not by us: manage it in Android Settings → System → Backup.
+The App allows Android's built-in backup and device-to-device transfer. If you have them turned on, the App's local data (rules, schedules, history and settings, which can include phone numbers and message text) may be included in your own encrypted backup in your Google account. Your Gmail app password cannot be recovered from such a backup (see Section 2). This is controlled by Android, not by us: manage it in Android Settings → System → Backup.
 
-## 8. Settings export file
+## 9. Settings export file
 
 Separately from Gmail backup, Settings → Export Configurations creates a file with your rules, scheduled messages (including their text and phone numbers) and settings. It **never includes your Gmail address or app password**. The file is created on your phone and handed to Android's share sheet, and **you** choose where it goes. We never receive a copy. Import Configurations reads a file you pick back into the App.
 
-## 9. Update check (GitHub version only)
+## 10. Update check (GitHub version only)
 
 The GitHub version checks whether a newer release has been published, so it can tell you about it. When you open the App, at most once every 24 hours, it asks GitHub's public API (`api.github.com`) for the latest release of this repository. If you tap **Download and install**, it downloads the APK from GitHub and hands it to Android's installer, which asks you to confirm.
 
 These requests carry no information about you, your messages or your settings. Like any connection to a website, GitHub sees your IP address and a generic app identifier (`SMS-Toolbox-Android`), under [GitHub's privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement). The App remembers on your phone only when it last checked and which version was the latest. The Google Play version does none of this.
 
-## 10. Permissions and why the App needs them
+## 11. Permissions and why the App needs them
 
 Each permission is requested only when a feature needs it, and none of them gives **us** access to your data.
 
 | Permission | Why |
 |---|---|
-| `READ_SMS` / `RECEIVE_SMS` | Read your received and sent messages to back them up to Gmail, and detect new messages to back up or check against your forwarding rules |
-| `SEND_SMS` (GitHub version only) | Send forwarded and scheduled messages to the numbers you chose |
+| Default SMS app (role) | Be your messaging app: receive SMS and MMS, save them and the messages you send, and restore backups. Requested first, before any SMS permission. Android grants the SMS permissions below together with it. Messages and Restore need it; the other features can work without it |
+| `READ_SMS` / `RECEIVE_SMS` | Granted with the default SMS app role, or, if you declined the role, asked for on its own when you first use Redirect, Schedule or Backup. Show your conversations, receive new messages, back them up to Gmail, and check them against your forwarding rules |
+| `SEND_SMS` | Send the messages you write, forward and schedule |
+| `RECEIVE_MMS` / `RECEIVE_WAP_PUSH` | Receive picture and group messages (MMS) |
 | `REQUEST_INSTALL_PACKAGES` (GitHub version only) | Hand a downloaded update to Android's installer, which asks you to confirm |
-| `READ_CONTACTS` | Let you pick a contact for a rule or a scheduled message, and show names instead of numbers |
-| `POST_NOTIFICATIONS` | Show backup and restore progress, and confirm forwarded and scheduled messages |
+| `READ_CONTACTS` | Show names instead of numbers in conversations, and let you pick a contact for a rule or a scheduled message |
+| `POST_NOTIFICATIONS` | Notify you of new messages, show backup and restore progress, and confirm forwarded and scheduled messages |
 | `INTERNET` / `ACCESS_NETWORK_STATE` | Connect to Gmail for backup and restore, and wait for a connection before trying |
-| Battery optimization exemption | Stop Android from delaying backups, forwards and scheduled sends |
-| Default SMS app (only while a restore runs) | Write restored messages to the phone's SMS storage, which Android allows only for the default SMS app |
-| `AD_ID` | Used by Firebase Analytics (see Section 6); never for advertising |
+| Battery optimization exemption | Stop Android from delaying messages, backups, forwards and scheduled sends |
+| `AD_ID` | Used by Firebase Analytics (see Section 7); never for advertising |
 
-## 11. What we do not do
+## 12. What we do not do
 
 - We do not run a server, and there is no account or login.
 - We do not receive your messages, contacts, Gmail address or app password.
 - We do not include advertising SDKs or show ads.
 - We do not sell, rent or share your data for marketing.
 
-## 12. Security
+## 13. Security
 
-Gmail connections use TLS with server identity checks. Your app password is encrypted with a key held in the Android Keystore. The App never logs message content or credentials. The backup record keeps only one-way hashes, not message text.
+Message notifications are hidden on the lock screen by default. Gmail connections use TLS with server identity checks. Your app password is encrypted with a key held in the Android Keystore. The App never logs message content or credentials. The backup record keeps only one-way hashes, not message text.
 
-## 13. Keeping and deleting data
+## 14. Keeping and deleting data
 
-Data on your phone stays until you delete it in the App, clear the App's storage or uninstall it, subject to any Android device backup you have turned on (Section 7). Backups in Gmail stay until you delete them in Gmail. Firebase data is kept by Google under its own retention policies, and we do not link it to your identity.
+Data on your phone stays until you delete it in the App, clear the App's storage or uninstall it, subject to any Android device backup you have turned on (Section 8). Your SMS and MMS messages stay in your phone's message storage until you delete them, also after uninstalling the App, as with any messaging app. Backups in Gmail stay until you delete them in Gmail. Firebase data is kept by Google under its own retention policies, and we do not link it to your identity.
 
-## 14. Your choices and rights
+## 15. Your choices and rights
 
+- **Default SMS app:** choose another default SMS app in Android Settings → Apps → Default apps at any time.
 - **Permissions:** revoke any permission in Android Settings. The feature that needs it stops working until you grant it again, and the rest of the App keeps working. If background running is not allowed, the App shows a banner until you allow it.
 - **Gmail backup:** turn it off on the Backup tab, remove your credentials in Settings, or revoke the app password in your Google account.
 - **History:** turn off Keep history or Keep schedule history to stop recording them, or clear them at any time.
@@ -149,14 +170,14 @@ Data on your phone stays until you delete it in the App, clear the App's storage
 
 Depending on where you live (for example under the GDPR or the CCPA), you may have rights to access, correct, export or delete your data. Everything the App stores is already on your phone and under your control. For questions about the diagnostic data processed by Firebase, contact us using the details below.
 
-## 15. Children
+## 16. Children
 
 The App is not directed at children under 13, and we do not knowingly collect personal data from children.
 
-## 16. Changes to this policy
+## 17. Changes to this policy
 
 We may update this policy as the App changes. Updates are published at this same address with a new effective date.
 
-## 17. Contact
+## 18. Contact
 
 Questions about this policy or your data? Email **play-store-neteinstein@googlegroups.com**.

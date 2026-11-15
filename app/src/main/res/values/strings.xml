@@ -1,8 +1,8 @@
 <resources>
     <string name="app_name">SMS Toolbox</string>
-    <string name="splash_subtitle">Back up, redirect and schedule your SMS</string>
+    <string name="splash_subtitle">Your messages: send, receive, back up, redirect and schedule</string>
     <string name="battery_optimization_title">Keep running in background</string>
-    <string name="battery_optimization_message">SMS Toolbox needs to keep running in the background to forward messages and send scheduled SMS reliably. Disable battery optimization for this app so Android does not stop it.</string>
+    <string name="battery_optimization_message">SMS Toolbox needs to keep running in the background to deliver your messages, forward them and send scheduled SMS reliably. Disable battery optimization for this app so Android does not stop it.</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_back">Back</string>
     <string name="action_ok">OK</string>
@@ -12,10 +12,8 @@
     <string name="sideload_warning_title">Allow restricted settings</string>
     <string name="sideload_warning_message">This app was not installed via the Play Store. An extra step is required:\n\n1. Go to Settings > Apps > SMS Toolbox\n2. Tap the three-dot menu (top right)\n3. Select \"Allow restricted settings\"\n\nPress OK to open the app settings screen.</string>
 
-    <string name="sms_permission_rationale_title">SMS permission needed</string>
-    <string name="sms_permission_rationale_message">SMS Toolbox needs SMS permissions to read incoming text messages, back them up and forward or send them for you. MMS and RCS messages are out of scope and will not be forwarded or scheduled.</string>
     <string name="sms_permission_denied_title">Can\'t continue without SMS permission</string>
-    <string name="sms_permission_denied_message">SMS Toolbox can\'t create redirects or scheduled messages without SMS permission. Grant the permission to continue.</string>
+    <string name="sms_permission_denied_message">SMS Toolbox can\'t do this without SMS permission. Grant the permission to continue.</string>
 
     <string name="contacts_permission_rationale_title">Contacts permission needed</string>
     <string name="contacts_permission_rationale_message">SMS Toolbox needs access to your contacts so you can pick a sender or target directly from your contact list instead of typing a number.</string>
@@ -23,7 +21,7 @@
     <string name="notifications_permission_rationale_title">Enable notifications?</string>
     <string name="notifications_permission_rationale_message">SMS Toolbox can show a notification whenever a message is backed up, forwarded or a scheduled SMS is sent, so you can confirm it went through.</string>
 
-    <string name="battery_banner_message">Background running is not enabled. SMS forwarding and scheduled messages might not work reliably.</string>
+    <string name="battery_banner_message">Background running is not enabled. Messages, forwarding and scheduled SMS might be delayed.</string>
     <string name="battery_banner_action">Fix now</string>
 
     <string name="home_title_rules">Redirect Rules</string>
@@ -222,7 +220,7 @@
     <string name="restore_title">Restore from Gmail</string>
     <string name="restore_description">Copy the messages backed up under the Gmail label “%1$s” back to this phone. Messages already on the phone are skipped, so it is safe to run more than once.</string>
     <string name="restore_start">Restore messages</string>
-    <string name="restore_role_denied">Restore needs SMS Toolbox to be your default SMS app while it runs. Nothing was changed.</string>
+    <string name="restore_role_denied">Restore needs SMS Toolbox to be your default SMS app. Nothing was changed.</string>
     <string name="restore_preparing">Preparing restore…</string>
     <string name="restore_progress">Checking %1$d of %2$d</string>
     <plurals name="restore_progress_restored">
@@ -247,10 +245,8 @@
         <item quantity="one">%1$d could not be saved by the phone</item>
         <item quantity="other">%1$d could not be saved by the phone</item>
     </plurals>
-    <string name="restore_switch_back_explanation">Last step: make your usual messaging app the default again, so you keep getting all messages, including picture messages (MMS).</string>
-    <string name="restore_switch_back">Switch back to your messaging app</string>
     <string name="restore_done">Done</string>
-    <string name="restore_failed_not_default">The restore stopped because SMS Toolbox is no longer your default SMS app.</string>
+    <string name="restore_failed_not_default">The restore stopped because SMS Toolbox is no longer your default SMS app. Make it the default again and try again.</string>
     <string name="restore_failed_auth">Gmail rejected the app password. Check it in Settings.</string>
     <string name="restore_failed_label_not_found">No backups found: the Gmail label “%1$s” does not exist. Check the label name above.</string>
     <string name="restore_failed_network">Could not reach Gmail. Check your connection.</string>
@@ -259,26 +255,19 @@
     <string name="restore_try_again">Try again</string>
     <string name="restore_dismiss">Dismiss</string>
     <string name="restore_dialog_title">Restore messages from Gmail?</string>
-    <string name="restore_dialog_intro">SMS Toolbox will copy the messages in the Gmail label “%1$s” back to this phone. It takes three steps:</string>
-    <string name="restore_dialog_step_role">Make SMS Toolbox your default SMS app for now. Android only lets the default SMS app add messages.</string>
-    <string name="restore_dialog_step_restore">Wait while your messages are restored. You can keep using your phone.</string>
-    <string name="restore_dialog_step_switch_back">Switch back to your usual messaging app. We will remind you.</string>
-    <string name="restore_dialog_mms_note">Meanwhile, new text messages are still saved, but picture messages (MMS) cannot be received. Only text messages are restored.</string>
+    <string name="restore_dialog_intro">SMS Toolbox will copy the messages in the Gmail label “%1$s” back to this phone.</string>
+    <string name="restore_dialog_step_role">Make SMS Toolbox your default SMS app. Android only lets the default SMS app add messages.</string>
+    <string name="restore_dialog_step_restore">Your messages are restored in the background. You can keep using your phone.</string>
+    <string name="restore_dialog_mms_note">Only text messages are restored: picture messages (MMS) are not part of the Gmail backup.</string>
     <string name="restore_dialog_confirm">Continue</string>
     <string name="restore_dialog_confirm_start">Start restore</string>
     <string name="restore_dialog_cancel">Cancel</string>
-    <string name="default_sms_banner_message">SMS Toolbox is still your default SMS app, so picture messages (MMS) cannot be received.</string>
-    <string name="default_sms_banner_action">Switch back</string>
     <string name="restore_notification_progress">Restoring messages — %1$d of %2$d</string>
     <plurals name="restore_notification_complete">
         <item quantity="one">Restore complete — %1$d message</item>
         <item quantity="other">Restore complete — %1$d messages</item>
     </plurals>
-    <string name="restore_notification_complete_text">Last step: switch back to your usual messaging app.</string>
     <string name="restore_notification_failed">Restore stopped. Open SMS Toolbox to see why.</string>
-    <string name="default_sms_notification_title">New message received</string>
-    <string name="default_sms_notification_sms_text">It was saved. SMS Toolbox is still your default SMS app — switch back to your messaging app to read it.</string>
-    <string name="default_sms_notification_mms_text">A picture message (MMS) could not be received because SMS Toolbox is still your default SMS app. Switch back to your messaging app.</string>
 
     <!-- In-app update (GitHub build only) -->
     <string name="update_banner_message">SMS Toolbox %1$s is available.</string>
@@ -298,4 +287,79 @@
     <string name="settings_updates_check_failed">Could not check for updates. Check your connection and try again.</string>
     <string name="settings_updates_check_now">Check for updates</string>
     <string name="settings_updates_install_guide">How to install the APK manually</string>
+
+    <!-- Messaging (SMS/MMS client) -->
+    <string name="main_tab_messages">Messages</string>
+    <string name="main_tab_restore">Restore</string>
+    <string name="settings_landing_screen_messages">Messages</string>
+    <string name="settings_landing_screen_restore">Restore</string>
+    <string name="messages_title">Messages</string>
+    <string name="messages_cd_new_message">New message</string>
+    <string name="messages_empty">No conversations yet</string>
+    <string name="messages_empty_hint">Tap + to send your first message. Messages you receive appear here.</string>
+    <string name="messages_unknown_sender">Unknown sender</string>
+    <string name="messages_picture_message">Picture message</string>
+    <string name="messages_delete_conversation_title">Delete conversation?</string>
+    <string name="messages_delete_conversation_message">All messages in this conversation will be deleted from this phone. Backups already in Gmail are kept.</string>
+    <string name="default_sms_prompt_title">Make SMS Toolbox your messaging app</string>
+    <string name="default_sms_prompt_message">SMS Toolbox is a full SMS and MMS messaging app. Set it as your default SMS app to read, send and receive your messages here.</string>
+    <string name="default_sms_prompt_action">Set as default SMS app</string>
+    <string name="default_sms_rationale_title">Set SMS Toolbox as your default SMS app?</string>
+    <string name="default_sms_rationale_message">SMS Toolbox is a messaging app: it sends and receives your SMS and MMS, and from there backs them up, restores, redirects and schedules them. Android asks you next to make it your default SMS app, which gives it access to your messages.</string>
+    <string name="default_sms_rationale_not_now">Not now</string>
+    <string name="default_sms_rationale_confirm">Continue</string>
+    <string name="default_sms_declined_title">SMS Toolbox is not your default SMS app</string>
+    <string name="default_sms_declined_message">Messages and Restore only work while SMS Toolbox is your default SMS app; until then they are shown disabled. Redirect, Schedule and Backup still work. You can set it any time from the Messages or Restore tab.</string>
+    <string name="default_sms_declined_message_tools">You can keep your current messaging app and give SMS Toolbox only the SMS permissions this feature needs. Messages and Restore stay disabled until SMS Toolbox is your default SMS app.</string>
+    <string name="default_sms_declined_permissions_only">Use SMS permissions only</string>
+    <string name="new_message_title">New message</string>
+    <string name="new_message_to">To</string>
+    <string name="new_message_to_hint">Phone number or email</string>
+    <string name="new_message_invalid_recipient">Enter a phone number or email address</string>
+    <string name="new_message_cd_pick_contact">Pick from contacts</string>
+    <string name="new_message_cd_remove_recipient">Remove recipient</string>
+    <string name="new_message_group_hint">Messages to more than one person are sent as a group message (MMS).</string>
+    <string name="new_message_next">Next</string>
+    <string name="conversation_hint_sms">Text message</string>
+    <string name="conversation_hint_mms">Picture or group message (MMS)</string>
+    <string name="conversation_cd_send">Send</string>
+    <string name="conversation_cd_add_picture">Add picture or video</string>
+    <string name="conversation_cd_add_file">Attach file</string>
+    <string name="conversation_cd_remove_attachment">Remove attachment</string>
+    <string name="conversation_cd_picture">Picture</string>
+    <string name="conversation_attachment">Attachment</string>
+    <string name="conversation_status_sending">Sending…</string>
+    <string name="conversation_status_failed">Not sent. Tap to retry.</string>
+    <string name="conversation_message_actions">Message</string>
+    <string name="conversation_action_copy">Copy text</string>
+    <string name="conversation_action_retry">Send again</string>
+    <string name="conversation_no_app_to_open">No app can open this attachment</string>
+    <string name="conversation_error_not_default">SMS Toolbox must be your default SMS app to send messages.</string>
+    <string name="conversation_error_no_recipients">Add a recipient first.</string>
+    <string name="conversation_error_empty">Type a message or add an attachment.</string>
+    <string name="conversation_error_too_large">The attachment is too large for a picture message.</string>
+    <string name="conversation_error_unreadable">The attachment could not be read.</string>
+    <string name="conversation_error_no_service">The message could not be sent. Check your mobile signal and try again.</string>
+    <string name="messages_notification_channel">Messages</string>
+    <string name="messages_notification_channel_description">Incoming SMS and MMS</string>
+    <string name="messages_notification_failure_channel">Message problems</string>
+    <string name="messages_notification_me">Me</string>
+    <string name="messages_notification_public_title">New message</string>
+    <string name="messages_notification_reply">Reply</string>
+    <string name="messages_notification_reply_hint">Message</string>
+    <string name="messages_notification_mark_read">Mark as read</string>
+    <string name="messages_notification_send_failed">Message not sent</string>
+    <string name="messages_notification_send_failed_text">Open the conversation to try again.</string>
+    <string name="messages_notification_mms_failed">Picture message not downloaded</string>
+    <string name="messages_notification_mms_failed_text">A picture message (MMS) arrived but could not be downloaded. It waits in the conversation: turn on mobile data and tap Download, or Retry here.</string>
+    <string name="messages_notification_retry">Retry</string>
+    <string name="restore_no_credentials_title">Connect your Gmail to restore</string>
+    <string name="messages_disabled_banner">Messages is disabled: set SMS Toolbox as your default SMS app to send and receive messages.</string>
+    <string name="restore_disabled_banner">Restore is disabled: Android only lets the default SMS app add messages. Set SMS Toolbox as your default SMS app to restore.</string>
+    <string name="default_sms_banner_action">Set as default</string>
+    <string name="messages_disabled_placeholder">Your conversations will appear here once SMS Toolbox is your default SMS app. Redirect, Schedule and Backup work without it.</string>
+    <string name="conversation_mms_not_downloaded">Picture message not downloaded yet</string>
+    <string name="conversation_mms_downloading">Downloading picture message…</string>
+    <string name="conversation_mms_download">Download</string>
+    <string name="conversation_mms_download_failed">The picture message could not be downloaded. Turn on mobile data and try again.</string>
 </resources>

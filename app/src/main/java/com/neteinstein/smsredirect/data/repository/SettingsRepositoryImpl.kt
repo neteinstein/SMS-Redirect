@@ -77,5 +77,5 @@ class SettingsRepositoryImpl(
     // nothing); fall back to the same BACKUP default the column's own SQL default uses, rather
     // than throwing on an unrecognized name.
     private fun String?.toLandingScreen(): LandingScreen =
-        this?.let { name -> runCatching { LandingScreen.valueOf(name) }.getOrNull() } ?: LandingScreen.BACKUP
+        this?.let { name -> runCatching { LandingScreen.valueOf(name) }.getOrNull() } ?: LandingScreen.MESSAGES
 }

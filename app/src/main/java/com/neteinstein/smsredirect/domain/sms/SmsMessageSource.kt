@@ -7,7 +7,7 @@ import com.neteinstein.smsredirect.domain.model.SmsMessageToBackup
  * split: the interface here, the `ContentResolver` query in `data/sms/`.
  *
  * Each message carries its [com.neteinstein.smsredirect.domain.model.SmsBox]. Drafts, the outbox
- * and failed sends are never returned. MMS is out of scope.
+ * and failed sends are never returned. MMS is not part of the Gmail backup format.
  */
 interface SmsMessageSource {
     /** Number of eligible received and sent messages, used for the "X of Y" denominator. */

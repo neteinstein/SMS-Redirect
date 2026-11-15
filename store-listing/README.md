@@ -1,10 +1,11 @@
 # Play Store listing assets
 
-> **This listing is for the Play build only: Backup and Restore.** The app is built
-> in two flavors (`app/build.gradle.kts`). The **play** flavor, uploaded to Google
-> Play, has no Redirect or Schedule, does not declare `SEND_SMS`, and never updates
-> itself. The **github** flavor, attached to each GitHub release, has every feature.
-> Nothing in this folder should mention forwarding or scheduling.
+> **This listing is for the Play build: an SMS/MMS messaging app** (Play core use
+> case "Default SMS handler") with Redirect, Schedule, Backup and Restore. The app
+> is built in two flavors (`app/build.gradle.kts`); the **play** flavor, uploaded to
+> Google Play, and the **github** flavor, attached to each GitHub release, are
+> identical except for the **Updates** section in Settings (GitHub only: Play forbids
+> self-updates). Lead with messaging everywhere in this folder.
 
 Everything needed to fill in the **Main store listing** (and get a head start on
 **App content > Data safety**) for `com.neteinstein.smsredirect` in the
@@ -36,14 +37,14 @@ store-listing/
 
 | Play Console field | File | Limit | Current length |
 |---|---|---|---|
-| App name | `text/<locale>/title.txt` | 30 chars | 29 (en-US) / 30 (pt-PT) |
-| Short description | `text/<locale>/short_description.txt` | 80 chars | 79 (en-US) / 80 (pt-PT) |
-| Full description | `text/<locale>/full_description.txt` | 4000 chars | 3067 (en-US) / 3395 (pt-PT) |
-| What's new (this release) | `text/<locale>/release_notes.txt` | 500 chars | 359 (en-US) / 359 (pt-PT) |
+| App name | `text/<locale>/title.txt` | 30 chars | 26 (en-US) / 26 (pt-PT) |
+| Short description | `text/<locale>/short_description.txt` | 80 chars | 77 (en-US) / 80 (pt-PT) |
+| Full description | `text/<locale>/full_description.txt` | 4000 chars | 2693 (en-US) / 3124 (pt-PT) |
+| What's new (this release) | `text/<locale>/release_notes.txt` | 500 chars | 328 (en-US) / 368 (pt-PT) |
 
 Paste each file's contents verbatim into the matching field for that locale.
-The store title is **"SMS Toolbox: Backup & Restore"** (pt-PT: "SMS Toolbox: Backup e Restauro"),
-which leads with the declared core use case. The app's own name on the device stays
+The store title is **"SMS Toolbox: Text Messages"** (pt-PT: "SMS Toolbox: Mensagens SMS"),
+which leads with the declared core use case, SMS messaging. The app's own name on the device stays
 "SMS Toolbox"; Play allows the two to differ.
 `pt-PT` matches the tone/wording already used in `app/src/main/res/values-pt/strings.xml`
 (European Portuguese — "ecrã", "definições", not Brazilian Portuguese).
@@ -76,8 +77,9 @@ Restore and Backup screens.
 
 **Screenshots.** Each one pairs a headline with the real screen in a phone frame,
 plus a few floating callouts (a notification, the Gmail label, a restore counter)
-that show the result of the feature. Upload them in this order, so the listing
-leads with the declared core use case, backup and restore:
+that show the result of the feature. ⚠️ **They predate the messaging app.** They show Backup and Restore only; add a
+Messages (inbox) and a conversation screenshot **first**, so the listing leads
+with the declared core use case, SMS messaging, before uploading. Current order:
 
 | # | File | Headline | Screen |
 |---|---|---|---|
@@ -118,10 +120,11 @@ store-listing/scripts/store_assets/build.sh --only 02-restore # one screenshot, 
 
 ## Promo video
 
-> ⚠️ **Both videos predate the Backup-only Play build.** They still show the
-> Redirect and Schedule tabs and the `SEND_SMS` grant, so do not link them from
-> the Play listing or the permissions declaration until they are re-recorded or
-> re-rendered without those scenes (see [`video/README.md`](video/README.md)).
+> ⚠️ **Both videos predate the messaging app.** They show Backup, Restore, Redirect
+> and Schedule but no Messages tab, and the old SMS-permission prompt instead of
+> the default-SMS-app request. Do not use them for the "Default SMS handler"
+> declaration: record a new one following
+> [`testing-instructions.md`](testing-instructions.md#demonstration-video-permissions-declaration-form).
 
 `video/sms-toolbox-launch.mp4` is a 24-second launch video (1920x1080, 30 fps,
 H.264 + AAC, with music) that walks through Backup, Restore, Redirect and
@@ -135,8 +138,8 @@ that one is `video/sms-toolbox-demo.mp4` and has to show the permission flow.
 
 ## Suggested Play Console fields not covered by a file
 
-- **App category:** Tools (Communication is a reasonable alternate)
-- **Tags:** SMS, backup, restore, Gmail
+- **App category:** Communication
+- **Tags:** SMS, MMS, messaging, backup, Gmail
 - **Content rating:** Everyone (run the questionnaire — no user-generated
   content, no ads, no unrestricted web access)
 - **Contact email:** `play-store-neteinstein@googlegroups.com` (from
@@ -148,56 +151,55 @@ that one is `video/sms-toolbox-demo.mp4` and has to show the permission flow.
 
 ## ⚠️ Before this can go live: the SMS permissions declaration
 
-The Play build requests `READ_SMS` / `RECEIVE_SMS` (not `SEND_SMS`). Play Console will
-block publishing until you complete **App content > Permissions declaration
-form** and justify these under one of Google's allowed core-use categories.
+The Play build requests `READ_SMS`, `RECEIVE_SMS`, `SEND_SMS`, `RECEIVE_MMS` and
+`RECEIVE_WAP_PUSH`. Play Console blocks publishing until you complete **App content >
+Sensitive app permissions > Permissions declaration form** and justify them under
+one of Google's permitted core uses.
 
-**Declare "Backup and restore".** That is a permitted core use case on Google's
-list, and it is the reason the app was reframed as SMS Toolbox with Gmail backup
-as the first tab and the landing screen: the declaration has to match what the
-app visibly is. A reviewer who opens the app must land on the backup feature.
-An SMS-forwarding utility does not map cleanly to any permitted category, which
-is what made the previous framing unpublishable.
+**Declare "Default SMS handler".** SMS Toolbox is a full SMS/MMS messaging app:
+the Messages tab is the first tab and the landing screen, it receives SMS
+(`SMS_DELIVER`) and MMS (`WAP_PUSH_DELIVER` → download → save), sends SMS and
+MMS (pictures, group messages), notifies with inline reply, handles `sms:`
+links and Share (`SENDTO`/`SEND`) and quick replies from the call screen
+(`RESPOND_VIA_MESSAGE`). Redirect, Schedule, Backup and Restore are tools on top
+of that messaging app. The declaration has to match what the app visibly is, and
+a reviewer who opens it lands on the inbox.
+
+How the app satisfies the policy, so the form and the video can say so:
+- **The role comes first.** On first launch, and before *any* SMS feature, the app
+  explains itself and opens Android's role request (`RoleManager.ROLE_SMS`, the
+  API-29+ replacement for `Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT`, which no
+  longer does anything on Android 10+; this app's minSdk is 33). The SMS
+  permissions are granted *with* the role. Only when the user explicitly declines
+  the role, and then asks to use Redirect, Schedule or Backup anyway ("Use SMS
+  permissions only"), are the three SMS permissions those tools need requested
+  on their own. Messages and Restore are then shown **disabled**, with a warning
+  bar and a "Set as default" button: the messaging app and restore never work
+  without the role.
+  ⚠️ This fallback is a judgment call. Play's policy expects apps declaring
+  "Default SMS handler" to use SMS permissions *as* the default handler. If a
+  reviewer objects, removing the "Use SMS permissions only" button from the
+  decline dialog in `MainActivity` makes every SMS feature require the role.
+- **No prohibited use.** No OTP/account verification, no analytics on message
+  content, no ad targeting, no keyboard. Firebase events never carry numbers,
+  names or text (`domain/analytics/AnalyticsEvents.kt`).
+- **No library requests SMS permissions on its own.** The only SMS code is the
+  app's own (`data/messaging/`, `DefaultSmsAppComponents.kt`); the MMS PDU codec
+  is written in-house (`domain/mms/`) rather than pulled from a third-party MMS
+  library. Check the merged manifest of each release (`release.yml` fails the
+  Play release if the four default-SMS components are missing, or if
+  `REQUEST_INSTALL_PACKAGES` appears).
 
 Notes for the submission:
-- The form asks for a **demonstration video**. Record the whole flow: Settings →
-  enter Gmail address + app password → Save (it verifies against Gmail) → Backup
-  tab → Enable → messages appearing under the Gmail label. Show that backup is
-  the app's purpose, not a side feature.
-- The Play build no longer declares `SEND_SMS` at all, and has no Redirect or
-  Schedule features: everything a reviewer can find in it is backup and restore.
-  `release.yml` fails the release if the Play bundle's merged manifest ever
-  requests `SEND_SMS` or `REQUEST_INSTALL_PACKAGES`. While SMS Toolbox holds the
-  default-SMS role during a restore, the quick-reply ("respond via message")
-  service therefore cannot send; the user replies from their own app.
-- `READ_SMS` was declared but never actually used before this feature. It is now
-  genuinely exercised by the backup scan, so the declared use and the observed
-  behaviour finally agree — a mismatch between the two is one of the most common
-  causes of SMS-app removal.
-- **Resubmit the Data safety form in the same release.** Gmail backup transmits
-  SMS content and an email address off-device; see [`data-safety.md`](data-safety.md).
-- Ship the updated [`PrivacyPolicy.md`](../PrivacyPolicy.md) **before or with**
-  this release. It is linked from the listing and its previous wording ("no
-  backend server", "we do not collect your email address") is no longer accurate.
-
-### Restore makes the app a (temporary) default SMS handler
-
-To restore messages, the app has to hold Android's SMS role while it writes to
-the SMS store. So the manifest now declares the four components that make an
-app eligible for the role: `SMS_DELIVER` and `WAP_PUSH_DELIVER` receivers, a
-`SENDTO` activity and a `RESPOND_VIA_MESSAGE` service. Play's SMS policy treats
-default-SMS-handler capability as its own category. Before submitting:
-
-- Keep **"Backup and restore"** as the declared core use case. Restore is the
-  second half of it, so it now does exactly what the declaration says. On the
-  form, explain that the app asks for the default-SMS role only for the length
-  of a user-started restore, and then sends the user back to their usual app.
-- Add the restore to the demonstration video (see
-  [`testing-instructions.md`](testing-instructions.md)): Backup tab → Restore
-  messages → the system's default-SMS prompt → progress → "Switch back to your
-  messaging app".
-- Check the form for a separate "default SMS handler" question and answer it
-  consistently. Policy wording shifts, so confirm on the live form.
+- The form asks for a **demonstration video** showing the app sending and
+  receiving messages and becoming the default handler. The shot list is in
+  [`testing-instructions.md`](testing-instructions.md#demonstration-video-permissions-declaration-form).
+- **Resubmit the Data safety form in the same release** (see
+  [`data-safety.md`](data-safety.md)), and ship the updated
+  [`PrivacyPolicy.md`](../PrivacyPolicy.md) **before or with** this release: it
+  now states that the app's primary purpose is SMS messaging, as Play requires.
+- The store title and description lead with messaging
+  (`text/<locale>/title.txt`, `full_description.txt`).
 
 The `tools:ignore="SmsAndCallLogPolicy"` lint suppressions in `AndroidManifest.xml`
 are a reminder that this review exists — they silence the lint warning, not

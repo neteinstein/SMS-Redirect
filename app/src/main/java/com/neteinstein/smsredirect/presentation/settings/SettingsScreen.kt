@@ -90,7 +90,7 @@ fun SettingsScreen(
     availableLandingScreens: List<LandingScreen> = LandingScreen.entries,
     /**
      * Whether Redirect/Schedule settings (roaming, notifications, prefixes, configuration
-     * export/import) are shown. False in the Play build, which has neither feature.
+     * export/import) are shown. False only in a build with neither Redirect nor Schedule.
      */
     showMessagingSettings: Boolean = true,
     /** The Updates section, shown first; null in builds without the self-update. */
@@ -310,9 +310,11 @@ private fun LandingScreenDropdown(
 ) {
     val labels =
         mapOf(
-            LandingScreen.BACKUP to stringResource(R.string.settings_landing_screen_backup),
+            LandingScreen.MESSAGES to stringResource(R.string.settings_landing_screen_messages),
             LandingScreen.REDIRECT to stringResource(R.string.settings_landing_screen_redirect),
             LandingScreen.SCHEDULE to stringResource(R.string.settings_landing_screen_schedule),
+            LandingScreen.BACKUP to stringResource(R.string.settings_landing_screen_backup),
+            LandingScreen.RESTORE to stringResource(R.string.settings_landing_screen_restore),
         )
     val options = options.map { it to labels.getValue(it) }
     var expanded by remember { mutableStateOf(false) }

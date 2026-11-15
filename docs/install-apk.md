@@ -7,14 +7,15 @@ your settings, and either one can update the other.
 
 | | Google Play | GitHub APK |
 |---|---|---|
+| Send and receive SMS and MMS | ✅ | ✅ |
 | Back up SMS to your Gmail | ✅ | ✅ |
 | Restore SMS from Gmail | ✅ | ✅ |
-| Redirect (forwarding rules) | — | ✅ |
-| Schedule messages | — | ✅ |
+| Redirect (forwarding rules) | ✅ | ✅ |
+| Schedule messages | ✅ | ✅ |
 | Updates | Automatic, by Play | In-app: a banner tells you, Settings → Updates installs it |
 
-If you only need backup and restore, use the Play version. If you want Redirect or
-Schedule, install the APK as shown below. It takes about five minutes the first
+Both versions have the same features; if you can use Google Play, it is simpler. To
+install the APK instead, follow the steps below. It takes about five minutes the first
 time; after that the app updates itself from GitHub.
 
 > The pictures below are illustrations of stock Android 14–16. The wording and menu
