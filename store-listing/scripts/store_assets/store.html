@@ -56,24 +56,56 @@ svg.i { width: 24px; height: 24px; fill: currentColor; flex: none; display: bloc
 .app { --primary:#1A73E8; --on-primary:#fff; --primary-c:#D3E3FD; --on-primary-c:#001A41;
   --secondary:#188038; --on-secondary:#fff; --secondary-c:#C4EED0; --on-secondary-c:#072711;
   --error:#D93025; --bg:#FAFBFF; --on-surface:#1A1C1E; --on-variant:#43474E; --outline:#73777F; --outline-v:#C3C6CF;
-  --s-lo:#F3F5FB; --s-c:#ECEFF7; --s-hi:#E6E9F2; --s-hst:#E0E4EE; --scrim: rgba(0,0,0,.32);
+  --s-lo:#F3F5FB; --s-c:#ECEFF7; --s-hi:#E6E9F2; --s-hst:#E0E4EE; --s-v:#DFE2EB; --scrim: rgba(0,0,0,.32);
   position: absolute; inset: 0; background: var(--bg); color: var(--on-surface); font-size: 14px; display: flex; flex-direction: column; }
 .app.dark { --primary:#A8C7FA; --on-primary:#062E6F; --primary-c:#0842A0; --on-primary-c:#D3E3FD;
   --secondary:#C4EED0; --on-secondary:#072711; --secondary-c:#0F5223; --on-secondary-c:#C4EED0;
   --error:#F2B8B5; --bg:#111318; --on-surface:#E2E2E9; --on-variant:#C3C6CF; --outline:#8D9199; --outline-v:#43474E;
-  --s-lo:#191C21; --s-c:#1D2025; --s-hi:#272A30; --s-hst:#32353B; }
+  --s-lo:#191C21; --s-c:#1D2025; --s-hi:#272A30; --s-hst:#32353B; --s-v:#43474E; }
 .sbar { height: 40px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 26px 0 30px; font-size: 14px; font-weight: 500; }
 .sbar .r { display: flex; gap: 6px; align-items: center; } .sbar svg { width: 17px; height: 17px; }
 .topbar { height: 64px; flex: none; display: flex; align-items: center; padding: 0 4px 0 16px; gap: 4px; }
 .topbar.back { padding-left: 4px; }
 .topbar h1 { font-size: 22px; font-weight: 500; flex: 1; letter-spacing: 0; white-space: nowrap; overflow: hidden; }
+.topbar h1 small { display: block; font-size: 12px; line-height: 16px; font-weight: 400; color: var(--on-variant); }
 .ib { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; color: var(--on-variant); }
 .ib.on { color: var(--on-surface); }
 .content { flex: 1; overflow: hidden; position: relative; padding: 4px 16px 0; }
-.nav { height: 80px; flex: none; background: var(--s-c); display: flex; justify-content: space-around; padding-top: 12px; }
-.nav .it { width: 100px; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; color: var(--on-variant); }
-.nav .pill { width: 64px; height: 32px; border-radius: 16px; display: grid; place-items: center; }
-.nav .it.sel { color: var(--on-surface); } .nav .it.sel .pill { background: var(--secondary-c); color: var(--on-secondary-c); }
+.content.flush { padding: 0; }
+/* MainBottomBar: a floating pill of tabs, plus the FAB on the tabs that create something */
+.fnav { flex: none; display: flex; align-items: center; gap: 12px; padding: 12px 24px; }
+.fnav .bar { flex: 1; height: 60px; border-radius: 28px; background: var(--s-hi); display: flex; align-items: center; padding: 8px;
+  box-shadow: 0 3px 6px rgba(0,0,0,.14), 0 1px 3px rgba(0,0,0,.10); }
+.fnav .tab { flex: 1; height: 44px; border-radius: 20px; display: grid; place-items: center; color: var(--on-variant); }
+.fnav .tab.sel { background: var(--secondary-c); color: var(--on-secondary-c); }
+.fnav .fabb { width: 56px; height: 56px; border-radius: 16px; background: var(--primary-c); color: var(--on-primary-c); display: grid; place-items: center; flex: none;
+  box-shadow: 0 3px 6px rgba(0,0,0,.18), 0 1px 3px rgba(0,0,0,.12); }
+/* Messages tab (ConversationListScreen) */
+.conv { display: flex; align-items: center; padding: 12px 16px; }
+.av48 { width: 48px; height: 48px; border-radius: 50%; background: var(--primary-c); color: var(--on-primary-c); display: grid; place-items: center; font-size: 16px; font-weight: 500; flex: none; }
+.conv .tx { flex: 1; min-width: 0; margin-left: 16px; }
+.conv .l1, .conv .l2 { display: flex; align-items: center; }
+.conv .nm { flex: 1; font-size: 16px; line-height: 24px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conv .tm { font-size: 11px; line-height: 16px; font-weight: 500; color: var(--on-variant); margin-left: 8px; white-space: nowrap; }
+.conv .sn { flex: 1; font-size: 14px; line-height: 20px; color: var(--on-variant); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.conv .l2 svg { width: 16px; height: 16px; padding-right: 4px; color: var(--on-variant); }
+.conv.unread .nm, .conv.unread .sn { font-weight: 700; } .conv.unread .sn { color: var(--on-surface); } .conv.unread .tm { color: var(--primary); }
+.conv .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--primary); margin-left: 8px; flex: none; }
+.hdiv { height: 1px; background: var(--outline-v); margin-left: 80px; }
+/* Conversation screen */
+.thread { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; padding: 8px 12px; }
+.bm { display: flex; flex-direction: column; align-items: flex-start; }
+.bm.out { align-items: flex-end; }
+.bm .b { max-width: 300px; border-radius: 18px; padding: 10px 14px; background: var(--s-hi); color: var(--on-surface); font-size: 16px; line-height: 24px;
+  display: flex; flex-direction: column; gap: 6px; }
+.bm.out .b { background: var(--primary-c); color: var(--on-primary-c); }
+.bm .st { font-size: 11px; line-height: 16px; font-weight: 500; color: var(--on-variant); padding: 2px 4px; }
+.pic { width: 250px; height: 178px; border-radius: 12px; overflow: hidden; display: block; }
+.composer { flex: none; background: var(--s-c); padding: 8px; display: flex; align-items: center; }
+.composer .in { flex: 1; min-height: 56px; border: 1px solid var(--outline); border-radius: 24px; display: flex; align-items: center; padding: 0 16px; font-size: 16px; }
+.composer .send { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; margin-left: 8px; flex: none; }
+.composer .send svg { width: 24px; height: 24px; }
+.fib.off { background: color-mix(in srgb, var(--on-surface) 12%, transparent); color: color-mix(in srgb, var(--on-surface) 38%, transparent); }
 .gesture { height: 18px; flex: none; background: var(--s-c); display: grid; place-items: center; }
 .gesture i { width: 108px; height: 4px; border-radius: 2px; background: var(--on-surface); opacity: .55; display: block; }
 .gesture.plain { background: var(--bg); }
@@ -118,8 +150,6 @@ svg.i { width: 24px; height: 24px; fill: currentColor; flex: none; display: bloc
 .rcard .l { font-size: 14px; line-height: 20px; }
 .rcard .trail { display: flex; align-items: center; color: var(--on-variant); }
 .rcard.hl { box-shadow: 0 0 0 2px var(--primary) inset; background: color-mix(in srgb, var(--primary-c) 70%, var(--s-hst)); }
-.fab { position: absolute; right: 16px; bottom: 16px; width: 56px; height: 56px; border-radius: 16px; background: var(--primary-c); color: var(--on-primary-c);
-  display: grid; place-items: center; box-shadow: 0 3px 6px rgba(0,0,0,.18), 0 1px 3px rgba(0,0,0,.12); }
 .menu { position: absolute; background: var(--s-c); border-radius: 4px; box-shadow: 0 6px 14px rgba(0,0,0,.18), 0 2px 4px rgba(0,0,0,.12); padding: 8px 0; z-index: 5; }
 .menu div { height: 48px; display: flex; align-items: center; padding: 0 16px; font-size: 16px; }
 .menu div.sel { background: color-mix(in srgb, var(--on-surface) 10%, transparent); }
@@ -137,6 +167,7 @@ svg.i { width: 24px; height: 24px; fill: currentColor; flex: none; display: bloc
 .notif .ic svg { width: 24px; height: 24px; fill: white; }
 .notif .app { all: unset; font-size: 14px; color: #43474E; display: block; }
 .notif b { font-size: 18px; display: block; margin-top: 2px; } .notif p { font-size: 17px; color: #43474E; margin-top: 2px; line-height: 1.35; }
+.notif .acts { display: flex; gap: 30px; margin-top: 14px; font-size: 16px; font-weight: 500; color: #1A73E8; }
 .mail { width: 100%; overflow: hidden; }
 .mail .hd { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 14px; border-bottom: 1px solid #ECEEF4; }
 .mail .hd b { font-size: 20px; }
@@ -192,15 +223,20 @@ const BATT = `<svg class="i" viewBox="0 0 24 24" style="transform:rotate(90deg)"
 function statusBar() {
   return `<div class="sbar"><span>9:41</span><span class="r">${WIFI}${SIGNAL}${BATT}</span></div>`;
 }
-function topBar(title, actions = [], back = false) {
-  return `<div class="topbar ${back ? "back" : ""}">${back ? `<div class="ib on">${ic("arrow_back")}</div>` : ""}<h1>${title}</h1>${actions.map(a => `<div class="ib">${ic(a)}</div>`).join("")}</div>`;
+function topBar(title, actions = [], back = false, sub = "") {
+  return `<div class="topbar ${back ? "back" : ""}">${back ? `<div class="ib on">${ic("arrow_back")}</div>` : ""}<h1>${title}${sub ? `<small>${sub}</small>` : ""}</h1>${actions.map(a => `<div class="ib">${ic(a)}</div>`).join("")}</div>`;
 }
-function navBar(sel) {
-  const items = [["backup", "Backup"], ["forward", "Redirect"], ["schedule", "Schedule"]];
-  return `<div class="nav">${items.map(([i, l], k) => `<div class="it ${k === sel ? "sel" : ""}"><div class="pill">${ic(i)}</div>${l}</div>`).join("")}</div><div class="gesture"><i></i></div>`;
+// MainTab, in display order. Messages first: it is the declared core use case and the landing tab.
+const TABS = ["chat", "forward", "schedule", "backup", "restore"];
+const TAB = { messages: 0, redirect: 1, schedule: 2, backup: 3, restore: 4 };
+function navBar(sel, fab) {
+  // MainBottomBar shows the selected tab's label only when there is room; with all five tabs
+  // and the FAB on a phone there is not, so every tab is drawn as its icon.
+  return `<div class="fnav"><div class="bar">${TABS.map((i, k) => `<div class="tab ${k === sel ? "sel" : ""}">${ic(i)}</div>`).join("")}</div>${fab ? `<div class="fabb">${ic("add")}</div>` : ""}</div><div class="gesture plain"><i></i></div>`;
 }
-function app(inner, { dark = false, nav = null, title = "", actions = [], back = false, fab = false } = {}) {
-  return `<div class="app ${dark ? "dark" : ""}">${statusBar()}${topBar(title, actions, back)}<div class="content">${inner}${fab ? `<div class="fab">${ic("add")}</div>` : ""}</div>${nav === null ? `<div class="gesture plain"><i></i></div>` : navBar(nav)}</div>`;
+function app(inner, { dark = false, nav = null, title = "", sub = "", actions = [], back = false, fab = false, flush = false, bottom = null } = {}) {
+  const foot = bottom !== null ? bottom : nav === null ? `<div class="gesture plain"><i></i></div>` : navBar(nav, fab);
+  return `<div class="app ${dark ? "dark" : ""}">${statusBar()}${topBar(title, actions, back, sub)}<div class="content ${flush ? "flush" : ""}">${inner}</div>${foot}</div>`;
 }
 function tf(label, value, { lead = null, trail = null, focus = false, ph = false, multi = false, caret = false } = {}) {
   return `<div class="tf ${focus ? "focus" : ""} ${multi ? "multi" : ""}"><label>${label}</label>${lead ? ic(lead, "lead") : ""}<span class="v ${ph ? "ph" : ""}">${value}${caret ? '<i class="caret"></i>' : ""}</span>${trail || ""}</div>`;
@@ -208,36 +244,39 @@ function tf(label, value, { lead = null, trail = null, focus = false, ph = false
 
 // ---------------- app screens ----------------
 const SCREENS = {
-  backup: () => app(`
-    ${tf("Gmail label", "SMS", { lead: "label", trail: `<div class="fib">${ic("save")}</div>` })}
-    ${tf("Email subject", "SMS with $CONTACT_NAME ($PHONE_NUMBER)", { lead: "subject", trail: `<div class="fib">${ic("save")}</div>` })}
-    <div class="row" style="margin-top:14px;min-height:48px">${ic("sync", "", "color:var(--on-variant)")}<span style="flex:1;font-size:16px">Backup all previous SMS</span><div class="sw"></div></div>
-    <div class="btn big green" style="margin-top:14px">${ic("check")}Backup to Gmail enabled</div>
-    <p class="body muted" style="margin-top:12px">Messages are backed up as they arrive. With “Backup all previous SMS” on, your existing messages are backed up immediately first, then new ones as they arrive.</p>
-    <div style="margin-top:18px" class="body">Backing up 3,104 of 3,214</div>
-    <div class="lpi" style="margin-top:8px"><i style="width:96.6%"></i></div>
-    <div class="card" style="margin-top:22px;padding:16px">
-      <div class="row" style="font-size:16px;font-weight:500">${ic("restore", "", "color:var(--on-variant)")}Restore from Gmail</div>
-      <p class="body muted" style="margin-top:8px">Copy the messages backed up under the Gmail label “SMS” back to this phone.</p>
-    </div>`,
-    { nav: null, title: "Backup to Gmail", actions: ["settings"] }),
+  // Messages tab: ConversationListScreen.
+  messages: () => app(CONVOS.map(convRow).join(`<div class="hdiv"></div>`),
+    { nav: TAB.messages, fab: true, title: "Messages", actions: ["settings"], flush: true }),
 
+  // One conversation: ConversationScreen, with a picture message (MMS) and receipts.
+  conversation: () => app(`<div class="thread">${THREAD.map(bubble).join("")}</div>`,
+    { title: "Ana Silva", sub: "+351 961 222 333", back: true, flush: true,
+      bottom: `<div class="composer"><div class="ib">${ic("add_photo_alternate")}</div><div class="ib">${ic("attach_file")}</div>
+        <div class="in">Can't wait! 😎<i class="caret"></i></div><div class="send">${ic("send")}</div></div><div class="gesture"><i></i></div>` }),
+
+  // Backup tab: BackupScreen.BackupConfiguration, mid-backup.
+  backup: () => app(`
+    ${settingRow("Email subject", "SMS with $CONTACT_NAME ($PHONE_NUMBER)", "subject", "Use $CONTACT_NAME and $PHONE_NUMBER — they are replaced with the contact's name and number for each message.")}
+    ${settingRow("Gmail label", "SMS", "label", "Messages are filed under this label. It is created the first time a backup runs.")}
+    <div style="height:1px;background:var(--outline-v)"></div>
+    <div class="row" style="padding:12px 16px;gap:16px">${ic("sync", "", "color:var(--primary)")}<span style="flex:1;font-size:16px">Backup all previous SMS</span><div class="sw"></div></div>
+    <div style="height:1px;background:var(--outline-v)"></div>
+    <div style="padding:12px 16px"><div class="btn green">${ic("check")}Backup to Gmail enabled</div></div>
+    <p class="small muted" style="padding:0 16px">Messages are backed up as they arrive. With “Backup all previous SMS” on, your existing messages are backed up immediately first, then new ones as they arrive.</p>
+    <div style="padding:16px"><div class="body">Backing up 3104 of 3214</div><div class="lpi" style="margin-top:8px"><i style="width:96.6%"></i></div></div>`,
+    { nav: TAB.backup, title: "Backup to Gmail", actions: ["settings"], flush: true }),
+
+  // Restore tab: RestoreScreen.RestoreCard, mid-restore.
   restore: () => app(`
-    <div class="row" style="min-height:48px">${ic("sync", "", "color:var(--on-variant)")}<span style="flex:1;font-size:16px">Backup all previous SMS</span><div class="sw"></div></div>
-    <div class="btn big green" style="margin-top:10px">${ic("check")}Backup to Gmail enabled</div>
-    <div class="card" style="margin-top:20px;padding:18px 16px 10px">
-      <div class="row" style="font-size:16px;font-weight:500">${ic("restore", "", "color:var(--on-variant)")}Restore from Gmail</div>
-      <p class="body muted" style="margin-top:10px">Copy the messages backed up under the Gmail label “SMS” back to this phone. Messages already on the phone are skipped, so it is safe to run more than once.</p>
-      <div class="body" style="margin-top:18px;font-weight:500">Checking 2,180 of 3,214</div>
-      <div class="lpi" style="margin-top:8px"><i style="width:67.8%"></i></div>
-      <div class="body muted" style="margin-top:10px">2,176 messages restored so far</div>
-      <div class="body muted" style="margin-top:6px">You can leave the app — the restore continues in the background.</div>
-      <div class="btn text" style="margin-top:6px;width:max-content">Stop</div>
-    </div>
-    <div class="card" style="margin-top:14px;padding:14px 16px;background:var(--primary-c);color:var(--on-primary-c)">
-      <div class="row body">${ic("phonelink_ring")}<span>SMS Toolbox is your default SMS app until the restore is done. You switch back right after.</span></div>
+    <div style="margin:16px;padding:16px;border-radius:12px;background:var(--s-v);display:flex;flex-direction:column;gap:12px">
+      <div class="row" style="gap:12px;font-size:16px;font-weight:500">${ic("restore", "", "color:var(--primary)")}Restore from Gmail</div>
+      <div class="body">Checking 2180 of 3214</div>
+      <div class="lpi"><i style="width:67.8%"></i></div>
+      <div class="small muted">2176 messages restored so far</div>
+      <div class="small muted">You can leave the app — the restore continues in the background.</div>
+      <div class="btn text" style="width:max-content">Stop</div>
     </div>`,
-    { nav: null, title: "Backup to Gmail", actions: ["settings"] }),
+    { nav: TAB.restore, title: "Restore from Gmail", actions: ["settings"], flush: true }),
 
   rules: () => app(`
     ${catHead("Work", "2 rules", 0)}
@@ -286,10 +325,9 @@ const SCREENS = {
     ${histCard("EDP → +351 960 123 456", "Yesterday, 7:03", "Power outage", "Scheduled maintenance tomorrow 10:00–12:00")}`,
     { nav: null, title: "Redirect History", actions: ["delete_sweep"], back: true }),
 
+  // Scrolled down to the Gmail backup section.
   settings: (dark = true) => app(`
-    <div class="sline">${ic("language")}<span class="grow">Language<br><span class="muted" style="font-size:14px">System default</span></span>${ic("chevron_right")}</div>
-    <div class="divider"></div>
-    <div class="section-t">Gmail backup</div>
+    <div class="section-t" style="margin-top:8px">Gmail backup</div>
     ${tf("Gmail address", "you@gmail.com", { lead: "email" })}
     ${tf("App password", "••••••••••••••••", { lead: "key", trail: ic("visibility_off", "", "color:var(--on-variant)") })}
     <div class="row body" style="margin-top:12px;color:var(--primary);font-weight:500">${ic("check_circle")}Connected to Gmail</div>
@@ -298,6 +336,63 @@ const SCREENS = {
     { dark, nav: null, title: "Settings", back: true }),
 };
 
+// ConversationRow: [title, snippet, relative time, unread, { group, pic }]. All fictional.
+const CONVOS = [
+  ["Mom", "Landed safely! Call you tonight ❤️", "1 min. ago", true],
+  ["Rui, Rita, Ana Silva", "", "12 min. ago", true, { group: true, pic: true }],
+  ["Ana Silva", "Looks amazing. See you there!", "18 min. ago", false],
+  ["DHL", "Your parcel arrives today between 14:00 and 16:00. Track it in the app.", "2 hr. ago", false],
+  ["WorkBank", "Your code is 771204. Never share it with anyone.", "Yesterday", false],
+  ["Rita", "Rent sent, thanks! 🙌", "2 days ago", false],
+  ["+351 912 345 678", "Hi, it's Marta from the clinic. Your appointment is confirmed for Tuesday at 10:30.", "Nov 10", false],
+  ["Rui", "Gym tonight?", "Nov 8", false],
+];
+function convRow([title, snippet, time, unread, o = {}]) {
+  const initial = (title.match(/\p{L}/u) || [null])[0];
+  const av = o.group ? ic("group") : initial ? initial.toUpperCase() : ic("chat");
+  const text = snippet || (o.pic ? "Picture message" : "");
+  return `<div class="conv ${unread ? "unread" : ""}"><div class="av48">${av}</div><div class="tx">
+    <div class="l1"><span class="nm">${title}</span><span class="tm">${time}</span></div>
+    <div class="l2">${o.pic ? ic("image") : ""}<span class="sn">${text}</span>${unread ? `<span class="dot"></span>` : ""}</div></div></div>`;
+}
+// MessageBubble: [body, status line, outgoing, picture]. Oldest first, anchored to the composer.
+const THREAD = [
+  ["Beach this weekend? 🏖️", "Delivered · Nov 14, 5:51 PM", true],
+  ["Did you see the forecast? ☀️", "Nov 14, 5:58 PM", false],
+  ["Sunny all weekend!", "Delivered · Nov 14, 6:00 PM", true],
+  ["So we're still on for tomorrow?", "Nov 14, 6:02 PM", false],
+  ["Yes! Leaving at 10. Want a lift?", "Delivered · Nov 14, 6:05 PM", true],
+  ["Please 🙏 I'll bring snacks", "Nov 14, 6:06 PM", false],
+  ["This is the spot 🌊", "Nov 15, 9:20 AM", false, true],
+  ["Looks amazing. See you there!", "Delivered · Nov 15, 9:23 AM", true],
+];
+function bubble([body, status, out, pic]) {
+  return `<div class="bm ${out ? "out" : ""}"><div class="b">${pic ? BEACH : ""}<span>${body}</span></div><div class="st">${status}</div></div>`;
+}
+// The picture in the MMS: an illustration, not a photo.
+const BEACH = `<svg class="pic" viewBox="0 0 250 178" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5DB4F5"/><stop offset="1" stop-color="#CFEBFF"/></linearGradient>
+    <linearGradient id="bSea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1477BE"/><stop offset="1" stop-color="#3FB1DE"/></linearGradient>
+    <linearGradient id="bSand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F6DFAE"/><stop offset="1" stop-color="#E6BD78"/></linearGradient>
+    <radialGradient id="bSun"><stop offset=".55" stop-color="#FFF3C4"/><stop offset="1" stop-color="#FFF3C4" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="250" height="178" fill="url(#bSky)"/>
+  <circle cx="186" cy="52" r="34" fill="url(#bSun)"/><circle cx="186" cy="52" r="17" fill="#FFE7A0"/>
+  <g fill="#fff" opacity=".85"><ellipse cx="60" cy="40" rx="26" ry="8"/><ellipse cx="78" cy="34" rx="16" ry="8"/><ellipse cx="128" cy="62" rx="18" ry="5"/></g>
+  <rect y="98" width="250" height="44" fill="url(#bSea)"/>
+  <g stroke="#fff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round" fill="none">
+    <path d="M20 112h22M150 108h30M90 122h26M200 124h22"/></g>
+  <path d="M0 136 C60 124 120 128 170 134 C205 138 230 134 250 128 V178 H0 Z" fill="url(#bSand)"/>
+  <path d="M0 136 C60 124 120 128 170 134 C205 138 230 134 250 128" stroke="#fff" stroke-opacity=".8" stroke-width="3" fill="none"/>
+  <line x1="72" y1="118" x2="80" y2="166" stroke="#7A5530" stroke-width="2.5"/>
+  <path d="M44 124 C50 100 96 92 112 112 Z" fill="#EA4335"/><path d="M60 117 C66 104 86 99 96 108 Z" fill="#fff" opacity=".9"/>
+  <rect x="120" y="152" width="34" height="12" rx="3" fill="#1A73E8" transform="rotate(-6 137 158)"/>
+</svg>`;
+function settingRow(label, value, icon, hint) {
+  return `<div style="padding:12px 16px"><div class="row" style="gap:8px">${tf(label, value, { lead: icon }).replace('class="tf', 'style="flex:1;margin-top:0;min-width:0" class="tf')}<div class="fib off">${ic("check")}</div></div>
+    <p class="small muted" style="margin-top:4px">${hint}</p></div>`;
+}
 function catHead(name, count, a) {
   const c = ACCENTS[a];
   return `<div class="cathead" style="background:${c}1A"><span class="bar" style="background:${c}"></span><span style="color:${c};font-weight:700">${name}</span><span class="n">${count}</span>${ic("arrow_drop_down")}</div>`;
@@ -322,7 +417,7 @@ function device(screenHtml, { x, y, scale, rot = 0 }) {
     <div class="screen">${screenHtml}<div class="glare"></div></div><div class="cam"></div></div></div>`;
 }
 const F = {
-  notif: (appName, title, body, color, icon) => `<div class="glass notif"><div class="ic" style="background:${color}">${icon.length === 1 ? icon : ic(icon)}</div><div><span class="app">${appName}</span><b>${title}</b><p>${body}</p></div></div>`,
+  notif: (appName, title, body, color, icon, actions = []) => `<div class="glass notif"><div class="ic" style="background:${color}">${icon.length === 1 ? icon : ic(icon)}</div><div><span class="app">${appName}</span><b>${title}</b><p>${body}</p>${actions.length ? `<div class="acts">${actions.map(a => `<span>${a}</span>`).join("")}</div>` : ""}</div></div>`,
   mail: (rows) => `<div class="glass mail"><div class="hd"><b>Gmail</b><span class="lbl">${ic("label")}SMS</span></div>${rows.map(([a, c, s, p, d, isNew]) =>
     `<div class="mrow ${isNew ? "new" : ""}"><div class="av" style="background:${c}">${a}</div><div class="tx"><div class="s">${s}</div><div class="p">${p}</div></div><div class="d">${d}</div></div>`).join("")}</div>`,
   chip: (icon, text, color, dark = false) => `<div class="chip glass" style="${dark ? "background:rgba(17,19,24,.9);color:#fff" : ""}"><span class="ic" style="background:${color}">${ic(icon)}</span>${text}</div>`,
@@ -340,20 +435,46 @@ const MAIL_ROWS = [
 // ---------------- shots ----------------
 // Each: eyebrow, headline (html), sub, accent color for glows, screen, floats per layout.
 // Float positions: [html, {phone:{x,y,w,rot}, tablet:{x,y,w,rot}}]
+// Messages first: the listing leads with the declared core use case (Default SMS handler).
 const SHOTS = [
-  { key: "01-backup", eye: ["backup", "Backup", "#1A73E8"], head: "Every text, safe in <em>your own Gmail</em>", sub: "Received and sent, backed up as they arrive.",
+  { key: "01-messages", eye: ["chat", "Messages", "#1A73E8"], head: "All your texts, <em>one simple inbox</em>", sub: "Send and receive SMS and MMS. Your default messaging app.",
+    glow: ["#1A73E8", "#12B5CB"], screen: () => SCREENS.messages(),
+    floats: [
+      [F.notif("SMS Toolbox · now", "Mom", "Landed safely! Call you tonight ❤️", "#1A73E8", "M", ["Reply", "Mark as read"]), { phone: { x: 30, y: 1350, w: 440, rot: -2 }, tablet: { x: 760, y: 720, w: 430, rot: -2 } }],
+      [F.chip("check_circle", "Default SMS app", "#188038"), { tablet: { x: 1440, y: 380, w: 0, rot: 3 } }],
+    ] },
+  { key: "02-conversation", eye: ["image", "Photos & groups", "#9334E6"], head: "Photos, groups <em>and delivery reports</em>", sub: "Picture and group messages (MMS). Optional delivery and read reports.",
+    glow: ["#9334E6", "#1A73E8"], screen: () => SCREENS.conversation(),
+    floats: [
+      [F.chip("done_all", "Delivery reports", "#1A73E8"), { phone: { x: 30, y: 1585, w: 0, rot: -3 }, tablet: { x: 770, y: 830, w: 0, rot: -3 } }],
+      [F.chip("group", "Group messages", "#9334E6"), { phone: { x: 640, y: 1500, w: 0, rot: 3 }, tablet: { x: 1450, y: 760, w: 0, rot: 3 } }],
+    ] },
+  { key: "03-backup", eye: ["backup", "Backup", "#188038"], head: "Every text, safe in <em>your own Gmail</em>", sub: "Received and sent, backed up as they arrive.",
     glow: ["#1A73E8", "#34A853"], screen: () => SCREENS.backup(),
     floats: [
-      [F.notif("Messages · now", "Mom", "Landed safely! Call you tonight ❤️", "#188038", "M"), { phone: { x: 30, y: 1610, w: 400, rot: -2 }, tablet: { x: 790, y: 760, w: 400, rot: -2 } }],
-      [F.mail(MAIL_ROWS), { phone: { x: 450, y: 1080, w: 420, rot: 2 }, tablet: { x: 1400, y: 400, w: 410, rot: 2 } }],
+      [F.notif("SMS Toolbox · now", "Mom", "Landed safely! Call you tonight ❤️", "#1A73E8", "M"), { tablet: { x: 790, y: 760, w: 400, rot: -2 } }],
+      [F.mail(MAIL_ROWS), { tablet: { x: 1400, y: 400, w: 410, rot: 2 } }],
+      [F.mail(MAIL_ROWS.slice(0, 3)), { phone: { x: 440, y: 1325, w: 420, rot: 2 } }],
     ] },
-  { key: "02-restore", eye: ["restore", "Restore", "#188038"], head: "New phone? <em>Bring every text back</em>", sub: "Restore from your Gmail in one tap. Nothing is duplicated.",
+  { key: "04-restore", eye: ["restore", "Restore", "#188038"], head: "New phone? <em>Bring every text back</em>", sub: "Restore from your Gmail in one tap. Nothing is duplicated.",
     glow: ["#12B5CB", "#34A853"], screen: () => SCREENS.restore(),
     floats: [
-      [F.stat("2,176", "messages restored so far", "#188038"), { phone: { x: 30, y: 1460, w: 280, rot: -3 }, tablet: { x: 800, y: 640, w: 280, rot: -3 } }],
-      [F.chip("done_all", "Already on the phone? Skipped.", "#188038"), { phone: { x: 420, y: 1700, w: 0, rot: 2 }, tablet: { x: 1360, y: 880, w: 0, rot: 2 } }],
+      [F.stat("2176", "messages restored so far", "#188038"), { phone: { x: 30, y: 1120, w: 280, rot: -3 }, tablet: { x: 800, y: 640, w: 280, rot: -3 } }],
+      [F.chip("done_all", "Already on the phone? Skipped.", "#188038"), { phone: { x: 360, y: 1420, w: 0, rot: 2 }, tablet: { x: 1360, y: 760, w: 0, rot: 2 } }],
     ] },
-  { key: "03-privacy", eye: ["shield", "Private", "#188038"], head: "No account. No server. <em>Just your Gmail.</em>", sub: "Your app password stays encrypted on your phone.",
+  { key: "05-redirect", eye: ["forward", "Redirect", "#EA4335"], head: "Forward the texts <em>that matter</em>", sub: "Rules by sender or number pass them on to another phone.",
+    glow: ["#1A73E8", "#EA4335"], screen: () => SCREENS.rules(),
+    floats: [
+      [F.chip("forward", "WorkBank → +351 912 345 678", "#1A73E8"), { phone: { x: 40, y: 1505, w: 0, rot: -2 }, tablet: { x: 780, y: 780, w: 0, rot: -2 } }],
+      [F.chip("check", "First matching rule wins", "#34A853"), { phone: { x: 480, y: 1595, w: 0, rot: 2 }, tablet: { x: 1450, y: 420, w: 0, rot: 3 } }],
+    ] },
+  { key: "06-schedule", eye: ["schedule", "Schedule", "#E37400"], head: "Write it now, <em>send it later</em>", sub: "Once, daily, on work days, monthly or yearly.",
+    glow: ["#F9AB00", "#9334E6"], screen: () => SCREENS.scheduleList(),
+    floats: [
+      [F.chip("event_repeat", "Yearly · Sep 3, 08:00", "#9334E6"), { phone: { x: 40, y: 1560, w: 0, rot: -2 }, tablet: { x: 790, y: 760, w: 0, rot: -2 } }],
+      [F.chip("cake", "Never miss a birthday", "#E37400"), { phone: { x: 470, y: 1410, w: 0, rot: 3 }, tablet: { x: 1450, y: 400, w: 0, rot: 3 } }],
+    ] },
+  { key: "07-privacy", eye: ["shield", "Private", "#188038"], head: "No account. No server. <em>Just your Gmail.</em>", sub: "Your app password stays encrypted on your phone.",
     glow: ["#188038", "#1A73E8"], screen: () => SCREENS.settings(true), dark: true,
     floats: [
       [`<div class="trust">${F.chip("person", "No account to create", "#1A73E8")}${F.chip("cloud_done", "Phone → your Gmail, nothing in between", "#188038")}${F.chip("key", "Password encrypted with Android Keystore", "#E37400")}${F.chip("code", "Open source: check every claim", "#9334E6")}</div>`,
@@ -378,6 +499,7 @@ function eyebrow([icon, label, color], size) {
 function floatsHtml(floats, layout) {
   return floats.map(([html, pos]) => {
     const p = pos[layout];
+    if (!p) return ""; // this callout is only shown in the other layout
     const k = layout === "phone" ? 1.4 : 1.15;
     return `<div class="float" style="left:${p.x}px;top:${p.y}px;${p.w ? `width:${p.w}px;` : ""}transform-origin:0 0;transform:rotate(${p.rot}deg) scale(${k})">${html}</div>`;
   }).join("");
@@ -447,11 +569,11 @@ function renderFeature() {
   stage.innerHTML = background(W, H, ["#1A73E8", "#34A853"]) +
     `<div class="copy" style="left:64px;top:84px;width:470px">
       <div style="display:flex;align-items:center;gap:22px">${appIcon(96)}<div class="headline" style="font-size:58px">SMS Toolbox</div></div>
-      <div class="headline" style="font-size:40px;margin-top:30px;line-height:1.12">Back up &amp; restore your texts <em>with your own Gmail</em></div>
-      <div class="sub" style="font-size:21px;margin-top:18px">Received and sent, as they arrive. Back on any phone.</div>
+      <div class="headline" style="font-size:40px;margin-top:30px;line-height:1.12">Your SMS &amp; MMS app, <em>with Gmail backup</em></div>
+      <div class="sub" style="font-size:21px;margin-top:18px">Plus restore, redirect and schedule. No account, no server.</div>
     </div>` +
-    device(SCREENS.restore(), { x: 560, y: 70, scale: 0.53, rot: -6 }) +
-    device(SCREENS.backup(), { x: 760, y: 40, scale: 0.56, rot: 5 });
+    device(SCREENS.conversation(), { x: 560, y: 70, scale: 0.53, rot: -6 }) +
+    device(SCREENS.messages(), { x: 760, y: 40, scale: 0.56, rot: 5 });
 }
 
 window.renderAsset = function (kind, i) {

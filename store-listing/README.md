@@ -22,9 +22,9 @@ store-listing/
 │   ├── icon-512.png                  512x512 hi-res icon
 │   └── feature-graphic-1024x500.png  1024x500 feature graphic
 ├── screenshots/
-│   ├── phone/                        3 captioned 1080x1920 screenshots
-│   ├── sevenInchTablet/              same 3 moments, 1920x1080 "large screen" layout
-│   └── tenInchTablet/                same 3 moments, 2560x1440 "large screen" layout
+│   ├── phone/                        7 captioned 1080x1920 screenshots
+│   ├── sevenInchTablet/              same 7 moments, 1920x1080 "large screen" layout
+│   └── tenInchTablet/                same 7 moments, 2560x1440 "large screen" layout
 ├── scripts/store_assets/build.sh     regenerates everything under graphics/ + screenshots/ (needs Playwright)
 ├── scripts/generate_demo_video.py    regenerates the permissions demo video (needs Pillow + ffmpeg)
 ├── scripts/launch_video/build.sh     regenerates the launch video (needs Playwright + ffmpeg)
@@ -72,20 +72,26 @@ forward chevrons, path for path) on a brand-blue gradient, full bleed. Play appl
 its own rounded mask, so the corners are left square.
 
 **Feature graphic** (`graphics/feature-graphic-1024x500.png`). The icon, the app
-name and the backup-and-restore promise, next to two phones showing the real
-Restore and Backup screens.
+name and the promise ("Your SMS & MMS app, with Gmail backup"), next to two phones
+showing the Messages inbox and a conversation.
 
 **Screenshots.** Each one pairs a headline with the real screen in a phone frame,
-plus a few floating callouts (a notification, the Gmail label, a restore counter)
-that show the result of the feature. ⚠️ **They predate the messaging app.** They show Backup and Restore only; add a
-Messages (inbox) and a conversation screenshot **first**, so the listing leads
-with the declared core use case, SMS messaging, before uploading. Current order:
+plus a few floating callouts (a message notification, the Gmail label, a restore
+counter) that show the result of the feature. They lead with the declared core use
+case, SMS messaging: the inbox and a conversation come first, then each tool in tab
+order. Upload them in this order:
 
 | # | File | Headline | Screen |
 |---|---|---|---|
-| 1 | `01-backup.png` | Every text, safe in your own Gmail | Backup tab, running (the landing screen) |
-| 2 | `02-restore.png` | New phone? Bring every text back | Restore from Gmail, mid-run |
-| 3 | `03-privacy.png` | No account. No server. Just your Gmail. | Settings → Gmail backup, dark theme |
+| 1 | `01-messages.png` | All your texts, one simple inbox | Messages tab (the landing screen) |
+| 2 | `02-conversation.png` | Photos, groups and delivery reports | A conversation with a picture message (MMS) |
+| 3 | `03-backup.png` | Every text, safe in your own Gmail | Backup tab, running |
+| 4 | `04-restore.png` | New phone? Bring every text back | Restore tab, mid-run |
+| 5 | `05-redirect.png` | Forward the texts that matter | Redirect tab, rules by category |
+| 6 | `06-schedule.png` | Write it now, send it later | Schedule tab |
+| 7 | `07-privacy.png` | No account. No server. Just your Gmail. | Settings → Gmail backup, dark theme |
+
+Play shows up to 8 phone screenshots, so there is room for one more.
 
 **How they are made.** `scripts/store_assets/store.html` rebuilds each screen in
 HTML from the real Compose layouts (`app/src/main/java/.../presentation/`), the
@@ -94,14 +100,17 @@ using Roboto, the app's font, and the official Material Icons. Both are bundled 
 `scripts/store_assets/` with their licenses. `render.js` renders them with headless
 Chromium. They are not device captures: no emulator was available where they were
 made, and the surface colors follow Material You with a blue wallpaper. Every
-name, number and message in them is fictional.
+name, number and message in them is fictional, and the photo in the picture
+message is a drawn illustration. The bottom bar shows each tab as its icon:
+`MainBottomBar` only labels the selected tab, and with five tabs and the FAB on a
+phone there is no room for the label.
 
 They meet Play's requirements:
-- **Phone:** 1080x1920, 24-bit PNG, no alpha, 3 images (Play needs at least 2).
+- **Phone:** 1080x1920, 24-bit PNG, no alpha, 7 images (Play needs at least 2, allows 8).
 - **Tablets:** `screenshots/sevenInchTablet/` (1920x1080) and
   `screenshots/tenInchTablet/` (2560x1440) cover the **7-inch** and **10-inch
   tablet** slots, under "Large screens" in Play Console. They are 16:9 landscape,
-  with both dimensions between 1080 and 7680px, 3 images each.
+  with both dimensions between 1080 and 7680px, 7 images each.
 
 The app has no tablet layout, so the tablet images show the same phone screens
 beside the headline rather than a stretched UI. Uploading them is optional (Play
@@ -113,7 +122,7 @@ To change copy, layout or colors, edit `store.html`, then regenerate everything:
 
 ```bash
 store-listing/scripts/store_assets/build.sh                   # all graphics and screenshots
-store-listing/scripts/store_assets/build.sh --only 02-restore # one screenshot, all three sizes
+store-listing/scripts/store_assets/build.sh --only 02-conversation # one screenshot, all three sizes
 ```
 
 `build.sh` needs Node with Playwright (Chromium), and Python 3 with Pillow.

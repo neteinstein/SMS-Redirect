@@ -1,6 +1,6 @@
 // Renders every Play Store graphic from store.html with headless Chromium (Playwright).
 //   node render.js                 -> all assets into store-listing/graphics + screenshots
-//   node render.js --only 01-backup -> just that screenshot (all three sizes)
+//   node render.js --only 01-messages -> just that screenshot (all three sizes)
 const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
