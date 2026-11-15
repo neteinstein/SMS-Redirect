@@ -117,6 +117,7 @@ object MessageNotifications {
         context: Context,
         contentLocation: String,
         retry: PendingIntent,
+        threadId: Long?,
     ) {
         val manager = notificationManagerOrNull(context) ?: return
         val notification =
@@ -125,8 +126,8 @@ object MessageNotifications {
                 .setContentTitle(context.getString(R.string.messages_notification_mms_failed))
                 .setContentText(context.getString(R.string.messages_notification_mms_failed_text))
                 .setStyle(NotificationCompat.BigTextStyle().bigText(context.getString(R.string.messages_notification_mms_failed_text)))
-                // Not auto-cancelled: this notification is the only way back to the message.
-                .setContentIntent(retry)
+                // Opens the conversation, where the message waits with a Download button.
+                .setContentIntent(threadId?.let { openConversation(context, it) } ?: retry)
                 .addAction(0, context.getString(R.string.messages_notification_retry), retry)
                 .build()
         manager.notify(mmsDownloadFailedId(contentLocation), notification)

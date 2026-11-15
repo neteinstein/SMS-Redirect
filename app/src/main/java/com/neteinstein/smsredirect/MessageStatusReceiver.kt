@@ -8,6 +8,8 @@ import android.net.Uri
 import android.telephony.SmsManager
 import android.util.Log
 import androidx.core.app.RemoteInput
+import com.neteinstein.smsredirect.data.messaging.AndroidMmsDownloader
+import com.neteinstein.smsredirect.data.messaging.MmsDownloadResult
 import com.neteinstein.smsredirect.domain.messaging.SendOutcome
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -59,14 +61,22 @@ class MessageStatusReceiver : BroadcastReceiver() {
                     }
 
                     ACTION_MMS_RETRY_DOWNLOAD -> {
-                        val location = intent.getStringExtra(EXTRA_CONTENT_LOCATION) ?: return@launch
-                        val transactionId = intent.getStringExtra(EXTRA_TRANSACTION_ID)
-                        val from = intent.getStringExtra(EXTRA_FROM)
-                        val subscriptionId = intent.getIntExtra(EXTRA_SUBSCRIPTION_ID, -1)
-                        MessageNotifications.cancelMmsDownloadFailed(context, location)
-                        val started = container.mmsDownloader.download(location, transactionId, from, subscriptionId)
+                        val failed = FailedMmsDownload.from(intent) ?: return@launch
+                        MessageNotifications.cancelMmsDownloadFailed(context, failed.contentLocation)
+                        val started =
+                            if (failed.placeholderId != null) {
+                                container.mmsDownloader.download(failed.placeholderId)
+                            } else {
+                                container.mmsDownloader.startDownload(
+                                    null,
+                                    failed.contentLocation,
+                                    failed.transactionId,
+                                    failed.from,
+                                    failed.subscriptionId,
+                                )
+                            }
                         // No callback comes for a download that never started: keep the way back.
-                        if (!started) showMmsDownloadFailed(context, location, transactionId, from, subscriptionId)
+                        if (!started) showMmsDownloadFailed(context, failed)
                     }
 
                     ACTION_REPLY -> {
@@ -109,19 +119,33 @@ class MessageStatusReceiver : BroadcastReceiver() {
         val container = (context.applicationContext as SmsRedirectApplication).appContainer
         val file = intent.getStringExtra(EXTRA_PDU_FILE)?.let(::File) ?: return
         val subscriptionId = intent.getIntExtra(EXTRA_SUBSCRIPTION_ID, -1)
-        val incoming = container.mmsDownloader.onDownloaded(resultCode, file, intent.getStringExtra(EXTRA_TRANSACTION_ID), subscriptionId)
-        if (incoming == null) {
-            // Most often no mobile data. Offer a retry rather than silently losing the message.
-            val location = intent.getStringExtra(EXTRA_CONTENT_LOCATION) ?: return
-            showMmsDownloadFailed(
-                context,
-                location,
+        val failedDownload = FailedMmsDownload.from(intent)
+        val result =
+            container.mmsDownloader.onDownloaded(
+                resultCode,
+                file,
                 intent.getStringExtra(EXTRA_TRANSACTION_ID),
-                intent.getStringExtra(EXTRA_FROM),
                 subscriptionId,
+                failedDownload?.placeholderId,
             )
-            return
-        }
+        val incoming =
+            when (result) {
+                is MmsDownloadResult.Saved -> {
+                    result.message
+                }
+
+                MmsDownloadResult.AlreadySaved -> {
+                    return
+                }
+
+                is MmsDownloadResult.Failed -> {
+                    // Most often no mobile data. The conversation keeps a "not downloaded" row with
+                    // a Download button; the notification says so and offers Retry too.
+                    failedDownload?.let { showMmsDownloadFailed(context, it.copy(threadId = result.threadId)) }
+                    return
+                }
+            }
+        failedDownload?.let { MessageNotifications.cancelMmsDownloadFailed(context, it.contentLocation) }
         val sender = incoming.from.orEmpty()
         val name =
             container.contactNameResolver.lookupNameByNumber(sender)
@@ -137,29 +161,62 @@ class MessageStatusReceiver : BroadcastReceiver() {
         private const val TAG = "MessageStatusReceiver"
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-        /** A "not downloaded" notification whose Retry starts the same download again. */
-        fun showMmsDownloadFailed(
-            context: Context,
-            contentLocation: String,
-            transactionId: String?,
-            from: String?,
-            subscriptionId: Int,
+        /** Everything needed to retry a download, carried in the notification's Retry intent. */
+        data class FailedMmsDownload(
+            val contentLocation: String,
+            val placeholderId: Long?,
+            val threadId: Long?,
+            val transactionId: String?,
+            val from: String?,
+            val subscriptionId: Int,
         ) {
-            val retry =
-                // The data makes each MMS's retry intent distinct; it is never resolved.
-                Intent(
-                    ACTION_MMS_RETRY_DOWNLOAD,
-                    Uri.fromParts("mmsretry", contentLocation, null),
-                    context,
-                    MessageStatusReceiver::class.java,
-                ).putExtra(EXTRA_CONTENT_LOCATION, contentLocation)
+            fun writeTo(intent: Intent): Intent =
+                intent
+                    .putExtra(EXTRA_CONTENT_LOCATION, contentLocation)
+                    .putExtra(EXTRA_PLACEHOLDER_ID, placeholderId ?: AndroidMmsDownloader.NO_PLACEHOLDER)
+                    .putExtra(EXTRA_THREAD_ID, threadId ?: -1L)
                     .putExtra(EXTRA_TRANSACTION_ID, transactionId)
                     .putExtra(EXTRA_FROM, from)
                     .putExtra(EXTRA_SUBSCRIPTION_ID, subscriptionId)
+
+            companion object {
+                fun from(intent: Intent): FailedMmsDownload? {
+                    val location = intent.getStringExtra(EXTRA_CONTENT_LOCATION) ?: return null
+                    return FailedMmsDownload(
+                        contentLocation = location,
+                        placeholderId = intent.getLongExtra(EXTRA_PLACEHOLDER_ID, AndroidMmsDownloader.NO_PLACEHOLDER).takeIf { it > 0 },
+                        threadId = intent.getLongExtra(EXTRA_THREAD_ID, -1L).takeIf { it > 0 },
+                        transactionId = intent.getStringExtra(EXTRA_TRANSACTION_ID),
+                        from = intent.getStringExtra(EXTRA_FROM),
+                        subscriptionId = intent.getIntExtra(EXTRA_SUBSCRIPTION_ID, -1),
+                    )
+                }
+            }
+        }
+
+        /**
+         * A "not downloaded" notification. Tapping it opens the conversation, where the message
+         * waits with a Download button; its Retry action starts the same download again.
+         */
+        fun showMmsDownloadFailed(
+            context: Context,
+            failed: FailedMmsDownload,
+        ) {
+            val retry =
+                // The data makes each MMS's retry intent distinct; it is never resolved.
+                failed.writeTo(
+                    Intent(
+                        ACTION_MMS_RETRY_DOWNLOAD,
+                        Uri.fromParts("mmsretry", failed.contentLocation, null),
+                        context,
+                        MessageStatusReceiver::class.java,
+                    ),
+                )
             MessageNotifications.showMmsDownloadFailed(
                 context,
-                contentLocation,
+                failed.contentLocation,
                 PendingIntent.getBroadcast(context, 0, retry, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE),
+                failed.threadId,
             )
         }
 
@@ -178,5 +235,6 @@ class MessageStatusReceiver : BroadcastReceiver() {
         const val EXTRA_FROM = "from"
         const val EXTRA_SUBSCRIPTION_ID = "subscription_id"
         const val EXTRA_THREAD_ID = "thread_id"
+        const val EXTRA_PLACEHOLDER_ID = "placeholder_id"
     }
 }

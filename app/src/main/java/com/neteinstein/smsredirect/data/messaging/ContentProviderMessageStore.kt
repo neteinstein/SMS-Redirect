@@ -138,15 +138,20 @@ class ContentProviderMessageStore(
                     Telephony.Mms.MESSAGE_BOX,
                     Telephony.Mms.MESSAGE_TYPE,
                     Telephony.Mms.SUBJECT,
+                    Telephony.Mms.STATUS,
                 ),
                 selection,
                 args,
             ) { cursor ->
-                // An undownloaded notification left behind by another messaging app: no content.
-                if (cursor.long(Telephony.Mms.MESSAGE_TYPE).toInt() == MmsHeaders.MESSAGE_TYPE_NOTIFICATION_IND) {
-                    return@query null
-                }
-                val status = mmsStatus(cursor.long(Telephony.Mms.MESSAGE_BOX).toInt()) ?: return@query null
+                // An announced MMS not downloaded yet (ours, or left by another messaging app):
+                // shown as "not downloaded", with a Download button.
+                val isNotification = cursor.long(Telephony.Mms.MESSAGE_TYPE).toInt() == MmsHeaders.MESSAGE_TYPE_NOTIFICATION_IND
+                val status =
+                    if (isNotification) {
+                        MmsDownloadState.toMessageStatus(cursor.long(Telephony.Mms.STATUS).toInt())
+                    } else {
+                        mmsStatus(cursor.long(Telephony.Mms.MESSAGE_BOX).toInt()) ?: return@query null
+                    }
                 Row(
                     id = cursor.long(Telephony.Mms._ID),
                     dateSeconds = cursor.long(Telephony.Mms.DATE),
@@ -165,7 +170,9 @@ class ContentProviderMessageStore(
                 isMms = true,
                 threadId = threadId,
                 address =
-                    if (row.status == MessageStatus.RECEIVED) {
+                    if (row.status == MessageStatus.RECEIVED || row.status == MessageStatus.NOT_DOWNLOADED ||
+                        row.status == MessageStatus.DOWNLOADING
+                    ) {
                         mmsSender(row.id)
                     } else {
                         threadAddresses.joinToString(", ")
@@ -340,6 +347,128 @@ class ContentProviderMessageStore(
             message.cc.forEach { insertAddress(messageId, it, ADDR_TYPE_CC) }
             threadId
         }
+
+    /** What is needed to (re)start the download of an announced MMS. */
+    data class PendingMmsDownload(
+        val messageId: Long,
+        val threadId: Long,
+        val contentLocation: String,
+        val transactionId: String?,
+        val from: String?,
+        val subscriptionId: Int,
+    )
+
+    /**
+     * Saves an MMS announcement as a "not downloaded" row in the sender's conversation, before
+     * the download starts. Until the download succeeds, this row is the message: it survives a
+     * failed download, a dismissed notification and a reboot, and its Download button retries.
+     */
+    suspend fun saveMmsNotification(
+        notification: MmsPdu.NotificationInd,
+        subscriptionId: Int,
+    ): PendingMmsDownload? =
+        withContext(dispatcher) {
+            val from = notification.from?.takeIf { it.isNotBlank() } ?: UNKNOWN_SENDER
+            val threadId = safely { Telephony.Threads.getOrCreateThreadId(context, from) } ?: return@withContext null
+            val values =
+                ContentValues().apply {
+                    put(Telephony.Mms.THREAD_ID, threadId)
+                    put(Telephony.Mms.DATE, System.currentTimeMillis() / 1000)
+                    put(Telephony.Mms.MESSAGE_BOX, Telephony.Mms.MESSAGE_BOX_INBOX)
+                    put(Telephony.Mms.READ, 0)
+                    put(Telephony.Mms.SEEN, 0)
+                    put(Telephony.Mms.MESSAGE_TYPE, MmsHeaders.MESSAGE_TYPE_NOTIFICATION_IND)
+                    put(Telephony.Mms.MMS_VERSION, MmsHeaders.MMS_VERSION_1_2)
+                    put(Telephony.Mms.CONTENT_LOCATION, notification.contentLocation)
+                    notification.transactionId?.let { put(Telephony.Mms.TRANSACTION_ID, it) }
+                    put(Telephony.Mms.MESSAGE_SIZE, notification.messageSize)
+                    notification.expirySeconds?.let { put(Telephony.Mms.EXPIRY, it) }
+                    notification.subject?.let {
+                        put(Telephony.Mms.SUBJECT, it)
+                        put(Telephony.Mms.SUBJECT_CHARSET, MmsCharsets.UTF_8)
+                    }
+                    put(Telephony.Mms.STATUS, MmsDownloadState.UNSTARTED)
+                    put(Telephony.Mms.SUBSCRIPTION_ID, subscriptionId)
+                }
+            val uri = safely { resolver.insert(Telephony.Mms.Inbox.CONTENT_URI, values) } ?: return@withContext null
+            val messageId = ContentUris.parseId(uri)
+            insertAddress(messageId, from, ADDR_TYPE_FROM)
+            PendingMmsDownload(
+                messageId,
+                threadId,
+                notification.contentLocation,
+                notification.transactionId,
+                notification.from,
+                subscriptionId,
+            )
+        }
+
+    /** The announcement behind a "not downloaded" row, or null if it is gone or already downloaded. */
+    suspend fun pendingMmsDownload(messageId: Long): PendingMmsDownload? =
+        withContext(dispatcher) {
+            query(
+                ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, messageId),
+                arrayOf(
+                    Telephony.Mms.THREAD_ID,
+                    Telephony.Mms.MESSAGE_TYPE,
+                    Telephony.Mms.CONTENT_LOCATION,
+                    Telephony.Mms.TRANSACTION_ID,
+                    Telephony.Mms.SUBSCRIPTION_ID,
+                ),
+            ) { cursor ->
+                if (cursor.long(Telephony.Mms.MESSAGE_TYPE).toInt() != MmsHeaders.MESSAGE_TYPE_NOTIFICATION_IND) return@query null
+                val location = cursor.string(Telephony.Mms.CONTENT_LOCATION)?.takeIf { it.isNotBlank() } ?: return@query null
+                PendingMmsDownload(
+                    messageId = messageId,
+                    threadId = cursor.long(Telephony.Mms.THREAD_ID),
+                    contentLocation = location,
+                    transactionId = cursor.string(Telephony.Mms.TRANSACTION_ID),
+                    from = null,
+                    subscriptionId = cursor.long(Telephony.Mms.SUBSCRIPTION_ID).toInt(),
+                )
+            }.firstOrNull()?.let { it.copy(from = mmsSender(messageId).ifBlank { null }) }
+        }
+
+    suspend fun setMmsDownloadState(
+        messageId: Long,
+        state: Int,
+    ) {
+        withContext(dispatcher) {
+            val values = ContentValues().apply { put(Telephony.Mms.STATUS, state) }
+            safely { resolver.update(ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, messageId), values, null, null) }
+        }
+    }
+
+    /** Removes the "not downloaded" row once the real message has been saved. */
+    suspend fun deleteMmsNotification(messageId: Long) {
+        withContext(dispatcher) {
+            safely {
+                resolver.delete(
+                    ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, messageId),
+                    "${Telephony.Mms.MESSAGE_TYPE} = ?",
+                    arrayOf(MmsHeaders.MESSAGE_TYPE_NOTIFICATION_IND.toString()),
+                )
+            }
+        }
+    }
+
+    /**
+     * A download "in progress" when the process starts cannot be tracked any more (its callback
+     * may still come, and is handled); show those rows as not downloaded so they can be retried.
+     */
+    suspend fun resetInterruptedMmsDownloads() {
+        withContext(dispatcher) {
+            val values = ContentValues().apply { put(Telephony.Mms.STATUS, MmsDownloadState.TRANSIENT_FAILURE) }
+            safely {
+                resolver.update(
+                    Telephony.Mms.CONTENT_URI,
+                    values,
+                    "${Telephony.Mms.MESSAGE_TYPE} = ? AND ${Telephony.Mms.STATUS} = ?",
+                    arrayOf(MmsHeaders.MESSAGE_TYPE_NOTIFICATION_IND.toString(), MmsDownloadState.DOWNLOADING.toString()),
+                )
+            }
+        }
+    }
 
     /** Writes one MMS part: text inline in the row, anything else as the part's file. */
     internal fun insertPart(

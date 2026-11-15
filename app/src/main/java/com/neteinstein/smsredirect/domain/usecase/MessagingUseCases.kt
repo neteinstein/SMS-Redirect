@@ -1,8 +1,10 @@
 package com.neteinstein.smsredirect.domain.usecase
 
 import com.neteinstein.smsredirect.domain.messaging.MessageStore
+import com.neteinstein.smsredirect.domain.messaging.MmsDownloadRequester
 import com.neteinstein.smsredirect.domain.model.Conversation
 import com.neteinstein.smsredirect.domain.model.ConversationMessage
+import com.neteinstein.smsredirect.domain.model.MessageStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -37,6 +39,16 @@ class GetOrCreateConversationUseCase(
         val recipients = normalizeRecipients(addresses)
         if (recipients.isEmpty()) return null
         return messageStore.threadIdFor(recipients)
+    }
+}
+
+/** Downloads an MMS that arrived while it could not be fetched, e.g. with mobile data off. */
+class DownloadMmsUseCase(
+    private val mmsDownloadRequester: MmsDownloadRequester,
+) {
+    suspend operator fun invoke(message: ConversationMessage): Boolean {
+        if (!message.isMms || message.status != MessageStatus.NOT_DOWNLOADED) return false
+        return mmsDownloadRequester.download(message.id)
     }
 }
 

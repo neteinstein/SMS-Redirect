@@ -351,11 +351,15 @@
     <string name="messages_notification_send_failed">Message not sent</string>
     <string name="messages_notification_send_failed_text">Open the conversation to try again.</string>
     <string name="messages_notification_mms_failed">Picture message not downloaded</string>
-    <string name="messages_notification_mms_failed_text">A picture message (MMS) arrived but could not be downloaded. Turn on mobile data and tap Retry.</string>
+    <string name="messages_notification_mms_failed_text">A picture message (MMS) arrived but could not be downloaded. It waits in the conversation: turn on mobile data and tap Download, or Retry here.</string>
     <string name="messages_notification_retry">Retry</string>
     <string name="restore_no_credentials_title">Connect your Gmail to restore</string>
     <string name="messages_disabled_banner">Messages is disabled: set SMS Toolbox as your default SMS app to send and receive messages.</string>
     <string name="restore_disabled_banner">Restore is disabled: Android only lets the default SMS app add messages. Set SMS Toolbox as your default SMS app to restore.</string>
     <string name="default_sms_banner_action">Set as default</string>
     <string name="messages_disabled_placeholder">Your conversations will appear here once SMS Toolbox is your default SMS app. Redirect, Schedule and Backup work without it.</string>
+    <string name="conversation_mms_not_downloaded">Picture message not downloaded yet</string>
+    <string name="conversation_mms_downloading">Downloading picture message…</string>
+    <string name="conversation_mms_download">Download</string>
+    <string name="conversation_mms_download_failed">The picture message could not be downloaded. Turn on mobile data and try again.</string>
 </resources>

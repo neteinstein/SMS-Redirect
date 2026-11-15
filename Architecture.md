@@ -55,12 +55,14 @@ Two rules from that policy shape the code:
 [ SMS_DELIVER ] ─► SmsDeliverReceiver ─► MessageStore.saveIncomingSms ─► MessageNotifications
 [ WAP_PUSH_DELIVER ] ─► MmsDeliverReceiver ─► AndroidMmsDownloader.onWapPush
                               │  MmsPduParser: M-Notification.ind → content location
+                              │  saveMmsNotification: "not downloaded" row (m_type 130, st, ct_l)
                               ▼
                        SmsManager.downloadMultimediaMessage (writes cache/mms/*.pdu via FileProvider)
                               ▼
                        MessageStatusReceiver (ACTION_MMS_DOWNLOADED)
                               ├─► MmsPduParser: M-Retrieve.conf → parts
                               ├─► MessageStore.saveIncomingMms  (content://mms + parts + addr)
+                              ├─► delete the "not downloaded" row (or mark it failed → Download button)
                               ├─► M-Acknowledge.ind back to the MMSC
                               └─► MessageNotifications (or "not downloaded" + Retry)
 
@@ -107,10 +109,17 @@ Failed messages show "Not sent. Tap to retry"; retry resends the same text and a
 (an MMS's stored parts are read back) and deletes the failed copy once the new one is queued. The
 failure notification opens the message's conversation (`threadIdOf`).
 
-**MMS that cannot be downloaded** (no mobile data, or the download could not even start) get
-one "not downloaded" notification each, keyed by content location, with a Retry action. Opening
-the app does not clear them (`isMessageNotification` keeps the failure channel), because until
-the download succeeds that notification is the only record of the message.
+**MMS that cannot be downloaded are never lost.** The announcement is saved *before* the download
+as a "not downloaded" row in the sender's conversation (`m_type` 130, content location in
+`ct_l`, state in `st` with the AOSP values in `MmsDownloadState`), as the stock messaging app
+does. The conversation shows it as a "Picture message not downloaded yet" bubble with a
+**Download** button (`DownloadMmsUseCase` → `MmsDownloadRequester`), or "Downloading…" while one
+is in flight. A successful download saves the real message and deletes the row; a failure marks
+it retryable. A second callback for an already-saved placeholder is ignored (`AlreadySaved`), so
+a retry racing the first attempt cannot save the message twice. Downloads left "in progress" by a
+killed process are reset to retryable on the next start. Each failure also gets its own
+notification (keyed by content location) that opens the conversation and has a Retry action;
+opening the app does not clear it.
 
 **Notifications** (`MessageNotifications`): one MessagingStyle notification per thread
 (appended to, not replaced), `VISIBILITY_PRIVATE` with a content-free public version, inline

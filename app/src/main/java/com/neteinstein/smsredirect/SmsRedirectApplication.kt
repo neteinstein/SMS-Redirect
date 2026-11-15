@@ -56,6 +56,7 @@ import com.neteinstein.smsredirect.domain.usecase.DeleteConversationUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteMessageUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteScheduledSmsUseCase
+import com.neteinstein.smsredirect.domain.usecase.DownloadMmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ExportBackupUseCase
 import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetAvailableAppUpdateUseCase
@@ -107,6 +108,7 @@ import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateScheduledSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.VerifyGmailCredentialsUseCase
+import kotlinx.coroutines.runBlocking
 
 class SmsRedirectApplication : Application() {
     lateinit var appContainer: AppContainer
@@ -152,7 +154,11 @@ class SmsRedirectApplication : Application() {
         val messageSender = AndroidMessageSender(this, messageStore)
         val mmsDownloader = AndroidMmsDownloader(this, messageStore)
         // Send/download PDU files whose platform callback never came (process killed, reboot).
-        Thread { runCatching { mmsDownloader.clearStaleFiles() } }.start()
+        // Downloads that were "in progress" when the process died are retryable again.
+        Thread {
+            runCatching { mmsDownloader.clearStaleFiles() }
+            runCatching { runBlocking { messageStore.resetInterruptedMmsDownloads() } }
+        }.start()
         val backupSmsMessageUseCase =
             BackupSmsMessageUseCase(
                 mailFactory = SmsMailFactory(),
@@ -300,6 +306,7 @@ class SmsRedirectApplication : Application() {
                 deleteConversationUseCase = DeleteConversationUseCase(messageStore),
                 deleteMessageUseCase = DeleteMessageUseCase(messageStore),
                 sendMessageUseCase = SendMessageUseCase(messageSender, defaultSmsAppChecker),
+                downloadMmsUseCase = DownloadMmsUseCase(mmsDownloader),
             )
     }
 }
@@ -382,6 +389,7 @@ data class AppContainer(
     val deleteConversationUseCase: DeleteConversationUseCase,
     val deleteMessageUseCase: DeleteMessageUseCase,
     val sendMessageUseCase: SendMessageUseCase,
+    val downloadMmsUseCase: DownloadMmsUseCase,
 )
 
 data class AppUpdateContainer(

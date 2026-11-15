@@ -127,8 +127,11 @@ Restore), no self-update. The **github** flavor adds only the update check
       "New message"); Reply sends and clears it; Mark as read clears it; no
       notification while that conversation is open.
 - [ ] MMS: send a photo (large photos are shrunk, not rejected); receive a
-      photo from another phone (needs mobile data); receive with mobile data
-      off → "Picture message not downloaded" → Retry after enabling data.
+      photo from another phone (needs mobile data).
+- [ ] MMS with mobile data off: the conversation shows "Picture message not
+      downloaded yet" with **Download**, and a notification appears. Dismiss
+      the notification, reboot, turn data on, open the conversation, tap
+      **Download**: the picture replaces the placeholder, exactly once.
 - [ ] Group: send to two numbers → one group conversation; a reply from either
       lands in it.
 - [ ] From another app: a contact's message button and Share → "Message" open

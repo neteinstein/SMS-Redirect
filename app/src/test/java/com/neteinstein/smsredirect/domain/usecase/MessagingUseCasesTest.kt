@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.neteinstein.smsredirect.FakeDefaultSmsAppChecker
 import com.neteinstein.smsredirect.FakeMessageSender
 import com.neteinstein.smsredirect.FakeMessageStore
+import com.neteinstein.smsredirect.FakeMmsDownloadRequester
 import com.neteinstein.smsredirect.domain.messaging.SendFailure
 import com.neteinstein.smsredirect.domain.messaging.SendOutcome
 import com.neteinstein.smsredirect.domain.model.Conversation
@@ -12,6 +13,7 @@ import com.neteinstein.smsredirect.domain.model.MessageStatus
 import com.neteinstein.smsredirect.domain.model.OutgoingAttachment
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -145,5 +147,18 @@ class MessagingUseCasesTest {
 
             assertEquals(first, again)
             assertNull(useCase(listOf("", " ")))
+        }
+
+    @Test
+    fun `only a not-downloaded MMS is downloaded`() =
+        runTest {
+            val requester = FakeMmsDownloadRequester()
+            val download = DownloadMmsUseCase(requester)
+            val pending = ConversationMessage(5, true, 7, "a", "", 1_000, MessageStatus.NOT_DOWNLOADED)
+
+            assertTrue(download(pending))
+            assertFalse(download(pending.copy(status = MessageStatus.DOWNLOADING)))
+            assertFalse(download(pending.copy(isMms = false)))
+            assertEquals(listOf(5L), requester.requested)
         }
 }

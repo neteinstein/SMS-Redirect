@@ -10,6 +10,7 @@ import com.neteinstein.smsredirect.domain.model.ConversationMessage
 import com.neteinstein.smsredirect.domain.model.MessageStatus
 import com.neteinstein.smsredirect.domain.model.OutgoingAttachment
 import com.neteinstein.smsredirect.domain.usecase.DeleteMessageUseCase
+import com.neteinstein.smsredirect.domain.usecase.DownloadMmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetConversationAddressesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetConversationMessagesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetOrCreateConversationUseCase
@@ -35,6 +36,8 @@ data class ConversationUiState(
     val attachments: List<OutgoingAttachment> = emptyList(),
     val sending: Boolean = false,
     val error: SendFailure? = null,
+    /** Set when a "not downloaded" picture message could not start downloading. */
+    val downloadFailed: Boolean = false,
 ) {
     /** "Ana", "Ana, Rui" or the bare number when there is no contact. */
     val title: String get() = addresses.joinToString(", ") { contactNames[it] ?: it }
@@ -65,6 +68,7 @@ class ConversationViewModel(
     private val sendMessageUseCase: SendMessageUseCase,
     private val deleteMessageUseCase: DeleteMessageUseCase,
     private val contactNameResolver: ContactNameResolver,
+    private val downloadMmsUseCase: DownloadMmsUseCase,
 ) : ViewModel() {
     private val _uiState =
         MutableStateFlow(
@@ -117,7 +121,14 @@ class ConversationViewModel(
     }
 
     fun onErrorShown() {
-        _uiState.value = _uiState.value.copy(error = null)
+        _uiState.value = _uiState.value.copy(error = null, downloadFailed = false)
+    }
+
+    /** Downloads a picture message that arrived while it could not be fetched. */
+    fun download(message: ConversationMessage) {
+        viewModelScope.launch {
+            if (!downloadMmsUseCase(message)) _uiState.value = _uiState.value.copy(downloadFailed = true)
+        }
     }
 
     fun send() {
@@ -196,6 +207,7 @@ class ConversationViewModelFactory(
     private val sendMessageUseCase: SendMessageUseCase,
     private val deleteMessageUseCase: DeleteMessageUseCase,
     private val contactNameResolver: ContactNameResolver,
+    private val downloadMmsUseCase: DownloadMmsUseCase,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
@@ -211,5 +223,6 @@ class ConversationViewModelFactory(
             sendMessageUseCase,
             deleteMessageUseCase,
             contactNameResolver,
+            downloadMmsUseCase,
         ) as T
 }

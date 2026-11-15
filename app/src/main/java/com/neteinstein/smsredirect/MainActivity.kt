@@ -771,6 +771,7 @@ class MainActivity : ComponentActivity() {
                                         sendMessageUseCase = appContainer.sendMessageUseCase,
                                         deleteMessageUseCase = appContainer.deleteMessageUseCase,
                                         contactNameResolver = appContainer.contactNameResolver,
+                                        downloadMmsUseCase = appContainer.downloadMmsUseCase,
                                     ),
                             )
                         val state by conversationViewModel.uiState.collectAsState()
@@ -829,6 +830,7 @@ class MainActivity : ComponentActivity() {
                             onOpenAttachment = { attachment -> openAttachment(attachment.uri, attachment.contentType) },
                             onRetry = conversationViewModel::retry,
                             onDelete = conversationViewModel::delete,
+                            onDownload = conversationViewModel::download,
                             onErrorShown = conversationViewModel::onErrorShown,
                         )
                     }

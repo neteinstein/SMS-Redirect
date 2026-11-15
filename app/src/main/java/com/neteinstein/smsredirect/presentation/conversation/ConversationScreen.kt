@@ -30,13 +30,17 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -89,10 +93,13 @@ fun ConversationScreen(
     onRetry: (ConversationMessage) -> Unit,
     onDelete: (ConversationMessage) -> Unit,
     onErrorShown: () -> Unit,
+    onDownload: (ConversationMessage) -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
-    val errorText = state.error?.let { sendFailureText(it) }
-    LaunchedEffect(state.error) {
+    val errorText =
+        state.error?.let { sendFailureText(it) }
+            ?: if (state.downloadFailed) stringResource(R.string.conversation_mms_download_failed) else null
+    LaunchedEffect(state.error, state.downloadFailed) {
         if (errorText != null) {
             snackbarHostState.showSnackbar(errorText)
             onErrorShown()
@@ -157,6 +164,7 @@ fun ConversationScreen(
                     onOpenAttachment = onOpenAttachment,
                     onLongClick = { selected = message },
                     onRetry = { onRetry(message) },
+                    onDownload = { onDownload(message) },
                 )
             }
         }
@@ -199,6 +207,7 @@ private fun MessageBubble(
     onOpenAttachment: (MessageAttachment) -> Unit,
     onLongClick: () -> Unit,
     onRetry: () -> Unit,
+    onDownload: () -> Unit,
 ) {
     val incoming = message.isIncoming
     val container = if (incoming) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.primaryContainer
@@ -219,12 +228,21 @@ private fun MessageBubble(
                     .widthIn(max = 300.dp)
                     .clip(RoundedCornerShape(18.dp))
                     .combinedClickable(
-                        onClick = { if (message.status == MessageStatus.FAILED) onRetry() },
+                        onClick = {
+                            when (message.status) {
+                                MessageStatus.FAILED -> onRetry()
+                                MessageStatus.NOT_DOWNLOADED -> onDownload()
+                                else -> Unit
+                            }
+                        },
                         onLongClick = onLongClick,
                     ),
         ) {
             Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 message.subject?.let { Text(it, style = MaterialTheme.typography.titleSmall) }
+                if (message.isAwaitingDownload) {
+                    NotDownloadedContent(downloading = message.status == MessageStatus.DOWNLOADING, onDownload = onDownload)
+                }
                 message.attachments.forEach { attachment ->
                     if (attachment.isImage) {
                         AttachmentImage(attachment, onClick = { onOpenAttachment(attachment) })
@@ -283,6 +301,33 @@ private fun MessageBubble(
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
             )
+        }
+    }
+}
+
+/** A picture message still on the carrier's server: say so, and offer to fetch it. */
+@Composable
+private fun NotDownloadedContent(
+    downloading: Boolean,
+    onDownload: () -> Unit,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(20.dp))
+        Text(
+            text =
+                stringResource(
+                    if (downloading) R.string.conversation_mms_downloading else R.string.conversation_mms_not_downloaded,
+                ),
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(start = 8.dp),
+        )
+    }
+    if (downloading) {
+        LinearProgressIndicator(modifier = Modifier.widthIn(min = 160.dp))
+    } else {
+        FilledTonalButton(onClick = onDownload) {
+            Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp).padding(end = 4.dp))
+            Text(stringResource(R.string.conversation_mms_download))
         }
     }
 }

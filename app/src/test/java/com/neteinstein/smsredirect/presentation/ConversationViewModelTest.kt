@@ -4,6 +4,7 @@ import com.neteinstein.smsredirect.FakeContactNameResolver
 import com.neteinstein.smsredirect.FakeDefaultSmsAppChecker
 import com.neteinstein.smsredirect.FakeMessageSender
 import com.neteinstein.smsredirect.FakeMessageStore
+import com.neteinstein.smsredirect.FakeMmsDownloadRequester
 import com.neteinstein.smsredirect.domain.messaging.SendFailure
 import com.neteinstein.smsredirect.domain.messaging.SendOutcome
 import com.neteinstein.smsredirect.domain.model.ConversationMessage
@@ -11,6 +12,7 @@ import com.neteinstein.smsredirect.domain.model.MessageAttachment
 import com.neteinstein.smsredirect.domain.model.MessageStatus
 import com.neteinstein.smsredirect.domain.model.OutgoingAttachment
 import com.neteinstein.smsredirect.domain.usecase.DeleteMessageUseCase
+import com.neteinstein.smsredirect.domain.usecase.DownloadMmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetConversationAddressesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetConversationMessagesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetOrCreateConversationUseCase
@@ -39,6 +41,7 @@ class ConversationViewModelTest {
     private lateinit var store: FakeMessageStore
     private val sender = FakeMessageSender(SendOutcome.Queued(7))
     private val checker = FakeDefaultSmsAppChecker(isDefault = true)
+    private val downloader = FakeMmsDownloadRequester()
 
     @Before
     fun setUp() {
@@ -68,6 +71,7 @@ class ConversationViewModelTest {
         sendMessageUseCase = SendMessageUseCase(sender, checker),
         deleteMessageUseCase = DeleteMessageUseCase(store),
         contactNameResolver = FakeContactNameResolver(mapOf(ana to "Ana")),
+        downloadMmsUseCase = DownloadMmsUseCase(downloader),
     )
 
     @Test
@@ -214,5 +218,36 @@ class ConversationViewModelTest {
             assertEquals("look", resent.body)
             assertEquals(listOf(OutgoingAttachment("content://mms/part/5", "image/jpeg", "p.jpg")), resent.attachments)
             assertEquals(listOf(failed), store.deletedMessages)
+        }
+
+    @Test
+    fun `tapping download on a not-downloaded picture message starts its download`() =
+        runTest {
+            val pending = ConversationMessage(11, true, 7, ana, "", 4_000, MessageStatus.NOT_DOWNLOADED)
+            store.messageList += pending
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.download(pending)
+            advanceUntilIdle()
+
+            assertEquals(listOf(11L), downloader.requested)
+            assertFalse(vm.uiState.value.downloadFailed)
+        }
+
+    @Test
+    fun `a download that cannot start is reported`() =
+        runTest {
+            downloader.starts = false
+            val pending = ConversationMessage(11, true, 7, ana, "", 4_000, MessageStatus.NOT_DOWNLOADED)
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.download(pending)
+            advanceUntilIdle()
+
+            assertTrue(vm.uiState.value.downloadFailed)
+            vm.onErrorShown()
+            assertFalse(vm.uiState.value.downloadFailed)
         }
 }

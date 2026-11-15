@@ -10,7 +10,7 @@ import android.telephony.SubscriptionManager
 import android.util.Log
 import androidx.core.content.FileProvider
 import com.neteinstein.smsredirect.MessageStatusReceiver
-import com.neteinstein.smsredirect.domain.messaging.MessageStore
+import com.neteinstein.smsredirect.domain.messaging.MmsDownloadRequester
 import com.neteinstein.smsredirect.domain.mms.MmsPdu
 import com.neteinstein.smsredirect.domain.mms.MmsPduComposer
 import com.neteinstein.smsredirect.domain.mms.MmsPduParser
@@ -28,38 +28,83 @@ data class IncomingMms(
     val hasAttachment: Boolean,
 )
 
+/** How a download that reported back ended. */
+sealed interface MmsDownloadResult {
+    data class Saved(
+        val message: IncomingMms,
+    ) : MmsDownloadResult
+
+    /** Not downloaded; the "not downloaded" row, if any, stays so the user can retry. */
+    data class Failed(
+        val threadId: Long?,
+    ) : MmsDownloadResult
+
+    /** A second callback for a message already saved (e.g. a retry that raced the first try). */
+    data object AlreadySaved : MmsDownloadResult
+}
+
 /**
  * Receiving an MMS is two steps: a WAP push announces it ([onWapPush]), then the message itself
  * is fetched from the carrier's MMSC over mobile data by the platform's MMS service, which writes
  * it to a file we hand it and reports back to [MessageStatusReceiver] ([onDownloaded]). The
  * default SMS app must then save it to the store itself, and acknowledge it so the MMSC stops
  * holding it.
+ *
+ * The announcement is saved first, as a "not downloaded" row in the sender's conversation
+ * ([ContentProviderMessageStore.saveMmsNotification]), so a message that cannot be downloaded --
+ * no mobile data, an MMSC error, a reboot mid-download -- is never lost: the row's Download
+ * button ([download]) tries again, and the row is replaced by the real message once it arrives.
  */
 class AndroidMmsDownloader(
     private val context: Context,
-    private val store: MessageStore,
+    private val store: ContentProviderMessageStore,
     private val parser: MmsPduParser = MmsPduParser(),
     private val composer: MmsPduComposer = MmsPduComposer(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
-) {
+) : MmsDownloadRequester {
     /** An MMS announcement, and whether its download could be started. */
     data class Announced(
         val notification: MmsPdu.NotificationInd,
+        val pending: ContentProviderMessageStore.PendingMmsDownload?,
         val started: Boolean,
     )
 
-    /** Starts the download of an announced MMS. Null when the push was not an MMS notification. */
-    fun onWapPush(
+    /**
+     * Saves the announcement and starts the download. Null when the push was not an MMS
+     * notification.
+     */
+    suspend fun onWapPush(
         pdu: ByteArray,
         subscriptionId: Int,
     ): Announced? {
         val notification = parser.parse(pdu) as? MmsPdu.NotificationInd ?: return null
-        val started = download(notification.contentLocation, notification.transactionId, notification.from, subscriptionId)
-        return Announced(notification, started)
+        val pending = store.saveMmsNotification(notification, subscriptionId)
+        val started =
+            if (pending != null) {
+                start(pending)
+            } else {
+                // Could not save the placeholder (not the default SMS app any more?): still try.
+                startDownload(null, notification.contentLocation, notification.transactionId, notification.from, subscriptionId)
+            }
+        return Announced(notification, pending, started)
     }
 
-    /** Starts (or retries) a download. Returns false if the platform refused to start it. */
-    fun download(
+    /** The conversation's Download button, and the notification's Retry. */
+    override suspend fun download(messageId: Long): Boolean {
+        val pending = store.pendingMmsDownload(messageId) ?: return false
+        return start(pending)
+    }
+
+    private suspend fun start(pending: ContentProviderMessageStore.PendingMmsDownload): Boolean {
+        store.setMmsDownloadState(pending.messageId, MmsDownloadState.DOWNLOADING)
+        val started = startDownload(pending.messageId, pending.contentLocation, pending.transactionId, pending.from, pending.subscriptionId)
+        if (!started) store.setMmsDownloadState(pending.messageId, MmsDownloadState.TRANSIENT_FAILURE)
+        return started
+    }
+
+    /** Starts a download. Returns false if the platform refused to start it. */
+    fun startDownload(
+        placeholderId: Long?,
         contentLocation: String,
         transactionId: String?,
         from: String?,
@@ -81,6 +126,7 @@ class AndroidMmsDownloader(
                     .putExtra(MessageStatusReceiver.EXTRA_TRANSACTION_ID, transactionId)
                     .putExtra(MessageStatusReceiver.EXTRA_FROM, from)
                     .putExtra(MessageStatusReceiver.EXTRA_SUBSCRIPTION_ID, subscriptionId)
+                    .putExtra(MessageStatusReceiver.EXTRA_PLACEHOLDER_ID, placeholderId ?: NO_PLACEHOLDER)
             val pendingIntent =
                 PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
             smsManager(subscriptionId).downloadMultimediaMessage(context, contentLocation, contentUri, null, pendingIntent)
@@ -92,24 +138,36 @@ class AndroidMmsDownloader(
         }
     }
 
-    /** Saves a finished download. Null when it failed or the content was unusable. */
+    /** Saves a finished download in place of its "not downloaded" row. */
     suspend fun onDownloaded(
         resultCode: Int,
         file: File,
         transactionId: String?,
         subscriptionId: Int,
-    ): IncomingMms? =
+        placeholderId: Long?,
+    ): MmsDownloadResult =
         withContext(dispatcher) {
             try {
-                if (resultCode != Activity.RESULT_OK || !file.exists()) return@withContext null
-                val message = parser.parse(file.readBytes()) as? MmsPdu.RetrieveConf ?: return@withContext null
-                val threadId = store.saveIncomingMms(message, subscriptionId) ?: return@withContext null
+                val pending = placeholderId?.let { store.pendingMmsDownload(it) }
+                // The placeholder is deleted once its message is saved; a second callback for it
+                // must not save the message twice.
+                if (placeholderId != null && pending == null) return@withContext MmsDownloadResult.AlreadySaved
+                val message =
+                    if (resultCode == Activity.RESULT_OK && file.exists()) parser.parse(file.readBytes()) as? MmsPdu.RetrieveConf else null
+                val threadId = message?.let { store.saveIncomingMms(it, subscriptionId) }
+                if (message == null || threadId == null) {
+                    placeholderId?.let { store.setMmsDownloadState(it, MmsDownloadState.TRANSIENT_FAILURE) }
+                    return@withContext MmsDownloadResult.Failed(pending?.threadId)
+                }
+                placeholderId?.let { store.deleteMmsNotification(it) }
                 (message.transactionId ?: transactionId)?.let { acknowledge(it, subscriptionId) }
-                IncomingMms(
-                    threadId = threadId,
-                    from = message.from,
-                    text = message.text,
-                    hasAttachment = message.parts.any { !it.isText && !it.isSmil },
+                MmsDownloadResult.Saved(
+                    IncomingMms(
+                        threadId = threadId,
+                        from = message.from,
+                        text = message.text,
+                        hasAttachment = message.parts.any { !it.isText && !it.isSmil },
+                    ),
                 )
             } finally {
                 file.delete()
@@ -149,8 +207,9 @@ class AndroidMmsDownloader(
 
     private fun mmsDir(): File = File(context.cacheDir, AndroidMessageSender.MMS_CACHE_DIR).apply { mkdirs() }
 
-    private companion object {
-        const val TAG = "MmsDownloader"
-        const val STALE_AFTER_MS = 24 * 60 * 60 * 1000L
+    companion object {
+        private const val TAG = "MmsDownloader"
+        const val NO_PLACEHOLDER = -1L
+        private const val STALE_AFTER_MS = 24 * 60 * 60 * 1000L
     }
 }

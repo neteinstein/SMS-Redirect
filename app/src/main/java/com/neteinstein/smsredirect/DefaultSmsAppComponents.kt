@@ -89,18 +89,34 @@ class MmsDeliverReceiver : BroadcastReceiver() {
         val pdu = intent.getByteArrayExtra("data") ?: return
         val container = (context.applicationContext as SmsRedirectApplication).appContainer
         val subscriptionId = intent.subscriptionId()
-        val announced = container.mmsDownloader.onWapPush(pdu, subscriptionId) ?: return
-        // The download could not even start: no callback will come, so offer Retry now.
-        if (!announced.started) {
-            val notification = announced.notification
-            MessageStatusReceiver.showMmsDownloadFailed(
-                context,
-                notification.contentLocation,
-                notification.transactionId,
-                notification.from,
-                subscriptionId,
-            )
+        val pending = goAsync()
+        receiverScope.launch {
+            try {
+                // Saves the announcement as a "not downloaded" message first, then downloads it.
+                val announced = container.mmsDownloader.onWapPush(pdu, subscriptionId) ?: return@launch
+                // The download could not even start: no callback will come, so offer Retry now.
+                if (!announced.started) {
+                    val notification = announced.notification
+                    MessageStatusReceiver.showMmsDownloadFailed(
+                        context,
+                        MessageStatusReceiver.Companion.FailedMmsDownload(
+                            contentLocation = notification.contentLocation,
+                            placeholderId = announced.pending?.messageId,
+                            threadId = announced.pending?.threadId,
+                            transactionId = notification.transactionId,
+                            from = notification.from,
+                            subscriptionId = subscriptionId,
+                        ),
+                    )
+                }
+            } finally {
+                pending.finish()
+            }
         }
+    }
+
+    private companion object {
+        val receiverScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     }
 }
 
