@@ -4,9 +4,12 @@
 
 ## Verdict
 
-**SMS Toolbox cannot add RCS today, and there is no announced path to it.** Android only lets a
-messaging app reach the carrier's RCS (IMS) stack if it is **both** the default SMS app **and** a
-*privileged app preinstalled on the system image*. A Play or GitHub APK can never be the second. Google
+**SMS Toolbox cannot add RCS today, and there is no announced path to it.** Android's platform RCS
+APIs (IMS single registration) only serve an app that is **both** the default SMS app **and** a
+*privileged app preinstalled on the system image*. A Play or GitHub APK can never be the second. The
+older alternative, an app running its own independent IMS stack ("dual registration"), is not blocked
+by Android permissions, but it needs the carrier (or Google's Jibe) to provision that client. There is
+no public route for a third-party client to get that provisioning. Google
 offers no public RCS API to third-party messaging apps; the one known Google Messages API is
 allowlisted to Samsung. Every third-party app with "RCS" (Beeper, Messages by OzarksMade) gets it by
 driving Google Messages, which must stay installed and in charge of RCS, and some of them also need a
@@ -29,7 +32,15 @@ The single registration framework commit lists `createSipDelegate`, `setRcsClien
 ([AOSP commit mirror][commit]). AOSP states that third-party apps therefore cannot use the single
 registration APIs ([AOSP: IMS single registration][aosp-sr]).
 
-Being the default SMS app, which SMS Toolbox already is, satisfies only half of the condition. Carrier
+AOSP also describes the older **dual registration** model (Android 11 and lower), in which RCS apps
+*"manage their own IMS stack and connection to the carrier's network"* and set up their own
+registration ([AOSP: IMS single registration][aosp-sr]). Android permissions do not forbid this for a
+store app. What blocks it is provisioning: the client must be configured by the carrier's RCS
+auto-configuration server or by Jibe, and Jibe provisions Google's client ([Jibe][jibe]). I found no
+public program that provisions independent third-party P2P clients. It also needs a full
+SIP/MSRP/Universal Profile stack and, for E2EE, MLS.
+
+Being the default SMS app, which SMS Toolbox already is, satisfies only half of the platform-API condition. Carrier
 privileges (a certificate in the SIM's access rules) are a separate mechanism, which a carrier grants
 only to its own apps. Even with them, the RCS calls above still need the privileged-app half.
 
@@ -71,10 +82,12 @@ only to its own apps. Even with them, the RCS calls above still need the privile
 
 ## 3. Permissions and Play policy
 
-- **Permissions an RCS client needs** (`PERFORM_IMS_SINGLE_REGISTRATION`,
+- **Permissions a platform-integrated RCS client needs** (`PERFORM_IMS_SINGLE_REGISTRATION`,
   `ACCESS_RCS_USER_CAPABILITY_EXCHANGE`, `CONNECTIVITY_USE_RESTRICTED_NETWORKS`) are privileged. A
   Play-distributed or sideloaded APK cannot be granted them on a stock device
-  ([AOSP: IMS single registration][aosp-sr]). Declaring them does nothing.
+  ([AOSP: IMS single registration][aosp-sr]). Declaring them does nothing. An independent-stack client
+  over ordinary internet needs no special permission, but it still needs carrier/Jibe provisioning
+  (see §1).
 - **Play SMS & Call Log policy** does not mention RCS. It covers the SMS permissions we already hold under
   "Default SMS handler", and requires a new Permissions Declaration whenever the use of restricted
   permissions changes ([Play policy][play]). A Google Messages handoff or "companion" design would mean
@@ -108,8 +121,9 @@ These are SMS/MMS standards, not RCS, so they work with every phone and add no s
   `KEY_MMS_MMS_DELIVERY_REPORT_ENABLED_BOOL` and `KEY_MMS_MMS_READ_REPORT_ENABLED_BOOL` ([CarrierConfigManager][ccm]).
   Sending a read report (`M-Read-Rec.ind`) needs a new PDU type and a round-trip test in `MmsPduTest`.
   It should be **opt-in**, because it tells the sender when you read their message.
-- **Larger media within the carrier limit:** compress to `KEY_MMS_MAX_MESSAGE_SIZE_INT` rather than a
-  fixed size ([CarrierConfigManager][ccm]).
+- **Larger media within the carrier limit: already done.** `AndroidMessageSender` reads the carrier's
+  `MMS_CONFIG_MAX_MESSAGE_SIZE` and budgets/compresses attachments to it, falling back to a fixed size
+  only when the carrier gives none (`AndroidMessageSender.kt:110-113`, `buildParts()`). Nothing to add.
 - **Effort:** about 2–4 dev-days with tests. **Risk:** carrier support varies, and some carriers charge
   for or ignore reports.
 - **Policy/data-safety:** if read reports are added, `PrivacyPolicy.md` gains one line: when you turn
@@ -134,10 +148,13 @@ These are SMS/MMS standards, not RCS, so they work with every phone and add no s
   Messages/Google's RCS servers.
 
 ### (a) Native RCS client: **not feasible**
-- Blocked by the privileged-app requirement ([AOSP][aosp-sr]). The only routes are an OEM/carrier
-  preload, or a custom ROM where the app is installed in `/system/priv-app`. Even then you need carrier
-  RCS provisioning, or Google's Jibe, which provisions only its own client. Effort would be months
-  (SIP/MSRP, UP provisioning, MLS) for a build no Play user could run.
+- **Platform-integrated** (single registration): blocked by the privileged-app requirement
+  ([AOSP][aosp-sr]). The only routes are an OEM/carrier preload, or a custom ROM where the app is
+  installed in `/system/priv-app`. That build no Play user could run.
+- **Independent IMS stack** (dual registration): not blocked by permissions, but it needs each
+  carrier, or Google's Jibe, to provision SMS Toolbox as an RCS client ([Jibe][jibe]). There is no
+  public route for that; it would take an arrangement with each carrier.
+- Either way, the effort would be months (SIP/MSRP, UP provisioning, MLS).
 
 ## Sources
 
