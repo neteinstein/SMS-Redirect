@@ -191,7 +191,7 @@ class MainActivity : ComponentActivity() {
                 // First open from the monthly reminder: explain that the reminder (and Android's
                 // clean-up of unused apps) can be switched off. Shown once, and only if the user
                 // has not already exempted the app.
-                var showUnusedAppInfo by remember { mutableStateOf(false) }
+                var showUnusedAppInfo by rememberSaveable { mutableStateOf(false) }
                 LaunchedEffect(Unit) {
                     openedFromReminderFlow.collect { fromReminder ->
                         if (fromReminder) {
@@ -1641,11 +1641,17 @@ class MainActivity : ComponentActivity() {
         newIntentFlow.value = intent
         composeIntentFlow.value = ComposeRequest.from(intent)
         openedFromReminderFlow.value = intent.getBooleanExtra(KeepAliveNotifications.EXTRA_FROM_REMINDER, false)
+        // A launch delivered to an already-started activity does not go through onStart.
+        restartKeepAliveCountdown()
     }
 
     override fun onStart() {
         super.onStart()
-        // Opening the app is what keeps Android from treating it as unused: restart the countdown.
+        restartKeepAliveCountdown()
+    }
+
+    /** Opening the app is what keeps Android from treating it as unused: restart the countdown. */
+    private fun restartKeepAliveCountdown() {
         (application as SmsRedirectApplication).appContainer.keepAliveReminderScheduler.schedule()
     }
 

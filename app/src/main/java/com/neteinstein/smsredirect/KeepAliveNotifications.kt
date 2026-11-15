@@ -15,6 +15,9 @@ object KeepAliveNotifications {
     private const val CHANNEL_ID = "keep_alive_reminder"
     private const val NOTIFICATION_ID = 4101
 
+    /** Distinct tag: forwarding notifications use untagged, ever-increasing IDs that could reach ours. */
+    private const val NOTIFICATION_TAG = "keep_alive_reminder"
+
     /** Marks the launch intent so [MainActivity] can offer the one-time "turn this off" info. */
     const val EXTRA_FROM_REMINDER = "com.neteinstein.smsredirect.extra.FROM_KEEP_ALIVE_REMINDER"
 
@@ -57,6 +60,6 @@ object KeepAliveNotifications {
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
                 .build()
-        manager.notify(NOTIFICATION_ID, notification)
+        manager.notify(NOTIFICATION_TAG, NOTIFICATION_ID, notification)
     }
 }
