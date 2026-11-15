@@ -31,6 +31,11 @@ carrier's MMSC onto the device. Nothing in the messaging feature reaches the
 developer or Firebase: notifications are local, and no analytics event or crash
 report carries a number, name, attachment or message text.
 
+**Delivery and read reports do not change these answers either.** They are off by default,
+turned on by the user in Settings → Message receipts, and travel between the user's phone, the
+carrier and the other party (user-initiated, like the messages). An MMS read report tells the
+sender when the user read their message; it never reaches the developer.
+
 ⚠️ **The Gmail backup feature changes this answer for SMS content.** When a
 user enables it, SMS content *is* transmitted off the device. The destination
 is the user's own Gmail account, which the developer neither controls nor can

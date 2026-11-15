@@ -19,6 +19,8 @@ class MmsPduComposer {
         recipients: List<String>,
         subject: String?,
         parts: List<MmsPart>,
+        requestDeliveryReport: Boolean = false,
+        requestReadReport: Boolean = false,
     ): ByteArray {
         require(recipients.isNotEmpty()) { "An MMS needs at least one recipient" }
         require(parts.isNotEmpty()) { "An MMS needs at least one part" }
@@ -37,8 +39,8 @@ class MmsPduComposer {
         if (!subject.isNullOrBlank()) out.header(MmsHeaders.SUBJECT) { encodedString(subject) }
         out.header(MmsHeaders.MESSAGE_CLASS) { byte(MmsHeaders.MESSAGE_CLASS_PERSONAL) }
         out.header(MmsHeaders.PRIORITY) { byte(MmsHeaders.PRIORITY_NORMAL) }
-        out.header(MmsHeaders.DELIVERY_REPORT) { byte(MmsHeaders.VALUE_NO) }
-        out.header(MmsHeaders.READ_REPORT) { byte(MmsHeaders.VALUE_NO) }
+        out.header(MmsHeaders.DELIVERY_REPORT) { byte(if (requestDeliveryReport) MmsHeaders.VALUE_YES else MmsHeaders.VALUE_NO) }
+        out.header(MmsHeaders.READ_REPORT) { byte(if (requestReadReport) MmsHeaders.VALUE_YES else MmsHeaders.VALUE_NO) }
 
         val smil = parts.firstOrNull()?.takeIf { it.isSmil }
         out.header(MmsHeaders.CONTENT_TYPE) {
@@ -61,14 +63,45 @@ class MmsPduComposer {
         return out.toByteArray()
     }
 
-    /** M-Acknowledge.ind: sent after a successful download, so the MMSC stops holding the message. */
-    fun composeAcknowledgeInd(transactionId: String): ByteArray {
+    /**
+     * M-Acknowledge.ind: sent after a successful download, so the MMSC stops holding the message.
+     *
+     * @param reportAllowed whether the MMSC may tell the sender this message was delivered
+     * (X-Mms-Report-Allowed). Follows the user's "MMS delivery reports" setting.
+     */
+    fun composeAcknowledgeInd(
+        transactionId: String,
+        reportAllowed: Boolean = false,
+    ): ByteArray {
         val out = WspWriter()
         out.header(MmsHeaders.MESSAGE_TYPE) { byte(MmsHeaders.MESSAGE_TYPE_ACKNOWLEDGE_IND) }
         out.header(MmsHeaders.TRANSACTION_ID) { textString(transactionId) }
         out.header(MmsHeaders.MMS_VERSION) { shortInteger(MmsHeaders.MMS_VERSION_1_2) }
-        // No delivery report back to the sender: that would tell them when the message was read.
-        out.header(MmsHeaders.REPORT_ALLOWED) { byte(MmsHeaders.VALUE_NO) }
+        out.header(MmsHeaders.REPORT_ALLOWED) { byte(if (reportAllowed) MmsHeaders.VALUE_YES else MmsHeaders.VALUE_NO) }
+        return out.toByteArray()
+    }
+
+    /**
+     * M-Read-Rec.ind: tells the sender of a received MMS that it was read. Sent only when the
+     * sender asked for it and the user turned on MMS read reports.
+     */
+    fun composeReadRecInd(
+        messageId: String,
+        to: String,
+        readStatus: Int = MmsHeaders.READ_STATUS_READ,
+        dateEpochSeconds: Long? = null,
+    ): ByteArray {
+        val out = WspWriter()
+        out.header(MmsHeaders.MESSAGE_TYPE) { byte(MmsHeaders.MESSAGE_TYPE_READ_REC_IND) }
+        out.header(MmsHeaders.MMS_VERSION) { shortInteger(MmsHeaders.MMS_VERSION_1_2) }
+        out.header(MmsHeaders.MESSAGE_ID) { textString(messageId) }
+        out.header(MmsHeaders.TO) { encodedString(toMmsAddress(to)) }
+        out.header(MmsHeaders.FROM) {
+            valueLength(1)
+            byte(MmsHeaders.FROM_INSERT_ADDRESS)
+        }
+        dateEpochSeconds?.let { out.header(MmsHeaders.DATE) { longInteger(it) } }
+        out.header(MmsHeaders.READ_STATUS) { byte(readStatus) }
         return out.toByteArray()
     }
 

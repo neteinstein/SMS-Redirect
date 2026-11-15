@@ -77,6 +77,18 @@ class MmsPduParser {
                     headers.responseStatus = reader.readByte()
                 }
 
+                MmsHeaders.STATUS -> {
+                    headers.status = reader.readByte()
+                }
+
+                MmsHeaders.READ_STATUS -> {
+                    headers.readStatus = reader.readByte()
+                }
+
+                MmsHeaders.READ_REPORT -> {
+                    headers.readReport = reader.readByte()
+                }
+
                 MmsHeaders.EXPIRY -> {
                     headers.expiry = readExpiry(reader)
                 }
@@ -119,6 +131,25 @@ class MmsPduParser {
                     dateEpochSeconds = headers.date,
                     contentType = type.mediaType,
                     parts = readBody(reader, type),
+                    readReportRequested = headers.readReport == MmsHeaders.VALUE_YES,
+                )
+            }
+
+            MmsHeaders.MESSAGE_TYPE_DELIVERY_IND -> {
+                MmsPdu.DeliveryInd(
+                    messageId = headers.messageId ?: throw MmsPduException("Delivery.ind without a message id"),
+                    to = headers.to.firstOrNull(),
+                    status = headers.status ?: throw MmsPduException("Delivery.ind without a status"),
+                    dateEpochSeconds = headers.date,
+                )
+            }
+
+            MmsHeaders.MESSAGE_TYPE_READ_ORIG_IND -> {
+                MmsPdu.ReadOrigInd(
+                    messageId = headers.messageId ?: throw MmsPduException("Read-Orig.ind without a message id"),
+                    from = headers.from,
+                    readStatus = headers.readStatus ?: throw MmsPduException("Read-Orig.ind without a read status"),
+                    dateEpochSeconds = headers.date,
                 )
             }
 
@@ -249,6 +280,9 @@ class MmsPduParser {
         var messageSize: Long? = null
         var responseStatus: Int? = null
         var expiry: Long? = null
+        var status: Int? = null
+        var readStatus: Int? = null
+        var readReport: Int? = null
     }
 
     companion object {

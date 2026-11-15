@@ -2,9 +2,12 @@ package com.neteinstein.smsredirect.domain.usecase
 
 import com.neteinstein.smsredirect.domain.messaging.MessageStore
 import com.neteinstein.smsredirect.domain.messaging.MmsDownloadRequester
+import com.neteinstein.smsredirect.domain.messaging.MmsReadReportSender
 import com.neteinstein.smsredirect.domain.model.Conversation
 import com.neteinstein.smsredirect.domain.model.ConversationMessage
 import com.neteinstein.smsredirect.domain.model.MessageStatus
+import com.neteinstein.smsredirect.domain.model.MessagingSettings
+import com.neteinstein.smsredirect.domain.repository.MessagingSettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -52,10 +55,35 @@ class DownloadMmsUseCase(
     }
 }
 
+/**
+ * Marks a conversation read. First, if the user turned MMS read reports on, tells the senders of
+ * its unread MMS that asked for one -- that has to happen while those messages are still unread.
+ */
 class MarkConversationReadUseCase(
     private val messageStore: MessageStore,
+    private val messagingSettingsRepository: MessagingSettingsRepository? = null,
+    private val mmsReadReportSender: MmsReadReportSender? = null,
 ) {
-    suspend operator fun invoke(threadId: Long) = messageStore.markRead(threadId)
+    suspend operator fun invoke(threadId: Long) {
+        if (mmsReadReportSender != null && messagingSettingsRepository?.get()?.mmsReadReports == true) {
+            mmsReadReportSender.sendReadReports(threadId)
+        }
+        messageStore.markRead(threadId)
+    }
+}
+
+class GetMessagingSettingsUseCase(
+    private val repository: MessagingSettingsRepository,
+) {
+    operator fun invoke(): Flow<MessagingSettings> = repository.observe()
+}
+
+class UpdateMessagingSettingsUseCase(
+    private val repository: MessagingSettingsRepository,
+) {
+    suspend operator fun invoke(transform: (MessagingSettings) -> MessagingSettings) {
+        repository.set(transform(repository.get()))
+    }
 }
 
 class DeleteConversationUseCase(

@@ -44,6 +44,16 @@ class MessageStatusReceiver : BroadcastReceiver() {
                         if (failed) MessageNotifications.showSendFailed(context, container.messageSender.threadIdOf(uri))
                     }
 
+                    ACTION_SMS_DELIVERED -> {
+                        val uri = intent.data ?: return@launch
+                        container.messageSender.onSmsDelivered(uri, intent.getByteArrayExtra("pdu"), intent.getStringExtra("format"))
+                    }
+
+                    ACTION_MMS_READ_REPORT_SENT -> {
+                        val rowId = intent.getLongExtra(EXTRA_MMS_ROW_ID, -1L)
+                        if (rowId > 0) container.mmsDownloader.onReadReportSent(rowId, resultCode)
+                    }
+
                     ACTION_MMS_SENT -> {
                         val uri = intent.data ?: return@launch
                         val failed =
@@ -221,7 +231,10 @@ class MessageStatusReceiver : BroadcastReceiver() {
         }
 
         const val ACTION_SMS_SENT = "com.neteinstein.smsredirect.action.SMS_SENT"
+        const val ACTION_SMS_DELIVERED = "com.neteinstein.smsredirect.action.SMS_DELIVERED"
         const val ACTION_MMS_SENT = "com.neteinstein.smsredirect.action.MMS_SENT"
+        const val ACTION_MMS_READ_REPORT_SENT = "com.neteinstein.smsredirect.action.MMS_READ_REPORT_SENT"
+        const val EXTRA_MMS_ROW_ID = "mms_row_id"
         const val ACTION_MMS_DOWNLOADED = "com.neteinstein.smsredirect.action.MMS_DOWNLOADED"
         const val ACTION_MMS_RETRY_DOWNLOAD = "com.neteinstein.smsredirect.action.MMS_RETRY_DOWNLOAD"
         const val ACTION_REPLY = "com.neteinstein.smsredirect.action.REPLY"

@@ -33,6 +33,8 @@ sealed interface MmsPdu {
         val dateEpochSeconds: Long?,
         val contentType: String,
         val parts: List<MmsPart>,
+        /** The sender asked to be told when this message is read (X-Mms-Read-Report: Yes). */
+        val readReportRequested: Boolean = false,
     ) : MmsPdu {
         /** The concatenated text parts, which is what a conversation view and a notification show. */
         val text: String
@@ -47,6 +49,29 @@ sealed interface MmsPdu {
         val contentType: String,
         val parts: List<MmsPart>,
     ) : MmsPdu
+
+    /**
+     * M-Delivery.ind: the MMSC reports what happened to a message we sent, per recipient.
+     * [status] is an X-Mms-Status octet, e.g. [MmsHeaders.STATUS_RETRIEVED].
+     */
+    data class DeliveryInd(
+        val messageId: String,
+        val to: String?,
+        val status: Int,
+        val dateEpochSeconds: Long?,
+    ) : MmsPdu {
+        override val transactionId: String? get() = null
+    }
+
+    /** M-Read-Orig.ind: a recipient read (or deleted unread) a message we sent. */
+    data class ReadOrigInd(
+        val messageId: String,
+        val from: String?,
+        val readStatus: Int,
+        val dateEpochSeconds: Long?,
+    ) : MmsPdu {
+        override val transactionId: String? get() = null
+    }
 
     /** M-Send.conf: the MMSC's answer to a send. [responseStatus] 128 means accepted. */
     data class SendConf(
@@ -114,6 +139,7 @@ object MmsHeaders {
     const val REPORT_ALLOWED = 0x11
     const val RESPONSE_STATUS = 0x12
     const val STATUS = 0x15
+    const val READ_STATUS = 0x1B
     const val SUBJECT = 0x16
     const val TO = 0x17
     const val TRANSACTION_ID = 0x18
@@ -126,6 +152,9 @@ object MmsHeaders {
     const val MESSAGE_TYPE_NOTIFYRESP_IND = 131
     const val MESSAGE_TYPE_RETRIEVE_CONF = 132
     const val MESSAGE_TYPE_ACKNOWLEDGE_IND = 133
+    const val MESSAGE_TYPE_DELIVERY_IND = 134
+    const val MESSAGE_TYPE_READ_REC_IND = 135
+    const val MESSAGE_TYPE_READ_ORIG_IND = 136
 
     /** MMS 1.2, encoded as a short integer: major in bits 4-6, minor in bits 0-3. */
     const val MMS_VERSION_1_2 = 0x12
@@ -135,7 +164,20 @@ object MmsHeaders {
     const val MESSAGE_CLASS_PERSONAL = 128
     const val PRIORITY_NORMAL = 129
     const val RESPONSE_STATUS_OK = 128
+
+    /** X-Mms-Status (M-Delivery.ind) values follow. */
+    const val STATUS_EXPIRED = 128
     const val STATUS_RETRIEVED = 129
+    const val STATUS_REJECTED = 130
+    const val STATUS_DEFERRED = 131
+    const val STATUS_UNRECOGNISED = 132
+    const val STATUS_INDETERMINATE = 133
+    const val STATUS_FORWARDED = 134
+    const val STATUS_UNREACHABLE = 135
+
+    /** X-Mms-Read-Status (M-Read-Rec.ind / M-Read-Orig.ind) values follow. */
+    const val READ_STATUS_READ = 128
+    const val READ_STATUS_DELETED_WITHOUT_READING = 129
 
     const val FROM_ADDRESS_PRESENT = 128
     const val FROM_INSERT_ADDRESS = 129

@@ -25,6 +25,20 @@ enum class MessageStatus {
     FAILED,
 }
 
+/** What the recipient's side reported about a message this phone sent. */
+enum class MessageReceipt {
+    /** No report was asked for. */
+    NONE,
+
+    /** A report was asked for and has not come yet. */
+    PENDING,
+    DELIVERED,
+    NOT_DELIVERED,
+
+    /** An MMS read report: the recipient opened it. */
+    READ,
+}
+
 /** One SMS or MMS inside a conversation. */
 data class ConversationMessage(
     /** Provider row id; unique per [isMms] kind, not across both. */
@@ -38,6 +52,8 @@ data class ConversationMessage(
     val status: MessageStatus,
     val attachments: List<MessageAttachment> = emptyList(),
     val subject: String? = null,
+    /** Delivery/read report for a sent message; always [MessageReceipt.NONE] for received ones. */
+    val receipt: MessageReceipt = MessageReceipt.NONE,
 ) {
     val isIncoming: Boolean
         get() = status == MessageStatus.RECEIVED || status == MessageStatus.NOT_DOWNLOADED || status == MessageStatus.DOWNLOADING

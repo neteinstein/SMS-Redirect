@@ -11,10 +11,12 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import android.provider.Telephony
 import android.telephony.SmsManager
+import android.telephony.SmsMessage
 import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import com.neteinstein.smsredirect.MessageStatusReceiver
+import com.neteinstein.smsredirect.domain.messaging.MessageReceipts
 import com.neteinstein.smsredirect.domain.messaging.MessageSender
 import com.neteinstein.smsredirect.domain.messaging.SendFailure
 import com.neteinstein.smsredirect.domain.messaging.SendOutcome
@@ -26,6 +28,7 @@ import com.neteinstein.smsredirect.domain.mms.MmsPduComposer
 import com.neteinstein.smsredirect.domain.mms.MmsPduParser
 import com.neteinstein.smsredirect.domain.mms.MmsSmil
 import com.neteinstein.smsredirect.domain.model.OutgoingAttachment
+import com.neteinstein.smsredirect.domain.repository.MessagingSettingsRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -45,6 +48,7 @@ import java.util.UUID
 class AndroidMessageSender(
     private val context: Context,
     private val store: ContentProviderMessageStore,
+    private val messagingSettings: MessagingSettingsRepository,
     private val composer: MmsPduComposer = MmsPduComposer(),
     private val parser: MmsPduParser = MmsPduParser(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -56,6 +60,7 @@ class AndroidMessageSender(
         body: String,
     ): SendOutcome =
         withContext(dispatcher) {
+            val wantsDeliveryReport = messagingSettings.get().smsDeliveryReports
             val smsManager = smsManager() ?: return@withContext SendOutcome.Failed(SendFailure.NO_SERVICE)
             val threadId =
                 runCatching { Telephony.Threads.getOrCreateThreadId(context, address) }.getOrNull()
@@ -70,6 +75,7 @@ class AndroidMessageSender(
                     put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_OUTBOX)
                     put(Telephony.Sms.THREAD_ID, threadId)
                     put(Telephony.Sms.SUBSCRIPTION_ID, SmsManager.getDefaultSmsSubscriptionId())
+                    if (wantsDeliveryReport) put(Telephony.Sms.STATUS, MessageReceipts.SMS_STATUS_PENDING)
                 }
             val messageUri =
                 runCatching { resolver.insert(Telephony.Sms.CONTENT_URI, values) }.getOrNull()
@@ -89,7 +95,22 @@ class AndroidMessageSender(
                             }
                         },
                     )
-                smsManager.sendMultipartTextMessage(address, null, parts, sentIntents, null)
+                // One delivery report for the whole message: the carrier reports on the last part.
+                val deliveryIntents =
+                    if (wantsDeliveryReport) {
+                        ArrayList(
+                            parts.indices.map { index ->
+                                if (index == parts.size - 1) {
+                                    statusIntent(MessageStatusReceiver.ACTION_SMS_DELIVERED, messageUri, requestCode = index) { }
+                                } else {
+                                    null
+                                }
+                            },
+                        )
+                    } else {
+                        null
+                    }
+                smsManager.sendMultipartTextMessage(address, null, parts, sentIntents, deliveryIntents)
                 SendOutcome.Queued(threadId)
             } catch (e: Exception) {
                 // IllegalArgumentException for an unusable address, SecurityException without
@@ -125,13 +146,22 @@ class AndroidMessageSender(
                         .replace("-", "")
                         .take(TRANSACTION_ID_LENGTH)
             val allParts = listOf(MmsSmil.build(parts)) + parts
-            val pdu = composer.composeSendReq(transactionId, addresses, subject = null, parts = allParts)
+            val settings = messagingSettings.get()
+            val pdu =
+                composer.composeSendReq(
+                    transactionId,
+                    addresses,
+                    subject = null,
+                    parts = allParts,
+                    requestDeliveryReport = settings.mmsDeliveryReports,
+                    requestReadReport = settings.mmsReadReports,
+                )
 
             val threadId =
                 runCatching { Telephony.Threads.getOrCreateThreadId(context, addresses.toSet()) }.getOrNull()
                     ?: return@withContext SendOutcome.Failed(SendFailure.NOT_DEFAULT_SMS_APP)
             val messageUri =
-                insertOutgoingMms(threadId, transactionId, addresses, allParts)
+                insertOutgoingMms(threadId, transactionId, addresses, allParts, settings.mmsDeliveryReports, settings.mmsReadReports)
                     ?: return@withContext SendOutcome.Failed(SendFailure.NOT_DEFAULT_SMS_APP)
 
             val file = File(mmsDir(), "send-${UUID.randomUUID()}.pdu")
@@ -259,6 +289,8 @@ class AndroidMessageSender(
         transactionId: String,
         addresses: List<String>,
         parts: List<MmsPart>,
+        deliveryReport: Boolean,
+        readReport: Boolean,
     ): Uri? {
         val values =
             ContentValues().apply {
@@ -273,8 +305,8 @@ class AndroidMessageSender(
                 put(Telephony.Mms.TRANSACTION_ID, transactionId)
                 put(Telephony.Mms.MESSAGE_CLASS, "personal")
                 put(Telephony.Mms.PRIORITY, MmsHeaders.PRIORITY_NORMAL)
-                put(Telephony.Mms.DELIVERY_REPORT, MmsHeaders.VALUE_NO)
-                put(Telephony.Mms.READ_REPORT, MmsHeaders.VALUE_NO)
+                put(Telephony.Mms.DELIVERY_REPORT, if (deliveryReport) MmsHeaders.VALUE_YES else MmsHeaders.VALUE_NO)
+                put(Telephony.Mms.READ_REPORT, if (readReport) MmsHeaders.VALUE_YES else MmsHeaders.VALUE_NO)
                 put(Telephony.Mms.SUBSCRIPTION_ID, SmsManager.getDefaultSmsSubscriptionId())
             }
         val messageUri = runCatching { resolver.insert(Telephony.Mms.CONTENT_URI, values) }.getOrNull() ?: return null
@@ -329,6 +361,29 @@ class AndroidMessageSender(
             runCatching { resolver.update(messageUri, values, null, null) }
             !accepted
         }
+
+    /**
+     * An SMS status report arrived for [messageUri]. [pdu]/[format] are the report the platform
+     * attaches to the delivery PendingIntent; its TP-Status says delivered, still trying, or failed.
+     */
+    suspend fun onSmsDelivered(
+        messageUri: Uri,
+        pdu: ByteArray?,
+        format: String?,
+    ) {
+        withContext(dispatcher) {
+            val reportStatus =
+                pdu?.let { runCatching { SmsMessage.createFromPdu(it, format)?.status }.getOrNull() } ?: return@withContext
+            val providerStatus =
+                if (format == SmsMessage.FORMAT_3GPP2) {
+                    MessageReceipts.smsStatusForCdmaReport(reportStatus)
+                } else {
+                    MessageReceipts.smsStatusForReport(reportStatus)
+                }
+            val values = ContentValues().apply { put(Telephony.Sms.STATUS, providerStatus) }
+            runCatching { resolver.update(messageUri, values, null, null) }
+        }
+    }
 
     /** The conversation a stored SMS or MMS belongs to, e.g. to open it from a failure notification. */
     suspend fun threadIdOf(messageUri: Uri): Long? =

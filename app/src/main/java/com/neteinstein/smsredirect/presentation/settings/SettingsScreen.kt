@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Language
@@ -61,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import com.neteinstein.smsredirect.R
 import com.neteinstein.smsredirect.domain.mail.MailVerificationResult
 import com.neteinstein.smsredirect.domain.model.LandingScreen
+import com.neteinstein.smsredirect.domain.model.MessagingSettings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,6 +88,10 @@ fun SettingsScreen(
     onImportBackup: () -> Unit,
     onOpenLanguageSettings: () -> Unit,
     onBack: () -> Unit,
+    messagingSettings: MessagingSettings = MessagingSettings(),
+    onSmsDeliveryReportsChanged: (Boolean) -> Unit = {},
+    onMmsDeliveryReportsChanged: (Boolean) -> Unit = {},
+    onMmsReadReportsChanged: (Boolean) -> Unit = {},
     /** The landing screens this build ships; the picker is hidden when there is only one. */
     availableLandingScreens: List<LandingScreen> = LandingScreen.entries,
     /**
@@ -135,6 +141,15 @@ fun SettingsScreen(
                     onSelected = onLandingScreenChanged,
                 )
             }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            ReceiptSettings(
+                settings = messagingSettings,
+                onSmsDeliveryReportsChanged = onSmsDeliveryReportsChanged,
+                onMmsDeliveryReportsChanged = onMmsDeliveryReportsChanged,
+                onMmsReadReportsChanged = onMmsReadReportsChanged,
+            )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -441,6 +456,46 @@ private fun LanguageRow(
             contentDescription = stringResource(R.string.action_open_screen),
         )
     }
+}
+
+/** Delivery and read receipts for messages sent from (and read on) this phone. */
+@Composable
+private fun ReceiptSettings(
+    settings: MessagingSettings,
+    onSmsDeliveryReportsChanged: (Boolean) -> Unit,
+    onMmsDeliveryReportsChanged: (Boolean) -> Unit,
+    onMmsReadReportsChanged: (Boolean) -> Unit,
+) {
+    Text(
+        text = stringResource(R.string.settings_receipts_section),
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
+    SettingSwitchRow(
+        icon = Icons.Default.DoneAll,
+        title = stringResource(R.string.settings_sms_delivery_reports),
+        checked = settings.smsDeliveryReports,
+        onCheckedChange = onSmsDeliveryReportsChanged,
+    )
+    SettingSwitchRow(
+        icon = Icons.Default.DoneAll,
+        title = stringResource(R.string.settings_mms_delivery_reports),
+        checked = settings.mmsDeliveryReports,
+        onCheckedChange = onMmsDeliveryReportsChanged,
+    )
+    SettingSwitchRow(
+        icon = Icons.Default.Visibility,
+        title = stringResource(R.string.settings_mms_read_reports),
+        checked = settings.mmsReadReports,
+        onCheckedChange = onMmsReadReportsChanged,
+    )
+    Text(
+        text = stringResource(R.string.settings_receipts_hint),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+    )
 }
 
 @Composable

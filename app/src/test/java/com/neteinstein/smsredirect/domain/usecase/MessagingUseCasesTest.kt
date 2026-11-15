@@ -4,12 +4,15 @@ import app.cash.turbine.test
 import com.neteinstein.smsredirect.FakeDefaultSmsAppChecker
 import com.neteinstein.smsredirect.FakeMessageSender
 import com.neteinstein.smsredirect.FakeMessageStore
+import com.neteinstein.smsredirect.FakeMessagingSettingsRepository
 import com.neteinstein.smsredirect.FakeMmsDownloadRequester
+import com.neteinstein.smsredirect.domain.messaging.MmsReadReportSender
 import com.neteinstein.smsredirect.domain.messaging.SendFailure
 import com.neteinstein.smsredirect.domain.messaging.SendOutcome
 import com.neteinstein.smsredirect.domain.model.Conversation
 import com.neteinstein.smsredirect.domain.model.ConversationMessage
 import com.neteinstein.smsredirect.domain.model.MessageStatus
+import com.neteinstein.smsredirect.domain.model.MessagingSettings
 import com.neteinstein.smsredirect.domain.model.OutgoingAttachment
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -160,5 +163,39 @@ class MessagingUseCasesTest {
             assertFalse(download(pending.copy(status = MessageStatus.DOWNLOADING)))
             assertFalse(download(pending.copy(isMms = false)))
             assertEquals(listOf(5L), requester.requested)
+        }
+
+    @Test
+    fun `read reports go out before the conversation is marked read, only when turned on`() =
+        runTest {
+            val store = FakeMessageStore()
+            val sentFor = mutableListOf<Long>()
+            val readReporter =
+                MmsReadReportSender { threadId ->
+                    sentFor += threadId
+                    assertTrue(store.markedRead.isEmpty())
+                }
+            val settings = FakeMessagingSettingsRepository()
+            val markRead = MarkConversationReadUseCase(store, settings, readReporter)
+
+            markRead(7)
+            assertTrue(sentFor.isEmpty())
+
+            store.markedRead.clear()
+            settings.state.value = MessagingSettings(mmsReadReports = true)
+            markRead(7)
+
+            assertEquals(listOf(7L), sentFor)
+            assertEquals(listOf(7L), store.markedRead)
+        }
+
+    @Test
+    fun `receipt settings are updated one switch at a time`() =
+        runTest {
+            val settings = FakeMessagingSettingsRepository(MessagingSettings(mmsReadReports = true))
+
+            UpdateMessagingSettingsUseCase(settings).invoke { it.copy(smsDeliveryReports = true) }
+
+            assertEquals(MessagingSettings(smsDeliveryReports = true, mmsReadReports = true), settings.state.value)
         }
 }

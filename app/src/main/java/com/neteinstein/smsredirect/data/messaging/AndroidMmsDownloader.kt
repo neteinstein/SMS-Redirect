@@ -11,9 +11,11 @@ import android.util.Log
 import androidx.core.content.FileProvider
 import com.neteinstein.smsredirect.MessageStatusReceiver
 import com.neteinstein.smsredirect.domain.messaging.MmsDownloadRequester
+import com.neteinstein.smsredirect.domain.messaging.MmsReadReportSender
 import com.neteinstein.smsredirect.domain.mms.MmsPdu
 import com.neteinstein.smsredirect.domain.mms.MmsPduComposer
 import com.neteinstein.smsredirect.domain.mms.MmsPduParser
+import com.neteinstein.smsredirect.domain.repository.MessagingSettingsRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -58,10 +60,12 @@ sealed interface MmsDownloadResult {
 class AndroidMmsDownloader(
     private val context: Context,
     private val store: ContentProviderMessageStore,
+    private val messagingSettings: MessagingSettingsRepository,
     private val parser: MmsPduParser = MmsPduParser(),
     private val composer: MmsPduComposer = MmsPduComposer(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
-) : MmsDownloadRequester {
+) : MmsDownloadRequester,
+    MmsReadReportSender {
     /** An MMS announcement, and whether its download could be started. */
     data class Announced(
         val notification: MmsPdu.NotificationInd,
@@ -70,14 +74,34 @@ class AndroidMmsDownloader(
     )
 
     /**
-     * Saves the announcement and starts the download. Null when the push was not an MMS
-     * notification.
+     * Handles an MMS WAP push. An announcement is saved and its download started (returned, so
+     * the caller can offer Retry if it did not start); delivery and read reports for MMS we sent
+     * are recorded on the sent message. Null for anything that is not an announcement.
      */
     suspend fun onWapPush(
         pdu: ByteArray,
         subscriptionId: Int,
     ): Announced? {
-        val notification = parser.parse(pdu) as? MmsPdu.NotificationInd ?: return null
+        val notification =
+            when (val parsed = parser.parse(pdu)) {
+                is MmsPdu.NotificationInd -> {
+                    parsed
+                }
+
+                is MmsPdu.DeliveryInd -> {
+                    store.recordMmsDelivery(parsed.messageId, parsed.status)
+                    return null
+                }
+
+                is MmsPdu.ReadOrigInd -> {
+                    store.recordMmsRead(parsed.messageId, parsed.readStatus)
+                    return null
+                }
+
+                else -> {
+                    return null
+                }
+            }
         val pending = store.saveMmsNotification(notification, subscriptionId)
         val started =
             if (pending != null) {
@@ -160,7 +184,9 @@ class AndroidMmsDownloader(
                     return@withContext MmsDownloadResult.Failed(pending?.threadId)
                 }
                 placeholderId?.let { store.deleteMmsNotification(it) }
-                (message.transactionId ?: transactionId)?.let { acknowledge(it, subscriptionId) }
+                (message.transactionId ?: transactionId)?.let {
+                    acknowledge(it, subscriptionId, reportAllowed = messagingSettings.get().mmsDeliveryReports)
+                }
                 MmsDownloadResult.Saved(
                     IncomingMms(
                         threadId = threadId,
@@ -178,16 +204,73 @@ class AndroidMmsDownloader(
     private fun acknowledge(
         transactionId: String,
         subscriptionId: Int,
+        reportAllowed: Boolean,
     ) {
-        val file = File(mmsDir(), "ack-${UUID.randomUUID()}.pdu")
-        try {
-            file.writeBytes(composer.composeAcknowledgeInd(transactionId))
-            val contentUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-            smsManager(subscriptionId).sendMultimediaMessage(context, contentUri, null, null, null)
-        } catch (e: Exception) {
-            Log.w(TAG, "MMS acknowledge failed: ${e.javaClass.simpleName}")
+        sendPdu(composer.composeAcknowledgeInd(transactionId, reportAllowed), subscriptionId, "ack")
+    }
+
+    /**
+     * Tells the senders of this conversation's unread MMS that asked for it that they were read.
+     * Called (by MarkConversationReadUseCase) only when the user turned MMS read reports on.
+     */
+    override suspend fun sendReadReports(threadId: Long) {
+        withContext(dispatcher) {
+            for (request in store.pendingReadReports(threadId)) {
+                // Another mark-read may be sending this same report right now: only one claims it.
+                if (!store.claimReadReport(request.rowId)) continue
+                val pdu =
+                    composer.composeReadRecInd(
+                        messageId = request.messageId,
+                        to = request.from,
+                        dateEpochSeconds = System.currentTimeMillis() / 1000,
+                    )
+                // Recorded as sent only when the MMS service confirms (onReadReportSent).
+                val result =
+                    Intent(
+                        MessageStatusReceiver.ACTION_MMS_READ_REPORT_SENT,
+                        Uri.fromParts("mmsreadreport", request.rowId.toString(), null),
+                        context,
+                        MessageStatusReceiver::class.java,
+                    ).putExtra(MessageStatusReceiver.EXTRA_MMS_ROW_ID, request.rowId)
+                val started = sendPdu(pdu, request.subscriptionId, "read", result)
+                if (!started) store.finishReadReport(request.rowId, sent = false)
+            }
         }
-        // The file must outlive the platform's read of it; stale ones are cleared on next start.
+    }
+
+    /** The MMS service reported on a read report sent by [sendReadReports]. */
+    suspend fun onReadReportSent(
+        rowId: Long,
+        resultCode: Int,
+    ) {
+        store.finishReadReport(rowId, sent = resultCode == Activity.RESULT_OK)
+    }
+
+    /**
+     * Hands a small PDU (acknowledge, read report) to the MMS service. With [resultIntent], the
+     * service's verdict is broadcast to it; without one, this is fire-and-forget.
+     */
+    private fun sendPdu(
+        pdu: ByteArray,
+        subscriptionId: Int,
+        kind: String,
+        resultIntent: Intent? = null,
+    ): Boolean {
+        val file = File(mmsDir(), "$kind-${UUID.randomUUID()}.pdu")
+        return try {
+            file.writeBytes(pdu)
+            val contentUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            val sentIntent =
+                resultIntent?.let {
+                    PendingIntent.getBroadcast(context, 0, it, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
+                }
+            smsManager(subscriptionId).sendMultimediaMessage(context, contentUri, null, null, sentIntent)
+            // The file must outlive the platform's read of it; stale ones are cleared on next start.
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "MMS $kind PDU not sent: ${e.javaClass.simpleName}")
+            false
+        }
     }
 
     /** Deletes PDU files left behind by sends and downloads that never reported back. */

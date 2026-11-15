@@ -8,6 +8,7 @@ ENVIAR E RECEBER SMS E MMS
 • Abra ligações de "enviar mensagem" e partilhe texto ou imagens a partir de outras apps
 • Responda por mensagem a partir do ecrã de chamada recebida
 • As mensagens que falham ficam assinaladas e podem ser reenviadas com um toque
+• Relatórios de entrega opcionais para SMS e MMS, e confirmações de leitura de MMS
 
 REENCAMINHAR
 • Reencaminhe para outro telemóvel as SMS recebidas que correspondam às suas regras (por remetente ou número)

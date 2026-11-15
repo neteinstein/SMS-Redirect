@@ -2,6 +2,7 @@ package com.neteinstein.smsredirect.domain.mms
 
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -238,4 +239,91 @@ class MmsPduTest {
             contentLocation = "text_0.txt",
             charset = MmsCharsets.UTF_8,
         )
+
+    @Test
+    fun `parses a delivery indication`() {
+        val pdu =
+            WspWriter()
+                .apply {
+                    header(MmsHeaders.MESSAGE_TYPE) { byte(MmsHeaders.MESSAGE_TYPE_DELIVERY_IND) }
+                    header(MmsHeaders.MMS_VERSION) { shortInteger(MmsHeaders.MMS_VERSION_1_2) }
+                    header(MmsHeaders.MESSAGE_ID) { textString("mid-9") }
+                    header(MmsHeaders.TO) { encodedString("+351912345678/TYPE=PLMN") }
+                    header(MmsHeaders.DATE) { longInteger(1_700_000_000) }
+                    header(MmsHeaders.STATUS) { byte(MmsHeaders.STATUS_RETRIEVED) }
+                }.toByteArray()
+
+        assertEquals(
+            MmsPdu.DeliveryInd("mid-9", "+351912345678", MmsHeaders.STATUS_RETRIEVED, 1_700_000_000),
+            parser.parse(pdu),
+        )
+    }
+
+    @Test
+    fun `parses a read-orig indication`() {
+        val pdu =
+            WspWriter()
+                .apply {
+                    header(MmsHeaders.MESSAGE_TYPE) { byte(MmsHeaders.MESSAGE_TYPE_READ_ORIG_IND) }
+                    header(MmsHeaders.MMS_VERSION) { shortInteger(MmsHeaders.MMS_VERSION_1_2) }
+                    header(MmsHeaders.MESSAGE_ID) { textString("mid-9") }
+                    header(MmsHeaders.FROM) {
+                        valueLength(1 + "+351912345678/TYPE=PLMN".length + 1)
+                        byte(MmsHeaders.FROM_ADDRESS_PRESENT)
+                        textString("+351912345678/TYPE=PLMN")
+                    }
+                    header(MmsHeaders.READ_STATUS) { byte(MmsHeaders.READ_STATUS_READ) }
+                }.toByteArray()
+
+        assertEquals(MmsPdu.ReadOrigInd("mid-9", "+351912345678", MmsHeaders.READ_STATUS_READ, null), parser.parse(pdu))
+    }
+
+    @Test
+    fun `send request carries the requested report flags`() {
+        val withReports =
+            composer.composeSendReq(
+                "T1",
+                listOf("+15551234567"),
+                null,
+                listOf(textPart("hi")),
+                requestDeliveryReport = true,
+                requestReadReport = true,
+            )
+        val without = composer.composeSendReq("T1", listOf("+15551234567"), null, listOf(textPart("hi")))
+
+        assertTrue(withReports.containsHeader(MmsHeaders.DELIVERY_REPORT, MmsHeaders.VALUE_YES))
+        assertTrue(withReports.containsHeader(MmsHeaders.READ_REPORT, MmsHeaders.VALUE_YES))
+        assertTrue(without.containsHeader(MmsHeaders.DELIVERY_REPORT, MmsHeaders.VALUE_NO))
+        assertTrue(without.containsHeader(MmsHeaders.READ_REPORT, MmsHeaders.VALUE_NO))
+    }
+
+    @Test
+    fun `a retrieved message that asks for a read report says so`() {
+        fun retrieved(readReport: Boolean): MmsPdu.RetrieveConf {
+            val bytes = composer.composeSendReq("T9", listOf("+15551234567"), null, listOf(textPart("x")), requestReadReport = readReport)
+            bytes[1] = (0x80 or MmsHeaders.MESSAGE_TYPE_RETRIEVE_CONF).toByte()
+            return parser.parse(bytes) as MmsPdu.RetrieveConf
+        }
+
+        assertTrue(retrieved(readReport = true).readReportRequested)
+        assertFalse(retrieved(readReport = false).readReportRequested)
+    }
+
+    @Test
+    fun `read report and acknowledge are well formed`() {
+        val readRec = composer.composeReadRecInd("mid-1", "+351912345678", dateEpochSeconds = 1_700_000_000)
+        assertEquals(MmsPdu.Other(null, MmsHeaders.MESSAGE_TYPE_READ_REC_IND), parser.parse(readRec))
+        assertTrue(readRec.containsHeader(MmsHeaders.READ_STATUS, MmsHeaders.READ_STATUS_READ))
+
+        assertTrue(
+            composer.composeAcknowledgeInd("T5", reportAllowed = true).containsHeader(MmsHeaders.REPORT_ALLOWED, MmsHeaders.VALUE_YES),
+        )
+        assertTrue(composer.composeAcknowledgeInd("T5").containsHeader(MmsHeaders.REPORT_ALLOWED, MmsHeaders.VALUE_NO))
+    }
+
+    /** True when the header field octet is immediately followed by [value]. */
+    private fun ByteArray.containsHeader(
+        field: Int,
+        value: Int,
+    ): Boolean = (0 until size - 1).any { (this[it].toInt() and 0xFF) == (0x80 or field) && (this[it + 1].toInt() and 0xFF) == value }
 }
