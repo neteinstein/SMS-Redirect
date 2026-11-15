@@ -121,6 +121,23 @@ killed process are reset to retryable on the next start. Each failure also gets 
 notification (keyed by content location) that opens the conversation and has a Retry action;
 opening the app does not clear it.
 
+**Delivery and read reports** (Settings → Message receipts, all off by default; stored in
+SharedPreferences by `SharedPreferencesMessagingSettingsRepository`, no Room migration):
+- *SMS delivery reports*: the last part of each SMS gets a delivery PendingIntent; the row is
+  written with `STATUS_PENDING`, and `MessageStatusReceiver` (`ACTION_SMS_DELIVERED`) turns the
+  status report's TP-Status into `STATUS_COMPLETE` / `_PENDING` / `_FAILED`
+  (`MessageReceipts.smsStatusForReport`).
+- *MMS delivery reports*: M-Send.req carries `X-Mms-Delivery-Report: Yes`; the MMSC's
+  M-Delivery.ind arrives by WAP push and `ContentProviderMessageStore.recordMmsDelivery` stores
+  its X-Mms-Status in the sent row's `st` (one recipient's "deferred" never hides another's
+  "retrieved"). The same switch sets `X-Mms-Report-Allowed` in our M-Acknowledge.ind.
+- *MMS read reports*: M-Send.req carries `X-Mms-Read-Report: Yes`; M-Read-Orig.ind is stored in
+  `read_status`. A received MMS that asks for one keeps `rr = Yes`; when its conversation is
+  marked read, `MarkConversationReadUseCase` first has `MmsReadReportSender` send an
+  M-Read-Rec.ind for each such unread message, then records it so it never goes twice.
+- `MessageReceipts` maps the stored values to `MessageReceipt` (Delivered, Not delivered, Read),
+  shown next to the time under sent messages.
+
 **Notifications** (`MessageNotifications`): one MessagingStyle notification per thread
 (appended to, not replaced), `VISIBILITY_PRIVATE` with a content-free public version, inline
 reply (RemoteInput → `SendMessageUseCase`) and mark-as-read. Suppressed while that conversation

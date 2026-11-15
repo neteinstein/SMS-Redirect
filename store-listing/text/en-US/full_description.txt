@@ -8,6 +8,7 @@ SEND AND RECEIVE SMS AND MMS
 • Open "send message" links and share text or pictures from other apps
 • Reply by text from the incoming-call screen
 • Failed messages are marked, and can be sent again with a tap
+• Optional delivery reports for SMS and MMS, and MMS read reports
 
 REDIRECT
 • Forward incoming SMS that match your rules (by sender or number) to another phone

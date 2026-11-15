@@ -12,6 +12,7 @@ import android.os.Looper
 import android.provider.Telephony
 import android.util.Log
 import androidx.core.net.toUri
+import com.neteinstein.smsredirect.domain.messaging.MessageReceipts
 import com.neteinstein.smsredirect.domain.messaging.MessageStore
 import com.neteinstein.smsredirect.domain.mms.MmsCharsets
 import com.neteinstein.smsredirect.domain.mms.MmsHeaders
@@ -21,6 +22,7 @@ import com.neteinstein.smsredirect.domain.mms.MmsRecipients
 import com.neteinstein.smsredirect.domain.model.Conversation
 import com.neteinstein.smsredirect.domain.model.ConversationMessage
 import com.neteinstein.smsredirect.domain.model.MessageAttachment
+import com.neteinstein.smsredirect.domain.model.MessageReceipt
 import com.neteinstein.smsredirect.domain.model.MessageStatus
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -100,11 +102,18 @@ class ContentProviderMessageStore(
                         Telephony.Sms.BODY,
                         Telephony.Sms.DATE,
                         Telephony.Sms.TYPE,
+                        Telephony.Sms.STATUS,
                     ),
                     selection,
                     args,
                 ) { cursor ->
                     val status = smsStatus(cursor.long(Telephony.Sms.TYPE).toInt()) ?: return@query null
+                    val receipt =
+                        if (status == MessageStatus.SENT) {
+                            MessageReceipts.forSms(cursor.longOrNull(Telephony.Sms.STATUS)?.toInt() ?: MessageReceipts.SMS_STATUS_NONE)
+                        } else {
+                            MessageReceipt.NONE
+                        }
                     ConversationMessage(
                         id = cursor.long(Telephony.Sms._ID),
                         isMms = false,
@@ -113,6 +122,7 @@ class ContentProviderMessageStore(
                         body = cursor.string(Telephony.Sms.BODY).orEmpty(),
                         dateEpochMs = cursor.long(Telephony.Sms.DATE),
                         status = status,
+                        receipt = receipt,
                     )
                 }
             sms + mmsMessages(threadId, selection, args)
@@ -128,6 +138,7 @@ class ContentProviderMessageStore(
             val dateSeconds: Long,
             val status: MessageStatus,
             val subject: String?,
+            val receipt: MessageReceipt,
         )
         val rows =
             query(
@@ -139,6 +150,9 @@ class ContentProviderMessageStore(
                     Telephony.Mms.MESSAGE_TYPE,
                     Telephony.Mms.SUBJECT,
                     Telephony.Mms.STATUS,
+                    Telephony.Mms.DELIVERY_REPORT,
+                    Telephony.Mms.READ_REPORT,
+                    Telephony.Mms.READ_STATUS,
                 ),
                 selection,
                 args,
@@ -157,6 +171,18 @@ class ContentProviderMessageStore(
                     dateSeconds = cursor.long(Telephony.Mms.DATE),
                     status = status,
                     subject = cursor.string(Telephony.Mms.SUBJECT)?.takeIf { it.isNotBlank() },
+                    receipt =
+                        if (status == MessageStatus.SENT) {
+                            MessageReceipts.forMms(
+                                reportRequested =
+                                    cursor.long(Telephony.Mms.DELIVERY_REPORT).toInt() == MmsHeaders.VALUE_YES ||
+                                        cursor.long(Telephony.Mms.READ_REPORT).toInt() == MmsHeaders.VALUE_YES,
+                                deliveryStatus = cursor.longOrNull(Telephony.Mms.STATUS)?.toInt(),
+                                readStatus = cursor.longOrNull(Telephony.Mms.READ_STATUS)?.toInt(),
+                            )
+                        } else {
+                            MessageReceipt.NONE
+                        },
                 )
             }
         if (rows.isEmpty()) return emptyList()
@@ -182,6 +208,7 @@ class ContentProviderMessageStore(
                 status = row.status,
                 attachments = parts.mapNotNull { it.third },
                 subject = row.subject,
+                receipt = row.receipt,
             )
         }
     }
@@ -333,6 +360,8 @@ class ContentProviderMessageStore(
                     put(Telephony.Mms.CONTENT_TYPE, message.contentType)
                     message.messageId?.let { put(Telephony.Mms.MESSAGE_ID, it) }
                     message.transactionId?.let { put(Telephony.Mms.TRANSACTION_ID, it) }
+                    // Whether the sender wants a read report; MmsReadReportSender acts on it.
+                    put(Telephony.Mms.READ_REPORT, if (message.readReportRequested) MmsHeaders.VALUE_YES else MmsHeaders.VALUE_NO)
                     message.subject?.let {
                         put(Telephony.Mms.SUBJECT, it)
                         put(Telephony.Mms.SUBJECT_CHARSET, MmsCharsets.UTF_8)
@@ -347,6 +376,87 @@ class ContentProviderMessageStore(
             message.cc.forEach { insertAddress(messageId, it, ADDR_TYPE_CC) }
             threadId
         }
+
+    /** An M-Delivery.ind for an MMS we sent: record its X-Mms-Status on the sent row. */
+    suspend fun recordMmsDelivery(
+        messageId: String,
+        status: Int,
+    ) {
+        withContext(dispatcher) {
+            val current =
+                query(
+                    Telephony.Mms.CONTENT_URI,
+                    arrayOf(Telephony.Mms._ID, Telephony.Mms.STATUS),
+                    "${Telephony.Mms.MESSAGE_ID} = ? AND ${Telephony.Mms.MESSAGE_BOX} = ?",
+                    arrayOf(messageId, Telephony.Mms.MESSAGE_BOX_SENT.toString()),
+                ) { it.long(Telephony.Mms._ID) to it.longOrNull(Telephony.Mms.STATUS)?.toInt() }
+            for ((rowId, currentStatus) in current) {
+                // In a group, one recipient's "deferred" must not hide another's "retrieved".
+                if (!MessageReceipts.shouldRecordMmsDelivery(currentStatus, status)) continue
+                val values = ContentValues().apply { put(Telephony.Mms.STATUS, status) }
+                safely { resolver.update(ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, rowId), values, null, null) }
+            }
+        }
+    }
+
+    /** An M-Read-Orig.ind for an MMS we sent: record its X-Mms-Read-Status on the sent row. */
+    suspend fun recordMmsRead(
+        messageId: String,
+        readStatus: Int,
+    ) {
+        withContext(dispatcher) {
+            val values = ContentValues().apply { put(Telephony.Mms.READ_STATUS, readStatus) }
+            // "Read" wins over "deleted without reading" from another group member.
+            val where =
+                "${Telephony.Mms.MESSAGE_ID} = ? AND ${Telephony.Mms.MESSAGE_BOX} = ? AND " +
+                    "(${Telephony.Mms.READ_STATUS} IS NULL OR ${Telephony.Mms.READ_STATUS} != ?)"
+            safely {
+                resolver.update(
+                    Telephony.Mms.CONTENT_URI,
+                    values,
+                    where,
+                    arrayOf(messageId, Telephony.Mms.MESSAGE_BOX_SENT.toString(), MmsHeaders.READ_STATUS_READ.toString()),
+                )
+            }
+        }
+    }
+
+    /** An unread received MMS whose sender asked for a read report not sent yet. */
+    data class ReadReportRequest(
+        val rowId: Long,
+        val messageId: String,
+        val from: String,
+        val subscriptionId: Int,
+    )
+
+    suspend fun pendingReadReports(threadId: Long): List<ReadReportRequest> =
+        withContext(dispatcher) {
+            query(
+                Telephony.Mms.CONTENT_URI,
+                arrayOf(Telephony.Mms._ID, Telephony.Mms.MESSAGE_ID, Telephony.Mms.SUBSCRIPTION_ID),
+                "${Telephony.Mms.THREAD_ID} = ? AND ${Telephony.Mms.MESSAGE_BOX} = ? AND ${Telephony.Mms.READ} = 0 AND " +
+                    "${Telephony.Mms.MESSAGE_TYPE} = ? AND ${Telephony.Mms.READ_REPORT} = ? AND " +
+                    "(${Telephony.Mms.READ_STATUS} IS NULL OR ${Telephony.Mms.READ_STATUS} = 0)",
+                arrayOf(
+                    threadId.toString(),
+                    Telephony.Mms.MESSAGE_BOX_INBOX.toString(),
+                    MmsHeaders.MESSAGE_TYPE_RETRIEVE_CONF.toString(),
+                    MmsHeaders.VALUE_YES.toString(),
+                ),
+            ) { cursor ->
+                val rowId = cursor.long(Telephony.Mms._ID)
+                val messageId = cursor.string(Telephony.Mms.MESSAGE_ID)?.takeIf { it.isNotBlank() } ?: return@query null
+                ReadReportRequest(rowId, messageId, "", cursor.long(Telephony.Mms.SUBSCRIPTION_ID).toInt())
+            }.mapNotNull { request -> mmsSender(request.rowId).takeIf { it.isNotBlank() }?.let { request.copy(from = it) } }
+        }
+
+    /** Remembers that a read report went out, so it is never sent twice. */
+    suspend fun markReadReportSent(rowId: Long) {
+        withContext(dispatcher) {
+            val values = ContentValues().apply { put(Telephony.Mms.READ_STATUS, MmsHeaders.READ_STATUS_READ) }
+            safely { resolver.update(ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, rowId), values, null, null) }
+        }
+    }
 
     /** What is needed to (re)start the download of an announced MMS. */
     data class PendingMmsDownload(
@@ -559,6 +669,8 @@ class ContentProviderMessageStore(
         }
 
     private fun Cursor.long(column: String): Long = getColumnIndex(column).takeIf { it >= 0 }?.let { getLong(it) } ?: 0L
+
+    private fun Cursor.longOrNull(column: String): Long? = getColumnIndex(column).takeIf { it >= 0 && !isNull(it) }?.let { getLong(it) }
 
     private fun Cursor.string(column: String): String? = getColumnIndex(column).takeIf { it >= 0 }?.let { getString(it) }
 

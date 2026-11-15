@@ -44,6 +44,11 @@ class MessageStatusReceiver : BroadcastReceiver() {
                         if (failed) MessageNotifications.showSendFailed(context, container.messageSender.threadIdOf(uri))
                     }
 
+                    ACTION_SMS_DELIVERED -> {
+                        val uri = intent.data ?: return@launch
+                        container.messageSender.onSmsDelivered(uri, intent.getByteArrayExtra("pdu"), intent.getStringExtra("format"))
+                    }
+
                     ACTION_MMS_SENT -> {
                         val uri = intent.data ?: return@launch
                         val failed =
@@ -221,6 +226,7 @@ class MessageStatusReceiver : BroadcastReceiver() {
         }
 
         const val ACTION_SMS_SENT = "com.neteinstein.smsredirect.action.SMS_SENT"
+        const val ACTION_SMS_DELIVERED = "com.neteinstein.smsredirect.action.SMS_DELIVERED"
         const val ACTION_MMS_SENT = "com.neteinstein.smsredirect.action.MMS_SENT"
         const val ACTION_MMS_DOWNLOADED = "com.neteinstein.smsredirect.action.MMS_DOWNLOADED"
         const val ACTION_MMS_RETRY_DOWNLOAD = "com.neteinstein.smsredirect.action.MMS_RETRY_DOWNLOAD"

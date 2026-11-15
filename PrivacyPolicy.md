@@ -38,6 +38,12 @@ SMS Toolbox is a messaging app. It works once you make it your **default SMS app
 
 **Sending.** When you send a message, or reply from a notification or the incoming-call screen, the App hands it to Android, which sends it through your mobile carrier to the people you chose, and saves it in your phone's message storage. Text to one person is sent as SMS; a message with a picture or other attachment, or to several people, is sent as MMS. Large photos are resized on your phone first so the carrier accepts them. Your carrier may charge for messages as usual.
 
+**Delivery and read reports.** Three switches in Settings → Message receipts, all **off** by default:
+- *SMS delivery reports* and *MMS delivery reports* ask your carrier to report when your messages reach the other phone, and the App shows "Delivered" under them. With MMS delivery reports on, the App also lets the carrier tell people who send you an MMS that it reached you.
+- *MMS read reports* asks the people you send an MMS to for a read report, and shows "Read" when one comes back. It also sends a read report — the fact that you read the message, and when — to whoever sent you an MMS and asked for one, at the moment you open that conversation.
+
+These reports travel only between your phone, your carrier and the other person's phone, like the messages themselves. They are not sent to us.
+
 **Sharing into the App.** Other apps can open a new message in the App (a contact's "message" button, an `sms:` link, or Share). Nothing is sent until you tap Send.
 
 **What the App does not do with your messages.** It does not send them to us, does not analyse them, does not use them for advertising, and does not keep a copy of them anywhere except your phone's message storage (and your own Gmail, only if you turn on backup, Section 2). It does not use SMS to verify an account.
@@ -94,6 +100,8 @@ This is the complete list:
 |---|---|---|
 | Messages you send (SMS and MMS, including attachments you add) | The people **you** chose, via your carrier's SMS/MMS network | When you tap Send, or reply from a notification or the call screen |
 | A request to download a picture message sent to you | Your carrier's MMS server, by Android's MMS service | When a picture message arrives |
+| Delivery reports you asked for, and (with MMS delivery reports on) permission for the carrier to confirm delivery of picture messages sent to you | Your carrier, and the sender of that message | Only with the matching switch on in Settings → Message receipts |
+| A read report for a picture message sent to you | The person who sent it, via your carrier | Only with MMS read reports on, and only if they asked for one, when you open the conversation |
 | Your SMS messages (received and sent) | **Your own** Gmail account, via Google's IMAP servers | Only while Gmail backup is on |
 | Your Gmail address and app password | Google's IMAP servers, as your login | Each time the App connects for a backup or restore |
 | Messages you forward or schedule | The phone numbers **you** chose, via your carrier's SMS network | When a rule matches, or at the scheduled time |

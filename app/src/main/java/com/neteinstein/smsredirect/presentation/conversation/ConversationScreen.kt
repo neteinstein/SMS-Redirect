@@ -73,6 +73,7 @@ import com.neteinstein.smsredirect.R
 import com.neteinstein.smsredirect.domain.messaging.SendFailure
 import com.neteinstein.smsredirect.domain.model.ConversationMessage
 import com.neteinstein.smsredirect.domain.model.MessageAttachment
+import com.neteinstein.smsredirect.domain.model.MessageReceipt
 import com.neteinstein.smsredirect.domain.model.MessageStatus
 import com.neteinstein.smsredirect.domain.model.OutgoingAttachment
 import kotlinx.coroutines.Dispatchers
@@ -284,18 +285,18 @@ private fun MessageBubble(
                         }
 
                         else -> {
-                            DateUtils.formatDateTime(
-                                null,
-                                message.dateEpochMs,
-                                DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_ABBREV_ALL,
-                            )
+                            val time =
+                                DateUtils.formatDateTime(
+                                    null,
+                                    message.dateEpochMs,
+                                    DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_ABBREV_ALL,
+                                )
+                            receiptLabel(message.receipt)?.let { "$it · $time" } ?: time
                         }
                     },
                 style = MaterialTheme.typography.labelSmall,
                 color =
-                    if (message.status ==
-                        MessageStatus.FAILED
-                    ) {
+                    if (message.status == MessageStatus.FAILED || message.receipt == MessageReceipt.NOT_DELIVERED) {
                         MaterialTheme.colorScheme.error
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
@@ -304,6 +305,16 @@ private fun MessageBubble(
         }
     }
 }
+
+/** "Delivered", "Read", ... for a sent message whose receipt has come in; null when there is none. */
+@Composable
+private fun receiptLabel(receipt: MessageReceipt): String? =
+    when (receipt) {
+        MessageReceipt.NONE, MessageReceipt.PENDING -> null
+        MessageReceipt.DELIVERED -> stringResource(R.string.conversation_receipt_delivered)
+        MessageReceipt.NOT_DELIVERED -> stringResource(R.string.conversation_receipt_not_delivered)
+        MessageReceipt.READ -> stringResource(R.string.conversation_receipt_read)
+    }
 
 /** A picture message still on the carrier's server: say so, and offer to fetch it. */
 @Composable

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.smsredirect.domain.mail.MailVerificationResult
 import com.neteinstein.smsredirect.domain.model.LandingScreen
+import com.neteinstein.smsredirect.domain.model.MessagingSettings
 import com.neteinstein.smsredirect.domain.model.SmsBackupSettings
 import com.neteinstein.smsredirect.domain.scheduling.SmsBackupScheduler
 import com.neteinstein.smsredirect.domain.usecase.BackupImportResult
@@ -13,6 +14,7 @@ import com.neteinstein.smsredirect.domain.usecase.ExportBackupUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetLandingScreenUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetMessagingSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSmsBackupSettingsUseCase
@@ -22,6 +24,7 @@ import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetLandingScreenUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
+import com.neteinstein.smsredirect.domain.usecase.UpdateMessagingSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.VerifyGmailCredentialsUseCase
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,7 +53,14 @@ class SettingsViewModel(
     private val verifyGmailCredentialsUseCase: VerifyGmailCredentialsUseCase,
     private val clearGmailCredentialsUseCase: ClearGmailCredentialsUseCase,
     private val smsBackupScheduler: SmsBackupScheduler,
+    getMessagingSettingsUseCase: GetMessagingSettingsUseCase? = null,
+    private val updateMessagingSettingsUseCase: UpdateMessagingSettingsUseCase? = null,
 ) : ViewModel() {
+    private val _messagingSettings = MutableStateFlow(MessagingSettings())
+
+    /** Delivery and read receipts for SMS and MMS. */
+    val messagingSettings: StateFlow<MessagingSettings> = _messagingSettings.asStateFlow()
+
     private val _sendWhileRoaming = MutableStateFlow(false)
     val sendWhileRoaming: StateFlow<Boolean> = _sendWhileRoaming.asStateFlow()
     private val _defaultPrefix = MutableStateFlow("+351")
@@ -67,6 +77,7 @@ class SettingsViewModel(
     val gmailVerification: StateFlow<GmailVerificationState> = _gmailVerification.asStateFlow()
 
     init {
+        getMessagingSettingsUseCase?.invoke()?.onEach { _messagingSettings.value = it }?.launchIn(viewModelScope)
         getSendWhileRoamingUseCase()
             .onEach { _sendWhileRoaming.value = it }
             .launchIn(viewModelScope)
@@ -164,6 +175,17 @@ class SettingsViewModel(
             _importResult.emit(result)
         }
     }
+
+    fun setSmsDeliveryReports(enabled: Boolean) = updateMessaging { it.copy(smsDeliveryReports = enabled) }
+
+    fun setMmsDeliveryReports(enabled: Boolean) = updateMessaging { it.copy(mmsDeliveryReports = enabled) }
+
+    fun setMmsReadReports(enabled: Boolean) = updateMessaging { it.copy(mmsReadReports = enabled) }
+
+    private fun updateMessaging(transform: (MessagingSettings) -> MessagingSettings) {
+        val update = updateMessagingSettingsUseCase ?: return
+        viewModelScope.launch { update(transform) }
+    }
 }
 
 class SettingsViewModelFactory(
@@ -183,6 +205,8 @@ class SettingsViewModelFactory(
     private val verifyGmailCredentialsUseCase: VerifyGmailCredentialsUseCase,
     private val clearGmailCredentialsUseCase: ClearGmailCredentialsUseCase,
     private val smsBackupScheduler: SmsBackupScheduler,
+    private val getMessagingSettingsUseCase: GetMessagingSettingsUseCase,
+    private val updateMessagingSettingsUseCase: UpdateMessagingSettingsUseCase,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
@@ -203,6 +227,8 @@ class SettingsViewModelFactory(
             verifyGmailCredentialsUseCase = verifyGmailCredentialsUseCase,
             clearGmailCredentialsUseCase = clearGmailCredentialsUseCase,
             smsBackupScheduler = smsBackupScheduler,
+            getMessagingSettingsUseCase = getMessagingSettingsUseCase,
+            updateMessagingSettingsUseCase = updateMessagingSettingsUseCase,
         ) as T
     }
 }

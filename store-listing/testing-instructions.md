@@ -132,6 +132,13 @@ Restore), no self-update. The **github** flavor adds only the update check
       downloaded yet" with **Download**, and a notification appears. Dismiss
       the notification, reboot, turn data on, open the conversation, tap
       **Download**: the picture replaces the placeholder, exactly once.
+- [ ] Receipts (Settings → Message receipts, all off by default): with SMS
+      delivery reports on, a sent SMS shows "Delivered · time" once the other
+      phone receives it (if the carrier supports reports). With MMS delivery /
+      read reports on, a sent MMS shows "Delivered", then "Read" once the
+      recipient opens it (if their app sends read reports). Receiving an MMS
+      that asks for a read report sends one only with MMS read reports on, and
+      only once.
 - [ ] Group: send to two numbers → one group conversation; a reply from either
       lands in it.
 - [ ] From another app: a contact's message button and Share → "Message" open

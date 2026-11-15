@@ -856,8 +856,11 @@ class MainActivity : ComponentActivity() {
                                         appContainer.verifyGmailCredentialsUseCase,
                                         appContainer.clearGmailCredentialsUseCase,
                                         appContainer.smsBackupScheduler,
+                                        appContainer.getMessagingSettingsUseCase,
+                                        appContainer.updateMessagingSettingsUseCase,
                                     ),
                             )
+                        val messagingSettings by settingsViewModel.messagingSettings.collectAsState()
                         val sendWhileRoaming by settingsViewModel.sendWhileRoaming.collectAsState()
                         val showNotifications by settingsViewModel.showNotifications.collectAsState()
                         val defaultPrefix by settingsViewModel.defaultPrefix.collectAsState()
@@ -1018,6 +1021,10 @@ class MainActivity : ComponentActivity() {
                             onImportBackup = { importLauncher.launch("application/json") },
                             onOpenLanguageSettings = { openAppLocaleSettings() },
                             onBack = { navController.popBackStack() },
+                            messagingSettings = messagingSettings,
+                            onSmsDeliveryReportsChanged = settingsViewModel::setSmsDeliveryReports,
+                            onMmsDeliveryReportsChanged = settingsViewModel::setMmsDeliveryReports,
+                            onMmsReadReportsChanged = settingsViewModel::setMmsReadReports,
                             availableLandingScreens = features.availableLandingScreens,
                             showMessagingSettings = features.sendsSms,
                             updatesSection =

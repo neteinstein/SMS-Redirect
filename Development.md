@@ -32,6 +32,7 @@ How to build, test and run SMS Toolbox from source. For what the app is and how 
 - Conversation list (newest first, unread markers, contact names) and conversation view with bubbles, timestamps and send status
 - Sends SMS (multipart) and MMS (pictures, video, audio, vCards; group messages); large photos are re-encoded to fit the carrier's MMS size limit
 - Receives SMS (`SMS_DELIVER`) and MMS (`WAP_PUSH_DELIVER` → download via `SmsManager` → saved to `content://mms`), with MessagingStyle notifications, inline reply and mark-as-read
+- Optional SMS/MMS delivery reports and MMS read reports (Settings → Message receipts, off by default), shown as "Delivered" / "Read" under sent messages
 - Opens `sms:`/`smsto:`/`mms:` links and Share intents pre-filled; "respond via message" from the call screen
 - The MMS PDU encoder/decoder is in-house, pure Kotlin and unit-tested (`domain/mms/`)
 

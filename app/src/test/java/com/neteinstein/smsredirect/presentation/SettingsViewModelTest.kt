@@ -1,6 +1,7 @@
 package com.neteinstein.smsredirect.presentation
 
 import com.neteinstein.smsredirect.FakeMailTransport
+import com.neteinstein.smsredirect.FakeMessagingSettingsRepository
 import com.neteinstein.smsredirect.FakeRuleRepository
 import com.neteinstein.smsredirect.FakeScheduledSmsRepository
 import com.neteinstein.smsredirect.FakeScheduledSmsScheduler
@@ -10,11 +11,13 @@ import com.neteinstein.smsredirect.FakeSmsBackupSettingsRepository
 import com.neteinstein.smsredirect.FakeSmsBackupStateRepository
 import com.neteinstein.smsredirect.domain.mail.MailVerificationResult
 import com.neteinstein.smsredirect.domain.model.LandingScreen
+import com.neteinstein.smsredirect.domain.model.MessagingSettings
 import com.neteinstein.smsredirect.domain.usecase.ClearGmailCredentialsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ExportBackupUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetLandingScreenUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetMessagingSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetSmsBackupSettingsUseCase
@@ -24,6 +27,7 @@ import com.neteinstein.smsredirect.domain.usecase.SetForwardPrefixUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetLandingScreenUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
+import com.neteinstein.smsredirect.domain.usecase.UpdateMessagingSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.VerifyGmailCredentialsUseCase
 import com.neteinstein.smsredirect.presentation.settings.GmailVerificationState
 import com.neteinstein.smsredirect.presentation.settings.SettingsViewModel
@@ -82,7 +86,25 @@ class SettingsViewModelTest {
                 VerifyGmailCredentialsUseCase(mailTransport, backupSettingsRepository, backupStateRepository),
             clearGmailCredentialsUseCase = ClearGmailCredentialsUseCase(backupSettingsRepository),
             smsBackupScheduler = smsBackupScheduler,
+            getMessagingSettingsUseCase = GetMessagingSettingsUseCase(messagingSettingsRepository),
+            updateMessagingSettingsUseCase = UpdateMessagingSettingsUseCase(messagingSettingsRepository),
         )
+
+    private val messagingSettingsRepository = FakeMessagingSettingsRepository()
+
+    @Test
+    fun `receipt switches start off and toggle independently`() =
+        runTest {
+            val vm = createViewModel()
+            advanceUntilIdle()
+            assertEquals(MessagingSettings(), vm.messagingSettings.value)
+
+            vm.setSmsDeliveryReports(true)
+            vm.setMmsReadReports(true)
+            advanceUntilIdle()
+
+            assertEquals(MessagingSettings(smsDeliveryReports = true, mmsReadReports = true), vm.messagingSettings.value)
+        }
 
     @Test
     fun `init observes sendWhileRoaming`() =

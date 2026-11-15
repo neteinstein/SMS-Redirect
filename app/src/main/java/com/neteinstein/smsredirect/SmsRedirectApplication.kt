@@ -16,6 +16,7 @@ import com.neteinstein.smsredirect.data.repository.RuleRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.ScheduledSmsHistoryRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.ScheduledSmsRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.SettingsRepositoryImpl
+import com.neteinstein.smsredirect.data.repository.SharedPreferencesMessagingSettingsRepository
 import com.neteinstein.smsredirect.data.repository.SmsBackupSettingsRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.SmsBackupStateRepositoryImpl
 import com.neteinstein.smsredirect.data.scheduling.WorkManagerScheduledSmsScheduler
@@ -74,6 +75,7 @@ import com.neteinstein.smsredirect.domain.usecase.GetKeepHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepScheduleHistoryNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetKeepScheduleHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetLandingScreenUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetMessagingSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetOrCreateConversationUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRulesUseCase
@@ -105,6 +107,7 @@ import com.neteinstein.smsredirect.domain.usecase.SetKeepScheduleHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetLandingScreenUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
+import com.neteinstein.smsredirect.domain.usecase.UpdateMessagingSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateScheduledSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.VerifyGmailCredentialsUseCase
@@ -151,8 +154,12 @@ class SmsRedirectApplication : Application() {
         val defaultSmsAppChecker = AndroidDefaultSmsAppChecker(this)
         val smsMessageWriter = ContentProviderSmsMessageWriter(contentResolver, defaultSmsAppChecker)
         val messageStore = ContentProviderMessageStore(this)
-        val messageSender = AndroidMessageSender(this, messageStore)
-        val mmsDownloader = AndroidMmsDownloader(this, messageStore)
+        val messagingSettingsRepository =
+            SharedPreferencesMessagingSettingsRepository(
+                getSharedPreferences(SharedPreferencesMessagingSettingsRepository.PREFS_NAME, MODE_PRIVATE),
+            )
+        val messageSender = AndroidMessageSender(this, messageStore, messagingSettingsRepository)
+        val mmsDownloader = AndroidMmsDownloader(this, messageStore, messagingSettingsRepository)
         // Send/download PDU files whose platform callback never came (process killed, reboot).
         // Downloads that were "in progress" when the process died are retryable again.
         Thread {
@@ -302,7 +309,9 @@ class SmsRedirectApplication : Application() {
                 getConversationMessagesUseCase = GetConversationMessagesUseCase(messageStore),
                 getConversationAddressesUseCase = GetConversationAddressesUseCase(messageStore),
                 getOrCreateConversationUseCase = GetOrCreateConversationUseCase(messageStore),
-                markConversationReadUseCase = MarkConversationReadUseCase(messageStore),
+                markConversationReadUseCase = MarkConversationReadUseCase(messageStore, messagingSettingsRepository, mmsDownloader),
+                getMessagingSettingsUseCase = GetMessagingSettingsUseCase(messagingSettingsRepository),
+                updateMessagingSettingsUseCase = UpdateMessagingSettingsUseCase(messagingSettingsRepository),
                 deleteConversationUseCase = DeleteConversationUseCase(messageStore),
                 deleteMessageUseCase = DeleteMessageUseCase(messageStore),
                 sendMessageUseCase = SendMessageUseCase(messageSender, defaultSmsAppChecker),
@@ -386,6 +395,8 @@ data class AppContainer(
     val getConversationAddressesUseCase: GetConversationAddressesUseCase,
     val getOrCreateConversationUseCase: GetOrCreateConversationUseCase,
     val markConversationReadUseCase: MarkConversationReadUseCase,
+    val getMessagingSettingsUseCase: GetMessagingSettingsUseCase,
+    val updateMessagingSettingsUseCase: UpdateMessagingSettingsUseCase,
     val deleteConversationUseCase: DeleteConversationUseCase,
     val deleteMessageUseCase: DeleteMessageUseCase,
     val sendMessageUseCase: SendMessageUseCase,

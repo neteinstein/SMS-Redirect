@@ -362,4 +362,12 @@
     <string name="conversation_mms_downloading">Downloading picture message…</string>
     <string name="conversation_mms_download">Download</string>
     <string name="conversation_mms_download_failed">The picture message could not be downloaded. Turn on mobile data and try again.</string>
+    <string name="settings_receipts_section">Message receipts</string>
+    <string name="settings_sms_delivery_reports">SMS delivery reports</string>
+    <string name="settings_mms_delivery_reports">MMS delivery reports</string>
+    <string name="settings_mms_read_reports">MMS read reports</string>
+    <string name="settings_receipts_hint">Delivery reports show \"Delivered\" under the messages you send; your carrier may not support them. With MMS read reports on, you see when someone reads your picture message, and people who ask are told when you read theirs.</string>
+    <string name="conversation_receipt_delivered">Delivered</string>
+    <string name="conversation_receipt_not_delivered">Not delivered</string>
+    <string name="conversation_receipt_read">Read</string>
 </resources>

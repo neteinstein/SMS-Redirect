@@ -366,4 +366,12 @@
     <string name="conversation_mms_downloading">A transferir a mensagem com imagem…</string>
     <string name="conversation_mms_download">Transferir</string>
     <string name="conversation_mms_download_failed">Não foi possível transferir a mensagem com imagem. Ative os dados móveis e tente novamente.</string>
+    <string name="settings_receipts_section">Confirmações de mensagens</string>
+    <string name="settings_sms_delivery_reports">Relatórios de entrega de SMS</string>
+    <string name="settings_mms_delivery_reports">Relatórios de entrega de MMS</string>
+    <string name="settings_mms_read_reports">Confirmações de leitura de MMS</string>
+    <string name="settings_receipts_hint">Os relatórios de entrega mostram \"Entregue\" nas mensagens que envia; o seu operador pode não os suportar. Com as confirmações de leitura de MMS ligadas, vê quando alguém lê a sua mensagem com imagem, e quem o pedir fica a saber quando lê a sua.</string>
+    <string name="conversation_receipt_delivered">Entregue</string>
+    <string name="conversation_receipt_not_delivered">Não entregue</string>
+    <string name="conversation_receipt_read">Lida</string>
 </resources>
