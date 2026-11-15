@@ -1,8 +1,8 @@
 <resources>
     <string name="app_name">SMS Toolbox</string>
-    <string name="splash_subtitle">Guarde, redirecione e agende as suas SMS</string>
+    <string name="splash_subtitle">As suas mensagens: enviar, receber, guardar, reencaminhar e agendar</string>
     <string name="battery_optimization_title">Manter em execução em segundo plano</string>
-    <string name="battery_optimization_message">O SMS Toolbox precisa de continuar em execução em segundo plano para reencaminhar mensagens e enviar SMS agendados de forma fiável. Desative a otimização de bateria para esta app para que o Android não a interrompa.</string>
+    <string name="battery_optimization_message">O SMS Toolbox precisa de continuar em execução em segundo plano para entregar as suas mensagens, reencaminhá-las e enviar SMS agendadas de forma fiável. Desative a otimização de bateria para esta app para que o Android não a interrompa.</string>
     <string name="action_cancel">Cancelar</string>
     <string name="action_back">Voltar</string>
     <string name="action_ok">OK</string>
@@ -12,10 +12,8 @@
     <string name="sideload_warning_title">Permitir definições restritas</string>
     <string name="sideload_warning_message">Esta app não foi instalada pela Play Store. É necessário um passo extra:\n\n1. Vá a Definições > Apps > SMS Toolbox\n2. Toque no menu de três pontos (canto superior direito)\n3. Selecione \"Permitir definições restritas\"\n\nPrima OK para abrir o ecrã de definições da app.</string>
 
-    <string name="sms_permission_rationale_title">Permissão de SMS necessária</string>
-    <string name="sms_permission_rationale_message">O SMS Toolbox precisa de permissões de SMS para ler mensagens de texto recebidas, criar cópias de segurança e reencaminhá-las ou enviá-las por si. Mensagens MMS e RCS não são suportadas e não serão reencaminhadas nem agendadas.</string>
     <string name="sms_permission_denied_title">Não é possível continuar sem permissão de SMS</string>
-    <string name="sms_permission_denied_message">O SMS Toolbox não pode criar redirecionamentos nem mensagens agendadas sem permissão de SMS. Conceda a permissão para continuar.</string>
+    <string name="sms_permission_denied_message">O SMS Toolbox não pode fazer isto sem permissão de SMS. Conceda a permissão para continuar.</string>
 
     <string name="contacts_permission_rationale_title">Permissão de contactos necessária</string>
     <string name="contacts_permission_rationale_message">O SMS Toolbox precisa de aceder aos seus contactos para poder escolher um remetente ou destinatário diretamente da sua lista de contactos em vez de digitar um número.</string>
@@ -23,7 +21,7 @@
     <string name="notifications_permission_rationale_title">Ativar notificações?</string>
     <string name="notifications_permission_rationale_message">O SMS Toolbox pode mostrar uma notificação sempre que uma mensagem é copiada, reencaminhada ou um SMS agendado é enviado, para que possa confirmar que foi bem-sucedido.</string>
 
-    <string name="battery_banner_message">A execução em segundo plano não está ativada. O reencaminhamento de SMS e as mensagens agendadas podem não funcionar de forma fiável.</string>
+    <string name="battery_banner_message">A execução em segundo plano não está ativada. As mensagens, o reencaminhamento e as SMS agendadas podem atrasar-se.</string>
     <string name="battery_banner_action">Corrigir agora</string>
 
     <string name="home_title_rules">Regras de Redirecionamento</string>
@@ -226,7 +224,7 @@
     <string name="restore_title">Restaurar do Gmail</string>
     <string name="restore_description">Copie de volta para este telemóvel as mensagens guardadas na etiqueta do Gmail “%1$s”. As mensagens que já estão no telemóvel são ignoradas, por isso pode repetir sem problema.</string>
     <string name="restore_start">Restaurar mensagens</string>
-    <string name="restore_role_denied">O restauro precisa que o SMS Toolbox seja a sua app de SMS predefinida enquanto decorre. Nada foi alterado.</string>
+    <string name="restore_role_denied">O restauro precisa que o SMS Toolbox seja a sua app de SMS predefinida. Nada foi alterado.</string>
     <string name="restore_preparing">A preparar o restauro…</string>
     <string name="restore_progress">A verificar %1$d de %2$d</string>
     <plurals name="restore_progress_restored">
@@ -251,10 +249,8 @@
         <item quantity="one">%1$d não pôde ser guardada pelo telemóvel</item>
         <item quantity="other">%1$d não puderam ser guardadas pelo telemóvel</item>
     </plurals>
-    <string name="restore_switch_back_explanation">Último passo: volte a definir a sua app de mensagens habitual como predefinida, para continuar a receber todas as mensagens, incluindo mensagens com imagem (MMS).</string>
-    <string name="restore_switch_back">Voltar à sua app de mensagens</string>
     <string name="restore_done">Concluído</string>
-    <string name="restore_failed_not_default">O restauro parou porque o SMS Toolbox deixou de ser a sua app de SMS predefinida.</string>
+    <string name="restore_failed_not_default">O restauro parou porque o SMS Toolbox deixou de ser a sua app de SMS predefinida. Torne-a predefinida novamente e tente outra vez.</string>
     <string name="restore_failed_auth">O Gmail rejeitou a palavra-passe de app. Verifique-a nas Definições.</string>
     <string name="restore_failed_label_not_found">Nenhuma cópia encontrada: a etiqueta do Gmail “%1$s” não existe. Verifique o nome da etiqueta acima.</string>
     <string name="restore_failed_network">Não foi possível contactar o Gmail. Verifique a sua ligação.</string>
@@ -263,26 +259,19 @@
     <string name="restore_try_again">Tentar novamente</string>
     <string name="restore_dismiss">Fechar</string>
     <string name="restore_dialog_title">Restaurar mensagens do Gmail?</string>
-    <string name="restore_dialog_intro">O SMS Toolbox vai copiar de volta para este telemóvel as mensagens da etiqueta do Gmail “%1$s”. São três passos:</string>
-    <string name="restore_dialog_step_role">Tornar o SMS Toolbox a sua app de SMS predefinida por agora. O Android só permite que a app de SMS predefinida adicione mensagens.</string>
-    <string name="restore_dialog_step_restore">Aguardar enquanto as mensagens são restauradas. Pode continuar a usar o telemóvel.</string>
-    <string name="restore_dialog_step_switch_back">Voltar à sua app de mensagens habitual. Nós lembramos.</string>
-    <string name="restore_dialog_mms_note">Entretanto, as novas mensagens de texto continuam a ser guardadas, mas não é possível receber mensagens com imagem (MMS). Só são restauradas mensagens de texto.</string>
+    <string name="restore_dialog_intro">O SMS Toolbox vai copiar as mensagens da etiqueta do Gmail “%1$s” de volta para este telemóvel.</string>
+    <string name="restore_dialog_step_role">Torne o SMS Toolbox a sua app de SMS predefinida. O Android só deixa a app de SMS predefinida adicionar mensagens.</string>
+    <string name="restore_dialog_step_restore">As suas mensagens são restauradas em segundo plano. Pode continuar a usar o telemóvel.</string>
+    <string name="restore_dialog_mms_note">Só são restauradas mensagens de texto: as mensagens com imagem (MMS) não fazem parte da cópia no Gmail.</string>
     <string name="restore_dialog_confirm">Continuar</string>
     <string name="restore_dialog_confirm_start">Iniciar restauro</string>
     <string name="restore_dialog_cancel">Cancelar</string>
-    <string name="default_sms_banner_message">O SMS Toolbox continua a ser a sua app de SMS predefinida, por isso não é possível receber mensagens com imagem (MMS).</string>
-    <string name="default_sms_banner_action">Voltar</string>
     <string name="restore_notification_progress">A restaurar mensagens — %1$d de %2$d</string>
     <plurals name="restore_notification_complete">
         <item quantity="one">Restauro concluído — %1$d mensagem</item>
         <item quantity="other">Restauro concluído — %1$d mensagens</item>
     </plurals>
-    <string name="restore_notification_complete_text">Último passo: volte à sua app de mensagens habitual.</string>
     <string name="restore_notification_failed">O restauro parou. Abra o SMS Toolbox para ver porquê.</string>
-    <string name="default_sms_notification_title">Nova mensagem recebida</string>
-    <string name="default_sms_notification_sms_text">Foi guardada. O SMS Toolbox continua a ser a sua app de SMS predefinida — volte à sua app de mensagens para a ler.</string>
-    <string name="default_sms_notification_mms_text">Não foi possível receber uma mensagem com imagem (MMS) porque o SMS Toolbox continua a ser a sua app de SMS predefinida. Volte à sua app de mensagens.</string>
 
     <!-- Atualização na app (apenas versão do GitHub) -->
     <string name="update_banner_message">Está disponível o SMS Toolbox %1$s.</string>
@@ -302,4 +291,71 @@
     <string name="settings_updates_check_failed">Não foi possível procurar atualizações. Verifique a ligação e tente novamente.</string>
     <string name="settings_updates_check_now">Procurar atualizações</string>
     <string name="settings_updates_install_guide">Como instalar o APK manualmente</string>
+
+    <!-- Messaging (SMS/MMS client) -->
+    <string name="main_tab_messages">Mensagens</string>
+    <string name="main_tab_restore">Restaurar</string>
+    <string name="settings_landing_screen_messages">Mensagens</string>
+    <string name="settings_landing_screen_restore">Restaurar</string>
+    <string name="messages_title">Mensagens</string>
+    <string name="messages_cd_new_message">Nova mensagem</string>
+    <string name="messages_empty">Ainda não há conversas</string>
+    <string name="messages_empty_hint">Toque em + para enviar a sua primeira mensagem. As mensagens que receber aparecem aqui.</string>
+    <string name="messages_unknown_sender">Remetente desconhecido</string>
+    <string name="messages_picture_message">Mensagem com imagem</string>
+    <string name="messages_delete_conversation_title">Eliminar conversa?</string>
+    <string name="messages_delete_conversation_message">Todas as mensagens desta conversa serão eliminadas deste telemóvel. As cópias já guardadas no Gmail mantêm-se.</string>
+    <string name="default_sms_prompt_title">Torne o SMS Toolbox a sua app de mensagens</string>
+    <string name="default_sms_prompt_message">O SMS Toolbox é uma app completa de mensagens SMS e MMS. Defina-a como a sua app de SMS predefinida para ler, enviar e receber as suas mensagens aqui.</string>
+    <string name="default_sms_prompt_action">Definir como app de SMS predefinida</string>
+    <string name="default_sms_rationale_title">Definir o SMS Toolbox como app de SMS predefinida?</string>
+    <string name="default_sms_rationale_message">O SMS Toolbox é uma app de mensagens: envia e recebe as suas SMS e MMS e, a partir daí, guarda-as, restaura-as, reencaminha-as e agenda-as. A seguir, o Android pede-lhe para a tornar a sua app de SMS predefinida, o que lhe dá acesso às suas mensagens.</string>
+    <string name="default_sms_rationale_not_now">Agora não</string>
+    <string name="default_sms_rationale_confirm">Continuar</string>
+    <string name="default_sms_declined_title">O SMS Toolbox não é a sua app de SMS predefinida</string>
+    <string name="default_sms_declined_message">Enviar, receber e restaurar mensagens só funciona enquanto o SMS Toolbox for a sua app de SMS predefinida. Pode defini-la a qualquer momento no separador Mensagens.</string>
+    <string name="default_sms_declined_message_tools">O SMS Toolbox funciona melhor como a sua app de SMS predefinida. Também pode manter a sua app de mensagens atual e dar ao SMS Toolbox apenas permissões de SMS para esta funcionalidade.</string>
+    <string name="default_sms_declined_permissions_only">Usar só permissões de SMS</string>
+    <string name="new_message_title">Nova mensagem</string>
+    <string name="new_message_to">Para</string>
+    <string name="new_message_to_hint">Número de telefone ou email</string>
+    <string name="new_message_invalid_recipient">Introduza um número de telefone ou um endereço de email</string>
+    <string name="new_message_cd_pick_contact">Escolher dos contactos</string>
+    <string name="new_message_cd_remove_recipient">Remover destinatário</string>
+    <string name="new_message_group_hint">As mensagens para mais de uma pessoa são enviadas como mensagem de grupo (MMS).</string>
+    <string name="new_message_next">Seguinte</string>
+    <string name="conversation_hint_sms">Mensagem de texto</string>
+    <string name="conversation_hint_mms">Mensagem com imagem ou de grupo (MMS)</string>
+    <string name="conversation_cd_send">Enviar</string>
+    <string name="conversation_cd_add_picture">Adicionar imagem ou vídeo</string>
+    <string name="conversation_cd_add_file">Anexar ficheiro</string>
+    <string name="conversation_cd_remove_attachment">Remover anexo</string>
+    <string name="conversation_cd_picture">Imagem</string>
+    <string name="conversation_attachment">Anexo</string>
+    <string name="conversation_status_sending">A enviar…</string>
+    <string name="conversation_status_failed">Não enviada. Toque para tentar novamente.</string>
+    <string name="conversation_message_actions">Mensagem</string>
+    <string name="conversation_action_copy">Copiar texto</string>
+    <string name="conversation_action_retry">Enviar novamente</string>
+    <string name="conversation_no_app_to_open">Nenhuma app consegue abrir este anexo</string>
+    <string name="conversation_error_not_default">O SMS Toolbox tem de ser a sua app de SMS predefinida para enviar mensagens.</string>
+    <string name="conversation_error_no_recipients">Adicione primeiro um destinatário.</string>
+    <string name="conversation_error_empty">Escreva uma mensagem ou adicione um anexo.</string>
+    <string name="conversation_error_too_large">O anexo é demasiado grande para uma mensagem com imagem.</string>
+    <string name="conversation_error_unreadable">Não foi possível ler o anexo.</string>
+    <string name="conversation_error_no_service">Não foi possível enviar a mensagem. Verifique o sinal de rede móvel e tente novamente.</string>
+    <string name="messages_notification_channel">Mensagens</string>
+    <string name="messages_notification_channel_description">SMS e MMS recebidas</string>
+    <string name="messages_notification_failure_channel">Problemas com mensagens</string>
+    <string name="messages_notification_me">Eu</string>
+    <string name="messages_notification_public_title">Nova mensagem</string>
+    <string name="messages_notification_reply">Responder</string>
+    <string name="messages_notification_reply_hint">Mensagem</string>
+    <string name="messages_notification_mark_read">Marcar como lida</string>
+    <string name="messages_notification_send_failed">Mensagem não enviada</string>
+    <string name="messages_notification_send_failed_text">Abra a conversa para tentar novamente.</string>
+    <string name="messages_notification_mms_failed">Mensagem com imagem não transferida</string>
+    <string name="messages_notification_mms_failed_text">Chegou uma mensagem com imagem (MMS), mas não foi possível transferi-la. Ative os dados móveis e toque em Tentar novamente.</string>
+    <string name="messages_notification_retry">Tentar novamente</string>
+    <string name="restore_no_credentials_title">Ligue o seu Gmail para restaurar</string>
 </resources>

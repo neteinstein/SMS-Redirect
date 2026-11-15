@@ -1,2 +1,3 @@
-• O SMS Toolbox no Google Play passa a dedicar-se a uma só coisa: guardar as suas mensagens no seu Gmail e restaurá-las em qualquer telemóvel. O reencaminhamento e o agendamento deixam de fazer parte da versão Play, e a app deixa de pedir permissão para enviar SMS.
-• O backup e o restauro funcionam como antes, e as suas definições do Gmail são mantidas.
+• O SMS Toolbox é agora uma app de mensagens completa: envie e receba SMS, mensagens com imagem (MMS) e de grupo, com notificações e resposta rápida.
+• Torne-a a sua app de SMS predefinida no novo separador Mensagens.
+• Separadores: Mensagens, Reencaminhar, Agendar, Cópia e Restaurar. A cópia e o restauro no Gmail funcionam como antes e as suas definições mantêm-se.

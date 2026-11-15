@@ -14,7 +14,7 @@ class FakeSettingsRepository(
     private val defaultPrefixState = MutableStateFlow("+351")
     private val forwardPrefixState = MutableStateFlow("SMS Toolbox:")
     private val showNotificationsState = MutableStateFlow(true)
-    private val landingScreenState = MutableStateFlow(LandingScreen.BACKUP)
+    private val landingScreenState = MutableStateFlow(LandingScreen.MESSAGES)
 
     override fun observeSendWhileRoaming(): Flow<Boolean> = sendWhileRoamingState
 

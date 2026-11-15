@@ -20,8 +20,11 @@ import com.neteinstein.smsredirect.domain.analytics.NoOpCrashReporter
 import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
 import com.neteinstein.smsredirect.domain.model.RepeatType
 import com.neteinstein.smsredirect.domain.model.ScheduledSms
+import com.neteinstein.smsredirect.domain.model.SmsBox
+import com.neteinstein.smsredirect.domain.model.SmsMessageToRestore
 import com.neteinstein.smsredirect.domain.scheduling.RecurrenceCalculator
 import com.neteinstein.smsredirect.domain.scheduling.ScheduledSmsScheduler
+import com.neteinstein.smsredirect.domain.sms.SmsMessageWriter
 import com.neteinstein.smsredirect.domain.usecase.GetKeepScheduleHistoryNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetScheduledSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetShowNotificationsNowUseCase
@@ -37,6 +40,11 @@ class ScheduledSmsSender(
     private val scheduler: ScheduledSmsScheduler,
     private val analyticsTracker: AnalyticsTracker = NoOpAnalyticsTracker,
     private val crashReporter: CrashReporter = NoOpCrashReporter,
+    /**
+     * Records the sent message in the conversation. Android does that itself for apps that are
+     * not the default SMS app, but not for the default one -- which this app usually is.
+     */
+    private val sentSmsWriter: SmsMessageWriter? = null,
 ) {
     companion object {
         private const val TAG = "ScheduledSmsSender"
@@ -80,6 +88,7 @@ class ScheduledSmsSender(
                 Log.d(TAG, "Message split into ${parts.size} parts")
                 smsManager.sendMultipartTextMessage(scheduledSms.contactNumber, null, parts, null, null)
             }
+            recordSent(scheduledSms.contactNumber, scheduledSms.message)
             Log.i(TAG, "Scheduled SMS sent successfully to '${scheduledSms.contactNumber}'")
             analyticsTracker.logEvent(
                 AnalyticsEvents.SCHEDULED_SMS_SENT,
@@ -202,5 +211,13 @@ class ScheduledSmsSender(
         } else {
             contactNumber
         }
+    }
+
+    private suspend fun recordSent(
+        address: String,
+        body: String,
+    ) {
+        val writer = sentSmsWriter?.takeIf { it.canWrite() } ?: return
+        writer.insert(SmsMessageToRestore(address, body, System.currentTimeMillis(), 0L, SmsBox.SENT))
     }
 }

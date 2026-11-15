@@ -11,6 +11,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.ContactsContract
+import android.provider.OpenableColumns
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
@@ -18,6 +19,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -49,20 +51,34 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.neteinstein.smsredirect.domain.model.LandingScreen
+import com.neteinstein.smsredirect.domain.model.OutgoingAttachment
 import com.neteinstein.smsredirect.presentation.backup.BackupScreen
 import com.neteinstein.smsredirect.presentation.backup.BackupViewModel
 import com.neteinstein.smsredirect.presentation.backup.BackupViewModelFactory
+import com.neteinstein.smsredirect.presentation.conversation.ConversationScreen
+import com.neteinstein.smsredirect.presentation.conversation.ConversationViewModel
+import com.neteinstein.smsredirect.presentation.conversation.ConversationViewModelFactory
 import com.neteinstein.smsredirect.presentation.history.HistoryScreen
 import com.neteinstein.smsredirect.presentation.history.HistoryViewModel
 import com.neteinstein.smsredirect.presentation.history.HistoryViewModelFactory
 import com.neteinstein.smsredirect.presentation.home.HomeScreen
 import com.neteinstein.smsredirect.presentation.home.HomeViewModel
 import com.neteinstein.smsredirect.presentation.home.HomeViewModelFactory
+import com.neteinstein.smsredirect.presentation.messages.ConversationListScreen
+import com.neteinstein.smsredirect.presentation.messages.ConversationListViewModel
+import com.neteinstein.smsredirect.presentation.messages.ConversationListViewModelFactory
+import com.neteinstein.smsredirect.presentation.messages.DefaultSmsAppPrompt
 import com.neteinstein.smsredirect.presentation.navigation.MainBottomBar
 import com.neteinstein.smsredirect.presentation.navigation.MainTab
 import com.neteinstein.smsredirect.presentation.navigation.Routes
 import com.neteinstein.smsredirect.presentation.navigation.availableTabs
 import com.neteinstein.smsredirect.presentation.navigation.toMainTab
+import com.neteinstein.smsredirect.presentation.newmessage.NewMessageScreen
+import com.neteinstein.smsredirect.presentation.newmessage.NewMessageViewModel
+import com.neteinstein.smsredirect.presentation.newmessage.NewMessageViewModelFactory
+import com.neteinstein.smsredirect.presentation.restore.RestoreScreen
+import com.neteinstein.smsredirect.presentation.restore.RestoreViewModel
+import com.neteinstein.smsredirect.presentation.restore.RestoreViewModelFactory
 import com.neteinstein.smsredirect.presentation.rule.RuleScreen
 import com.neteinstein.smsredirect.presentation.rule.RuleViewModel
 import com.neteinstein.smsredirect.presentation.rule.RuleViewModelFactory
@@ -90,16 +106,21 @@ import kotlinx.coroutines.flow.collectLatest
 import java.io.File
 
 class MainActivity : ComponentActivity() {
-    // SEND_SMS is requested only by builds that declare it (github). Asking for an undeclared
-    // permission is reported as denied, which would make the Play build's grant check always fail.
-    private val smsPermissions by lazy {
-        val features = (application as SmsRedirectApplication).appContainer.features
-        listOfNotNull(
+    /** Granted together with the default SMS role; requested directly only as a github fallback. */
+    private val smsPermissions =
+        arrayOf(
             Manifest.permission.RECEIVE_SMS,
             Manifest.permission.READ_SMS,
-            Manifest.permission.SEND_SMS.takeIf { features.sendsSms },
-        ).toTypedArray()
-    }
+            Manifest.permission.SEND_SMS,
+            Manifest.permission.RECEIVE_MMS,
+            Manifest.permission.RECEIVE_WAP_PUSH,
+        )
+
+    /** Not SMS permissions; asked for right after the role is granted. */
+    private val afterRolePermissions =
+        arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.POST_NOTIFICATIONS)
+
+    private val composeIntentFlow = MutableStateFlow<ComposeRequest?>(null)
 
     private val newIntentFlow = MutableStateFlow<Intent?>(null)
 
@@ -108,6 +129,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         dismissAllNotifications()
+        if (savedInstanceState == null) composeIntentFlow.value = ComposeRequest.from(intent)
 
         setContent {
             SmsRedirectTheme {
@@ -115,7 +137,7 @@ class MainActivity : ComponentActivity() {
                 val features = appContainer.features
                 val navController = rememberNavController()
                 val landingScreen by
-                    appContainer.getLandingScreenUseCase().collectAsState(initial = LandingScreen.BACKUP)
+                    appContainer.getLandingScreenUseCase().collectAsState(initial = LandingScreen.MESSAGES)
 
                 // Activity-scoped so the home banner and the Settings section share one state.
                 // Creating it runs the launch-time update check (at most once a day).
@@ -154,6 +176,11 @@ class MainActivity : ComponentActivity() {
                 }
 
                 var showBatteryDialog by remember { mutableStateOf(false) }
+                var pendingSmsAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var pendingAllowsPermissionsOnly by remember { mutableStateOf(false) }
+                var showDefaultSmsRationale by remember { mutableStateOf(false) }
+                var showDefaultSmsDeclined by remember { mutableStateOf(false) }
+                var showSmsDenied by remember { mutableStateOf(false) }
                 val showSideloadDialog = remember { mutableStateOf(shouldShowSideloadWarning()) }
 
                 val lifecycleOwnerTop = LocalLifecycleOwner.current
@@ -174,6 +201,169 @@ class MainActivity : ComponentActivity() {
                     remember(appResumeTick) {
                         mutableStateOf(isBatteryBannerEnabled() && shouldShowBatteryOptimizationDialog())
                     }
+
+                // ---- Default SMS app gate -------------------------------------------------
+                // SMS Toolbox is a messaging app. Every SMS permission comes from the default SMS
+                // role, which is always requested *before* any SMS permission (Play's Default SMS
+                // handler policy). Only builds that allow it (github) fall back to plain SMS
+                // permissions for Redirect/Schedule/Backup when the user declines the role.
+                val defaultSmsAppChecker = appContainer.defaultSmsAppChecker
+                var roleCheckTick by remember { mutableIntStateOf(0) }
+                val isDefaultSmsApp =
+                    remember(appResumeTick, roleCheckTick) { defaultSmsAppChecker.isDefaultSmsApp() }
+
+                val runPendingSmsAction = {
+                    val action = pendingSmsAction
+                    pendingSmsAction = null
+                    action?.invoke()
+                }
+                // Asked right after the role is granted: the role carries the SMS permissions,
+                // contacts give the inbox names, notifications announce incoming messages.
+                val afterRolePermissionsLauncher =
+                    rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+                        if (hasSmsPermissions()) runPendingSmsAction() else pendingSmsAction = null
+                    }
+                val permissionsOnlyLauncher =
+                    rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
+                        if (results.values.all { it }) {
+                            runPendingSmsAction()
+                        } else {
+                            pendingSmsAction = null
+                            showSmsDenied = true
+                        }
+                    }
+                val roleLauncher =
+                    rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+                        roleCheckTick++
+                        if (defaultSmsAppChecker.isDefaultSmsApp()) {
+                            val missing = (smsPermissions + afterRolePermissions).filterNot(::isGranted)
+                            if (missing.isEmpty()) runPendingSmsAction() else afterRolePermissionsLauncher.launch(missing.toTypedArray())
+                        } else {
+                            showDefaultSmsDeclined = true
+                        }
+                    }
+                val launchDefaultSmsRoleRequest = {
+                    val roleManager = getSystemService(RoleManager::class.java)
+                    if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_SMS)) {
+                        roleLauncher.launch(roleManager.createRequestRoleIntent(RoleManager.ROLE_SMS))
+                    } else {
+                        // No SMS role on this device (e.g. a tablet without telephony).
+                        showDefaultSmsDeclined = true
+                    }
+                }
+
+                /** For messaging and restore: only the default SMS app can do them at all. */
+                val requireDefaultSmsApp: (() -> Unit) -> Unit = { action ->
+                    if (defaultSmsAppChecker.isDefaultSmsApp() && hasSmsPermissions()) {
+                        action()
+                    } else {
+                        pendingSmsAction = action
+                        pendingAllowsPermissionsOnly = false
+                        showDefaultSmsRationale = true
+                    }
+                }
+
+                /** For Redirect, Schedule and Backup: the role, or plain permissions where allowed. */
+                val requireSmsAccess: (() -> Unit) -> Unit = { action ->
+                    val allowed = defaultSmsAppChecker.isDefaultSmsApp() || features.smsPermissionsWithoutDefaultRole
+                    if (allowed && hasSmsPermissions()) {
+                        action()
+                    } else {
+                        pendingSmsAction = action
+                        pendingAllowsPermissionsOnly = features.smsPermissionsWithoutDefaultRole
+                        showDefaultSmsRationale = true
+                    }
+                }
+
+                if (showDefaultSmsRationale) {
+                    AlertDialog(
+                        onDismissRequest = {
+                            showDefaultSmsRationale = false
+                            pendingSmsAction = null
+                        },
+                        title = { Text(stringResource(R.string.default_sms_rationale_title)) },
+                        text = { Text(stringResource(R.string.default_sms_rationale_message)) },
+                        dismissButton = {
+                            TextButton(onClick = {
+                                showDefaultSmsRationale = false
+                                pendingSmsAction = null
+                            }) { Text(stringResource(R.string.default_sms_rationale_not_now)) }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showDefaultSmsRationale = false
+                                launchDefaultSmsRoleRequest()
+                            }) { Text(stringResource(R.string.default_sms_rationale_confirm)) }
+                        },
+                    )
+                }
+
+                if (showDefaultSmsDeclined) {
+                    val offerPermissionsOnly = pendingAllowsPermissionsOnly && pendingSmsAction != null
+                    AlertDialog(
+                        onDismissRequest = {
+                            showDefaultSmsDeclined = false
+                            pendingSmsAction = null
+                        },
+                        title = { Text(stringResource(R.string.default_sms_declined_title)) },
+                        text = {
+                            Text(
+                                stringResource(
+                                    if (offerPermissionsOnly) {
+                                        R.string.default_sms_declined_message_tools
+                                    } else {
+                                        R.string.default_sms_declined_message
+                                    },
+                                ),
+                            )
+                        },
+                        dismissButton =
+                            if (offerPermissionsOnly) {
+                                {
+                                    TextButton(onClick = {
+                                        showDefaultSmsDeclined = false
+                                        permissionsOnlyLauncher.launch(smsPermissions)
+                                    }) { Text(stringResource(R.string.default_sms_declined_permissions_only)) }
+                                }
+                            } else {
+                                null
+                            },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showDefaultSmsDeclined = false
+                                pendingSmsAction = null
+                            }) { Text(stringResource(R.string.action_ok)) }
+                        },
+                    )
+                }
+
+                if (showSmsDenied) {
+                    AlertDialog(
+                        onDismissRequest = { showSmsDenied = false },
+                        title = { Text(stringResource(R.string.sms_permission_denied_title)) },
+                        text = { Text(stringResource(R.string.sms_permission_denied_message)) },
+                        confirmButton = {
+                            TextButton(onClick = { showSmsDenied = false }) {
+                                Text(stringResource(R.string.action_ok))
+                            }
+                        },
+                    )
+                }
+
+                // Opens a pre-filled conversation for sms:/smsto: links and Share.
+                LaunchedEffect(Unit) {
+                    composeIntentFlow.collectLatest { compose ->
+                        if (compose == null) return@collectLatest
+                        composeIntentFlow.value = null
+                        // Wait for the splash to hand over to Home before navigating.
+                        while (navController.currentDestination?.route == Routes.Splash ||
+                            navController.currentDestination == null
+                        ) {
+                            delay(50)
+                        }
+                        navController.navigate(compose.route())
+                    }
+                }
 
                 if (showSideloadDialog.value) {
                     AlertDialog(
@@ -250,115 +440,93 @@ class MainActivity : ComponentActivity() {
                                 mutableStateOf(features.resolveLandingScreen(landingScreen).toMainTab())
                             }
 
-                        var pendingSmsAction by remember { mutableStateOf<(() -> Unit)?>(null) }
-                        var showSmsRationale by remember { mutableStateOf(false) }
-                        var showSmsDenied by remember { mutableStateOf(false) }
-
-                        val smsPermissionLauncher =
-                            rememberLauncherForActivityResult(
-                                ActivityResultContracts.RequestMultiplePermissions(),
-                            ) { results ->
-                                val action = pendingSmsAction
+                        // First launch: offer to become the default SMS app straight away. That is
+                        // what the Messages tab needs, and the role is always requested before any
+                        // SMS permission (Play's Default SMS handler policy).
+                        LaunchedEffect(Unit) {
+                            if (!isDefaultSmsApp && !hasPromptedForDefaultSmsApp()) {
+                                markPromptedForDefaultSmsApp()
                                 pendingSmsAction = null
-                                if (results.values.all { it } && action != null) {
-                                    action()
-                                } else {
-                                    showSmsDenied = true
-                                }
-                            }
-
-                        // Gates any action that needs READ_SMS/RECEIVE_SMS behind the same
-                        // rationale/request flow, whether it navigates to a create screen or (for
-                        // Backup) simply flips a toggle in place.
-                        val requestSmsPermission: (() -> Unit) -> Unit = { action ->
-                            if (hasSmsPermissions()) {
-                                action()
-                            } else {
-                                pendingSmsAction = action
-                                showSmsRationale = true
+                                pendingAllowsPermissionsOnly = false
+                                showDefaultSmsRationale = true
                             }
                         }
 
                         val requestCreate: (String) -> Unit = { route ->
-                            requestSmsPermission { navController.navigate(route) }
+                            requireSmsAccess { navController.navigate(route) }
                         }
 
-                        if (showSmsRationale) {
-                            AlertDialog(
-                                onDismissRequest = {
-                                    showSmsRationale = false
-                                    pendingSmsAction = null
-                                },
-                                title = { Text(stringResource(R.string.sms_permission_rationale_title)) },
-                                text = { Text(stringResource(R.string.sms_permission_rationale_message)) },
-                                dismissButton = {
-                                    TextButton(onClick = {
-                                        showSmsRationale = false
-                                        pendingSmsAction = null
-                                    }) {
-                                        Text(stringResource(R.string.action_cancel))
-                                    }
-                                },
-                                confirmButton = {
-                                    TextButton(onClick = {
-                                        showSmsRationale = false
-                                        smsPermissionLauncher.launch(smsPermissions)
-                                    }) {
-                                        Text(stringResource(R.string.action_proceed))
-                                    }
-                                },
-                            )
-                        }
-
-                        if (showSmsDenied) {
-                            AlertDialog(
-                                onDismissRequest = { showSmsDenied = false },
-                                title = { Text(stringResource(R.string.sms_permission_denied_title)) },
-                                text = { Text(stringResource(R.string.sms_permission_denied_message)) },
-                                confirmButton = {
-                                    TextButton(onClick = { showSmsDenied = false }) {
-                                        Text(stringResource(R.string.action_ok))
-                                    }
-                                },
-                            )
+                        // Posted on first use of Backup/Restore: without it the progress
+                        // notifications would silently never appear. The result is not acted on.
+                        val notificationsLauncher =
+                            rememberLauncherForActivityResult(
+                                ActivityResultContracts.RequestPermission(),
+                            ) { }
+                        val requestNotificationsIfMissing = {
+                            if (!isGranted(Manifest.permission.POST_NOTIFICATIONS)) {
+                                notificationsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
                         }
 
                         val bottomBar: @Composable () -> Unit = {
-                            // A single-tab build (Play: Backup only) has nothing to switch between.
                             if (tabs.size > 1) {
                                 MainBottomBar(
                                     selectedTab = selectedTab,
                                     onTabSelected = { selectedTab = it },
                                     onFabClick = {
                                         when (selectedTab) {
-                                            MainTab.BACKUP -> Unit
+                                            MainTab.MESSAGES -> requireDefaultSmsApp { navController.navigate(Routes.NewMessage) }
                                             MainTab.REDIRECT -> requestCreate(Routes.ruleRoute())
                                             MainTab.SCHEDULE -> requestCreate(Routes.scheduleRoute())
+                                            MainTab.BACKUP, MainTab.RESTORE -> Unit
                                         }
                                     },
                                     fabContentDescription =
                                         when (selectedTab) {
-                                            MainTab.BACKUP -> ""
+                                            MainTab.MESSAGES -> stringResource(R.string.messages_cd_new_message)
                                             MainTab.REDIRECT -> stringResource(R.string.home_cd_add_rule)
                                             MainTab.SCHEDULE -> stringResource(R.string.schedule_cd_add)
+                                            MainTab.BACKUP, MainTab.RESTORE -> ""
                                         },
-                                    showFab = selectedTab != MainTab.BACKUP,
+                                    showFab = selectedTab != MainTab.BACKUP && selectedTab != MainTab.RESTORE,
                                     tabs = tabs,
                                 )
                             }
                         }
 
                         when (selectedTab) {
-                            MainTab.BACKUP -> {
-                                // POST_NOTIFICATIONS is otherwise only requested from the Settings
-                                // screen's notification toggle, so without this the "Backup ongoing
-                                // X of Y" notification would silently never appear. Backup itself
-                                // does not depend on the grant, so the result is not acted on.
-                                val backupNotificationsLauncher =
-                                    rememberLauncherForActivityResult(
-                                        ActivityResultContracts.RequestPermission(),
-                                    ) { }
+                            MainTab.MESSAGES -> {
+                                val conversationListViewModel: ConversationListViewModel =
+                                    viewModel(
+                                        factory =
+                                            ConversationListViewModelFactory(
+                                                appContainer.getConversationsUseCase,
+                                                appContainer.deleteConversationUseCase,
+                                                appContainer.contactNameResolver,
+                                            ),
+                                    )
+                                val conversationsState by conversationListViewModel.uiState.collectAsState()
+                                // Nothing is read from the SMS store until the app holds the role.
+                                LaunchedEffect(isDefaultSmsApp) {
+                                    if (isDefaultSmsApp && isGranted(Manifest.permission.READ_SMS)) {
+                                        conversationListViewModel.start()
+                                    }
+                                }
+                                ConversationListScreen(
+                                    state = conversationsState,
+                                    isDefaultSmsApp = isDefaultSmsApp,
+                                    onSetDefaultSmsApp = { requireDefaultSmsApp { } },
+                                    onOpenConversation = { navController.navigate(Routes.conversationRoute(it)) },
+                                    onDeleteConversation = conversationListViewModel::deleteConversation,
+                                    onOpenSettings = { navController.navigate(Routes.Settings) },
+                                    bottomBar = bottomBar,
+                                    showBackgroundWarning = showBatteryBanner,
+                                    onFixBackgroundWarning = { openBatteryOptimizationSettings() },
+                                    topBanner = updateBanner,
+                                )
+                            }
 
+                            MainTab.BACKUP -> {
                                 val backupViewModel: BackupViewModel =
                                     viewModel(
                                         factory =
@@ -369,38 +537,10 @@ class MainActivity : ComponentActivity() {
                                                 appContainer.setBackupPreviousEnabledUseCase,
                                                 appContainer.setBackupEnabledUseCase,
                                                 appContainer.smsBackupScheduler,
-                                                appContainer.smsRestoreScheduler,
-                                                appContainer.defaultSmsAppChecker,
                                             ),
                                     )
                                 val backupState by backupViewModel.uiState.collectAsState()
                                 val needsCredentials by backupViewModel.needsCredentials.collectAsState()
-                                val requestDefaultSmsRole by backupViewModel.requestDefaultSmsRole.collectAsState()
-                                val defaultSmsRoleDenied by backupViewModel.defaultSmsRoleDenied.collectAsState()
-
-                                // The SMS role is handed back in system Settings, outside the
-                                // app, so the only way to notice is to re-check on every resume.
-                                LaunchedEffect(appResumeTick) { backupViewModel.refreshDefaultSmsApp() }
-
-                                val defaultSmsRoleLauncher =
-                                    rememberLauncherForActivityResult(
-                                        ActivityResultContracts.StartActivityForResult(),
-                                    ) { backupViewModel.onDefaultSmsRoleResult() }
-                                LaunchedEffect(requestDefaultSmsRole) {
-                                    if (requestDefaultSmsRole) {
-                                        backupViewModel.onDefaultSmsRoleRequestLaunched()
-                                        val roleManager = getSystemService(RoleManager::class.java)
-                                        if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_SMS)) {
-                                            defaultSmsRoleLauncher.launch(
-                                                roleManager.createRequestRoleIntent(RoleManager.ROLE_SMS),
-                                            )
-                                        } else {
-                                            // No SMS role on this device (e.g. a tablet without
-                                            // telephony); reported back as a refusal.
-                                            backupViewModel.onDefaultSmsRoleResult()
-                                        }
-                                    }
-                                }
                                 BackupScreen(
                                     state = backupState,
                                     needsCredentials = needsCredentials,
@@ -408,20 +548,10 @@ class MainActivity : ComponentActivity() {
                                     onGmailLabelSaved = backupViewModel::onGmailLabelSaved,
                                     onBackupPreviousChanged = backupViewModel::onBackupPreviousChanged,
                                     onToggleBackupEnabled = {
-                                        // Backup reads the SMS content provider directly, so it
-                                        // needs the same READ_SMS/RECEIVE_SMS grant Redirect and
-                                        // Schedule require before they can create anything.
-                                        requestSmsPermission {
-                                            if (!backupState.settings.backupEnabled &&
-                                                ContextCompat.checkSelfPermission(
-                                                    this@MainActivity,
-                                                    Manifest.permission.POST_NOTIFICATIONS,
-                                                ) != PackageManager.PERMISSION_GRANTED
-                                            ) {
-                                                backupNotificationsLauncher.launch(
-                                                    Manifest.permission.POST_NOTIFICATIONS,
-                                                )
-                                            }
+                                        // Backup reads the SMS store, so it needs READ_SMS -- which
+                                        // comes with the default SMS role.
+                                        requireSmsAccess {
+                                            if (!backupState.settings.backupEnabled) requestNotificationsIfMissing()
                                             backupViewModel.onToggleBackupEnabled()
                                         }
                                     },
@@ -430,26 +560,37 @@ class MainActivity : ComponentActivity() {
                                     showBackgroundWarning = showBatteryBanner,
                                     topBanner = updateBanner,
                                     onFixBackgroundWarning = { openBatteryOptimizationSettings() },
+                                )
+                            }
+
+                            MainTab.RESTORE -> {
+                                val restoreViewModel: RestoreViewModel =
+                                    viewModel(
+                                        factory =
+                                            RestoreViewModelFactory(
+                                                appContainer.getSmsBackupSettingsUseCase,
+                                                appContainer.smsRestoreScheduler,
+                                                appContainer.defaultSmsAppChecker,
+                                            ),
+                                    )
+                                val restoreState by restoreViewModel.uiState.collectAsState()
+                                val defaultSmsRoleDenied by restoreViewModel.defaultSmsRoleDenied.collectAsState()
+                                LaunchedEffect(isDefaultSmsApp) { restoreViewModel.refreshDefaultSmsApp() }
+                                RestoreScreen(
+                                    state = restoreState,
                                     defaultSmsRoleDenied = defaultSmsRoleDenied,
                                     onRestoreConfirmed = {
-                                        // Same SMS grant as backup (the duplicate check reads the
-                                        // SMS store); the notification is how progress is shown.
-                                        requestSmsPermission {
-                                            if (ContextCompat.checkSelfPermission(
-                                                    this@MainActivity,
-                                                    Manifest.permission.POST_NOTIFICATIONS,
-                                                ) != PackageManager.PERMISSION_GRANTED
-                                            ) {
-                                                backupNotificationsLauncher.launch(
-                                                    Manifest.permission.POST_NOTIFICATIONS,
-                                                )
-                                            }
-                                            backupViewModel.onRestoreConfirmed()
+                                        // Only the default SMS app can write to the SMS store.
+                                        requireDefaultSmsApp {
+                                            requestNotificationsIfMissing()
+                                            restoreViewModel.onRestoreConfirmed()
                                         }
                                     },
-                                    onCancelRestore = backupViewModel::onCancelRestore,
-                                    onRestoreResultDismissed = backupViewModel::onRestoreResultDismissed,
-                                    onSwitchBackToMessagingApp = { openDefaultAppsSettings() },
+                                    onCancelRestore = restoreViewModel::onCancelRestore,
+                                    onRestoreResultDismissed = restoreViewModel::onRestoreResultDismissed,
+                                    onOpenSettings = { navController.navigate(Routes.Settings) },
+                                    bottomBar = bottomBar,
+                                    topBanner = updateBanner,
                                 )
                             }
 
@@ -513,6 +654,164 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
+                    }
+
+                    composable(
+                        route = Routes.NewMessageWithArgs,
+                        arguments =
+                            listOf(
+                                navArgument(Routes.DraftArg) { nullableArgs() },
+                                navArgument(Routes.AttachmentArg) { nullableArgs() },
+                                navArgument(Routes.AttachmentTypeArg) { nullableArgs() },
+                            ),
+                    ) { backStackEntry ->
+                        val args = backStackEntry.arguments
+                        val newMessageViewModel: NewMessageViewModel = viewModel(factory = NewMessageViewModelFactory())
+                        val state by newMessageViewModel.uiState.collectAsState()
+                        // ACTION_PICK on phone numbers grants read access to the one row picked,
+                        // so no READ_CONTACTS prompt is needed here.
+                        val pickPhoneLauncher =
+                            rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                                result.data?.data?.let(::resolvePickedPhone)?.let { (number, name) ->
+                                    newMessageViewModel.onContactPicked(number, name)
+                                }
+                            }
+                        if (!isDefaultSmsApp) {
+                            DefaultSmsAppPrompt(onSetDefaultSmsApp = { requireDefaultSmsApp { } })
+                        } else {
+                            NewMessageScreen(
+                                state = state,
+                                onInputChanged = newMessageViewModel::onInputChanged,
+                                onCommitInput = { newMessageViewModel.commitInput() },
+                                onRemoveRecipient = newMessageViewModel::onRecipientRemoved,
+                                onPickContact = {
+                                    runCatching {
+                                        pickPhoneLauncher.launch(
+                                            Intent(Intent.ACTION_PICK).setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE),
+                                        )
+                                    }
+                                },
+                                onNext = {
+                                    if (newMessageViewModel.commitInput()) {
+                                        val addresses = newMessageViewModel.uiState.value.effectiveAddresses
+                                        navController.navigate(
+                                            Routes.conversationRoute(
+                                                addresses,
+                                                draft = args?.getString(Routes.DraftArg),
+                                                attachment = args?.getString(Routes.AttachmentArg),
+                                                attachmentType = args?.getString(Routes.AttachmentTypeArg),
+                                            ),
+                                        ) { popUpTo(Routes.NewMessageWithArgs) { inclusive = true } }
+                                    }
+                                },
+                                onBack = { navController.popBackStack() },
+                            )
+                        }
+                    }
+
+                    composable(
+                        route = Routes.ConversationWithArgs,
+                        arguments =
+                            listOf(
+                                navArgument(Routes.ThreadIdArg) {
+                                    type = NavType.LongType
+                                    defaultValue = 0L
+                                },
+                                navArgument(Routes.AddressesArg) { nullableArgs() },
+                                navArgument(Routes.DraftArg) { nullableArgs() },
+                                navArgument(Routes.AttachmentArg) { nullableArgs() },
+                                navArgument(Routes.AttachmentTypeArg) { nullableArgs() },
+                            ),
+                    ) { backStackEntry ->
+                        val args = backStackEntry.arguments
+                        val threadId = args?.getLong(Routes.ThreadIdArg) ?: 0L
+                        if (!isDefaultSmsApp) {
+                            DefaultSmsAppPrompt(onSetDefaultSmsApp = { requireDefaultSmsApp { } })
+                            return@composable
+                        }
+                        val conversationViewModel: ConversationViewModel =
+                            viewModel(
+                                factory =
+                                    ConversationViewModelFactory(
+                                        threadId = threadId,
+                                        addresses =
+                                            args
+                                                ?.getString(Routes.AddressesArg)
+                                                ?.split(Routes.ADDRESS_SEPARATOR)
+                                                ?.filter { it.isNotBlank() }
+                                                .orEmpty(),
+                                        draft = args?.getString(Routes.DraftArg),
+                                        attachment =
+                                            args?.getString(Routes.AttachmentArg)?.let { uri ->
+                                                outgoingAttachmentFor(uri.toUri(), args.getString(Routes.AttachmentTypeArg))
+                                            },
+                                        getConversationMessagesUseCase = appContainer.getConversationMessagesUseCase,
+                                        getConversationAddressesUseCase = appContainer.getConversationAddressesUseCase,
+                                        getOrCreateConversationUseCase = appContainer.getOrCreateConversationUseCase,
+                                        markConversationReadUseCase = appContainer.markConversationReadUseCase,
+                                        sendMessageUseCase = appContainer.sendMessageUseCase,
+                                        deleteMessageUseCase = appContainer.deleteMessageUseCase,
+                                        contactNameResolver = appContainer.contactNameResolver,
+                                    ),
+                            )
+                        val state by conversationViewModel.uiState.collectAsState()
+
+                        // While this conversation is on screen its messages are read as they
+                        // arrive, so they get no notification.
+                        val lifecycleOwner = LocalLifecycleOwner.current
+                        DisposableEffect(lifecycleOwner, state.threadId) {
+                            val observer =
+                                LifecycleEventObserver { _, event ->
+                                    when (event) {
+                                        Lifecycle.Event.ON_RESUME -> {
+                                            MessageNotifications.visibleThreadId = state.threadId
+                                            MessageNotifications.cancel(this@MainActivity, state.threadId)
+                                            conversationViewModel.onVisible(true)
+                                        }
+
+                                        Lifecycle.Event.ON_PAUSE -> {
+                                            MessageNotifications.visibleThreadId = null
+                                            conversationViewModel.onVisible(false)
+                                        }
+
+                                        else -> {
+                                            Unit
+                                        }
+                                    }
+                                }
+                            lifecycleOwner.lifecycle.addObserver(observer)
+                            onDispose {
+                                lifecycleOwner.lifecycle.removeObserver(observer)
+                                MessageNotifications.visibleThreadId = null
+                            }
+                        }
+
+                        val pickImageLauncher =
+                            rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+                                uri?.let { outgoingAttachmentFor(it, null) }?.let(conversationViewModel::onAttachmentPicked)
+                            }
+                        val pickFileLauncher =
+                            rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+                                uri?.let { outgoingAttachmentFor(it, null) }?.let(conversationViewModel::onAttachmentPicked)
+                            }
+
+                        ConversationScreen(
+                            state = state,
+                            onBack = { navController.popBackStack() },
+                            onDraftChanged = conversationViewModel::onDraftChanged,
+                            onSend = conversationViewModel::send,
+                            onPickImage = {
+                                pickImageLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo),
+                                )
+                            },
+                            onPickFile = { runCatching { pickFileLauncher.launch(MMS_ATTACHMENT_TYPES) } },
+                            onRemoveAttachment = conversationViewModel::onAttachmentRemoved,
+                            onOpenAttachment = { attachment -> openAttachment(attachment.uri, attachment.contentType) },
+                            onRetry = conversationViewModel::retry,
+                            onDelete = conversationViewModel::delete,
+                            onErrorShown = conversationViewModel::onErrorShown,
+                        )
                     }
 
                     composable(Routes.Settings) {
@@ -1120,10 +1419,63 @@ class MainActivity : ComponentActivity() {
         return if (number.isNotBlank()) Pair(number, displayName) else null
     }
 
-    private fun hasSmsPermissions(): Boolean =
-        smsPermissions.all {
-            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
-        }
+    private fun hasSmsPermissions(): Boolean = smsPermissions.all(::isGranted)
+
+    private fun isGranted(permission: String): Boolean =
+        ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+
+    private fun hasPromptedForDefaultSmsApp(): Boolean =
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getBoolean(KEY_DEFAULT_SMS_PROMPTED, false)
+
+    private fun markPromptedForDefaultSmsApp() {
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit { putBoolean(KEY_DEFAULT_SMS_PROMPTED, true) }
+    }
+
+    /** Number and display name of a row picked from ACTION_PICK on phone numbers. */
+    private fun resolvePickedPhone(uri: Uri): Pair<String, String?>? =
+        runCatching {
+            contentResolver
+                .query(
+                    uri,
+                    arrayOf(
+                        ContactsContract.CommonDataKinds.Phone.NUMBER,
+                        ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                    ),
+                    null,
+                    null,
+                    null,
+                )?.use { cursor ->
+                    if (cursor.moveToFirst()) cursor.getString(0).orEmpty() to cursor.getString(1) else null
+                }
+        }.getOrNull()?.takeIf { it.first.isNotBlank() }
+
+    /** Type and display name of something picked to send, read from its provider. */
+    private fun outgoingAttachmentFor(
+        uri: Uri,
+        knownType: String?,
+    ): OutgoingAttachment? {
+        if (!isShareableAttachment(uri, packageName)) return null
+        val type = knownType?.takeIf { it.contains('/') && !it.contains('*') } ?: contentResolver.getType(uri) ?: return null
+        val name =
+            runCatching {
+                contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) cursor.getString(0) else null
+                }
+            }.getOrNull()
+        return OutgoingAttachment(uri = uri.toString(), contentType = type, name = name)
+    }
+
+    private fun openAttachment(
+        uri: String,
+        contentType: String,
+    ) {
+        val intent =
+            Intent(Intent.ACTION_VIEW)
+                .setDataAndType(uri.toUri(), contentType)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        runCatching { startActivity(intent) }
+            .onFailure { Toast.makeText(this, R.string.conversation_no_app_to_open, Toast.LENGTH_SHORT).show() }
+    }
 
     private fun shouldShowBatteryOptimizationDialog(): Boolean {
         val powerManager = getSystemService(POWER_SERVICE) as? PowerManager ?: return false
@@ -1217,12 +1569,19 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         dismissAllNotifications()
         newIntentFlow.value = intent
+        composeIntentFlow.value = ComposeRequest.from(intent)
     }
 
+    /**
+     * Clears the app's status notifications on open, but not unread-message notifications: those
+     * go when their conversation is read.
+     */
     private fun dismissAllNotifications() {
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancelAll()
+        notificationManager.activeNotifications
+            .filterNot { MessageNotifications.isMessageNotification(it.notification) }
+            .forEach { notificationManager.cancel(it.tag, it.id) }
     }
 
     private fun resolveDeepLinkRoute(intent: Intent?): String? {
@@ -1230,9 +1589,25 @@ class MainActivity : ComponentActivity() {
         if (uri.scheme != "smsredirect" || uri.host != "app") return null
         val features = (application as SmsRedirectApplication).appContainer.features
         return when (uri.path) {
-            "/${Routes.History}" -> Routes.History.takeIf { features.forwarding }
-            "/${Routes.ScheduleHistory}" -> Routes.ScheduleHistory.takeIf { features.scheduling }
-            else -> null
+            "/${Routes.History}" -> {
+                Routes.History.takeIf { features.forwarding }
+            }
+
+            "/${Routes.ScheduleHistory}" -> {
+                Routes.ScheduleHistory.takeIf { features.scheduling }
+            }
+
+            "/${Routes.Conversation}" -> {
+                uri
+                    .getQueryParameter(Routes.ThreadIdArg)
+                    ?.toLongOrNull()
+                    ?.takeIf { it > 0 }
+                    ?.let(Routes::conversationRoute)
+            }
+
+            else -> {
+                null
+            }
         }
     }
 
@@ -1244,5 +1619,64 @@ class MainActivity : ComponentActivity() {
             "https://github.com/neteinstein/SMS-Redirect/blob/main/docs/install-apk.md"
         private const val KEY_SIDELOAD_DISMISSED = "sideload_warning_dismissed"
         private const val KEY_BATTERY_BANNER_ENABLED = "battery_banner_enabled"
+        private const val KEY_DEFAULT_SMS_PROMPTED = "default_sms_app_prompted"
+
+        /** What a picture message can carry; the MMSC rejects most other types. */
+        private val MMS_ATTACHMENT_TYPES = arrayOf("image/*", "video/*", "audio/*", "text/x-vcard", "text/vcard")
+
+        /** Sent by [ComposeSmsActivity] for sms:/smsto: links and Share. */
+        const val ACTION_COMPOSE = "com.neteinstein.smsredirect.action.COMPOSE"
+        const val EXTRA_COMPOSE_ADDRESSES = "compose_addresses"
+        const val EXTRA_COMPOSE_BODY = "compose_body"
+        const val EXTRA_COMPOSE_ATTACHMENT = "compose_attachment"
+        const val EXTRA_COMPOSE_ATTACHMENT_TYPE = "compose_attachment_type"
     }
+}
+
+/**
+ * Whether a URI handed in by another app may be attached to an outgoing message. MainActivity and
+ * ComposeSmsActivity are exported, so a caller could name a URI only *this* app can read -- another
+ * conversation's MMS part, or one of our own cache files -- hoping the user taps Send without
+ * looking. Those are refused; everything else is readable by the caller anyway.
+ */
+internal fun isShareableAttachment(
+    uri: Uri,
+    ownPackage: String,
+): Boolean {
+    if (uri.scheme != "content") return false
+    val authority = uri.authority ?: return false
+    return authority !in setOf("sms", "mms", "mms-sms", "$ownPackage.fileprovider")
+}
+
+/** A "send a message" request forwarded by [ComposeSmsActivity]. */
+private data class ComposeRequest(
+    val addresses: List<String>,
+    val body: String?,
+    val attachment: String?,
+    val attachmentType: String?,
+) {
+    fun route(): String =
+        if (addresses.isEmpty()) {
+            Routes.newMessageRoute(body, attachment, attachmentType)
+        } else {
+            Routes.conversationRoute(addresses, body, attachment, attachmentType)
+        }
+
+    companion object {
+        fun from(intent: Intent?): ComposeRequest? {
+            if (intent?.action != MainActivity.ACTION_COMPOSE) return null
+            return ComposeRequest(
+                addresses = intent.getStringArrayListExtra(MainActivity.EXTRA_COMPOSE_ADDRESSES).orEmpty(),
+                body = intent.getStringExtra(MainActivity.EXTRA_COMPOSE_BODY),
+                attachment = intent.getStringExtra(MainActivity.EXTRA_COMPOSE_ATTACHMENT),
+                attachmentType = intent.getStringExtra(MainActivity.EXTRA_COMPOSE_ATTACHMENT_TYPE),
+            )
+        }
+    }
+}
+
+private fun androidx.navigation.NavArgumentBuilder.nullableArgs() {
+    type = NavType.StringType
+    nullable = true
+    defaultValue = null
 }

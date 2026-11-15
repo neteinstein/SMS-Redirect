@@ -1,1 +1,1 @@
-Back up your SMS to your own Gmail and restore them on any phone. No account.
+SMS & MMS messaging app, with Gmail backup, restore, redirect and scheduling.

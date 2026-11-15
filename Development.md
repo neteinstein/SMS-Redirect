@@ -14,7 +14,7 @@ How to build, test and run SMS Toolbox from source. For what the app is and how 
 
 ```bash
 ./gradlew assembleGithubDebug   # every feature
-./gradlew assemblePlayDebug     # Backup & Restore only, as on Google Play
+./gradlew assemblePlayDebug     # as on Google Play: every feature, no self-update
 ./gradlew test                  # unit tests for both flavors
 ./gradlew lint
 ```
@@ -26,6 +26,14 @@ How to build, test and run SMS Toolbox from source. For what the app is and how 
 ```
 
 ## Features
+
+### Messages (SMS/MMS client)
+- Full messaging app, used as the device's **default SMS app** (requested through `RoleManager` before any SMS permission)
+- Conversation list (newest first, unread markers, contact names) and conversation view with bubbles, timestamps and send status
+- Sends SMS (multipart) and MMS (pictures, video, audio, vCards; group messages); large photos are re-encoded to fit the carrier's MMS size limit
+- Receives SMS (`SMS_DELIVER`) and MMS (`WAP_PUSH_DELIVER` → download via `SmsManager` → saved to `content://mms`), with MessagingStyle notifications, inline reply and mark-as-read
+- Opens `sms:`/`smsto:`/`mms:` links and Share intents pre-filled; "respond via message" from the call screen
+- The MMS PDU encoder/decoder is in-house, pure Kotlin and unit-tested (`domain/mms/`)
 
 ### SMS Backup to Gmail
 - Copies SMS messages to your own Gmail account over IMAP (`imap.gmail.com:993`, TLS)
@@ -39,9 +47,9 @@ How to build, test and run SMS Toolbox from source. For what the app is and how 
 - Progress notification while a backup runs
 
 ### SMS Restore from Gmail
-- **Restore messages** on the Backup tab copies everything under your Gmail label back to the phone, received and sent messages each into the right box
+- **Restore messages** on the Restore tab copies everything under your Gmail label back to the phone, received and sent messages each into the right box
 - Messages already on the phone are skipped, so a restore is safe to run more than once, and restored messages are not uploaded again by the next backup
-- Android only lets the default SMS app write messages, so the app asks for the default-SMS role for the length of a user-started restore, then asks you to switch back to your usual messaging app
+- Android only lets the default SMS app write messages; SMS Toolbox is normally that app already, and asks for the role first if not
 - Runs in the background in bounded, resumable chunks; MMS is not restored
 
 > **Why IMAP APPEND and not SMTP:** a Gmail label *is* an IMAP folder, so APPEND can file messages under your chosen label. SMTP can only deliver to the inbox, stamps everything with the send time (so years of history would all be dated today), and would hit Gmail's ~500/day sending cap during a backfill.
@@ -92,7 +100,7 @@ When deploying the app from Android Studio or ADB, it is considered **sideloaded
 1. Go to **Settings > Apps > SMS Toolbox**
 2. Tap the **three-dot menu** (top right)
 3. Select **"Allow restricted settings"**
-4. Back in the app, add a rule or scheduled SMS to trigger the SMS permission dialog, then grant RECEIVE_SMS, SEND_SMS, and READ_SMS when prompted
+4. Back in the app, accept the "set as default SMS app" prompt (the SMS permissions come with the role); in the github build you can instead decline it and choose "Use SMS permissions only" when adding a rule or scheduled SMS
 5. Tap "pick contact" from a rule or scheduled SMS to trigger and grant **Contacts** permission if you want to use the contact picker
 
 ### Verifying the receiver works

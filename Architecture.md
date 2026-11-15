@@ -2,35 +2,115 @@
 
 ## Overview
 
-SMS Toolbox is an Android app with three independent features, presented as bottom-navigation tabs on the home screen:
+SMS Toolbox is an Android SMS/MMS messaging app with a toolbox around it, presented as five bottom-navigation tabs on the home screen, in this order:
 
-- **Backup** — copies SMS messages to the user's own Gmail account over IMAP. This is the app's primary feature and the landing tab.
+- **Messages** — a full messaging client used as the device's default SMS app: conversation list, conversations, sending and receiving SMS and MMS (pictures, group messages), notifications with reply. This is the app's primary feature and the landing tab.
 - **Redirect** — intercepts incoming SMS messages matching user-defined rules and forwards them to a configured target phone number via SMS.
 - **Schedule** — lets the user compose a message once and have it sent automatically at a future date/time, optionally repeating on a recurring pattern.
+- **Backup** — copies SMS messages to the user's own Gmail account over IMAP.
+- **Restore** — copies those backups back into the phone's SMS store.
 
 **Two distributions.** The `distribution` flavor dimension (`app/build.gradle.kts`) builds the app twice from one codebase, with the same `applicationId`, signing key and `versionCode`:
 
 | | `play` (Google Play) | `github` (GitHub release APK) |
 |---|---|---|
-| Features | Backup & Restore only | All three |
-| `SEND_SMS` | not declared (`src/play/AndroidManifest.xml` removes it as a guard) | declared in `src/github/AndroidManifest.xml` |
-| Self-update | none (Play forbids it) | daily GitHub release check + in-app install (`REQUEST_INSTALL_PACKAGES`) |
+| Features | All five tabs | All five tabs |
+| SMS permissions | only via the default SMS role | the role, or (if declined) plain permissions for Redirect/Schedule/Backup |
+| Self-update | none (Play forbids it; `src/play/AndroidManifest.xml` removes `REQUEST_INSTALL_PACKAGES` as a guard) | daily GitHub release check + in-app install (`REQUEST_INSTALL_PACKAGES`) |
 
-Each flavor has a `distribution/DistributionModule` (`src/play/…`, `src/github/…`) exposing an `AppFeatures` (`domain/model/`) and, in the github flavor only, the update source and installer. `AppFeatures` reaches everything through `AppContainer.features`: `MainActivity` filters the tabs (a single tab hides the bottom bar), the landing screen, the SMS permission set and the deep links; `SettingsScreen` hides the Redirect/Schedule settings; `SmsReceiver` skips forwarding; `SendScheduledSmsWorker` drops sends left over from a previous full install. The Play flavor also overrides the strings that mention forwarding or scheduling (`src/play/res/`). No code outside `DistributionModule` checks the flavor.
+Each flavor has a `distribution/DistributionModule` (`src/play/…`, `src/github/…`) exposing an `AppFeatures` (`domain/model/`) and, in the github flavor only, the update source and installer. `AppFeatures` reaches everything through `AppContainer.features`: `MainActivity` filters the tabs, the landing screen and the deep links, and decides whether declining the SMS role may fall back to plain permissions (`smsPermissionsWithoutDefaultRole`); `SettingsScreen` hides the Redirect/Schedule settings when neither ships; `SmsReceiver` skips forwarding and `SendScheduledSmsWorker` drops sends when their feature is off. No code outside `DistributionModule` checks the flavor.
 
-All three share the same app shell (permissions flow, Settings screen, deep-link handling) but are otherwise independent end-to-end: separate domain models, separate Room tables, separate use cases, separate WorkManager jobs.
+All five share the same app shell (permissions flow, Settings screen, deep-link handling) but are otherwise independent end-to-end: separate domain models, separate Room tables, separate use cases, separate WorkManager jobs.
 
 > **A note on the word "backup".** It means two different things in this codebase.
 > `ExportBackupUseCase` / `ImportBackupUseCase` predate the Gmail feature and refer to the
 > local JSON export of rules, schedules and settings. Everything belonging to the SMS→Gmail
 > feature is prefixed `SmsBackup*` or `Gmail*`. Keep that split when adding code.
 
-## Why Backup leads
+## Why Messages leads
 
-Google Play's SMS & Call Log Permissions policy only grants `READ_SMS` / `RECEIVE_SMS` for a
-declared core use case, and "backup and restore" is on the permitted list while "SMS forwarder"
-is not. Backup is therefore the declared purpose, the first tab, and the screen the app opens
-on — the declaration has to match what the app visibly is.
+Google Play's SMS & Call Log Permissions policy only grants `READ_SMS` / `RECEIVE_SMS` /
+`SEND_SMS` for a declared core use case. The declared one is **"Default SMS handler"**: SMS
+Toolbox is a full SMS/MMS messaging app, and Redirect, Schedule, Backup and Restore are tools
+built on top of it. Messages is therefore the first tab and the screen the app opens on — the
+declaration has to match what the app visibly is.
+
+Two rules from that policy shape the code:
+
+- **The role is requested before any SMS permission.** `MainActivity`'s default-SMS gate
+  (`requireDefaultSmsApp` / `requireSmsAccess`) shows an explanation, then
+  `RoleManager.createRequestRoleIntent(ROLE_SMS)` (the API-29+ form of
+  `Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT`, a no-op since Android 10; minSdk is 33). Android
+  grants the SMS permissions with the role; only contacts and notifications are asked for after
+  it. It runs once on first launch, and again whenever an SMS feature is used without the role.
+- **No SMS permission without the role in the Play build.** `AppFeatures.smsPermissionsWithoutDefaultRole`
+  is `false` for play: declining the role leaves the SMS features off. The github build offers
+  "Use SMS permissions only" for Redirect/Schedule/Backup, for people who keep another messaging
+  app; Messages and Restore always need the role.
+
+## Messaging (SMS/MMS client)
+
+```
+[ SMS_DELIVER ] ─► SmsDeliverReceiver ─► MessageStore.saveIncomingSms ─► MessageNotifications
+[ WAP_PUSH_DELIVER ] ─► MmsDeliverReceiver ─► AndroidMmsDownloader.onWapPush
+                              │  MmsPduParser: M-Notification.ind → content location
+                              ▼
+                       SmsManager.downloadMultimediaMessage (writes cache/mms/*.pdu via FileProvider)
+                              ▼
+                       MessageStatusReceiver (ACTION_MMS_DOWNLOADED)
+                              ├─► MmsPduParser: M-Retrieve.conf → parts
+                              ├─► MessageStore.saveIncomingMms  (content://mms + parts + addr)
+                              ├─► M-Acknowledge.ind back to the MMSC
+                              └─► MessageNotifications (or "not downloaded" + Retry)
+
+[ Conversation: Send ] ─► SendMessageUseCase ─► MessageSender (AndroidMessageSender)
+        text to one person → SMS: outbox row → sendMultipartTextMessage → MessageStatusReceiver → sent/failed
+        attachment or group → MMS: MmsPduComposer M-Send.req → outbox row (+parts, addr)
+                                   → sendMultimediaMessage → MessageStatusReceiver → M-Send.conf → sent/failed
+```
+
+**Store.** Messages live only in the Telephony provider (`content://sms`, `content://mms`,
+`content://mms-sms/conversations?simple=true` + `canonical-addresses`), never in Room: a second
+copy would change `PrivacyPolicy.md` and the Data safety form. `MessageStore` (domain) /
+`ContentProviderMessageStore` (data) is the seam; `observeChanges()` is a `ContentObserver`
+flow, so the list and the open conversation refresh on any provider change, whoever made it.
+Empty threads (created by "new message" and abandoned) are hidden by `message_count = 0`.
+
+**As the default SMS app, the app writes what it sends.** Android auto-writes sent messages only
+for apps that are *not* the default. So `AndroidMessageSender` inserts an outbox row before
+sending, and `SmsForwarder` / `ScheduledSmsSender` record their sends through
+`SmsMessageWriter` when they can write (`canWrite()`); when another app is default, the system
+writes them and the app's insert is skipped.
+
+**MMS codec.** The platform's PDU classes are hidden API, and third-party MMS libraries pull in
+legacy APN code and their own permissions. `domain/mms/` is a small pure-Kotlin WSP/MMS
+encoder/decoder (M-Notification.ind, M-Retrieve.conf, M-Send.req/conf, M-Acknowledge.ind),
+bounds-checked (a truncated PDU parses to `null`) and unit-tested by round trips. Note the
+`MmsHeaders` value constants are whole octets (high bit set) and are written with
+`WspWriter.byte()`, not `shortInteger()`.
+
+**Transport choice** (`SendMessageUseCase`): text to one recipient → SMS; any attachment, or
+more than one recipient → MMS (a group conversation, so replies stay together), like the stock
+Messages app. Images over the carrier's `MMS_CONFIG_MAX_MESSAGE_SIZE` budget are re-encoded as
+JPEG (quality, then dimensions) in `AndroidMessageSender`. A group MMS's conversation is the
+sender plus the other recipients (`MmsRecipients`); this phone's own number is not known without
+`READ_PHONE_NUMBERS`, which the app does not request, so a group can include it.
+
+**Status.** Every send gets an explicit, mutable `PendingIntent` to the non-exported
+`MessageStatusReceiver` (mutable so the platform can fill in the MMSC response). Each SMS part
+reports; any failure marks the row failed, the last part marks it sent unless already failed.
+Failed messages show "Not sent. Tap to retry"; retry deletes the failed copy after a successful
+resend.
+
+**Notifications** (`MessageNotifications`): one MessagingStyle notification per thread
+(appended to, not replaced), `VISIBILITY_PRIVATE` with a content-free public version, inline
+reply (RemoteInput → `SendMessageUseCase`) and mark-as-read. Suppressed while that conversation
+is on screen (`visibleThreadId`). `MainActivity.dismissAllNotifications()` leaves them alone.
+
+**Entry points from other apps** (`ComposeSmsActivity`): `SENDTO`/`VIEW` on `sms:`/`smsto:`/
+`mms:`/`mmsto:` and `SEND` (text, image, video) open a pre-filled conversation (or New message
+when there is no recipient); nothing is sent until the user taps Send. `HeadlessSmsSendService`
+sends call-screen quick replies through the same `MessageSender`.
 
 ## SMS Backup to Gmail Pipeline
 
@@ -83,7 +163,8 @@ box, so a restored sent message is not uploaded again.
 **Received and sent, never drafts.** The source reads `content://sms` filtered to
 `MESSAGE_TYPE_INBOX` and `MESSAGE_TYPE_SENT`, in one ordered scan, and tags each row with its
 `SmsBox`. Drafts, outbox, queued and failed rows are excluded: they were never delivered, and an
-outgoing message qualifies once the messaging app updates its row to "sent". MMS is out of scope.
+outgoing message qualifies once the messaging app updates its row to "sent". MMS is not backed up
+(the backup format is SMS-only; see "Backup format").
 
 ### Components
 
@@ -222,7 +303,7 @@ returns null instead of throwing, and a test would pass on a lie.
 ## SMS Restore from Gmail Pipeline
 
 ```
-[ Backup tab: "Restore messages" ] → 3-step dialog → RoleManager.ROLE_SMS request
+[ Restore tab: "Restore messages" ] → dialog → (default SMS role, if not held)
  │
  └─► SmsRestoreScheduler ──► RestoreSmsWorker  ◄── re-enqueues itself with its cursor
                                 │
@@ -238,18 +319,14 @@ returns null instead of throwing, and a test would pass on a lie.
 ```
 
 **Why the default SMS role.** Android silently drops every write to `content://sms` that does not
-come from the SMS-role holder, so there is no other way. The role is held only for the restore.
-`BackupUiState.shouldSwitchBack` drives a card button, a screen banner and a notification that all
-send the user to the system default-apps screen. Android cannot hand the role to a *specific* app,
-so that screen is as far as the app can take them. `refreshDefaultSmsApp()` runs on every resume,
-because the hand-back happens outside the app with no callback.
+come from the SMS-role holder. SMS Toolbox, as a messaging app, normally holds the role already; if
+not, the Restore tab goes through the same default-SMS gate as Messages before
+`RestoreViewModel.onRestoreConfirmed()`, which re-checks the role and refuses to start without it.
 
 **Role components** (`DefaultSmsAppComponents.kt`). Android only offers the role to an app
 declaring an `SMS_DELIVER` receiver, a `WAP_PUSH_DELIVER` receiver, a `SENDTO` activity and a
-`RESPOND_VIA_MESSAGE` service. While the role is held, SMS_DELIVER goes *only* to the role holder,
-so `SmsDeliverReceiver` writes incoming SMS to the inbox; it is not a stub. Quick replies are
-sent. MMS is out of scope: an arriving MMS cannot be downloaded and the user is notified.
-`SMS_RECEIVED` is still broadcast to everyone, so Redirect and live backup keep working.
+`RESPOND_VIA_MESSAGE` service. All four do real work (see "Messaging"). `SMS_RECEIVED` is still
+broadcast to everyone, so Redirect and live backup run off `SmsReceiver` regardless of the role.
 
 **Idempotent, so resumable without state.** The cursor (IMAP UID + counters) travels in the work
 input between bounded chunks rather than in a table. Before each insert the provider is searched
@@ -416,7 +493,10 @@ Redirect and Schedule each own their own tables end-to-end — `ScheduledSmsEnti
 | `BackupSettingsEntity` | `backup_settings` | Gmail credentials and backup configuration (single row, `id = 1`) |
 | `SmsBackupStateEntity` | `sms_backup_state` | One row per message already dealt with, keyed by a content hash. Makes a killed backup resumable and idempotent |
 
-Database version is **10**. `MIGRATION_9_10` adds the two tables above and rebuilds `app_settings`
+Database version is **11**. `MIGRATION_10_11` is data-only (no schema change; `11.json` equals
+`10.json` but for the version): it moves `landingScreen` from the old default `BACKUP` to
+`MESSAGES`. The column's SQL default deliberately stays `'BACKUP'` — changing it would change the
+schema and force a table rebuild — and new rows get `MESSAGES` from the Kotlin default. `MIGRATION_9_10` adds the two tables above and rebuilds `app_settings`
 solely to move the `forwardPrefix` default to `SMS Toolbox:` — SQLite cannot alter a column default
 in place, and Room validates the migration DDL against the schema generated from the entity
 annotations. `exportSchema` is on (`app/schemas/`), which is the only way a schema change here can
@@ -467,34 +547,36 @@ Permissions are requested contextually rather than upfront at first launch — t
 
 | Permission | Requested when | Purpose |
 |---|-----------|---------|
-| `READ_SMS` / `RECEIVE_SMS` / `SEND_SMS` (github flavor only) | Adding the first rule or scheduled SMS, or enabling backup | Read the inbox for backup; detect and forward/send SMS (MMS/RCS are out of scope). `READ_SMS` was declared but unused before the Backup feature — it is now genuinely exercised |
-| `READ_CONTACTS` | Tapping "pick contact" for the first time | Pick contacts for rules and scheduled SMS |
-| `POST_NOTIFICATIONS` | Turning on "Show notifications" in Settings, **or** enabling Gmail backup | Backup progress; notify after a successful forward or scheduled send. The Backup tab requests it too, because otherwise a user who never opens the notification toggle would silently never see backup progress |
+| Default SMS app role (`RoleManager.ROLE_SMS`) | First launch, and any SMS feature used without it — always **before** any SMS permission | Be the messaging app: receive (`SMS_DELIVER`/`WAP_PUSH_DELIVER`), write sent/received/restored messages. Android grants the SMS permissions below with it |
+| `READ_SMS` / `RECEIVE_SMS` / `SEND_SMS` / `RECEIVE_MMS` / `RECEIVE_WAP_PUSH` | Granted with the role. Requested directly only in the github build, after the role was declined, for Redirect/Schedule/Backup | Show, receive and send SMS/MMS; back up; detect and forward; send scheduled messages |
+| `READ_CONTACTS` | Right after the SMS role is granted; or tapping "pick contact" in a rule/schedule. The New message picker needs none (ACTION_PICK on phone numbers grants the one row) | Names in conversations and notifications; pick contacts for rules and scheduled SMS |
+| `POST_NOTIFICATIONS` | Right after the SMS role is granted; turning on "Show notifications"; enabling backup or starting a restore | Incoming messages; backup/restore progress; forward and scheduled-send confirmations |
 | `INTERNET` / `ACCESS_NETWORK_STATE` | Not runtime-requested (install-time) | Reach `imap.gmail.com`. Both previously arrived only via manifest merge from the Firebase/WorkManager AARs; they are now declared explicitly |
 | Battery optimization exemption | Right after creating a new rule or scheduled SMS | Prevent Doze from throttling background delivery; declining shows a persistent warning banner on Home until enabled |
 | `REQUEST_INSTALL_PACKAGES` (github flavor only) | Not runtime-requested; the user allows "install unknown apps" for SMS Toolbox the first time they install an update | Hand the downloaded update APK to the system installer |
-| Default SMS app role (`RoleManager.ROLE_SMS`) | Confirming "Restore messages", after a dialog explaining the three steps | Write restored messages to `content://sms`. Held only for the restore; the Backup tab prompts the user to switch back as soon as no restore needs it |
 
 WorkManager's own scheduling permissions were already present for the Redirect feature — Schedule required no new manifest permissions.
 
 ## Presentation Layer
 
-Uses Jetpack Compose with a simple NavHost. The `Home` route hosts a bottom navigation bar (`MainBottomBar`) with three tabs (`MainTab.BACKUP` / `REDIRECT` / `SCHEDULE`, in that order); switching tabs swaps the body between `BackupScreen`, `HomeScreen` and `ScheduleListScreen` while the `bottomBar` and the `Home` back-stack entry itself stay put, so the selected tab survives round-trips to any child screen. **`BACKUP` is the initial tab.**
+Uses Jetpack Compose with a simple NavHost. The `Home` route hosts a bottom navigation bar (`MainBottomBar`) with five tabs (`MainTab.MESSAGES` / `REDIRECT` / `SCHEDULE` / `BACKUP` / `RESTORE`, in that order); switching tabs swaps the body between `ConversationListScreen`, `HomeScreen`, `ScheduleListScreen`, `BackupScreen` and `RestoreScreen` while the `bottomBar` and the `Home` back-stack entry stay put, so the selected tab survives round-trips to any child screen. **`MESSAGES` is the initial tab** (`LandingScreen.MESSAGES`, user-changeable in Settings).
 
-`MainBottomBar` iterates the tabs the build ships (`AppFeatures.availableTabs()`), rather than hardcoding items; with a single tab (the Play build) `MainActivity` omits the bar entirely. It shows a label only for the selected tab — three icon+label pairs plus the FAB do not fit a narrow phone, and the Portuguese labels are longer. The FAB has no "create" action on the Backup tab, so it is hidden there (`showFab = false`) and the pill takes the full width.
+`MainBottomBar` iterates the tabs the build ships (`AppFeatures.availableTabs()`). It shows a label only for the selected tab — five icons plus the FAB do not fit labels on a narrow phone. The FAB is "new message" on Messages, "add" on Redirect/Schedule, and hidden on Backup and Restore.
 
-- **SplashScreen** → **BackupScreen** (`Home` route, Backup tab — the landing screen: Gmail config, enable toggle, progress; or an empty state prompting for credentials when none are stored)
-  - **BackupScreen** → **SettingsScreen** (where the Gmail address and app password are entered)
-- **SplashScreen** → **HomeScreen** (`Home` route, Redirect tab: rule list with drag-to-reorder)
+- **SplashScreen** → **ConversationListScreen** (`Home` route, Messages tab — the landing screen; shows `DefaultSmsAppPrompt` until the app holds the SMS role)
+  - → **NewMessageScreen** (`new_message`: recipients, contact picker) → **ConversationScreen**
+  - → **ConversationScreen** (`conversation?threadId=…` or `?addresses=…&draft=…&attachment=…`: bubbles, attachments, composer, retry/delete). Also reached from a notification (`smsredirect://app/conversation?threadId=…`) and from `ComposeSmsActivity`
+- **SplashScreen** → **HomeScreen** (Redirect tab: rule list with drag-to-reorder)
   - **HomeScreen** → **RuleScreen** (create/edit rule)
   - **HomeScreen** → **SettingsScreen** (toggles, prefix config — shared/global, see below)
   - **SettingsScreen** → **HistoryScreen** (last 50 forwarded messages, Redirect-specific)
-- **SplashScreen** → **ScheduleListScreen** (`Home` route, Schedule tab: scheduled SMS list with drag-to-reorder, same visual pattern as the rule list — categories, names, empty state)
-  - **ScheduleListScreen** → **ScheduleFormScreen** (create/edit scheduled SMS: name, category, contact, message, date, hour/minute, repeat pattern, stop-at)
-  - **ScheduleListScreen** → **SettingsScreen** (same shared screen as Redirect's top-right settings icon)
-  - **SettingsScreen** → **ScheduleHistoryScreen** (last 50 sent scheduled SMS, with its own persisted "keep schedule history" toggle, defaulting to enabled)
+- **SplashScreen** → **ScheduleListScreen** (Schedule tab: scheduled SMS list with drag-to-reorder)
+  - **ScheduleListScreen** → **ScheduleFormScreen** (create/edit scheduled SMS)
+  - **SettingsScreen** → **ScheduleHistoryScreen** (last 50 sent scheduled SMS)
+- **SplashScreen** → **BackupScreen** (Backup tab: Gmail config, enable toggle, progress; or an empty state prompting for credentials) → **SettingsScreen**
+- **SplashScreen** → **RestoreScreen** (Restore tab: restore card, progress and result; `RestoreViewModel`)
 
-Both tabs use the same top-right icon pattern (history icon → that tab's own history screen; settings icon → the one shared `SettingsScreen`). Deep links are supported via `smsredirect://app` URI scheme for both `history` and `schedule_history`, resolved by a single `resolveDeepLinkRoute()` helper in `MainActivity`.
+Redirect and Schedule use the same top-right icon pattern (history icon → that tab's own history screen; settings icon → the one shared `SettingsScreen`). Deep links are supported via `smsredirect://app` URI scheme for `history`, `schedule_history` and `conversation?threadId=`, resolved by a single `resolveDeepLinkRoute()` helper in `MainActivity`.
 
 ### Duplicate Rule Prevention
 
@@ -502,7 +584,7 @@ When saving a rule, the ViewModel checks all existing rules (post-normalization)
 
 ## Dependency Wiring
 
-Manual DI via `AppContainer` (created in `SmsRedirectApplication.onCreate()`). No framework — just constructor injection through a single data class holding all use cases (Redirect and Schedule), `SmsForwarder`, `ScheduledSmsSender`, and cross-cutting services like `ContactNameResolver`.
+Manual DI via `AppContainer` (created in `SmsRedirectApplication.onCreate()`). No framework — just constructor injection through a single data class holding all use cases, `SmsForwarder`, `ScheduledSmsSender`, the messaging services (`MessageStore`, and the concrete `AndroidMessageSender` / `AndroidMmsDownloader` that `MessageStatusReceiver` reports back to), and cross-cutting services like `ContactNameResolver`.
 
 ## Contact Resolution
 

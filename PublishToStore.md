@@ -59,14 +59,15 @@ Before the automated workflow can publish updates, you must:
 
 ### 5. Running the Workflow
 
-Google Play gets the **play** flavor only: Backup and Restore, no `SEND_SMS`, no self-update
-(see `app/build.gradle.kts` and `domain/model/AppFeatures.kt`). The **github** flavor, with every
-feature, goes to GitHub releases. Both come from the same commit, with the same `applicationId`,
+Google Play gets the **play** flavor: the SMS/MMS messaging app with every tool, declared as a
+**Default SMS handler**, and no self-update (see `app/build.gradle.kts` and
+`domain/model/AppFeatures.kt`). The **github** flavor, which adds the update check, goes to GitHub
+releases. Both come from the same commit, with the same `applicationId`,
 signing key and `versionCode`.
 
 - **Automatically on merge to `main`** — the **Build & Release** workflow (`release.yml`) bumps the
   patch version, builds the signed GitHub APK and Play bundle, checks that the Play bundle's merged
-  manifest does not request `SEND_SMS` or `REQUEST_INSTALL_PACKAGES`, creates the GitHub Release with
+  manifest declares the four default-SMS-app components and does not request `REQUEST_INSTALL_PACKAGES`, creates the GitHub Release with
   the APK, and uploads the bundle to the **internal** track. (`ktlintCheck` and `test` already passed
   as PR checks.) If any step fails, nothing reaches the Play Store.
 - **Manually, for other tracks** — the **Publish to Play Store** workflow rebuilds the Play bundle
@@ -90,7 +91,8 @@ signing key and `versionCode`.
 - **Version code already exists** — Version codes are derived from `versionName` (`major*10000000 + minor*100000 + patch*100 + build`, see `app/build.gradle.kts`), so the automatic upload of a version uses `build` 0. A manual upload of the same version needs a higher **build_number** input.
 - **First upload error** — Google requires the very first upload to be done manually through the Play Console.
 - **Play upload failed but the GitHub release exists** — The upload is the last step of **Build & Release**. Re-run that job, or run **Publish to Play Store** by hand for the `internal` track with **build_number** `1`.
-- **"Play bundle manifest declares a forbidden permission"** — Something (an edit to `src/main/AndroidManifest.xml` or a new library) added `SEND_SMS` or `REQUEST_INSTALL_PACKAGES` to the Play build. Move it to `app/src/github/AndroidManifest.xml`, or add a `tools:node="remove"` entry to `app/src/play/AndroidManifest.xml`.
+- **"Play bundle manifest declares a forbidden permission"** — Something (an edit to `src/main/AndroidManifest.xml` or a new library) added `REQUEST_INSTALL_PACKAGES` to the Play build. Move it to `app/src/github/AndroidManifest.xml`, or add a `tools:node="remove"` entry to `app/src/play/AndroidManifest.xml`.
+- **"Play bundle manifest lacks …"** — One of the components Android requires of a default SMS app (`SMS_DELIVER`, `WAP_PUSH_DELIVER`, `SENDTO`, `RESPOND_VIA_MESSAGE`) is gone from the merged manifest. Android would no longer offer the app the SMS role, which the Play declaration ("Default SMS handler") depends on. Restore it in `src/main/AndroidManifest.xml`.
 
 ## Security Notes
 

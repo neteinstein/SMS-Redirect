@@ -2,9 +2,9 @@
 
 ## Project Overview
 
-SMS Toolbox is a native Android app (Kotlin) with three features: backing up received and sent SMS to the user's own Gmail account over IMAP and restoring them to a phone (the primary feature and landing tab), forwarding incoming SMS that match user-defined rules, and sending scheduled messages. See `Architecture.md` for the full system design.
+SMS Toolbox is a native Android app (Kotlin): a full SMS/MMS messaging app, used as the device's default SMS app (the primary feature, first tab and landing screen), with four tools on top, in tab order: forwarding incoming SMS that match user-defined rules (Redirect), sending scheduled messages (Schedule), backing up received and sent SMS to the user's own Gmail account over IMAP (Backup), and restoring them to a phone (Restore). See `Architecture.md` for the full system design.
 
-It ships as two product flavors of the `distribution` dimension: **`play`** (Google Play — Backup & Restore only, no `SEND_SMS`, no self-update) and **`github`** (APK on GitHub releases — every feature, plus a daily in-app update check against GitHub releases). Both share the `applicationId`, signing key and `versionCode` so either can install over the other. See `Architecture.md` → "Two distributions".
+It ships as two product flavors of the `distribution` dimension: **`play`** (Google Play — every feature, no self-update, SMS permissions only via the default SMS role) and **`github`** (APK on GitHub releases — every feature, plus a daily in-app update check against GitHub releases). Both share the `applicationId`, signing key and `versionCode` so either can install over the other. See `Architecture.md` → "Two distributions".
 
 The app is named "SMS Toolbox" but the `applicationId` and Kotlin package remain `com.neteinstein.smsredirect`, and the deep link remains `smsredirect://app` — changing them would create a new Play listing and cut existing users off from updates.
 
@@ -20,6 +20,7 @@ The app is named "SMS Toolbox" but the `applicationId` and Kotlin package remain
 - **Linting:** ktlint 1.8.0 (via `org.jlleitschuh.gradle.ktlint` plugin)
 - **Testing:** JUnit 4, kotlinx-coroutines-test, Turbine
 - **Email:** JavaMail Android port (`com.sun.mail:android-mail`, `javax.mail` namespace)
+- **MMS:** in-house WSP/MMS PDU codec in `domain/mms/` (no third-party MMS library)
 - **Min SDK:** 33 | **Target SDK:** 37 | **Compile SDK:** 37
 
 ## Architecture
@@ -72,6 +73,7 @@ Do **not** introduce Hilt, Dagger, or Koin unless explicitly requested.
 - Repositories: `NounRepository` (interface) / `NounRepositoryImpl` (implementation).
 - Fakes for testing: `FakeNounRepository`.
 - Anything belonging to the SMS→Gmail feature: prefix `SmsBackup*` or `Gmail*`.
+- The messaging client: `Conversation*`, `Message*` (`MessageStore`, `MessageSender`, `ConversationMessage`), `Mms*` for the PDU codec.
 
 ### Compose
 
@@ -85,7 +87,7 @@ Do **not** introduce Hilt, Dagger, or Koin unless explicitly requested.
 ### Guidelines
 
 - Unit tests live in `app/src/test/`.
-- Use **Fake** implementations (not mocks) for repository interfaces. Existing fakes are in the test root package: `FakeRuleRepository`, `FakeSettingsRepository`, `FakeContactNameResolver`, `FakeForwardHistoryRepository`, `FakeScheduledSmsRepository`, `FakeScheduledSmsHistoryRepository`, `FakeScheduledSmsScheduler`, `FakeMailTransport`, `FakeSmsMessageSource`, `FakeSmsBackupStateRepository`, `FakeSmsBackupSettingsRepository`, `FakeSmsBackupScheduler`, `FakeSecretCipher`, `FakeSmsMessageWriter`, `FakeSmsRestoreScheduler`, `FakeDefaultSmsAppChecker`, `FakeAppReleaseSource`, `FakeAppUpdateRepository`, `FakeAppUpdateInstaller`.
+- Use **Fake** implementations (not mocks) for repository interfaces. Existing fakes are in the test root package: `FakeRuleRepository`, `FakeSettingsRepository`, `FakeContactNameResolver`, `FakeForwardHistoryRepository`, `FakeScheduledSmsRepository`, `FakeScheduledSmsHistoryRepository`, `FakeScheduledSmsScheduler`, `FakeMailTransport`, `FakeSmsMessageSource`, `FakeSmsBackupStateRepository`, `FakeSmsBackupSettingsRepository`, `FakeSmsBackupScheduler`, `FakeSecretCipher`, `FakeSmsMessageWriter`, `FakeSmsRestoreScheduler`, `FakeDefaultSmsAppChecker`, `FakeAppReleaseSource`, `FakeAppUpdateRepository`, `FakeAppUpdateInstaller`, `FakeMessageStore`, `FakeMessageSender`.
 - Tests for code that lives only in the `github` flavor source set (e.g. `GitHubReleaseParser`) go in `app/src/testGithub/`.
 - Keep Android and third-party types (`Context`, `SmsManager`, `javax.mail`, WorkManager) behind a domain interface so the logic in front of it is testable. `SmsForwarder` is untested precisely because this was not done.
 - Test use cases in isolation with their respective fakes.
@@ -131,7 +133,7 @@ Both must pass before merging. Always run these locally before pushing.
 # Run unit tests
 ./gradlew test
 
-# Build debug APKs (every feature / Play's Backup-only build)
+# Build debug APKs (GitHub build with self-update / Play build)
 ./gradlew assembleGithubDebug
 ./gradlew assemblePlayDebug
 ```
@@ -165,12 +167,20 @@ Both must pass before merging. Always run these locally before pushing.
 
 ## Traps (read before touching these areas)
 
-- **The Play build must never declare `SEND_SMS` or self-update.** Play's SMS declaration covers
-  "Backup and restore" only, and Play forbids updates outside Play. `SEND_SMS` and
-  `REQUEST_INSTALL_PACKAGES` live in `app/src/github/AndroidManifest.xml`, the play manifest
-  removes them as a guard, and `release.yml` fails if the Play bundle's merged manifest has
-  either. Gate features through `AppContainer.features` (`AppFeatures`), never by checking
-  `BuildConfig.FLAVOR`; put update/install code in `app/src/github/` only.
+- **Play declares "Default SMS handler": the role always comes before any SMS permission.**
+  Never call a runtime-permission request for an SMS permission (`READ_SMS`, `RECEIVE_SMS`,
+  `SEND_SMS`, `RECEIVE_MMS`, `RECEIVE_WAP_PUSH`) except through `MainActivity`'s gate
+  (`requireDefaultSmsApp` / `requireSmsAccess`), which requests `RoleManager.ROLE_SMS` first.
+  In the Play build (`AppFeatures.smsPermissionsWithoutDefaultRole = false`) declining the role
+  means no SMS permission prompt at all. Never use SMS permissions for OTP/verification,
+  analytics on message content, or ads, and do not add a library that declares SMS permissions.
+  Keep the four default-SMS components (`SMS_DELIVER`, `WAP_PUSH_DELIVER`, `SENDTO`,
+  `RESPOND_VIA_MESSAGE`) working: `release.yml` fails the Play release without them.
+- **The Play build must never self-update.** `REQUEST_INSTALL_PACKAGES` lives in
+  `app/src/github/AndroidManifest.xml`, the play manifest removes it as a guard, and
+  `release.yml` fails if the Play bundle's merged manifest has it. Gate features through
+  `AppContainer.features` (`AppFeatures`), never by checking `BuildConfig.FLAVOR`; put
+  update/install code in `app/src/github/` only.
 - **`versionCode` is derived from `versionName`** in `app/build.gradle.kts`, so the Play bundle
   and GitHub APK of a release match. Do not set it by hand or from a CI run number.
 
@@ -202,17 +212,21 @@ Both must pass before merging. Always run these locally before pushing.
   are what `SmsMailParser` reads back. Never rename or drop one. Bump `CURRENT_FORMAT` for an
   incompatible change and keep parsing older formats, including legacy backups that have no
   headers at all. Backups already in users' mailboxes can never be rewritten.
-- **The default SMS role is borrowed, not kept.** Restore needs it because only the role holder
-  can write `content://sms`. Never add a code path that asks for the role outside a
-  user-started restore, and keep `SmsDeliverReceiver` saving incoming SMS: while the role is
-  held, nothing else will.
+- **As the default SMS app, the app must write what it sends and receives.** Android delivers
+  SMS/MMS only to the role holder and does not auto-write the role holder's sent messages.
+  `SmsDeliverReceiver` and the MMS download path must save every incoming message, and every
+  send path (`AndroidMessageSender`, `SmsForwarder`, `ScheduledSmsSender`, quick reply) must
+  record what it sent. Messages live only in the Telephony provider, never in Room.
+- **MMS PDU constants are whole octets.** `MmsHeaders.MESSAGE_TYPE_*`, `VALUE_*`, `PRIORITY_*`
+  etc. already carry the high bit; write them with `WspWriter.byte()`, not `shortInteger()`.
+  Every codec change needs a round-trip test in `MmsPduTest`.
 - **`SmsForwarder` swallows exceptions**, which is why `ForwardSmsWorker`'s `Result.retry()` is
   effectively dead for send failures. Do not copy that pattern; new workers must report failures.
 
 ## Important Notes
 
 - The app requires sensitive permissions (SMS, notifications, internet). Never log message content in production.
-- Google Play's SMS & Call Log Permissions policy gates `READ_SMS` / `RECEIVE_SMS` behind a declared core use case. The declared one is **"Backup and restore"**, which is why Backup is the first tab and the landing screen. Changes that de-emphasise backup have Play-policy consequences, not just product ones.
+- Google Play's SMS & Call Log Permissions policy gates SMS permissions behind a declared core use case. The declared one is **"Default SMS handler"**, which is why Messages is the first tab and the landing screen, and why the store listing and `PrivacyPolicy.md` state that the app's primary purpose is SMS messaging. Changes that de-emphasise messaging have Play-policy consequences, not just product ones.
 - Backup state (`sms_backup_state`) stores a one-way hash per message, never the body. Keep it that way — a second on-device copy of message content would change both `PrivacyPolicy.md` and the Data safety form.
 - `PrivacyPolicy.md` and `store-listing/data-safety.md` are load-bearing: they are linked from the store listing and describe commitments. Any change to what leaves the device must update both.
 - `SmsForwarder` is the core domain logic — keep it free of Android framework coupling (except `SmsManager`).

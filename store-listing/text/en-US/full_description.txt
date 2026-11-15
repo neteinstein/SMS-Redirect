@@ -1,31 +1,38 @@
-Your texts live on one phone. SMS Toolbox keeps them safe in your own Gmail and brings them back on a new phone. No account to create, and no server of ours in between.
+SMS Toolbox is a messaging app for your text messages. Set it as your default SMS app to send and receive SMS and MMS, and get a toolbox around them: back up to your own Gmail, restore on a new phone, redirect and schedule. No account to create, and no server of ours in between.
+
+SEND AND RECEIVE SMS AND MMS
+• All your conversations in one list, newest first, with contact names and unread markers
+• Send and receive text messages, picture messages (MMS) and group messages
+• Attach photos, videos, audio or contact cards; large photos are resized to fit
+• Notifications with quick reply and "mark as read", hidden on the lock screen
+• Open "send message" links and share text or pictures from other apps
+• Reply by text from the incoming-call screen
+• Failed messages are marked, and can be sent again with a tap
+
+REDIRECT
+• Forward incoming SMS that match your rules (by sender or number) to another phone
+• Rules in the order you choose, optional prefix, and a forward history
+
+SCHEDULE
+• Write a message once and have it sent later: once, daily, on work days, every two weeks, monthly or yearly
 
 BACKUP TO YOUR OWN GMAIL
-• Backs up every SMS you receive and every SMS you send, automatically, as it happens
-• Files them under a Gmail label you choose (default: "SMS"), searchable like any email
+• Backs up every SMS you receive and send, automatically, under a Gmail label you choose
 • Each contact gets a single Gmail conversation, and original dates are kept
-• Customise the email subject with the contact's name and number
 • Back up your whole history, or only messages from now on
-• Never uploads the same message twice, and picks up where it left off if interrupted
 • Goes straight from your phone to Google over an encrypted connection
 
 RESTORE TO ANY PHONE
-• Brings your backed-up texts back from Gmail, received and sent, each in the right place
-• Skips messages that are already on the phone, so it is safe to run again
-• Android only lets the default SMS app add messages, so SMS Toolbox borrows that role while the restore runs, then reminds you to switch back
+• Brings your backed-up texts back from Gmail, received and sent, each in the right conversation
+• Skips messages already on the phone, so it is safe to run again
 
 PRIVATE BY DESIGN
-• No account, no login, and no server of ours: nothing we run can receive your messages
-• Your settings stay on your phone
+• Your messages stay on your phone. No account, no login, and no server of ours
 • Gmail backup is off until you turn it on. It uses an app password you create, stored encrypted with the Android Keystore and sent only to Google
 • Crash reports and usage statistics (Firebase) never include phone numbers, contact names or message text
-• Fully open source, so every claim here can be checked: github.com/neteinstein/SMS-Redirect
-
-ALSO INCLUDED
-• Material You design, in light and dark mode
-• In English and Portuguese
+• Fully open source: github.com/neteinstein/SMS-Redirect
 
 PERMISSIONS, EXPLAINED
-Each permission is asked for only when a feature needs it. SMS: read your messages to back them up, and detect new ones as they arrive. Notifications: backup and restore progress. Battery exemption: back up messages as soon as they arrive. Internet: reach Gmail when backup is on. Default SMS app: only while a restore you started is running.
+SMS Toolbox first asks to become your default SMS app; Android then gives it access to your SMS and MMS, which it needs to show, send and receive them. Contacts: show names instead of numbers. Notifications: new messages, backup and restore progress. Battery exemption: deliver, forward and send scheduled messages on time. Internet: reach Gmail when backup is on.
 
 Questions or feedback? Email play-store-neteinstein@googlegroups.com or open an issue on GitHub.

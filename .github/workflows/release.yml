@@ -5,7 +5,7 @@ name: Build & Release
 #   github flavor -> SMS-Toolbox_vX.Y.Z.apk on a GitHub release. Every feature, plus the
 #                    in-app update check that reads these releases.
 #   play flavor   -> app-play-release.aab uploaded to Google Play's internal track.
-#                    Backup & Restore only, no SEND_SMS.
+#                    The messaging app and every tool; no self-update.
 # publish-play-store.yml stays as a manual way to (re)upload the Play bundle to another track.
 
 on:
@@ -91,17 +91,28 @@ jobs:
         # versionCode is derived from versionName in build.gradle.kts, so both artifacts share it.
         run: ./gradlew assembleGithubRelease bundlePlayRelease
 
-      - name: Verify the Play bundle does not request SEND_SMS
+      - name: Verify the Play bundle is a default SMS handler without self-update
         run: |
           set -euo pipefail
-          # The Play listing declares Backup and restore only. Fail the release rather than
-          # ship a bundle whose merged manifest asks for SEND_SMS or self-update rights.
+          # The Play listing declares the "Default SMS handler" use case, and Play forbids
+          # self-updates. Fail the release rather than ship a bundle whose merged manifest asks
+          # for self-update rights, or lacks a component Android requires of a default SMS app.
           manifest=$(find app/build/intermediates -path '*playRelease*' -name AndroidManifest.xml -print -quit)
           test -n "$manifest"
-          if grep -E 'android.permission.(SEND_SMS|REQUEST_INSTALL_PACKAGES)' "$manifest"; then
+          if grep -E 'android.permission.REQUEST_INSTALL_PACKAGES' "$manifest"; then
             echo "::error::Play bundle manifest ($manifest) declares a forbidden permission" >&2
             exit 1
           fi
+          for required in \
+            'android.provider.Telephony.SMS_DELIVER' \
+            'android.provider.Telephony.WAP_PUSH_DELIVER' \
+            'android.intent.action.SENDTO' \
+            'android.intent.action.RESPOND_VIA_MESSAGE'; do
+            if ! grep -q "$required" "$manifest"; then
+              echo "::error::Play bundle manifest ($manifest) lacks $required, so Android would not offer it the SMS role" >&2
+              exit 1
+            fi
+          done
 
       - name: Rename APK
         run: |
@@ -139,7 +150,7 @@ jobs:
 
           ---
           **Installing:** download `SMS-Toolbox_v*.apk` below. This GitHub build has every feature (Backup & Restore, Redirect, Schedule) and tells you in the app when a new version is out. First time installing an APK? Follow the [step-by-step guide](https://github.com/neteinstein/SMS-Redirect/blob/main/docs/install-apk.md).
-          The Google Play version has Backup & Restore only. Both are the same app signed with the same key, so you can switch between them without losing data.
+          The Google Play version has every feature except the in-app update check. Both are the same app signed with the same key, so you can switch between them without losing data.
           NOTES
 
       - name: Create GitHub Release

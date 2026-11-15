@@ -13,5 +13,8 @@ data class AppSettingsEntity(
     @ColumnInfo(defaultValue = "SMS Toolbox:") val forwardPrefix: String = "SMS Toolbox:",
     @ColumnInfo(defaultValue = "0") val showNotifications: Boolean = false,
     @ColumnInfo(defaultValue = "1") val keepScheduleHistory: Boolean = true,
-    @ColumnInfo(defaultValue = "BACKUP") val landingScreen: String = "BACKUP",
+    // The SQL default stays 'BACKUP' on purpose: changing it would change the schema, and with it
+    // the table rebuild Room demands. Rows are always written from Kotlin, so only the Kotlin
+    // default matters for new installs; MIGRATION_10_11 moves existing rows.
+    @ColumnInfo(defaultValue = "BACKUP") val landingScreen: String = "MESSAGES",
 )

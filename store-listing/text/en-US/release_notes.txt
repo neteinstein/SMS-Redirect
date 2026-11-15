@@ -1,2 +1,3 @@
-• SMS Toolbox on Google Play now focuses on one thing: backing up your texts to your own Gmail and restoring them on any phone. Message forwarding and scheduling are no longer part of the Play version, and the app no longer asks for permission to send SMS.
-• Backup and restore work exactly as before, and your Gmail settings are kept.
+• SMS Toolbox is now a full messaging app: send and receive SMS, picture messages (MMS) and group messages, with notifications and quick reply.
+• Make it your default SMS app from the new Messages tab.
+• Tabs: Messages, Redirect, Schedule, Backup and Restore. Gmail backup and restore work as before, and your settings are kept.

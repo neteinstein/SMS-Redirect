@@ -19,6 +19,9 @@ import com.neteinstein.smsredirect.domain.analytics.CrashReporter
 import com.neteinstein.smsredirect.domain.analytics.NoOpAnalyticsTracker
 import com.neteinstein.smsredirect.domain.analytics.NoOpCrashReporter
 import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
+import com.neteinstein.smsredirect.domain.model.SmsBox
+import com.neteinstein.smsredirect.domain.model.SmsMessageToRestore
+import com.neteinstein.smsredirect.domain.sms.SmsMessageWriter
 import com.neteinstein.smsredirect.domain.usecase.CanForwardSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetForwardPrefixNowUseCase
@@ -37,6 +40,11 @@ class SmsForwarder(
     private val getShowNotificationsNowUseCase: GetShowNotificationsNowUseCase,
     private val analyticsTracker: AnalyticsTracker = NoOpAnalyticsTracker,
     private val crashReporter: CrashReporter = NoOpCrashReporter,
+    /**
+     * Records the sent message in the conversation. Android does that itself for apps that are
+     * not the default SMS app, but not for the default one -- which this app usually is.
+     */
+    private val sentSmsWriter: SmsMessageWriter? = null,
 ) {
     companion object {
         private const val TAG = "SmsForwarder"
@@ -119,6 +127,7 @@ class SmsForwarder(
                 Log.d(TAG, "Message split into ${parts.size} parts")
                 smsManager.sendMultipartTextMessage(rule.targetNumber, null, parts, null, null)
             }
+            recordSent(rule.targetNumber, prefixedBody)
             Log.i(TAG, "SMS forwarded successfully to '${rule.targetNumber}'")
             analyticsTracker.logEvent(
                 AnalyticsEvents.SMS_FORWARDED,
@@ -258,5 +267,13 @@ class SmsForwarder(
     private fun looksLikePhoneNumber(value: String): Boolean {
         val stripped = value.replace(Regex("[\\s\\-().+]"), "")
         return stripped.length >= 4 && stripped.all { it.isDigit() }
+    }
+
+    private suspend fun recordSent(
+        address: String,
+        body: String,
+    ) {
+        val writer = sentSmsWriter?.takeIf { it.canWrite() } ?: return
+        writer.insert(SmsMessageToRestore(address, body, System.currentTimeMillis(), 0L, SmsBox.SENT))
     }
 }
