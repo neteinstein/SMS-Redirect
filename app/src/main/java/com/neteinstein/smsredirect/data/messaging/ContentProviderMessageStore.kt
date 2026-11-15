@@ -394,7 +394,16 @@ class ContentProviderMessageStore(
                 // In a group, one recipient's "deferred" must not hide another's "retrieved".
                 if (!MessageReceipts.shouldRecordMmsDelivery(currentStatus, status)) continue
                 val values = ContentValues().apply { put(Telephony.Mms.STATUS, status) }
-                safely { resolver.update(ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, rowId), values, null, null) }
+                // Reports are handled concurrently, so the precedence is also in the UPDATE itself:
+                // a non-delivered status only lands on a row that is not already delivered.
+                val (where, whereArgs) =
+                    if (status in MessageReceipts.DELIVERED_MMS_STATUSES) {
+                        null to null
+                    } else {
+                        "${Telephony.Mms.STATUS} IS NULL OR ${Telephony.Mms.STATUS} NOT IN (?, ?)" to
+                            MessageReceipts.DELIVERED_MMS_STATUSES.map(Int::toString).toTypedArray()
+                    }
+                safely { resolver.update(ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, rowId), values, where, whereArgs) }
             }
         }
     }
@@ -434,14 +443,18 @@ class ContentProviderMessageStore(
             query(
                 Telephony.Mms.CONTENT_URI,
                 arrayOf(Telephony.Mms._ID, Telephony.Mms.MESSAGE_ID, Telephony.Mms.SUBSCRIPTION_ID),
-                "${Telephony.Mms.THREAD_ID} = ? AND ${Telephony.Mms.MESSAGE_BOX} = ? AND ${Telephony.Mms.READ} = 0 AND " +
-                    "${Telephony.Mms.MESSAGE_TYPE} = ? AND ${Telephony.Mms.READ_REPORT} = ? AND " +
-                    "(${Telephony.Mms.READ_STATUS} IS NULL OR ${Telephony.Mms.READ_STATUS} = 0)",
+                // Unread and not handled yet, or a report whose earlier send failed (retried even
+                // though the message has been read since).
+                "${Telephony.Mms.THREAD_ID} = ? AND ${Telephony.Mms.MESSAGE_BOX} = ? AND " +
+                    "${Telephony.Mms.MESSAGE_TYPE} = ? AND ${Telephony.Mms.READ_REPORT} = ? AND (" +
+                    "(${Telephony.Mms.READ} = 0 AND (${Telephony.Mms.READ_STATUS} IS NULL OR ${Telephony.Mms.READ_STATUS} = 0)) OR " +
+                    "${Telephony.Mms.READ_STATUS} = ?)",
                 arrayOf(
                     threadId.toString(),
                     Telephony.Mms.MESSAGE_BOX_INBOX.toString(),
                     MmsHeaders.MESSAGE_TYPE_RETRIEVE_CONF.toString(),
                     MmsHeaders.VALUE_YES.toString(),
+                    READ_REPORT_RETRY.toString(),
                 ),
             ) { cursor ->
                 val rowId = cursor.long(Telephony.Mms._ID)
@@ -450,11 +463,54 @@ class ContentProviderMessageStore(
             }.mapNotNull { request -> mmsSender(request.rowId).takeIf { it.isNotBlank() }?.let { request.copy(from = it) } }
         }
 
-    /** Remembers that a read report went out, so it is never sent twice. */
-    suspend fun markReadReportSent(rowId: Long) {
+    /**
+     * Atomically claims a pending read report for sending. Only one caller wins, however many
+     * mark the conversation read at the same moment, so each report is sent at most once.
+     */
+    suspend fun claimReadReport(rowId: Long): Boolean =
         withContext(dispatcher) {
-            val values = ContentValues().apply { put(Telephony.Mms.READ_STATUS, MmsHeaders.READ_STATUS_READ) }
+            val values = ContentValues().apply { put(Telephony.Mms.READ_STATUS, READ_REPORT_SENDING) }
+            val claimed =
+                safely {
+                    resolver.update(
+                        ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, rowId),
+                        values,
+                        "${Telephony.Mms.READ_STATUS} IS NULL OR ${Telephony.Mms.READ_STATUS} IN (0, ?)",
+                        arrayOf(READ_REPORT_RETRY.toString()),
+                    )
+                } ?: 0
+            claimed == 1
+        }
+
+    /** The platform reported on a read report: done for good, or retryable on the next mark-read. */
+    suspend fun finishReadReport(
+        rowId: Long,
+        sent: Boolean,
+    ) {
+        withContext(dispatcher) {
+            val values =
+                ContentValues().apply {
+                    put(
+                        Telephony.Mms.READ_STATUS,
+                        if (sent) MmsHeaders.READ_STATUS_READ else READ_REPORT_RETRY,
+                    )
+                }
             safely { resolver.update(ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, rowId), values, null, null) }
+        }
+    }
+
+    /** A read report "sending" when the process died gets retried rather than forgotten. */
+    suspend fun resetInterruptedReadReports() {
+        withContext(dispatcher) {
+            val values = ContentValues().apply { put(Telephony.Mms.READ_STATUS, READ_REPORT_RETRY) }
+            safely {
+                resolver.update(
+                    Telephony.Mms.CONTENT_URI,
+                    values,
+                    "${Telephony.Mms.MESSAGE_BOX} = ? AND ${Telephony.Mms.READ_STATUS} = ?",
+                    arrayOf(Telephony.Mms.MESSAGE_BOX_INBOX.toString(), READ_REPORT_SENDING.toString()),
+                )
+            }
         }
     }
 
@@ -678,6 +734,13 @@ class ContentProviderMessageStore(
         private const val TAG = "MessageStore"
         private const val QUERY_CHUNK = 200
         private const val UNKNOWN_SENDER = "unknown"
+
+        /**
+         * App-private `read_status` values on a *received* MMS, tracking our outgoing read report.
+         * Below the X-Mms-Read-Status range (128+), which marks a report as sent.
+         */
+        const val READ_REPORT_SENDING = 0x70
+        const val READ_REPORT_RETRY = 0x71
 
         /** PduHeaders.FROM / TO / CC, the `type` column of `content://mms/<id>/addr`. */
         const val ADDR_TYPE_FROM = 137

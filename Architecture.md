@@ -134,7 +134,12 @@ SharedPreferences by `SharedPreferencesMessagingSettingsRepository`, no Room mig
 - *MMS read reports*: M-Send.req carries `X-Mms-Read-Report: Yes`; M-Read-Orig.ind is stored in
   `read_status`. A received MMS that asks for one keeps `rr = Yes`; when its conversation is
   marked read, `MarkConversationReadUseCase` first has `MmsReadReportSender` send an
-  M-Read-Rec.ind for each such unread message, then records it so it never goes twice.
+  M-Read-Rec.ind for each such unread message. Each report is claimed atomically
+  (`read_status` → app-private "sending", so concurrent mark-reads send it once), marked sent
+  only when the MMS service confirms it, and otherwise left "retry" so the next mark-read of that
+  conversation sends it again; a report "sending" when the process died is reset to retry.
+- CDMA status reports carry the bearer error class, not a GSM TP-Status, and are decoded
+  separately (`MessageReceipts.smsStatusForCdmaReport`).
 - `MessageReceipts` maps the stored values to `MessageReceipt` (Delivered, Not delivered, Read),
   shown next to the time under sent messages.
 

@@ -214,28 +214,57 @@ class AndroidMmsDownloader(
      * Called (by MarkConversationReadUseCase) only when the user turned MMS read reports on.
      */
     override suspend fun sendReadReports(threadId: Long) {
-        for (request in store.pendingReadReports(threadId)) {
-            val pdu =
-                composer.composeReadRecInd(
-                    messageId = request.messageId,
-                    to = request.from,
-                    dateEpochSeconds = System.currentTimeMillis() / 1000,
-                )
-            if (sendPdu(pdu, request.subscriptionId, "read")) store.markReadReportSent(request.rowId)
+        withContext(dispatcher) {
+            for (request in store.pendingReadReports(threadId)) {
+                // Another mark-read may be sending this same report right now: only one claims it.
+                if (!store.claimReadReport(request.rowId)) continue
+                val pdu =
+                    composer.composeReadRecInd(
+                        messageId = request.messageId,
+                        to = request.from,
+                        dateEpochSeconds = System.currentTimeMillis() / 1000,
+                    )
+                // Recorded as sent only when the MMS service confirms (onReadReportSent).
+                val result =
+                    Intent(
+                        MessageStatusReceiver.ACTION_MMS_READ_REPORT_SENT,
+                        Uri.fromParts("mmsreadreport", request.rowId.toString(), null),
+                        context,
+                        MessageStatusReceiver::class.java,
+                    ).putExtra(MessageStatusReceiver.EXTRA_MMS_ROW_ID, request.rowId)
+                val started = sendPdu(pdu, request.subscriptionId, "read", result)
+                if (!started) store.finishReadReport(request.rowId, sent = false)
+            }
         }
     }
 
-    /** Best effort, no callback: hands a small PDU (acknowledge, read report) to the MMS service. */
+    /** The MMS service reported on a read report sent by [sendReadReports]. */
+    suspend fun onReadReportSent(
+        rowId: Long,
+        resultCode: Int,
+    ) {
+        store.finishReadReport(rowId, sent = resultCode == Activity.RESULT_OK)
+    }
+
+    /**
+     * Hands a small PDU (acknowledge, read report) to the MMS service. With [resultIntent], the
+     * service's verdict is broadcast to it; without one, this is fire-and-forget.
+     */
     private fun sendPdu(
         pdu: ByteArray,
         subscriptionId: Int,
         kind: String,
+        resultIntent: Intent? = null,
     ): Boolean {
         val file = File(mmsDir(), "$kind-${UUID.randomUUID()}.pdu")
         return try {
             file.writeBytes(pdu)
             val contentUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-            smsManager(subscriptionId).sendMultimediaMessage(context, contentUri, null, null, null)
+            val sentIntent =
+                resultIntent?.let {
+                    PendingIntent.getBroadcast(context, 0, it, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
+                }
+            smsManager(subscriptionId).sendMultimediaMessage(context, contentUri, null, null, sentIntent)
             // The file must outlive the platform's read of it; stale ones are cleared on next start.
             true
         } catch (e: Exception) {

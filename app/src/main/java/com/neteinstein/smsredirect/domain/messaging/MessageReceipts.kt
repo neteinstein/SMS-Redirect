@@ -37,6 +37,18 @@ object MessageReceipts {
         }
 
     /**
+     * The provider status for a CDMA (3GPP2) status report. `SmsMessage.getStatus()` returns the
+     * bearer data's error class and message status shifted left by 16, not a GSM TP-Status:
+     * bits 24-25 hold the error class (0 none, 2 temporary, 3 permanent; 3GPP2 C.S0015 4.5.21).
+     */
+    fun smsStatusForCdmaReport(status: Int): Int =
+        when ((status ushr 24) and 0x03) {
+            0 -> SMS_STATUS_COMPLETE
+            3 -> SMS_STATUS_FAILED
+            else -> SMS_STATUS_PENDING
+        }
+
+    /**
      * @param reportRequested whether a delivery or read report was asked for when it was sent.
      * @param deliveryStatus the latest X-Mms-Status from an M-Delivery.ind, or null/0.
      * @param readStatus the X-Mms-Read-Status from an M-Read-Orig.ind, or null/0.
@@ -67,7 +79,7 @@ object MessageReceipts {
         new: Int,
     ): Boolean = current == null || current == 0 || current !in DELIVERED_MMS_STATUSES || new in DELIVERED_MMS_STATUSES
 
-    private val DELIVERED_MMS_STATUSES = setOf(MmsHeaders.STATUS_RETRIEVED, MmsHeaders.STATUS_FORWARDED)
+    val DELIVERED_MMS_STATUSES = setOf(MmsHeaders.STATUS_RETRIEVED, MmsHeaders.STATUS_FORWARDED)
     private val FAILED_MMS_STATUSES =
         setOf(MmsHeaders.STATUS_EXPIRED, MmsHeaders.STATUS_REJECTED, MmsHeaders.STATUS_UNREACHABLE, MmsHeaders.STATUS_UNRECOGNISED)
 }

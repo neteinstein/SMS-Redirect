@@ -42,4 +42,16 @@ class MessageReceiptsTest {
         assertFalse(MessageReceipts.shouldRecordMmsDelivery(MmsHeaders.STATUS_RETRIEVED, MmsHeaders.STATUS_DEFERRED))
         assertTrue(MessageReceipts.shouldRecordMmsDelivery(MmsHeaders.STATUS_RETRIEVED, MmsHeaders.STATUS_FORWARDED))
     }
+
+    @Test
+    fun `cdma status reports are decoded by error class, not as a gsm TP-Status`() {
+        // SmsMessage.getStatus() for 3gpp2: (errorClass << 8 | messageStatus) << 16.
+        val delivered = (0 shl 8 or 0x02) shl 16
+        val temporary = (2 shl 8 or 0x04) shl 16
+        val permanent = (3 shl 8 or 0x06) shl 16
+
+        assertEquals(MessageReceipts.SMS_STATUS_COMPLETE, MessageReceipts.smsStatusForCdmaReport(delivered))
+        assertEquals(MessageReceipts.SMS_STATUS_PENDING, MessageReceipts.smsStatusForCdmaReport(temporary))
+        assertEquals(MessageReceipts.SMS_STATUS_FAILED, MessageReceipts.smsStatusForCdmaReport(permanent))
+    }
 }

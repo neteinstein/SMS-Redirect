@@ -165,6 +165,7 @@ class SmsRedirectApplication : Application() {
         Thread {
             runCatching { mmsDownloader.clearStaleFiles() }
             runCatching { runBlocking { messageStore.resetInterruptedMmsDownloads() } }
+            runCatching { runBlocking { messageStore.resetInterruptedReadReports() } }
         }.start()
         val backupSmsMessageUseCase =
             BackupSmsMessageUseCase(

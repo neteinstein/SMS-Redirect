@@ -372,9 +372,15 @@ class AndroidMessageSender(
         format: String?,
     ) {
         withContext(dispatcher) {
-            val tpStatus =
+            val reportStatus =
                 pdu?.let { runCatching { SmsMessage.createFromPdu(it, format)?.status }.getOrNull() } ?: return@withContext
-            val values = ContentValues().apply { put(Telephony.Sms.STATUS, MessageReceipts.smsStatusForReport(tpStatus)) }
+            val providerStatus =
+                if (format == SmsMessage.FORMAT_3GPP2) {
+                    MessageReceipts.smsStatusForCdmaReport(reportStatus)
+                } else {
+                    MessageReceipts.smsStatusForReport(reportStatus)
+                }
+            val values = ContentValues().apply { put(Telephony.Sms.STATUS, providerStatus) }
             runCatching { resolver.update(messageUri, values, null, null) }
         }
     }
