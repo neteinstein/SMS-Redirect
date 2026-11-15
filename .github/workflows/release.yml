@@ -4,7 +4,8 @@ name: Build & Release
 # same versionCode -- see app/build.gradle.kts):
 #   github flavor -> SMS-Toolbox_vX.Y.Z.apk on a GitHub release. Every feature, plus the
 #                    in-app update check that reads these releases.
-#   play flavor   -> app-play-release.aab uploaded to Google Play's internal track.
+#   play flavor   -> app-play-release.aab uploaded to Google Play's internal track, and also
+#                    attached to the GitHub release as SMS-Toolbox_vX.Y.Z.aab for manual uploads.
 #                    The messaging app and every tool; no self-update.
 # publish-play-store.yml stays as a manual way to (re)upload the Play bundle to another track.
 
@@ -114,9 +115,11 @@ jobs:
             fi
           done
 
-      - name: Rename APK
+      - name: Rename APK and copy AAB
         run: |
           mv app/build/outputs/apk/github/release/app-github-release.apk app/build/outputs/apk/github/release/SMS-Toolbox_v${{ steps.bump.outputs.new_version }}.apk
+          # Copy (not move): the Play upload step below still reads the original app-play-release.aab.
+          cp app/build/outputs/bundle/playRelease/app-play-release.aab app/build/outputs/bundle/playRelease/SMS-Toolbox_v${{ steps.bump.outputs.new_version }}.aab
 
       - name: Generate release notes
         env:
@@ -159,7 +162,9 @@ jobs:
           tag_name: v${{ steps.bump.outputs.new_version }}
           target_commitish: ${{ steps.bump.outputs.new_sha }}
           name: Release v${{ steps.bump.outputs.new_version }}
-          files: app/build/outputs/apk/github/release/SMS-Toolbox_v${{ steps.bump.outputs.new_version }}.apk
+          files: |
+            app/build/outputs/apk/github/release/SMS-Toolbox_v${{ steps.bump.outputs.new_version }}.apk
+            app/build/outputs/bundle/playRelease/SMS-Toolbox_v${{ steps.bump.outputs.new_version }}.aab
           body_path: release_notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
