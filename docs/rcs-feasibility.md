@@ -11,9 +11,10 @@ older alternative, an app running its own independent IMS stack ("dual registrat
 by Android permissions, but it needs the carrier (or Google's Jibe) to provision that client. There is
 no public route for a third-party client to get that provisioning. Google
 offers no public RCS API to third-party messaging apps; the one known Google Messages API is
-allowlisted to Samsung. Every third-party app with "RCS" (Beeper, Messages by OzarksMade) gets it by
-driving Google Messages, which must stay installed and in charge of RCS, and some of them also need a
-server. **Recommendation: (d) do nothing on RCS and document why, plus (c′) a small set of serverless
+allowlisted to Samsung. Third-party apps that offered "RCS" did it by driving Google Messages
+(Beeper, through a bridge server). Messages by OzarksMade did the same until it retired that mode,
+saying the Google API Terms of Service required it to; it now runs its own separate RCS network,
+which does not reach Google Messages users. **Recommendation: (d) do nothing on RCS and document why, plus (c′) a small set of serverless
 SMS/MMS improvements (delivery and read reports) that use carrier features we already have.**
 
 ## 1. Can a third-party default SMS app do RCS?
@@ -76,7 +77,7 @@ only to its own apps. Even with them, the RCS calls above still need the privile
 |---|---|---|
 | **Samsung Messages** | Had RCS (preinstalled, privileged, Samsung-allowlisted). **Discontinued**: Samsung announced in April 2026 that it was ending the app and moved users to Google Messages. It ended in July 2026 ([Engadget][engadget], [Cybernews][cybernews], [Samsung Community][samsung]). | System app, so the privileged path above |
 | **Google Messages** | Yes | Preinstalled/privileged on most devices, Jibe or carrier RCS. Google's own troubleshooting says to make it the default SMS app for RCS ([Google Messages Help][gm-help]) |
-| **Messages by OzarksMade** (2026) | Only in "Companion Mode" | Uses Google Messages *"as a background engine"*. Third-party developers *"cannot directly access RCS networks"*. Google Messages must stay installed and running ([Notebookcheck, 2026-07-29][nbc], [Android Headlines][ah]) |
+| **Messages by OzarksMade** (2026) | Not with Google Messages users any more | "Companion Mode" used Google Messages *"as a background engine"* ([Notebookcheck, 2026-07-29][nbc], [Android Headlines][ah]). It has been retired: *"our Google Messages integration has been discontinued, as required by the Google API Terms of Service"*, because *"Google changed the requirements for pairing"* ([OzarksMade][oz]). The app now runs **its own RCS network**, which *"does not connect to Google Messages RCS"*. Chat features work only between OzarksMade users, on OzarksMade-operated servers, as a paid subscription from 2027-01-01 ([OzarksMade RCS][oz-rcs]) |
 | **Beeper** | Yes | A Matrix bridge (`mautrix-gmessages`) to Google Messages' web pairing. *"All messages are proxied through the app, your phone must be connected"*, and QR pairing *"appears to no longer work"* ([mautrix docs][mau-auth], [mautrix/gmessages][mau]). Needs Google Messages + a bridge server |
 | **Textra, Pulse, QKSMS, Fossify Messages** | No | No API. Community threads say there is no path for Fossify ([Lemmy discussion][lemmy], [Fossify issues][fossify]). Older reports say Beeper was told there is no public RCS API ([Hacker News][hn]) |
 
@@ -93,9 +94,10 @@ only to its own apps. Even with them, the RCS calls above still need the privile
   permissions changes ([Play policy][play]). A Google Messages handoff or "companion" design would mean
   giving up the default SMS role (see below), which removes our declared core use case. Play would then
   require us to drop SMS permissions or re-declare.
-- **Don't reverse-engineer Google Messages** (the Beeper/OzarksMade route). It depends on undocumented
-  behaviour Google has already broken once (QR pairing), and it puts a Google app between the user and
-  their messages, which conflicts with this app's "no intermediary" promises.
+- **Don't reverse-engineer Google Messages** (the Beeper route, and OzarksMade's former one). It depends
+  on undocumented behaviour Google has already broken (QR pairing). OzarksMade withdrew its integration
+  citing the Google API Terms of Service ([OzarksMade][oz]). It also puts a Google app between the user
+  and their messages, which conflicts with this app's "no intermediary" promises.
 
 ## 4. Options for SMS Toolbox, ranked
 
@@ -143,7 +145,8 @@ These are SMS/MMS standards, not RCS, so they work with every phone and add no s
   Messages is the default app, so users would be switching defaults back and forth, and SMS Toolbox
   would lose `SMS_DELIVER` and the Messages tab. That undermines the "Default SMS handler" declaration
   and the restore/write-what-you-send invariants in `CLAUDE.md`.
-- A "companion" design like OzarksMade's relies on undocumented Google Messages behaviour. Changes to
+- A "companion" design like OzarksMade's former one relies on undocumented Google Messages behaviour,
+  and OzarksMade withdrew it citing Google's API terms ([OzarksMade][oz]). Changes to
   `PrivacyPolicy.md` and `data-safety.md` would be needed to say messages pass through Google
   Messages/Google's RCS servers.
 
@@ -176,6 +179,8 @@ These are SMS/MMS standards, not RCS, so they work with every phone and add no s
 [gm-help]: https://support.google.com/messages/answer/9487020?hl=en
 [nbc]: https://www.notebookcheck.net/Samsung-Messages-lives-on-thanks-to-this-unofficial-RCS-app.1354769.0.html
 [ah]: https://www.androidheadlines.com/2026/07/ozarksmade-app-recreates-samsung-messages-one-ui-rcs.html
+[oz]: https://messages.ozarksmade.net/
+[oz-rcs]: https://messages.ozarksmade.net/ozarksmade-rcs.html
 [mau-auth]: https://docs.mau.fi/bridges/go/gmessages/authentication.html
 [mau]: https://github.com/mautrix/gmessages
 [lemmy]: https://lemmy.nekusoul.de/post/427541
@@ -196,7 +201,8 @@ These are SMS/MMS standards, not RCS, so they work with every phone and add no s
 | [Google Messages Help: RCS chats][gm-help] | accessed 2026-11-15 | Default-app troubleshooting step |
 | [Jibe platform][jibe], [Google RBM partner registration][rbm] | accessed 2026-11-15 | Primary (Google) |
 | [XDA hidden API][xda] | 2021-07-09; accessed 2026-11-15 | Samsung-only allowlist |
-| [Notebookcheck on OzarksMade][nbc] | 2026-07-29 (upd. 2026-10-05); accessed 2026-11-15 | Companion Mode uses Google Messages |
+| [Notebookcheck on OzarksMade][nbc] | 2026-07-29 (upd. 2026-10-05); accessed 2026-11-15 | Companion Mode used Google Messages |
+| [OzarksMade site][oz], [OzarksMade RCS][oz-rcs] | no page date; accessed 2026-11-15 | Primary: Companion Mode retired (Google API ToS); own separate RCS network |
 | [mautrix-gmessages auth docs][mau-auth] | accessed 2026-11-15 | Beeper's bridge mechanism |
 | [Privacy Guides on iOS 26.5 E2EE][pg-e2ee] | 2026-05-05; accessed 2026-11-15 | UP 3.0 / MLS |
 | [Engadget][engadget], [Cybernews][cybernews], [Samsung Community][samsung] | 2026; accessed 2026-11-15 | Samsung Messages discontinued July 2026 |
