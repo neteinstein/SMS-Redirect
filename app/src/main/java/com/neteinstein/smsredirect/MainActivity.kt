@@ -131,12 +131,18 @@ class MainActivity : ComponentActivity() {
 
     private val newIntentFlow = MutableStateFlow<Intent?>(null)
 
+    /** True when the app was opened from the monthly "open the app" reminder. */
+    private val openedFromReminderFlow = MutableStateFlow(false)
+
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         dismissAllNotifications()
-        if (savedInstanceState == null) composeIntentFlow.value = ComposeRequest.from(intent)
+        if (savedInstanceState == null) {
+            composeIntentFlow.value = ComposeRequest.from(intent)
+            openedFromReminderFlow.value = intent.getBooleanExtra(KeepAliveNotifications.EXTRA_FROM_REMINDER, false)
+        }
 
         setContent {
             SmsRedirectTheme {
@@ -180,6 +186,40 @@ class MainActivity : ComponentActivity() {
                             newIntentFlow.value = null
                         }
                     }
+                }
+
+                // First open from the monthly reminder: explain that the reminder (and Android's
+                // clean-up of unused apps) can be switched off. Shown once, and only if the user
+                // has not already exempted the app.
+                var showUnusedAppInfo by rememberSaveable { mutableStateOf(false) }
+                LaunchedEffect(Unit) {
+                    openedFromReminderFlow.collect { fromReminder ->
+                        if (fromReminder) {
+                            openedFromReminderFlow.value = false
+                            if (appContainer.shouldShowUnusedAppInfoUseCase()) {
+                                appContainer.markUnusedAppInfoShownUseCase()
+                                showUnusedAppInfo = true
+                            }
+                        }
+                    }
+                }
+                if (showUnusedAppInfo) {
+                    AlertDialog(
+                        onDismissRequest = { showUnusedAppInfo = false },
+                        title = { Text(stringResource(R.string.unused_app_info_title)) },
+                        text = { Text(stringResource(R.string.unused_app_info_message)) },
+                        dismissButton = {
+                            TextButton(onClick = { showUnusedAppInfo = false }) {
+                                Text(stringResource(R.string.unused_app_info_dismiss))
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showUnusedAppInfo = false
+                                openUnusedAppSettings()
+                            }) { Text(stringResource(R.string.unused_app_info_open_settings)) }
+                        },
+                    )
                 }
 
                 var showBatteryDialog by remember { mutableStateOf(false) }
@@ -1600,6 +1640,19 @@ class MainActivity : ComponentActivity() {
         dismissAllNotifications()
         newIntentFlow.value = intent
         composeIntentFlow.value = ComposeRequest.from(intent)
+        openedFromReminderFlow.value = intent.getBooleanExtra(KeepAliveNotifications.EXTRA_FROM_REMINDER, false)
+        // A launch delivered to an already-started activity does not go through onStart.
+        restartKeepAliveCountdown()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        restartKeepAliveCountdown()
+    }
+
+    /** Opening the app is what keeps Android from treating it as unused: restart the countdown. */
+    private fun restartKeepAliveCountdown() {
+        (application as SmsRedirectApplication).appContainer.keepAliveReminderScheduler.schedule()
     }
 
     /**
@@ -1612,6 +1665,16 @@ class MainActivity : ComponentActivity() {
         notificationManager.activeNotifications
             .filterNot { MessageNotifications.isMessageNotification(it.notification) }
             .forEach { notificationManager.cancel(it.tag, it.id) }
+    }
+
+    /** Opens "Manage app if unused" for this app, or the app's details page if that is unavailable. */
+    private fun openUnusedAppSettings() {
+        val uri = "package:$packageName".toUri()
+        try {
+            startActivity(Intent(Intent.ACTION_AUTO_REVOKE_PERMISSIONS, uri))
+        } catch (e: android.content.ActivityNotFoundException) {
+            runCatching { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, uri)) }
+        }
     }
 
     private fun resolveDeepLinkRoute(intent: Intent?): String? {
