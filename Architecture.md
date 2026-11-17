@@ -5,7 +5,7 @@
 SMS Toolbox is an Android SMS/MMS messaging app with a toolbox around it, presented as five bottom-navigation tabs on the home screen, in this order:
 
 - **Messages** — a full messaging client used as the device's default SMS app: conversation list, conversations, sending and receiving SMS and MMS (pictures, group messages), notifications with reply. This is the app's primary feature and the landing tab.
-- **Redirect** — intercepts incoming SMS messages matching user-defined rules and forwards them to a configured target phone number via SMS.
+- **Automate** (the tab formerly called Redirect; internally still `REDIRECT` / `HomeScreen`) — rules matched against every incoming SMS. A rule either **redirects** the message to a configured target number via SMS, or runs a **phone action** on this device: ring at maximum volume with a chosen sound, vibrate in a pattern, or change the sound mode. See "Automation phone actions".
 - **Schedule** — lets the user compose a message once and have it sent automatically at a future date/time, optionally repeating on a recurring pattern.
 - **Backup** — copies SMS messages to the user's own Gmail account over IMAP.
 - **Restore** — copies those backups back into the phone's SMS store.
@@ -437,11 +437,30 @@ run as `NOT_DEFAULT_SMS_APP` instead of counting every remaining message as fail
 
 ## Rule Matching
 
-Rules are evaluated in sort order. A rule matches if:
-- The sender text **contains** the rule's `senderText` (case-insensitive), OR
-- The sender's digits match the rule's `phoneNumber` digits exactly
+Every rule has a `type` (`RuleType`): `REDIRECT` or `PHONE_ACTION`. The sender test is shared (`Rule.matchesSender`): a rule's sender matches if
+- the sender **equals** the rule's `senderText` (case-insensitive, e.g. an alphanumeric sender ID), OR
+- the sender's digits match the rule's `phoneNumber` digits exactly.
 
-First matching rule wins. If no rule matches, the message is not forwarded.
+**Redirect rules** (`FindMatchingRuleUseCase`) are evaluated in sort order and the **first** match wins. Phone-action rules are skipped, even when sorted first. If no redirect rule matches, the message is not forwarded.
+
+**Phone-action rules** (`Rule.triggersPhoneAction`, `FindMatchingPhoneActionRulesUseCase`) need a sender, a `messageText`, or both. The sender (if set) must match, and the body must **contain** `messageText` (if set, case-insensitive). **Every** matching phone-action rule runs, so one message can ring and vibrate. Redirect and phone-action matching are independent: one SMS can be forwarded and also ring the phone.
+
+## Automation phone actions
+
+```
+SmsReceiver ──(goAsync)──► TriggerPhoneActionsUseCase ──► PhoneActionScheduler ──► PhoneActionWorker ──► PhoneActionExecutor
+               match rules in memory          (WorkManagerPhoneActionScheduler)   (expedited, one per action)   (AndroidPhoneActionExecutor)
+```
+
+- `PhoneAction` (`domain/model/`) is a sealed interface: `Ring(soundUri, soundName)`, `Vibrate(VibrationPattern)`, `SetSoundMode(SoundMode)`. It is persisted as three strings, `kind` / `value` / `label`, in the `rules` table, the configuration export and the worker's input; `PhoneAction.decode` reads them back. Those names are a stored contract: add new kinds or enum constants, never rename one (`PhoneActionTest` pins them).
+- `SmsReceiver` matches in the receiver (on `goAsync()`), so **only the matched actions** reach WorkManager, never the message body.
+- `PhoneActionWorker` runs one action and reports failure (`Result.failure()`), never retries. Each request carries its queue time, and an action that starts more than `PhoneAction.MAX_START_DELAY_MILLIS` (2 min) late is dropped: once the expedited quota is spent WorkManager may defer the work, and a full-volume ring long after the SMS is worse than none.
+- **Ring** plays with `MediaPlayer` on the **alarm** stream (`USAGE_ALARM`), which ignores the ringer mode, so it rings on silent. The alarm volume is set to maximum and restored afterwards. It loops until the notification's Stop (or a tap or swipe, via `StopRingingReceiver`; the notification is not ongoing, so it can be swiped on Android 13) or `PhoneAction.RING_DURATION_MILLIS` (60 s). If the notification cannot be shown (permission denied, notifications or the channel off) there is no Stop button, so the ring lasts only `RING_WITHOUT_STOP_DURATION_MILLIS` (15 s); the editor asks for the notification permission when a Ring rule is saved or tried. `ActiveRing` (a `RingCoordinator`) keeps a single ring per process: a new ring ends the previous one and inherits the saved volume. Starting and finishing, with their volume and notification changes, run under one lock (`RingCoordinatorTest`). A missing or unreadable sound falls back to the default alarm, then the ringtone. Songs come from `ACTION_OPEN_DOCUMENT` with a persisted read grant; system sounds come from the ringtone picker. No audio focus is requested (Android 15 refuses it to background apps). No foreground service is used: the expedited worker keeps the process alive for the minute.
+- **Vibrate** uses `VibrationAttributes.USAGE_ALARM`, because Android drops other vibrations from background apps.
+- **Sound mode** sets `AudioManager.ringerMode`. Any switch to or from silent toggles Do Not Disturb and needs notification-policy access (`SoundModeAccessChecker`). The editor shows a warning with a shortcut to the settings page, and a rule that fires without access posts a notification instead of failing silently.
+- The editor's "Try it now" schedules the unsaved action through the same scheduler.
+- Phone actions keep no history and send nothing off the device.
+
 
 ## Scheduled SMS Pipeline
 
@@ -526,7 +545,7 @@ Redirect and Schedule each own their own tables end-to-end — `ScheduledSmsEnti
 
 | Entity | Table name | Purpose |
 |--------|-----------|---------|
-| `RuleEntity` | `rules` | Forwarding rules (sender match → target number) |
+| `RuleEntity` | `rules` | Automation rules: redirect (sender match → target number) or phone action (sender and/or message text → `phoneAction`/`phoneActionValue`/`phoneActionLabel`). v12 added `ruleType`, `messageText` and the three action columns (`MIGRATION_11_12`, checked against `12.json` by `AppDatabaseMigrationTest`) |
 | `AppSettingsEntity` | `app_settings` | App-wide settings (roaming, history, prefixes, notifications) |
 | `ForwardHistoryEntity` | `forward_history` | Log of forwarded messages (Redirect) |
 | `ScheduledSmsEntity` | `scheduled_sms` | Scheduled SMS definitions (name, category, contact, message, date, repeat pattern, stop-at, sort order) |
@@ -602,6 +621,9 @@ Permissions are requested contextually rather than upfront at first launch — t
 | `POST_NOTIFICATIONS` | Right after the SMS role is granted; turning on "Show notifications"; enabling backup or starting a restore | Incoming messages; backup/restore progress; forward and scheduled-send confirmations |
 | `INTERNET` / `ACCESS_NETWORK_STATE` | Not runtime-requested (install-time) | Reach `imap.gmail.com`. Both previously arrived only via manifest merge from the Firebase/WorkManager AARs; they are now declared explicitly |
 | Battery optimization exemption | Right after creating a new rule or scheduled SMS | Prevent Doze from throttling background delivery; declining shows a persistent warning banner on Home until enabled |
+| `VIBRATE` | Not runtime-requested (install-time) | Phone action: vibrate |
+| `MODIFY_AUDIO_SETTINGS` | Not runtime-requested (install-time) | Phone actions: raise and restore the alarm volume, change the ringer mode |
+| `ACCESS_NOTIFICATION_POLICY` ("Do Not Disturb" access) | Not a runtime permission: the user grants it in system settings, from the warning in the rule editor when a sound-mode action is chosen | Phone action: switch the ringer to or from silent |
 | `REQUEST_INSTALL_PACKAGES` (github flavor only) | Not runtime-requested; the user allows "install unknown apps" for SMS Toolbox the first time they install an update | Hand the downloaded update APK to the system installer |
 
 WorkManager's own scheduling permissions were already present for the Redirect feature — Schedule required no new manifest permissions.
@@ -615,7 +637,7 @@ Uses Jetpack Compose with a simple NavHost. The `Home` route hosts a bottom navi
 - **SplashScreen** → **ConversationListScreen** (`Home` route, Messages tab — the landing screen; shown disabled, with a warning bar, until the app holds the SMS role)
   - → **NewMessageScreen** (`new_message`: recipients, contact picker) → **ConversationScreen**
   - → **ConversationScreen** (`conversation?threadId=…` or `?addresses=…&draft=…&attachment=…`: bubbles, attachments, composer, retry/delete). Also reached from a notification (`smsredirect://app/conversation?threadId=…`) and from `ComposeSmsActivity`
-- **SplashScreen** → **HomeScreen** (Redirect tab: rule list with drag-to-reorder)
+- **SplashScreen** → **HomeScreen** (Automate tab: rule list with drag-to-reorder; each card shows a redirect's target or a phone action)
   - **HomeScreen** → **RuleScreen** (create/edit rule)
   - **HomeScreen** → **SettingsScreen** (toggles, prefix config — shared/global, see below)
   - **SettingsScreen** → **HistoryScreen** (last 50 forwarded messages, Redirect-specific)

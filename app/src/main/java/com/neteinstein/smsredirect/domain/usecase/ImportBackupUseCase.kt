@@ -4,8 +4,10 @@ import com.neteinstein.smsredirect.domain.analytics.AnalyticsEvents
 import com.neteinstein.smsredirect.domain.analytics.AnalyticsTracker
 import com.neteinstein.smsredirect.domain.analytics.NoOpAnalyticsTracker
 import com.neteinstein.smsredirect.domain.model.LandingScreen
+import com.neteinstein.smsredirect.domain.model.PhoneAction
 import com.neteinstein.smsredirect.domain.model.RepeatType
 import com.neteinstein.smsredirect.domain.model.Rule
+import com.neteinstein.smsredirect.domain.model.RuleType
 import com.neteinstein.smsredirect.domain.model.ScheduledSms
 import com.neteinstein.smsredirect.domain.repository.RuleRepository
 import com.neteinstein.smsredirect.domain.repository.ScheduledSmsRepository
@@ -75,6 +77,15 @@ class ImportBackupUseCase(
                     targetNumber = obj.optString("targetNumber", ""),
                     sortOrder = obj.optInt("sortOrder", 0),
                     category = obj.optString("category", ""),
+                    // Exports from before automation have none of these: a redirect rule.
+                    type = RuleType.entries.firstOrNull { it.name == obj.optString("type") } ?: RuleType.REDIRECT,
+                    messageText = obj.optString("messageText", ""),
+                    phoneAction =
+                        PhoneAction.decode(
+                            kind = obj.optString("phoneAction", ""),
+                            value = obj.optString("phoneActionValue", ""),
+                            label = obj.optString("phoneActionLabel", ""),
+                        ),
                 )
 
             val isDuplicate =
@@ -82,7 +93,10 @@ class ImportBackupUseCase(
                     existing.name == rule.name &&
                         existing.senderText == rule.senderText &&
                         existing.phoneNumber == rule.phoneNumber &&
-                        existing.targetNumber == rule.targetNumber
+                        existing.targetNumber == rule.targetNumber &&
+                        existing.type == rule.type &&
+                        existing.messageText == rule.messageText &&
+                        existing.phoneAction == rule.phoneAction
                 }
 
             if (!isDuplicate && rule.isValid()) {

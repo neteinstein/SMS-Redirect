@@ -24,6 +24,13 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Automation phone actions: vibrate in a pattern, and switch the ringer to or from silent
+         (which Android ties to "Do Not Disturb" access the user grants in system settings).
+         MODIFY_AUDIO_SETTINGS covers the alarm volume and ringer mode changes. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <!-- Required on Android 13+ for Firebase Analytics to access Advertising ID.
@@ -127,6 +134,10 @@
              Only ever reached through explicit PendingIntents this app creates. -->
         <receiver
             android:name=".MessageStatusReceiver"
+            android:exported="false" />
+        <!-- The "Stop" button of an automation ring. -->
+        <receiver
+            android:name=".StopRingingReceiver"
             android:exported="false" />
 
         <!-- Also hands MMS PDU files (cache/mms/) to the platform's MMS service, which reads the

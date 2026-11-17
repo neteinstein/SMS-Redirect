@@ -67,7 +67,7 @@ a live SIM (not an emulator, so SMS and MMS are real):
 6. Picture message: in the conversation, tap the photo button, pick a photo,
    send it (the hint reads "Picture or group message (MMS)"). From the second
    phone, send a picture back and show it arriving in the conversation.
-7. Briefly show the other tabs — Redirect, Schedule, Backup, Restore — as
+7. Briefly show the other tabs — Automate, Schedule, Backup, Restore — as
    features built on top of the messaging app.
 8. Optional: Android Settings → Apps → Default apps → SMS app shows SMS
    Toolbox selected.
@@ -99,7 +99,7 @@ build before promoting to `alpha`/`beta`/`production`.
 
 ### Manual test script
 
-This is the **play** flavor: every tab (Messages, Redirect, Schedule, Backup,
+This is the **play** flavor: every tab (Messages, Automate, Schedule, Backup,
 Restore), no self-update. The **github** flavor adds only the update check
 (test it with `./gradlew installGithubDebug`, see "GitHub build" below).
 
@@ -144,7 +144,7 @@ Restore), no self-update. The **github** flavor adds only the update check
 - [ ] From another app: a contact's message button and Share → "Message" open
       a pre-filled conversation; nothing is sent until Send is tapped.
 - [ ] Long-press: copy text, delete a message, delete a conversation.
-- [ ] Redirect / Schedule: a forwarded or scheduled SMS also appears in the
+- [ ] Automate / Schedule: a forwarded or scheduled SMS also appears in the
       target's conversation in Messages.
 - [ ] Switching the default SMS app away in Android settings: Messages shows
       the prompt again; nothing crashes.
@@ -230,8 +230,8 @@ versionCode and signing key. Before a release, on a device with the GitHub APK:
 - [ ] Reopen the app within 24 hours: no second network check (watch
       `adb logcat` or a proxy); "Check for updates" forces one.
 
-**Redirect tab**
-- [ ] Create two rules that could both match the same incoming sender; the
+**Automate tab** (formerly Redirect)
+- [ ] Create two redirect rules that could both match the same incoming sender; the
       rule earlier in the list order (`sortOrder`) must be the one that fires
       — **first match wins**, per `CLAUDE.md`. Reorder them and confirm the
       other one fires instead.
@@ -242,6 +242,18 @@ versionCode and signing key. Before a release, on a device with the GitHub APK:
       (check the target device/number receives it) and shows up in History.
 - [ ] Toggle "Keep history" off in Settings and confirm History stops
       recording new entries.
+- [ ] Phone action → Ring at maximum volume, message contains "ring me",
+      with a song from files. Put the phone on silent, text "please ring me"
+      from another phone: it rings at full volume; Stop in the notification
+      ends it, and the alarm volume is back where it was.
+- [ ] Phone action → Vibrate (SOS) for one sender only: a matching text from
+      that sender vibrates, the same text from another sender does not.
+- [ ] Phone action → Change sound mode → Silent: the editor warns about Do
+      Not Disturb access until "Allow" is used and granted. Without access,
+      a matching text posts a "Couldn't change the sound mode" notification.
+- [ ] One text matching a redirect rule and two phone-action rules is
+      forwarded once and runs both actions.
+- [ ] "Try it now" in the editor runs the action without saving.
 
 **Schedule tab**
 - [ ] Create a scheduled message a few minutes out; confirm it fires at the

@@ -6,6 +6,8 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.neteinstein.smsredirect.data.analytics.FirebaseAnalyticsTracker
 import com.neteinstein.smsredirect.data.analytics.FirebaseCrashReporter
 import com.neteinstein.smsredirect.data.contacts.AndroidContactNameResolver
+import com.neteinstein.smsredirect.data.device.AndroidPhoneActionExecutor
+import com.neteinstein.smsredirect.data.device.AndroidSoundModeAccessChecker
 import com.neteinstein.smsredirect.data.hibernation.AndroidUnusedAppRestrictionChecker
 import com.neteinstein.smsredirect.data.local.AppDatabase
 import com.neteinstein.smsredirect.data.mail.JavaMailImapTransport
@@ -22,6 +24,7 @@ import com.neteinstein.smsredirect.data.repository.SharedPreferencesMessagingSet
 import com.neteinstein.smsredirect.data.repository.SmsBackupSettingsRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.SmsBackupStateRepositoryImpl
 import com.neteinstein.smsredirect.data.scheduling.WorkManagerKeepAliveReminderScheduler
+import com.neteinstein.smsredirect.data.scheduling.WorkManagerPhoneActionScheduler
 import com.neteinstein.smsredirect.data.scheduling.WorkManagerScheduledSmsScheduler
 import com.neteinstein.smsredirect.data.scheduling.WorkManagerSmsBackupScheduler
 import com.neteinstein.smsredirect.data.scheduling.WorkManagerSmsRestoreScheduler
@@ -34,6 +37,9 @@ import com.neteinstein.smsredirect.distribution.DistributionModule
 import com.neteinstein.smsredirect.domain.analytics.AnalyticsTracker
 import com.neteinstein.smsredirect.domain.analytics.CrashReporter
 import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
+import com.neteinstein.smsredirect.domain.device.PhoneActionExecutor
+import com.neteinstein.smsredirect.domain.device.PhoneActionScheduler
+import com.neteinstein.smsredirect.domain.device.SoundModeAccessChecker
 import com.neteinstein.smsredirect.domain.mail.SmsMailFactory
 import com.neteinstein.smsredirect.domain.messaging.MessageStore
 import com.neteinstein.smsredirect.domain.model.AppFeatures
@@ -63,6 +69,7 @@ import com.neteinstein.smsredirect.domain.usecase.DeleteRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteScheduledSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.DownloadMmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ExportBackupUseCase
+import com.neteinstein.smsredirect.domain.usecase.FindMatchingPhoneActionRulesUseCase
 import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetAvailableAppUpdateUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetCategoriesUseCase
@@ -114,6 +121,7 @@ import com.neteinstein.smsredirect.domain.usecase.SetSendWhileRoamingUseCase
 import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ShouldSendKeepAliveReminderUseCase
 import com.neteinstein.smsredirect.domain.usecase.ShouldShowUnusedAppInfoUseCase
+import com.neteinstein.smsredirect.domain.usecase.TriggerPhoneActionsUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateMessagingSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateScheduledSmsUseCase
@@ -133,8 +141,12 @@ class SmsRedirectApplication : Application() {
         val database =
             Room
                 .databaseBuilder(this, AppDatabase::class.java, "sms_redirect.db")
-                .addMigrations(AppDatabase.MIGRATION_8_9, AppDatabase.MIGRATION_9_10, AppDatabase.MIGRATION_10_11)
-                .fallbackToDestructiveMigration(dropAllTables = false)
+                .addMigrations(
+                    AppDatabase.MIGRATION_8_9,
+                    AppDatabase.MIGRATION_9_10,
+                    AppDatabase.MIGRATION_10_11,
+                    AppDatabase.MIGRATION_11_12,
+                ).fallbackToDestructiveMigration(dropAllTables = false)
                 .build()
         val repository = RuleRepositoryImpl(database.ruleDao())
         val settingsRepository = SettingsRepositoryImpl(database.appSettingsDao())
@@ -159,6 +171,8 @@ class SmsRedirectApplication : Application() {
         val smsMessageSource = ContentProviderSmsMessageSource(contentResolver)
         val mailTransport = JavaMailImapTransport()
         val defaultSmsAppChecker = AndroidDefaultSmsAppChecker(this)
+        val soundModeAccessChecker = AndroidSoundModeAccessChecker(this)
+        val phoneActionScheduler = WorkManagerPhoneActionScheduler(this)
         val smsMessageWriter = ContentProviderSmsMessageWriter(contentResolver, defaultSmsAppChecker)
         val messageStore = ContentProviderMessageStore(this)
         val messagingSettingsRepository =
@@ -334,6 +348,11 @@ class SmsRedirectApplication : Application() {
                 shouldShowUnusedAppInfoUseCase =
                     ShouldShowUnusedAppInfoUseCase(unusedAppRestrictionChecker, keepAliveReminderRepository),
                 markUnusedAppInfoShownUseCase = MarkUnusedAppInfoShownUseCase(keepAliveReminderRepository),
+                phoneActionScheduler = phoneActionScheduler,
+                phoneActionExecutor = AndroidPhoneActionExecutor(this, soundModeAccessChecker),
+                soundModeAccessChecker = soundModeAccessChecker,
+                triggerPhoneActionsUseCase =
+                    TriggerPhoneActionsUseCase(FindMatchingPhoneActionRulesUseCase(repository), phoneActionScheduler),
             )
     }
 }
@@ -423,6 +442,10 @@ data class AppContainer(
     val shouldSendKeepAliveReminderUseCase: ShouldSendKeepAliveReminderUseCase,
     val shouldShowUnusedAppInfoUseCase: ShouldShowUnusedAppInfoUseCase,
     val markUnusedAppInfoShownUseCase: MarkUnusedAppInfoShownUseCase,
+    val phoneActionScheduler: PhoneActionScheduler,
+    val phoneActionExecutor: PhoneActionExecutor,
+    val soundModeAccessChecker: SoundModeAccessChecker,
+    val triggerPhoneActionsUseCase: TriggerPhoneActionsUseCase,
 )
 
 data class AppUpdateContainer(

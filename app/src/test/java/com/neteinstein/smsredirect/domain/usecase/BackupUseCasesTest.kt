@@ -5,8 +5,11 @@ import com.neteinstein.smsredirect.FakeScheduledSmsRepository
 import com.neteinstein.smsredirect.FakeScheduledSmsScheduler
 import com.neteinstein.smsredirect.FakeSettingsRepository
 import com.neteinstein.smsredirect.domain.model.LandingScreen
+import com.neteinstein.smsredirect.domain.model.PhoneAction
 import com.neteinstein.smsredirect.domain.model.Rule
+import com.neteinstein.smsredirect.domain.model.RuleType
 import com.neteinstein.smsredirect.domain.model.ScheduledSms
+import com.neteinstein.smsredirect.domain.model.VibrationPattern
 import kotlinx.coroutines.test.runTest
 import org.json.JSONArray
 import org.junit.Assert.assertEquals
@@ -120,5 +123,64 @@ class BackupUseCasesTest {
             assertEquals(1, result.importedRules)
             assertEquals(0, result.importedScheduledSms)
             assertEquals(1, ruleRepository.getRulesSnapshot().size)
+        }
+
+    @Test
+    fun `phone action rules survive an export and import`() =
+        runTest {
+            val actionRule =
+                Rule(
+                    id = 9,
+                    name = "Bank buzz",
+                    senderText = "BANK",
+                    phoneNumber = "BANK",
+                    category = "Alerts",
+                    type = RuleType.PHONE_ACTION,
+                    messageText = "fraud",
+                    phoneAction = PhoneAction.Vibrate(VibrationPattern.SOS),
+                )
+            val json =
+                ExportBackupUseCase(
+                    FakeRuleRepository(listOf(actionRule)),
+                    FakeScheduledSmsRepository(),
+                    FakeSettingsRepository(),
+                )()
+            val ruleRepository = FakeRuleRepository()
+
+            val result =
+                ImportBackupUseCase(
+                    ruleRepository,
+                    FakeScheduledSmsRepository(),
+                    FakeSettingsRepository(),
+                    FakeScheduledSmsScheduler(),
+                )(json)
+
+            assertEquals(1, result.importedRules)
+            assertEquals(actionRule.copy(id = 1), ruleRepository.getRulesSnapshot().single())
+        }
+
+    @Test
+    fun `rules from an export made before automation import as redirect rules`() =
+        runTest {
+            val legacyArray = JSONArray()
+            legacyArray.put(
+                org.json.JSONObject().apply {
+                    put("name", "Legacy")
+                    put("senderText", "BANK")
+                    put("targetNumber", "5551234")
+                },
+            )
+            val ruleRepository = FakeRuleRepository()
+
+            ImportBackupUseCase(
+                ruleRepository,
+                FakeScheduledSmsRepository(),
+                FakeSettingsRepository(),
+                FakeScheduledSmsScheduler(),
+            )(legacyArray.toString())
+
+            val rule = ruleRepository.getRulesSnapshot().single()
+            assertEquals(RuleType.REDIRECT, rule.type)
+            assertEquals(null, rule.phoneAction)
         }
 }

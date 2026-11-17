@@ -24,7 +24,7 @@
     <string name="battery_banner_message">A execução em segundo plano não está ativada. As mensagens, o reencaminhamento e as SMS agendadas podem atrasar-se.</string>
     <string name="battery_banner_action">Corrigir agora</string>
 
-    <string name="home_title_rules">Regras de Redirecionamento</string>
+    <string name="home_title_rules">Automatizações</string>
     <string name="home_cd_settings">Definições</string>
     <string name="home_cd_history">Histórico</string>
     <string name="home_cd_add_rule">Adicionar regra</string>
@@ -68,7 +68,7 @@
     <string name="settings_language_system_default">Predefinição do sistema</string>
     <string name="settings_landing_screen_label">Ecrã inicial</string>
     <string name="settings_landing_screen_backup">Backup de SMS</string>
-    <string name="settings_landing_screen_redirect">Redirecionar</string>
+    <string name="settings_landing_screen_redirect">Automatizar</string>
     <string name="settings_landing_screen_schedule">Agendar</string>
     <string name="settings_send_while_roaming">Enviar em roaming</string>
     <string name="settings_keep_history">Manter histórico</string>
@@ -107,7 +107,7 @@
     <string name="settings_history_rule_format">Regra: %1$s</string>
     <string name="settings_history_unknown_sender">Remetente desconhecido</string>
 
-    <string name="main_tab_redirect">Redirecionar</string>
+    <string name="main_tab_redirect">Automatizar</string>
     <string name="main_tab_schedule">Agendar</string>
 
     <string name="repeat_type_none">Nenhuma</string>
@@ -313,7 +313,7 @@
     <string name="default_sms_rationale_not_now">Agora não</string>
     <string name="default_sms_rationale_confirm">Continuar</string>
     <string name="default_sms_declined_title">O SMS Toolbox não é a sua app de SMS predefinida</string>
-    <string name="default_sms_declined_message">As Mensagens e o Restauro só funcionam enquanto o SMS Toolbox for a sua app de SMS predefinida; até lá aparecem desativados. Reencaminhar, Agendar e Cópia continuam a funcionar. Pode defini-la a qualquer momento nos separadores Mensagens ou Restaurar.</string>
+    <string name="default_sms_declined_message">As Mensagens e o Restauro só funcionam enquanto o SMS Toolbox for a sua app de SMS predefinida; até lá aparecem desativados. Automatizar, Agendar e Cópia continuam a funcionar. Pode defini-la a qualquer momento nos separadores Mensagens ou Restaurar.</string>
     <string name="default_sms_declined_message_tools">Pode manter a sua app de mensagens atual e dar ao SMS Toolbox apenas as permissões de SMS de que esta funcionalidade precisa. As Mensagens e o Restauro ficam desativados até o SMS Toolbox ser a sua app de SMS predefinida.</string>
     <string name="default_sms_declined_permissions_only">Usar só permissões de SMS</string>
     <string name="new_message_title">Nova mensagem</string>
@@ -361,7 +361,7 @@
     <string name="messages_disabled_banner">As Mensagens estão desativadas: defina o SMS Toolbox como a sua app de SMS predefinida para enviar e receber mensagens.</string>
     <string name="restore_disabled_banner">O Restauro está desativado: o Android só deixa a app de SMS predefinida adicionar mensagens. Defina o SMS Toolbox como a sua app de SMS predefinida para restaurar.</string>
     <string name="default_sms_banner_action">Definir</string>
-    <string name="messages_disabled_placeholder">As suas conversas aparecem aqui quando o SMS Toolbox for a sua app de SMS predefinida. Reencaminhar, Agendar e Cópia funcionam sem isso.</string>
+    <string name="messages_disabled_placeholder">As suas conversas aparecem aqui quando o SMS Toolbox for a sua app de SMS predefinida. Automatizar, Agendar e Cópia funcionam sem isso.</string>
     <string name="conversation_mms_not_downloaded">Mensagem com imagem ainda não transferida</string>
     <string name="conversation_mms_downloading">A transferir a mensagem com imagem…</string>
     <string name="conversation_mms_download">Transferir</string>
@@ -382,4 +382,48 @@
     <string name="unused_app_info_message">O Android repõe as permissões das apps que não abre durante alguns meses, o que pararia o reencaminhamento, os agendamentos e o backup. É por isso que recebe um lembrete mensal.\n\nPode desativar \"Gerir app se não utilizada\" (em alguns telemóveis \"Remover permissões e libertar espaço\") para esta app. Os lembretes param automaticamente.</string>
     <string name="unused_app_info_open_settings">Abrir definições</string>
     <string name="unused_app_info_dismiss">Entendi</string>
+
+    <!-- Automate: phone-action rules -->
+    <string name="rule_type_title">O que deve acontecer?</string>
+    <string name="rule_type_redirect">Reencaminhar</string>
+    <string name="rule_type_phone_action">Ação no telemóvel</string>
+    <string name="rule_label_sender_optional">Remetente (opcional)</string>
+    <string name="rule_label_message_text">A mensagem contém</string>
+    <string name="rule_message_text_supporting">Não distingue maiúsculas. Deixe vazio para qualquer mensagem do remetente.</string>
+    <string name="rule_label_action">Ação</string>
+    <string name="phone_action_ring">Tocar no volume máximo</string>
+    <string name="phone_action_vibrate">Vibrar</string>
+    <string name="phone_action_sound_mode">Mudar o modo de som</string>
+    <string name="rule_ring_description">Toca no volume máximo até um minuto, mesmo com o telemóvel em silêncio. Pare-o a partir da notificação.</string>
+    <string name="rule_label_sound">Som: %1$s</string>
+    <string name="rule_sound_default">Som de alarme predefinido</string>
+    <string name="rule_action_pick_system_sound">Sons do sistema</string>
+    <string name="rule_action_pick_song">Música dos ficheiros</string>
+    <string name="rule_action_use_default_sound">Usar o som predefinido</string>
+    <string name="rule_label_vibration_pattern">Padrão</string>
+    <string name="vibration_pattern_short">Curta</string>
+    <string name="vibration_pattern_long">Longa</string>
+    <string name="vibration_pattern_double">Dupla</string>
+    <string name="vibration_pattern_heartbeat">Batimento cardíaco</string>
+    <string name="vibration_pattern_sos">SOS</string>
+    <string name="vibration_pattern_alarm">Alarme (10 segundos)</string>
+    <string name="rule_label_sound_mode">Mudar para</string>
+    <string name="sound_mode_ring">Toque</string>
+    <string name="sound_mode_vibrate">Vibrar</string>
+    <string name="sound_mode_silent">Silêncio</string>
+    <string name="sound_mode_toggle">Alternar toque / silêncio</string>
+    <string name="rule_sound_mode_access_message">Mudar de ou para silêncio requer acesso a Não incomodar.</string>
+    <string name="rule_sound_mode_access_action">Permitir</string>
+    <string name="rule_action_try">Experimentar agora</string>
+    <string name="rule_try_rule_name">Teste</string>
+    <string name="rule_error_missing_condition">Indique um remetente, um texto da mensagem, ou ambos</string>
+    <string name="home_sender_anyone">Qualquer um</string>
+    <string name="home_message_text_format">A mensagem contém: “%1$s”</string>
+    <string name="home_action_format">Ação: %1$s</string>
+    <string name="phone_action_notification_channel">Alertas de automatização</string>
+    <string name="phone_action_notification_ringing_title">A tocar</string>
+    <string name="phone_action_notification_ringing_text">Regra: %1$s. Toque para parar.</string>
+    <string name="phone_action_notification_stop">Parar</string>
+    <string name="phone_action_notification_access_denied_title">Não foi possível mudar o modo de som</string>
+    <string name="phone_action_notification_access_denied_text">A regra \"%1$s\" precisa de acesso a Não incomodar. Toque para o permitir.</string>
 </resources>

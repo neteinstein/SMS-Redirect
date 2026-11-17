@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-SMS Toolbox is a native Android app (Kotlin): a full SMS/MMS messaging app, used as the device's default SMS app (the primary feature, first tab and landing screen), with four tools on top, in tab order: forwarding incoming SMS that match user-defined rules (Redirect), sending scheduled messages (Schedule), backing up received and sent SMS to the user's own Gmail account over IMAP (Backup), and restoring them to a phone (Restore). See `Architecture.md` for the full system design.
+SMS Toolbox is a native Android app (Kotlin): a full SMS/MMS messaging app, used as the device's default SMS app (the primary feature, first tab and landing screen), with four tools on top, in tab order: automation rules on incoming SMS (Automate, formerly Redirect: forward the message, or run a phone action such as ring at max volume, vibrate or change the sound mode), sending scheduled messages (Schedule), backing up received and sent SMS to the user's own Gmail account over IMAP (Backup), and restoring them to a phone (Restore). See `Architecture.md` for the full system design.
 
 It ships as two product flavors of the `distribution` dimension: **`play`** (Google Play — every feature, no self-update) and **`github`** (APK on GitHub releases — every feature, plus a daily in-app update check against GitHub releases). Both share the `applicationId`, signing key and `versionCode` so either can install over the other. See `Architecture.md` → "Two distributions".
 
@@ -87,7 +87,7 @@ Do **not** introduce Hilt, Dagger, or Koin unless explicitly requested.
 ### Guidelines
 
 - Unit tests live in `app/src/test/`.
-- Use **Fake** implementations (not mocks) for repository interfaces. Existing fakes are in the test root package: `FakeRuleRepository`, `FakeSettingsRepository`, `FakeContactNameResolver`, `FakeForwardHistoryRepository`, `FakeScheduledSmsRepository`, `FakeScheduledSmsHistoryRepository`, `FakeScheduledSmsScheduler`, `FakeMailTransport`, `FakeSmsMessageSource`, `FakeSmsBackupStateRepository`, `FakeSmsBackupSettingsRepository`, `FakeSmsBackupScheduler`, `FakeSecretCipher`, `FakeSmsMessageWriter`, `FakeSmsRestoreScheduler`, `FakeDefaultSmsAppChecker`, `FakeAppReleaseSource`, `FakeAppUpdateRepository`, `FakeAppUpdateInstaller`, `FakeMessageStore`, `FakeMessageSender`, `FakeMmsDownloadRequester`, `FakeMessagingSettingsRepository`.
+- Use **Fake** implementations (not mocks) for repository interfaces. Existing fakes are in the test root package: `FakeRuleRepository`, `FakeSettingsRepository`, `FakeContactNameResolver`, `FakeForwardHistoryRepository`, `FakeScheduledSmsRepository`, `FakeScheduledSmsHistoryRepository`, `FakeScheduledSmsScheduler`, `FakeMailTransport`, `FakeSmsMessageSource`, `FakeSmsBackupStateRepository`, `FakeSmsBackupSettingsRepository`, `FakeSmsBackupScheduler`, `FakeSecretCipher`, `FakeSmsMessageWriter`, `FakeSmsRestoreScheduler`, `FakeDefaultSmsAppChecker`, `FakeAppReleaseSource`, `FakeAppUpdateRepository`, `FakeAppUpdateInstaller`, `FakeMessageStore`, `FakeMessageSender`, `FakeMmsDownloadRequester`, `FakeMessagingSettingsRepository`, `FakePhoneActionScheduler`, `FakeSoundModeAccessChecker`.
 - Tests for code that lives only in the `github` flavor source set (e.g. `GitHubReleaseParser`) go in `app/src/testGithub/`.
 - Keep Android and third-party types (`Context`, `SmsManager`, `javax.mail`, WorkManager) behind a domain interface so the logic in front of it is testable. `SmsForwarder` is untested precisely because this was not done.
 - Test use cases in isolation with their respective fakes.
@@ -232,7 +232,8 @@ Both must pass before merging. Always run these locally before pushing.
 - Backup state (`sms_backup_state`) stores a one-way hash per message, never the body. Keep it that way — a second on-device copy of message content would change both `PrivacyPolicy.md` and the Data safety form.
 - `PrivacyPolicy.md` and `store-listing/data-safety.md` are load-bearing: they are linked from the store listing and describe commitments. Any change to what leaves the device must update both.
 - `SmsForwarder` is the core domain logic — keep it free of Android framework coupling (except `SmsManager`).
-- Rule matching is order-dependent (first match wins). Respect `sortOrder`.
+- Redirect rule matching is order-dependent (first match wins). Respect `sortOrder`. Phone-action rules are different: every match runs.
+- `PhoneAction` kinds and `VibrationPattern` / `SoundMode` / `RuleType` constant names are persisted (Room, exports, WorkManager input). Add new ones; never rename.
 - The `defaultPrefix` and `forwardPrefix` settings affect message formatting — test formatting changes thoroughly.
 - No Dependency Injection framework is used intentionally — keep it simple with manual DI.
 

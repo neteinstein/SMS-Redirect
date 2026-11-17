@@ -3,7 +3,7 @@ package com.neteinstein.smsredirect.presentation.navigation
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.automirrored.filled.Forward
+import androidx.compose.material.icons.filled.AutoMode
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Schedule
@@ -24,7 +24,9 @@ enum class MainTab(
     val icon: ImageVector,
 ) {
     MESSAGES(R.string.main_tab_messages, Icons.AutoMirrored.Filled.Chat),
-    REDIRECT(R.string.main_tab_redirect, Icons.AutoMirrored.Filled.Forward),
+
+    /** Shown as "Automate": redirect rules and phone-action rules. The name stays for saved state. */
+    REDIRECT(R.string.main_tab_redirect, Icons.Default.AutoMode),
     SCHEDULE(R.string.main_tab_schedule, Icons.Default.Schedule),
     BACKUP(R.string.main_tab_backup, Icons.Default.Backup),
     RESTORE(R.string.main_tab_restore, Icons.Default.Restore),

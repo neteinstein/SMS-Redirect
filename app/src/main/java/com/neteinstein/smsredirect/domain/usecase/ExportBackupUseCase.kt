@@ -44,6 +44,13 @@ class ExportBackupUseCase(
             obj.put("targetNumber", rule.targetNumber)
             obj.put("sortOrder", rule.sortOrder)
             obj.put("category", rule.category)
+            obj.put("type", rule.type.name)
+            obj.put("messageText", rule.messageText)
+            rule.phoneAction?.let { action ->
+                obj.put("phoneAction", action.kind)
+                obj.put("phoneActionValue", action.value)
+                obj.put("phoneActionLabel", action.label)
+            }
             jsonArray.put(obj)
         }
         return jsonArray
