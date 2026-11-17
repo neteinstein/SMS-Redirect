@@ -50,7 +50,8 @@ Two rules from that policy shape the code:
   `SMS_RECEIVED`, which Android sends to any app holding `RECEIVE_SMS`, and `SmsForwarder` /
   `ScheduledSmsSender` fall back to `SmsManager` without the role. How those permissions are
   asked for depends on `AppFeatures.smsPermissionsWithoutRole`:
-  - **GitHub build (true):** `requireSmsAccess` requests `toolSmsPermissions` directly; the role
+  - **GitHub build (true):** `requireSmsAccess` requests `toolSmsPermissions` directly, with
+    contacts and notifications alongside (optional: only the SMS grants are required); the role
     is not offered. Play's policy does not apply to a sideloaded APK.
   - **Play build (false):** the role is offered first, and only if the user declines it does the
     decline dialog offer "Use SMS permissions only". Once the user has declined Android's role
@@ -627,9 +628,9 @@ Permissions are requested contextually rather than upfront at first launch — t
 | Permission | Requested when | Purpose |
 |---|-----------|---------|
 | Default SMS app role (`RoleManager.ROLE_SMS`) | First launch, and any SMS feature used without it — always **before** any SMS permission | Be the messaging app: receive (`SMS_DELIVER`/`WAP_PUSH_DELIVER`), write sent/received/restored messages. Android grants the SMS permissions below with it |
-| `READ_SMS` / `RECEIVE_SMS` / `SEND_SMS` / `RECEIVE_MMS` / `RECEIVE_WAP_PUSH` | Granted with the role. Requested directly only in the github build, after the role was declined, for Redirect/Schedule/Backup | Show, receive and send SMS/MMS; back up; detect and forward; send scheduled messages |
-| `READ_CONTACTS` | Right after the SMS role is granted; or tapping "pick contact" in a rule/schedule. The New message picker needs none (ACTION_PICK on phone numbers grants the one row) | Names in conversations and notifications; pick contacts for rules and scheduled SMS |
-| `POST_NOTIFICATIONS` | Right after the SMS role is granted; turning on "Show notifications"; enabling backup or starting a restore | Incoming messages; backup/restore progress; forward and scheduled-send confirmations |
+| `READ_SMS` / `RECEIVE_SMS` / `SEND_SMS` / `RECEIVE_MMS` / `RECEIVE_WAP_PUSH` | Granted with the role. `RECEIVE_SMS` / `READ_SMS` / `SEND_SMS` (`toolSmsPermissions`) are also requested on their own for Automate/Schedule/Backup: directly in the github build, only after the role was declined in the play build | Show, receive and send SMS/MMS; back up; detect and forward; send scheduled messages |
+| `READ_CONTACTS` | Right after the SMS role is granted, or with the SMS permissions when a tool asks for them without the role; or tapping "pick contact" in a rule/schedule. The New message picker needs none (ACTION_PICK on phone numbers grants the one row) | Names in conversations and notifications; pick contacts for rules and scheduled SMS |
+| `POST_NOTIFICATIONS` | Right after the SMS role is granted, or with the SMS permissions when a tool asks for them without the role; turning on "Show notifications"; enabling backup or starting a restore | Incoming messages; backup/restore progress; forward and scheduled-send confirmations |
 | `INTERNET` / `ACCESS_NETWORK_STATE` | Not runtime-requested (install-time) | Reach `imap.gmail.com`. Both previously arrived only via manifest merge from the Firebase/WorkManager AARs; they are now declared explicitly |
 | Battery optimization exemption | Right after creating a new rule or scheduled SMS | Prevent Doze from throttling background delivery; declining shows a persistent warning banner on Home until enabled |
 | `VIBRATE` | Not runtime-requested (install-time) | Phone action: vibrate |

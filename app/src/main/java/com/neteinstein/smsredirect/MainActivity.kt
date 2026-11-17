@@ -287,6 +287,13 @@ class MainActivity : ComponentActivity() {
                             showSmsDenied = true
                         }
                     }
+                // Contacts and notifications ride along, as they do after the role is granted:
+                // forwarded messages name the sender, and forwards and keep-alive reminders are
+                // announced. Only the SMS grants are required (see permissionsOnlyLauncher).
+                val launchPermissionsOnlyRequest = {
+                    val missingOptional = afterRolePermissions.filterNot(::isGranted)
+                    permissionsOnlyLauncher.launch(toolSmsPermissions + missingOptional)
+                }
                 val roleLauncher =
                     rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                         roleCheckTick++
@@ -333,7 +340,7 @@ class MainActivity : ComponentActivity() {
                         action()
                     } else if (askPermissionsDirectly && !defaultSmsAppChecker.isDefaultSmsApp()) {
                         pendingSmsAction = action
-                        permissionsOnlyLauncher.launch(toolSmsPermissions)
+                        launchPermissionsOnlyRequest()
                     } else {
                         pendingSmsAction = action
                         pendingAllowsPermissionsOnly = true
@@ -388,7 +395,7 @@ class MainActivity : ComponentActivity() {
                                 {
                                     TextButton(onClick = {
                                         showDefaultSmsDeclined = false
-                                        permissionsOnlyLauncher.launch(toolSmsPermissions)
+                                        launchPermissionsOnlyRequest()
                                     }) { Text(stringResource(R.string.default_sms_declined_permissions_only)) }
                                 }
                             } else {
