@@ -16,6 +16,7 @@ SMS Toolbox is an Android SMS/MMS messaging app with a toolbox around it, presen
 |---|---|---|
 | Features | All five tabs | All five tabs |
 | Self-update | none (Play forbids it; `src/play/AndroidManifest.xml` removes `REQUEST_INSTALL_PACKAGES` as a guard) | daily GitHub release check + in-app install (`REQUEST_INSTALL_PACKAGES`) |
+| SMS access for Automate / Schedule / Backup (`smsPermissionsWithoutRole`) | default SMS role offered first; SMS permissions alone only after the user declines it | SMS permissions asked for directly; the role is not required |
 
 Each flavor has a `distribution/DistributionModule` (`src/play/…`, `src/github/…`) exposing an `AppFeatures` (`domain/model/`) and, in the github flavor only, the update source and installer. `AppFeatures` reaches everything through `AppContainer.features`: `MainActivity` filters the tabs, the landing screen and the deep links; `SettingsScreen` hides the Redirect/Schedule settings when neither ships; `SmsReceiver` skips forwarding and `SendScheduledSmsWorker` drops sends when their feature is off. No code outside `DistributionModule` checks the flavor.
 
@@ -36,7 +37,7 @@ declaration has to match what the app visibly is.
 
 Two rules from that policy shape the code:
 
-- **The role is requested before any SMS permission.** `MainActivity`'s default-SMS gate
+- **The role is requested before any SMS permission (Play build).** `MainActivity`'s default-SMS gate
   (`requireDefaultSmsApp` / `requireSmsAccess`) shows an explanation, then
   `RoleManager.createRequestRoleIntent(ROLE_SMS)` (the API-29+ form of
   `Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT`, a no-op since Android 10; minSdk is 33). Android
@@ -44,14 +45,21 @@ Two rules from that policy shape the code:
   it. It runs once on first launch, and again whenever an SMS feature is used without the role.
 - **Without the role, Messages and Restore are disabled, the rest works.** Both tabs stay visible
   but greyed out (`DISABLED_ALPHA`), with a warning bar whose "Set as default" action re-runs the
-  role request. Automate, Schedule and Backup go through `requireSmsAccess`: the role is offered
-  first, and only if the user declines it does the decline dialog offer "Use SMS permissions
-  only", which requests `toolSmsPermissions` (`RECEIVE_SMS`, `READ_SMS`, `SEND_SMS`). Once the
-  user has declined Android's role dialog (`KEY_DEFAULT_SMS_DECLINED`), `requireSmsAccess` asks
-  for `toolSmsPermissions` directly instead of offering the role again. Creating or editing a
-  rule or a schedule is never gated: Automate and Schedule show a warning banner with "Allow"
-  (which runs `requireSmsAccess`) while those permissions are missing. Both builds behave
-  identically here.
+  role request. Automate, Schedule and Backup go through `requireSmsAccess` and run on
+  `toolSmsPermissions` (`RECEIVE_SMS`, `READ_SMS`, `SEND_SMS`) alone: `SmsReceiver` listens to
+  `SMS_RECEIVED`, which Android sends to any app holding `RECEIVE_SMS`, and `SmsForwarder` /
+  `ScheduledSmsSender` fall back to `SmsManager` without the role. How those permissions are
+  asked for depends on `AppFeatures.smsPermissionsWithoutRole`:
+  - **GitHub build (true):** `requireSmsAccess` requests `toolSmsPermissions` directly, with
+    contacts and notifications alongside (optional: only the SMS grants are required); the role
+    is not offered. Play's policy does not apply to a sideloaded APK.
+  - **Play build (false):** the role is offered first, and only if the user declines it does the
+    decline dialog offer "Use SMS permissions only". Once the user has declined Android's role
+    dialog (`KEY_DEFAULT_SMS_DECLINED`), `requireSmsAccess` asks for `toolSmsPermissions`
+    directly instead of offering the role again.
+
+  Creating or editing a rule or a schedule is never gated: Automate and Schedule show a warning
+  banner with "Allow" (which runs `requireSmsAccess`) while those permissions are missing.
 
 ## Messaging (SMS/MMS client)
 
@@ -620,9 +628,9 @@ Permissions are requested contextually rather than upfront at first launch — t
 | Permission | Requested when | Purpose |
 |---|-----------|---------|
 | Default SMS app role (`RoleManager.ROLE_SMS`) | First launch, and any SMS feature used without it — always **before** any SMS permission | Be the messaging app: receive (`SMS_DELIVER`/`WAP_PUSH_DELIVER`), write sent/received/restored messages. Android grants the SMS permissions below with it |
-| `READ_SMS` / `RECEIVE_SMS` / `SEND_SMS` / `RECEIVE_MMS` / `RECEIVE_WAP_PUSH` | Granted with the role. Requested directly only in the github build, after the role was declined, for Redirect/Schedule/Backup | Show, receive and send SMS/MMS; back up; detect and forward; send scheduled messages |
-| `READ_CONTACTS` | Right after the SMS role is granted; or tapping "pick contact" in a rule/schedule. The New message picker needs none (ACTION_PICK on phone numbers grants the one row) | Names in conversations and notifications; pick contacts for rules and scheduled SMS |
-| `POST_NOTIFICATIONS` | Right after the SMS role is granted; turning on "Show notifications"; enabling backup or starting a restore | Incoming messages; backup/restore progress; forward and scheduled-send confirmations |
+| `READ_SMS` / `RECEIVE_SMS` / `SEND_SMS` / `RECEIVE_MMS` / `RECEIVE_WAP_PUSH` | Granted with the role. `RECEIVE_SMS` / `READ_SMS` / `SEND_SMS` (`toolSmsPermissions`) are also requested on their own for Automate/Schedule/Backup: directly in the github build, only after the role was declined in the play build | Show, receive and send SMS/MMS; back up; detect and forward; send scheduled messages |
+| `READ_CONTACTS` | Right after the SMS role is granted, or with the SMS permissions when a tool asks for them without the role; or tapping "pick contact" in a rule/schedule. The New message picker needs none (ACTION_PICK on phone numbers grants the one row) | Names in conversations and notifications; pick contacts for rules and scheduled SMS |
+| `POST_NOTIFICATIONS` | Right after the SMS role is granted, or with the SMS permissions when a tool asks for them without the role; turning on "Show notifications"; enabling backup or starting a restore | Incoming messages; backup/restore progress; forward and scheduled-send confirmations |
 | `INTERNET` / `ACCESS_NETWORK_STATE` | Not runtime-requested (install-time) | Reach `imap.gmail.com`. Both previously arrived only via manifest merge from the Firebase/WorkManager AARs; they are now declared explicitly |
 | Battery optimization exemption | Right after creating a new rule or scheduled SMS | Prevent Doze from throttling background delivery; declining shows a persistent warning banner on Home until enabled |
 | `VIBRATE` | Not runtime-requested (install-time) | Phone action: vibrate |

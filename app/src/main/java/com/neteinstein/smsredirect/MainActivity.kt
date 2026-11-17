@@ -257,8 +257,9 @@ class MainActivity : ComponentActivity() {
                 // SMS Toolbox is a messaging app. The default SMS role is always requested *before*
                 // any SMS permission (Play's Default SMS handler policy), and the SMS permissions
                 // come with it. Messages and Restore need the role itself and are shown disabled
-                // without it; only if the user declines it are the permissions Redirect, Schedule
-                // and Backup need requested on their own. Both builds behave the same.
+                // without it. Automate, Schedule and Backup can run on SMS permissions alone: the
+                // GitHub build asks for them directly, the Play build only after the user declined
+                // the role (AppFeatures.smsPermissionsWithoutRole).
                 val defaultSmsAppChecker = appContainer.defaultSmsAppChecker
                 var roleCheckTick by remember { mutableIntStateOf(0) }
                 val isDefaultSmsApp =
@@ -286,6 +287,13 @@ class MainActivity : ComponentActivity() {
                             showSmsDenied = true
                         }
                     }
+                // Contacts and notifications ride along, as they do after the role is granted:
+                // forwarded messages name the sender, and forwards and keep-alive reminders are
+                // announced. Only the SMS grants are required (see permissionsOnlyLauncher).
+                val launchPermissionsOnlyRequest = {
+                    val missingOptional = afterRolePermissions.filterNot(::isGranted)
+                    permissionsOnlyLauncher.launch(toolSmsPermissions + missingOptional)
+                }
                 val roleLauncher =
                     rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                         roleCheckTick++
@@ -319,17 +327,20 @@ class MainActivity : ComponentActivity() {
                 }
 
                 /**
-                 * For Automate, Schedule and Backup, which also work without the role: the role is
-                 * still offered first, and only if the user declines it are the SMS permissions
-                 * these tools need requested on their own. Once the user has declined the role,
-                 * it is not offered again here; the permissions are asked for directly.
+                 * For Automate, Schedule and Backup, which also work without the role. The GitHub
+                 * build asks for the SMS permissions these tools need directly
+                 * (`AppFeatures.smsPermissionsWithoutRole`). The Play build still offers the role
+                 * first, and only if the user declines it are the permissions requested on their
+                 * own; once the user has declined the role, it is not offered again here.
                  */
                 val requireSmsAccess: (() -> Unit) -> Unit = { action ->
+                    val askPermissionsDirectly =
+                        features.smsPermissionsWithoutRole || hasDeclinedDefaultSmsRole()
                     if (hasToolSmsPermissions()) {
                         action()
-                    } else if (hasDeclinedDefaultSmsRole() && !defaultSmsAppChecker.isDefaultSmsApp()) {
+                    } else if (askPermissionsDirectly && !defaultSmsAppChecker.isDefaultSmsApp()) {
                         pendingSmsAction = action
-                        permissionsOnlyLauncher.launch(toolSmsPermissions)
+                        launchPermissionsOnlyRequest()
                     } else {
                         pendingSmsAction = action
                         pendingAllowsPermissionsOnly = true
@@ -384,7 +395,7 @@ class MainActivity : ComponentActivity() {
                                 {
                                     TextButton(onClick = {
                                         showDefaultSmsDeclined = false
-                                        permissionsOnlyLauncher.launch(toolSmsPermissions)
+                                        launchPermissionsOnlyRequest()
                                     }) { Text(stringResource(R.string.default_sms_declined_permissions_only)) }
                                 }
                             } else {

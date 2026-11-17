@@ -7,7 +7,7 @@ SMS Toolbox ("the App", "we", "us") is an Android app developed by [neteinstein]
 **Two versions.** The App is published in two versions built from the same source code:
 
 - **Google Play version:** every feature in this policy except the update check in Section 10 (Google Play updates it).
-- **GitHub version** (the APK attached to each release on GitHub): every feature in this policy, plus the update check described in Section 10.
+- **GitHub version** (the APK attached to each release on GitHub): every feature in this policy, plus the update check described in Section 10. It also lets Automate, Schedule and Backup ask for SMS permissions without first offering to become your default SMS app (Section 1).
 
 Everything else in this policy applies to both.
 
@@ -28,9 +28,9 @@ Everything else in this policy applies to both.
 
 ## 1. Messaging (the App's main feature)
 
-SMS Toolbox is a messaging app. It works once you make it your **default SMS app**: the App asks for this first, using Android's own prompt, before it requests any SMS permission, and Android then gives it access to your messages. You can choose another default SMS app at any time in Android Settings; the App then stops receiving messages.
+SMS Toolbox is a messaging app. It works once you make it your **default SMS app**: the App asks for this first, using Android's own prompt, before it requests any SMS permission (except, in the GitHub version, for the features described below), and Android then gives it access to your messages. You can choose another default SMS app at any time in Android Settings; the App then stops receiving messages.
 
-**If you do not make it your default SMS app,** the Messages and Restore tabs are shown disabled, with a reminder and a button to change your mind. Automate, Schedule and Backup can still work. You can create automations and scheduled messages at any time; until the App has SMS access, those tabs show a reminder with an "Allow" button. The App first offers the default-SMS-app prompt, and only if you decline it asks for the SMS permissions these features need (to read, receive and send SMS) on their own. After you have declined once, "Allow" asks for those permissions directly.
+**If you do not make it your default SMS app,** the Messages and Restore tabs are shown disabled, with a reminder and a button to change your mind. Automate, Schedule and Backup can still work. You can create automations and scheduled messages at any time; until the App has SMS access, those tabs show a reminder with an "Allow" button. In the Google Play version, the App first offers the default-SMS-app prompt, and only if you decline it asks for the SMS permissions these features need (to read, receive and send SMS) on their own; after you have declined once, "Allow" asks for those permissions directly. In the GitHub version, "Allow" asks for those permissions directly, without the default-SMS-app prompt.
 
 **Reading.** The App shows the conversations and messages in your phone's SMS/MMS storage, with contact names from your phone's contacts. It reads them on your phone only, to display them to you.
 
@@ -144,7 +144,7 @@ Each permission is requested only when a feature needs it, and none of them give
 | Permission | Why |
 |---|---|
 | Default SMS app (role) | Be your messaging app: receive SMS and MMS, save them and the messages you send, and restore backups. Requested first, before any SMS permission. Android grants the SMS permissions below together with it. Messages and Restore need it; the other features can work without it |
-| `READ_SMS` / `RECEIVE_SMS` | Granted with the default SMS app role, or, if you declined the role, asked for on its own when you first use Automate, Schedule or Backup. Show your conversations, receive new messages, back them up to Gmail, and check them against your automation rules |
+| `READ_SMS` / `RECEIVE_SMS` | Granted with the default SMS app role, or asked for on its own when you first use Automate, Schedule or Backup: in the Google Play version only if you declined the role, in the GitHub version directly. Show your conversations, receive new messages, back them up to Gmail, and check them against your automation rules |
 | `SEND_SMS` | Send the messages you write, forward and schedule |
 | `RECEIVE_MMS` / `RECEIVE_WAP_PUSH` | Receive picture and group messages (MMS) |
 | `VIBRATE` | Vibrate when a phone-action rule asks for it |
