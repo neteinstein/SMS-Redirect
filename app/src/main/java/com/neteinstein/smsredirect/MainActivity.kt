@@ -53,6 +53,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.neteinstein.smsredirect.domain.model.LandingScreen
 import com.neteinstein.smsredirect.domain.model.OutgoingAttachment
+import com.neteinstein.smsredirect.domain.model.PhoneAction
+import com.neteinstein.smsredirect.domain.model.RuleType
 import com.neteinstein.smsredirect.presentation.backup.BackupScreen
 import com.neteinstein.smsredirect.presentation.backup.BackupViewModel
 import com.neteinstein.smsredirect.presentation.backup.BackupViewModelFactory
@@ -1208,6 +1210,19 @@ class MainActivity : ComponentActivity() {
                                 ruleViewModel.onSoundPicked(uri.toString(), title.orEmpty())
                             }
 
+                        // The ring's notification is its only Stop button: ask for it with the rule.
+                        val ringNotificationsLauncher =
+                            rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+                        val askNotificationsForRing = {
+                            if (uiState.type == RuleType.PHONE_ACTION &&
+                                uiState.actionKind == PhoneAction.KIND_RING &&
+                                ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.POST_NOTIFICATIONS) !=
+                                PackageManager.PERMISSION_GRANTED
+                            ) {
+                                ringNotificationsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        }
+
                         val pickSongLauncher =
                             rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
                                 if (uri == null) return@rememberLauncherForActivityResult
@@ -1341,6 +1356,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             onSave = {
+                                askNotificationsForRing()
                                 ruleViewModel.saveRule(
                                     invalidTargetError = getString(R.string.rule_error_invalid_target),
                                     duplicateRuleError = getString(R.string.rule_error_duplicate),
@@ -1370,7 +1386,10 @@ class MainActivity : ComponentActivity() {
                             onGrantSoundModeAccess = {
                                 startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
                             },
-                            onTryPhoneAction = { ruleViewModel.tryPhoneAction(getString(R.string.rule_try_rule_name)) },
+                            onTryPhoneAction = {
+                                askNotificationsForRing()
+                                ruleViewModel.tryPhoneAction(getString(R.string.rule_try_rule_name))
+                            },
                         )
                     }
 

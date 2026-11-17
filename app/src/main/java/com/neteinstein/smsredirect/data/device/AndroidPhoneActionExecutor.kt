@@ -24,49 +24,8 @@ import com.neteinstein.smsredirect.domain.model.VibrationPattern
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-
-/**
- * The single ring the process may be playing. A new ring, or [stop] (the notification's Stop
- * button), ends the one before it. Holds the user's alarm volume from before the first of a run
- * of overlapping rings, so the last one to finish can put it back.
- */
-object ActiveRing {
-    private val current = MutableStateFlow<Long?>(null)
-    private var counter = 0L
-    private var savedVolume: Int? = null
-
-    @Synchronized
-    internal fun begin(currentVolume: () -> Int): Long {
-        if (savedVolume == null) savedVolume = currentVolume()
-        counter++
-        current.value = counter
-        return counter
-    }
-
-    fun stop() {
-        current.value = null
-    }
-
-    internal suspend fun awaitEnd(token: Long) {
-        current.first { it != token }
-    }
-
-    /**
-     * Ends ring [token]. Returns the volume to restore, or null when a newer ring is playing
-     * and now owns the volume and the notification.
-     */
-    @Synchronized
-    internal fun end(token: Long): Int? {
-        val playing = current.value
-        if (playing != null && playing != token) return null
-        current.value = null
-        return savedVolume.also { savedVolume = null }
-    }
-}
 
 class AndroidSoundModeAccessChecker(
     private val context: Context,
@@ -110,18 +69,26 @@ class AndroidPhoneActionExecutor(
             withContext(Dispatchers.IO) { preparePlayer(action.soundUri) }
                 ?: return PhoneActionOutcome.Failed(PhoneActionFailure.NO_PLAYABLE_SOUND)
 
-        val token = ActiveRing.begin { audioManager.getStreamVolume(AudioManager.STREAM_ALARM) }
-        setAlarmVolume(audioManager, audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM))
+        var notificationShown = false
+        val token =
+            ActiveRing.begin(
+                currentVolume = { audioManager.getStreamVolume(AudioManager.STREAM_ALARM) },
+                start = {
+                    setAlarmVolume(audioManager, audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM))
+                    notificationShown = PhoneActionNotifications.showRinging(context, ruleName)
+                },
+            )
+        // Without the notification there is no Stop button, so keep the ring short.
+        val duration =
+            if (notificationShown) PhoneAction.RING_DURATION_MILLIS else PhoneAction.RING_WITHOUT_STOP_DURATION_MILLIS
         try {
-            PhoneActionNotifications.showRinging(context, ruleName)
             player.start()
-            withTimeoutOrNull(PhoneAction.RING_DURATION_MILLIS) { ActiveRing.awaitEnd(token) }
+            withTimeoutOrNull(duration) { ActiveRing.awaitEnd(token) }
         } finally {
             withContext(NonCancellable) {
                 runCatching { player.stop() }
                 player.release()
-                // Null when a newer ring has taken over the volume and the notification.
-                ActiveRing.end(token)?.let { previousVolume ->
+                ActiveRing.end(token) { previousVolume ->
                     setAlarmVolume(audioManager, previousVolume)
                     PhoneActionNotifications.cancelRinging(context)
                 }

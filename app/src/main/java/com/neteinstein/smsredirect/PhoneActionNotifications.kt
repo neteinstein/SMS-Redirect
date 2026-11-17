@@ -22,12 +22,18 @@ object PhoneActionNotifications {
     private const val RINGING_NOTIFICATION_ID = 300_000
     private const val SOUND_MODE_DENIED_NOTIFICATION_ID = 300_001
 
-    /** Shown while a ring plays; tapping, dismissing or "Stop" all end it. */
+    /**
+     * Shown while a ring plays; tapping, swiping it away or "Stop" all end it. Not ongoing, so
+     * it can be swiped on Android 13 too. Returns false when the user cannot see it (permission
+     * denied, notifications or this channel turned off): then there is no Stop button.
+     */
     fun showRinging(
         context: Context,
         ruleName: String,
-    ) {
-        val manager = notificationManagerOrNull(context) ?: return
+    ): Boolean {
+        val manager = notificationManagerOrNull(context) ?: return false
+        if (!manager.areNotificationsEnabled()) return false
+        if (manager.getNotificationChannel(CHANNEL_ID)?.importance == NotificationManager.IMPORTANCE_NONE) return false
         val stop = stopRingingIntent(context)
         val notification =
             NotificationCompat
@@ -39,12 +45,12 @@ object PhoneActionNotifications {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 // The ring itself is the sound; the notification must not add a second one.
                 .setSilent(true)
-                .setOngoing(true)
                 .setContentIntent(stop)
                 .setDeleteIntent(stop)
                 .addAction(0, context.getString(R.string.phone_action_notification_stop), stop)
                 .build()
         manager.notify(TAG, RINGING_NOTIFICATION_ID, notification)
+        return true
     }
 
     fun cancelRinging(context: Context) {

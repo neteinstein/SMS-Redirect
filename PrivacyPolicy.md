@@ -148,6 +148,7 @@ Each permission is requested only when a feature needs it, and none of them give
 | `SEND_SMS` | Send the messages you write, forward and schedule |
 | `RECEIVE_MMS` / `RECEIVE_WAP_PUSH` | Receive picture and group messages (MMS) |
 | `VIBRATE` | Vibrate when a phone-action rule asks for it |
+| `MODIFY_AUDIO_SETTINGS` | Raise the alarm volume for a ring and put it back afterwards, and change the sound mode when a rule asks for it |
 | Do Not Disturb access (`ACCESS_NOTIFICATION_POLICY`) | Only if you create a rule that changes the sound mode, and only after you allow it in Android's settings: switch the ringer to or from silent |
 | `REQUEST_INSTALL_PACKAGES` (GitHub version only) | Hand a downloaded update to Android's installer, which asks you to confirm |
 | `READ_CONTACTS` | Show names instead of numbers in conversations, and let you pick a contact for a rule or a scheduled message |

@@ -56,6 +56,21 @@ sealed interface PhoneAction {
         /** How long a ring lasts when nobody stops it. */
         const val RING_DURATION_MILLIS = 60_000L
 
+        /** How long a ring lasts when its notification, the only Stop button, cannot be shown. */
+        const val RING_WITHOUT_STOP_DURATION_MILLIS = 15_000L
+
+        /**
+         * An action that could not start within this long of its SMS arriving is dropped:
+         * WorkManager may defer work once the expedited quota runs out, and a full-volume ring or
+         * a sound-mode change long after the message is worse than none.
+         */
+        const val MAX_START_DELAY_MILLIS = 2 * 60_000L
+
+        fun isTooLateToRun(
+            queuedAtMillis: Long,
+            nowMillis: Long,
+        ): Boolean = nowMillis - queuedAtMillis > MAX_START_DELAY_MILLIS
+
         /**
          * Reads back what [kind], [value] and [label] wrote. Unknown kinds give null; an
          * unknown pattern or mode falls back to the default so a rule never silently vanishes.

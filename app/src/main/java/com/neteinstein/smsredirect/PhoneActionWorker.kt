@@ -16,7 +16,8 @@ import com.neteinstein.smsredirect.domain.model.PhoneAction
  * ring lasts up to a minute, far longer than a broadcast may run.
  *
  * Its input is the action only (kind, value, label) and the rule's name, never the message.
- * Failures are reported, not retried: a ring a few minutes late is worse than none.
+ * Failures are reported, not retried, and an action that starts more than
+ * [PhoneAction.MAX_START_DELAY_MILLIS] late is dropped: a ring long after the SMS is worse than none.
  */
 class PhoneActionWorker(
     context: Context,
@@ -28,6 +29,7 @@ class PhoneActionWorker(
         private const val KEY_VALUE = "value"
         private const val KEY_LABEL = "label"
         private const val KEY_RULE_NAME = "rule_name"
+        private const val KEY_QUEUED_AT = "queued_at"
 
         fun enqueue(
             context: Context,
@@ -42,6 +44,7 @@ class PhoneActionWorker(
                             KEY_VALUE to action.value,
                             KEY_LABEL to action.label,
                             KEY_RULE_NAME to ruleName,
+                            KEY_QUEUED_AT to System.currentTimeMillis(),
                         ),
                     ).setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                     .build()
@@ -50,6 +53,10 @@ class PhoneActionWorker(
     }
 
     override suspend fun doWork(): Result {
+        if (PhoneAction.isTooLateToRun(inputData.getLong(KEY_QUEUED_AT, 0L), System.currentTimeMillis())) {
+            Log.i(TAG, "Dropped: started too long after it was queued")
+            return Result.success()
+        }
         val action =
             PhoneAction.decode(
                 kind = inputData.getString(KEY_KIND).orEmpty(),

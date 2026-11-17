@@ -1,6 +1,7 @@
 package com.neteinstein.smsredirect.domain.model
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -58,5 +59,16 @@ class PhoneActionTest {
             listOf<Long>(0, 200, 200, 200, 200, 200, 600, 600, 200, 600, 200, 600, 600, 200, 200, 200, 200, 200),
             VibrationPattern.SOS.timings,
         )
+    }
+
+    @Test
+    fun `an action that starts more than two minutes late is too late to run`() {
+        val queued = 1_000_000L
+
+        assertFalse(PhoneAction.isTooLateToRun(queued, queued))
+        assertFalse(PhoneAction.isTooLateToRun(queued, queued + 120_000L))
+        assertTrue(PhoneAction.isTooLateToRun(queued, queued + 120_001L))
+        // Work queued without a timestamp never runs.
+        assertTrue(PhoneAction.isTooLateToRun(0L, queued))
     }
 }

@@ -26,8 +26,10 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Automation phone actions: vibrate in a pattern, and switch the ringer to or from silent
-         (which Android ties to "Do Not Disturb" access the user grants in system settings). -->
+         (which Android ties to "Do Not Disturb" access the user grants in system settings).
+         MODIFY_AUDIO_SETTINGS covers the alarm volume and ringer mode changes. -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
