@@ -30,7 +30,7 @@ Everything else in this policy applies to both.
 
 SMS Toolbox is a messaging app. It works once you make it your **default SMS app**: the App asks for this first, using Android's own prompt, before it requests any SMS permission, and Android then gives it access to your messages. You can choose another default SMS app at any time in Android Settings; the App then stops receiving messages.
 
-**If you do not make it your default SMS app,** the Messages and Restore tabs are shown disabled, with a reminder and a button to change your mind. Automate, Schedule and Backup can still work: when you use one of them, the App offers the default-SMS-app prompt again, and only if you decline it asks for the SMS permissions that feature needs (to read, receive and send SMS) on their own.
+**If you do not make it your default SMS app,** the Messages and Restore tabs are shown disabled, with a reminder and a button to change your mind. Automate, Schedule and Backup can still work. You can create automations and scheduled messages at any time; until the App has SMS access, those tabs show a reminder with an "Allow" button. The App first offers the default-SMS-app prompt, and only if you decline it asks for the SMS permissions these features need (to read, receive and send SMS) on their own. After you have declined once, "Allow" asks for those permissions directly.
 
 **Reading.** The App shows the conversations and messages in your phone's SMS/MMS storage, with contact names from your phone's contacts. It reads them on your phone only, to display them to you.
 

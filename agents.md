@@ -172,8 +172,9 @@ Both must pass before merging. Always run these locally before pushing.
   `SEND_SMS`, `RECEIVE_MMS`, `RECEIVE_WAP_PUSH`) except through `MainActivity`'s gate
   (`requireDefaultSmsApp` / `requireSmsAccess`), which requests `RoleManager.ROLE_SMS` first.
   Messages and Restore need the role itself and are shown disabled (warning bar + "Set as
-  default") without it; Redirect, Schedule and Backup may fall back to `toolSmsPermissions`, but
-  only after the user declined the role. Both builds behave the same; they differ only in the
+  default") without it; Automate, Schedule and Backup may fall back to `toolSmsPermissions`, but
+  only after the user declined the role. Creating or editing rules and schedules is never gated
+  on SMS access; those tabs show an "Allow" banner instead. Both builds behave the same; they differ only in the
   self-update. Never use SMS permissions for OTP/verification,
   analytics on message content, or ads, and do not add a library that declares SMS permissions.
   Keep the four default-SMS components (`SMS_DELIVER`, `WAP_PUSH_DELIVER`, `SENDTO`,
