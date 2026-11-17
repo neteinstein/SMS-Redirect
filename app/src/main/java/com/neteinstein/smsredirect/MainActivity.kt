@@ -8,6 +8,7 @@ import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.RingtoneManager
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.ContactsContract
@@ -1178,10 +1179,44 @@ class MainActivity : ComponentActivity() {
                                         defaultRuleNameProvider = { index ->
                                             getString(R.string.rule_default_name_format, index)
                                         },
+                                        phoneActionScheduler = appContainer.phoneActionScheduler,
+                                        soundModeAccessChecker = appContainer.soundModeAccessChecker,
                                     ),
                             )
 
                         val uiState by ruleViewModel.uiState.collectAsState()
+
+                        // Do Not Disturb access is granted in system settings; re-check on return.
+                        val ruleLifecycleOwner = LocalLifecycleOwner.current
+                        DisposableEffect(ruleLifecycleOwner) {
+                            val observer =
+                                LifecycleEventObserver { _, event ->
+                                    if (event == Lifecycle.Event.ON_RESUME) ruleViewModel.refreshSoundModeAccess()
+                                }
+                            ruleLifecycleOwner.lifecycle.addObserver(observer)
+                            onDispose { ruleLifecycleOwner.lifecycle.removeObserver(observer) }
+                        }
+
+                        val pickSystemSoundLauncher =
+                            rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                                val uri =
+                                    result.data?.getParcelableExtra(
+                                        RingtoneManager.EXTRA_RINGTONE_PICKED_URI,
+                                        Uri::class.java,
+                                    ) ?: return@rememberLauncherForActivityResult
+                                val title = RingtoneManager.getRingtone(this@MainActivity, uri)?.getTitle(this@MainActivity)
+                                ruleViewModel.onSoundPicked(uri.toString(), title.orEmpty())
+                            }
+
+                        val pickSongLauncher =
+                            rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+                                if (uri == null) return@rememberLauncherForActivityResult
+                                // The ring plays later, from the background: keep read access.
+                                runCatching {
+                                    contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                ruleViewModel.onSoundPicked(uri.toString(), displayNameOf(uri).orEmpty())
+                            }
 
                         val pickSenderContactLauncher =
                             rememberLauncherForActivityResult(
@@ -1309,9 +1344,33 @@ class MainActivity : ComponentActivity() {
                                 ruleViewModel.saveRule(
                                     invalidTargetError = getString(R.string.rule_error_invalid_target),
                                     duplicateRuleError = getString(R.string.rule_error_duplicate),
+                                    missingConditionError = getString(R.string.rule_error_missing_condition),
                                 )
                             },
                             onBack = { navController.popBackStack() },
+                            onTypeChanged = ruleViewModel::onTypeChanged,
+                            onMessageTextChanged = ruleViewModel::onMessageTextChanged,
+                            onActionKindChanged = ruleViewModel::onActionKindChanged,
+                            onPickSystemSound = {
+                                pickSystemSoundLauncher.launch(
+                                    Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
+                                        .putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALL)
+                                        .putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+                                        .putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, false)
+                                        .putExtra(
+                                            RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
+                                            uiState.soundUri.takeIf { it.isNotBlank() }?.let(Uri::parse),
+                                        ),
+                                )
+                            },
+                            onPickSong = { pickSongLauncher.launch(arrayOf("audio/*")) },
+                            onUseDefaultSound = ruleViewModel::onDefaultSoundSelected,
+                            onVibrationPatternChanged = ruleViewModel::onVibrationPatternChanged,
+                            onSoundModeChanged = ruleViewModel::onSoundModeChanged,
+                            onGrantSoundModeAccess = {
+                                startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
+                            },
+                            onTryPhoneAction = { ruleViewModel.tryPhoneAction(getString(R.string.rule_try_rule_name)) },
                         )
                     }
 
@@ -1526,14 +1585,16 @@ class MainActivity : ComponentActivity() {
     ): OutgoingAttachment? {
         if (!isShareableAttachment(uri.scheme, uri.encodedAuthority, packageName)) return null
         val type = knownType?.takeIf { it.contains('/') && !it.contains('*') } ?: contentResolver.getType(uri) ?: return null
-        val name =
-            runCatching {
-                contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-                    if (cursor.moveToFirst()) cursor.getString(0) else null
-                }
-            }.getOrNull()
-        return OutgoingAttachment(uri = uri.toString(), contentType = type, name = name)
+        return OutgoingAttachment(uri = uri.toString(), contentType = type, name = displayNameOf(uri))
     }
+
+    /** The file name a document provider gives [uri], if any. */
+    private fun displayNameOf(uri: Uri): String? =
+        runCatching {
+            contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getString(0) else null
+            }
+        }.getOrNull()
 
     private fun openAttachment(
         uri: String,

@@ -4,7 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.smsredirect.domain.contacts.ContactNameResolver
+import com.neteinstein.smsredirect.domain.device.PhoneActionScheduler
+import com.neteinstein.smsredirect.domain.device.SoundModeAccessChecker
+import com.neteinstein.smsredirect.domain.model.PhoneAction
 import com.neteinstein.smsredirect.domain.model.Rule
+import com.neteinstein.smsredirect.domain.model.RuleType
+import com.neteinstein.smsredirect.domain.model.SoundMode
+import com.neteinstein.smsredirect.domain.model.VibrationPattern
 import com.neteinstein.smsredirect.domain.repository.RuleRepository
 import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetCategoriesUseCase
@@ -32,7 +38,28 @@ data class RuleUiState(
     val existingCategories: List<String> = emptyList(),
     val error: String? = null,
     val saved: Boolean = false,
-)
+    val type: RuleType = RuleType.REDIRECT,
+    val messageText: String = "",
+    /** One of [PhoneAction.KIND_RING], [PhoneAction.KIND_VIBRATE], [PhoneAction.KIND_SOUND_MODE]. */
+    val actionKind: String = PhoneAction.KIND_RING,
+    val soundUri: String = "",
+    val soundName: String = "",
+    val vibrationPattern: VibrationPattern = VibrationPattern.LONG,
+    val soundMode: SoundMode = SoundMode.SILENT,
+    val canChangeSoundMode: Boolean = true,
+) {
+    /** The phone action the form describes; each kind keeps its own settings while switching. */
+    val phoneAction: PhoneAction
+        get() =
+            when (actionKind) {
+                PhoneAction.KIND_VIBRATE -> PhoneAction.Vibrate(vibrationPattern)
+                PhoneAction.KIND_SOUND_MODE -> PhoneAction.SetSoundMode(soundMode)
+                else -> PhoneAction.Ring(soundUri, soundName)
+            }
+
+    val showSoundModeAccessWarning: Boolean
+        get() = type == RuleType.PHONE_ACTION && actionKind == PhoneAction.KIND_SOUND_MODE && !canChangeSoundMode
+}
 
 class RuleViewModel(
     private val getRuleUseCase: GetRuleUseCase,
@@ -43,6 +70,8 @@ class RuleViewModel(
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val contactNameResolver: ContactNameResolver? = null,
     private val defaultRuleNameProvider: (Int) -> String = { "Rule #$it" },
+    private val phoneActionScheduler: PhoneActionScheduler? = null,
+    private val soundModeAccessChecker: SoundModeAccessChecker? = null,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(RuleUiState())
     val uiState: StateFlow<RuleUiState> = _uiState.asStateFlow()
@@ -51,6 +80,7 @@ class RuleViewModel(
     private var targetLookupJob: Job? = null
 
     init {
+        refreshSoundModeAccess()
         getCategoriesUseCase()
             .onEach { categories ->
                 _uiState.update { it.copy(existingCategories = categories) }
@@ -63,13 +93,16 @@ class RuleViewModel(
             val rule = getRuleUseCase(ruleId) ?: return@launch
             val sender = rule.senderText.ifBlank { rule.phoneNumber }
             _uiState.update {
-                it.copy(
-                    id = rule.id,
-                    name = rule.name,
-                    senderText = sender,
-                    targetNumber = rule.targetNumber,
-                    category = rule.category,
-                )
+                it
+                    .copy(
+                        id = rule.id,
+                        name = rule.name,
+                        senderText = sender,
+                        targetNumber = rule.targetNumber,
+                        category = rule.category,
+                        type = rule.type,
+                        messageText = rule.messageText,
+                    ).withPhoneAction(rule.phoneAction)
             }
             // Resolve contact names for loaded numbers
             lookupContactName(sender) { name ->
@@ -79,6 +112,49 @@ class RuleViewModel(
                 _uiState.update { it.copy(targetContactName = name) }
             }
         }
+    }
+
+    fun onTypeChanged(type: RuleType) {
+        _uiState.update { it.copy(type = type, error = null) }
+    }
+
+    fun onMessageTextChanged(value: String) {
+        _uiState.update { it.copy(messageText = value, error = null) }
+    }
+
+    fun onActionKindChanged(kind: String) {
+        _uiState.update { it.copy(actionKind = kind, error = null) }
+    }
+
+    fun onSoundPicked(
+        uri: String,
+        name: String,
+    ) {
+        _uiState.update { it.copy(soundUri = uri, soundName = name) }
+    }
+
+    fun onDefaultSoundSelected() {
+        _uiState.update { it.copy(soundUri = "", soundName = "") }
+    }
+
+    fun onVibrationPatternChanged(pattern: VibrationPattern) {
+        _uiState.update { it.copy(vibrationPattern = pattern) }
+    }
+
+    fun onSoundModeChanged(mode: SoundMode) {
+        _uiState.update { it.copy(soundMode = mode) }
+    }
+
+    /** Call on resume: the user may have just granted Do Not Disturb access in settings. */
+    fun refreshSoundModeAccess() {
+        val granted = soundModeAccessChecker?.canChangeSoundMode() ?: true
+        _uiState.update { it.copy(canChangeSoundMode = granted) }
+    }
+
+    /** Runs the configured phone action right away, so the user can hear or feel it. */
+    fun tryPhoneAction(ruleName: String) {
+        val current = uiState.value
+        phoneActionScheduler?.schedule(current.phoneAction, current.name.trim().ifBlank { ruleName })
     }
 
     fun onNameChanged(value: String) {
@@ -169,23 +245,51 @@ class RuleViewModel(
     fun saveRule(
         invalidTargetError: String = "Target must be a valid phone number",
         duplicateRuleError: String = "This rule already exists",
+        missingConditionError: String = "Enter a sender, a message text, or both",
     ) {
         viewModelScope.launch {
             val current = uiState.value
-            if (!isValidPhoneNumber(current.targetNumber.trim())) {
-                _uiState.update { it.copy(error = invalidTargetError) }
-                return@launch
-            }
             val prefix = getDefaultPrefixNowUseCase()
             val senderValue = normalizePhoneNumber(current.senderText.trim(), prefix)
-            val targetValue = normalizeTargetNumber(current.targetNumber.trim(), prefix)
+            val candidate =
+                when (current.type) {
+                    RuleType.REDIRECT -> {
+                        if (!isValidPhoneNumber(current.targetNumber.trim())) {
+                            _uiState.update { it.copy(error = invalidTargetError) }
+                            return@launch
+                        }
+                        Rule(
+                            senderText = senderValue,
+                            phoneNumber = senderValue,
+                            targetNumber = normalizeTargetNumber(current.targetNumber.trim(), prefix),
+                        )
+                    }
+
+                    RuleType.PHONE_ACTION -> {
+                        val messageText = current.messageText.trim()
+                        if (senderValue.isBlank() && messageText.isBlank()) {
+                            _uiState.update { it.copy(error = missingConditionError) }
+                            return@launch
+                        }
+                        Rule(
+                            senderText = senderValue,
+                            phoneNumber = senderValue,
+                            type = RuleType.PHONE_ACTION,
+                            messageText = messageText,
+                            phoneAction = current.phoneAction,
+                        )
+                    }
+                }
 
             val existingRules = ruleRepository.getRulesSnapshot()
             val isDuplicate =
                 existingRules.any { existing ->
                     existing.id != current.id &&
-                        existing.senderText == senderValue &&
-                        existing.targetNumber == targetValue
+                        existing.type == candidate.type &&
+                        existing.senderText == candidate.senderText &&
+                        existing.targetNumber == candidate.targetNumber &&
+                        existing.messageText == candidate.messageText &&
+                        existing.phoneAction == candidate.phoneAction
                 }
             if (isDuplicate) {
                 _uiState.update { it.copy(error = duplicateRuleError) }
@@ -198,12 +302,9 @@ class RuleViewModel(
                     defaultRuleNameProvider(count + 1)
                 }
             val rule =
-                Rule(
+                candidate.copy(
                     id = current.id,
                     name = name,
-                    senderText = senderValue,
-                    phoneNumber = senderValue,
-                    targetNumber = targetValue,
                     category = current.category.trim(),
                 )
             val result = if (rule.id == 0L) addRuleUseCase(rule) else updateRuleUseCase(rule)
@@ -221,6 +322,25 @@ class RuleViewModel(
 
     companion object {
         internal const val LOOKUP_DEBOUNCE_MS = 300L
+
+        private fun RuleUiState.withPhoneAction(action: PhoneAction?): RuleUiState =
+            when (action) {
+                null -> {
+                    this
+                }
+
+                is PhoneAction.Ring -> {
+                    copy(actionKind = action.kind, soundUri = action.soundUri, soundName = action.soundName)
+                }
+
+                is PhoneAction.Vibrate -> {
+                    copy(actionKind = action.kind, vibrationPattern = action.pattern)
+                }
+
+                is PhoneAction.SetSoundMode -> {
+                    copy(actionKind = action.kind, soundMode = action.mode)
+                }
+            }
 
         /**
          * If the value looks like a phone number (digits only, optionally starting with 0)
@@ -281,6 +401,8 @@ class RuleViewModelFactory(
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val contactNameResolver: ContactNameResolver? = null,
     private val defaultRuleNameProvider: (Int) -> String = { "Rule #$it" },
+    private val phoneActionScheduler: PhoneActionScheduler? = null,
+    private val soundModeAccessChecker: SoundModeAccessChecker? = null,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
@@ -293,6 +415,8 @@ class RuleViewModelFactory(
             getCategoriesUseCase = getCategoriesUseCase,
             contactNameResolver = contactNameResolver,
             defaultRuleNameProvider = defaultRuleNameProvider,
+            phoneActionScheduler = phoneActionScheduler,
+            soundModeAccessChecker = soundModeAccessChecker,
         ) as T
     }
 }

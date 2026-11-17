@@ -5,10 +5,15 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 import android.util.Log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class SmsReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "SmsReceiver"
+        private val receiverScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     }
 
     override fun onReceive(
@@ -33,9 +38,23 @@ class SmsReceiver : BroadcastReceiver() {
 
         Log.i(TAG, "SMS received from='$sender', bodyLength=${body.length}")
 
-        val features = (context.applicationContext as SmsRedirectApplication).appContainer.features
-        if (features.forwarding) {
+        val container = (context.applicationContext as SmsRedirectApplication).appContainer
+        if (container.features.forwarding) {
             ForwardSmsWorker.enqueue(context, sender, body)
+
+            // Automation phone actions (ring, vibrate, sound mode). Matched here so that only the
+            // matching rules' actions are queued, not the message body.
+            val pending = goAsync()
+            receiverScope.launch {
+                try {
+                    val scheduled = container.triggerPhoneActionsUseCase(sender, body)
+                    if (scheduled > 0) Log.i(TAG, "Scheduled $scheduled phone action(s)")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Could not match phone-action rules", e)
+                } finally {
+                    pending.finish()
+                }
+            }
         }
 
         // Backup is triggered for every incoming SMS, independent of whether a redirect rule

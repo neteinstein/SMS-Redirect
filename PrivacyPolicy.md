@@ -1,6 +1,6 @@
 # Privacy Policy for SMS Toolbox
 
-**Effective date:** November 15, 2026
+**Effective date:** November 17, 2026
 
 SMS Toolbox ("the App", "we", "us") is an Android app developed by [neteinstein](https://github.com/neteinstein). **Its primary purpose is SMS messaging:** it is a full SMS and MMS messaging app that you set as your phone's default SMS app, to read, send and receive your text and picture messages. Around that, it backs up your text messages to your own Gmail account, restores them to a phone, forwards the messages you choose, and sends messages on a schedule.
 
@@ -30,7 +30,7 @@ Everything else in this policy applies to both.
 
 SMS Toolbox is a messaging app. It works once you make it your **default SMS app**: the App asks for this first, using Android's own prompt, before it requests any SMS permission, and Android then gives it access to your messages. You can choose another default SMS app at any time in Android Settings; the App then stops receiving messages.
 
-**If you do not make it your default SMS app,** the Messages and Restore tabs are shown disabled, with a reminder and a button to change your mind. Redirect, Schedule and Backup can still work: when you use one of them, the App offers the default-SMS-app prompt again, and only if you decline it asks for the SMS permissions that feature needs (to read, receive and send SMS) on their own.
+**If you do not make it your default SMS app,** the Messages and Restore tabs are shown disabled, with a reminder and a button to change your mind. Automate, Schedule and Backup can still work: when you use one of them, the App offers the default-SMS-app prompt again, and only if you decline it asks for the SMS permissions that feature needs (to read, receive and send SMS) on their own.
 
 **Reading.** The App shows the conversations and messages in your phone's SMS/MMS storage, with contact names from your phone's contacts. It reads them on your phone only, to display them to you.
 
@@ -74,15 +74,17 @@ Android lets only the default SMS app write messages, so a restore needs the App
 
 For each restored message the App stores the same one-way hash it stores for a backup, so a restored message is not uploaded again. Nothing in a restore is sent anywhere except from your own mailbox to your own phone.
 
-## 4. Forwarding and scheduled messages
+## 4. Forwarding, phone actions and scheduled messages
 
-When an incoming SMS matches one of your rules, the App reads its sender and text on your phone and sends it, with the prefix you configured, to the number you chose. It uses Android's standard SMS service, through your mobile carrier. Scheduled messages are sent the same way, at the time you chose. These messages go only to the numbers you specified, and appear in that conversation in the App like any other message you sent. We do not relay, copy or store them on any server.
+When an incoming SMS matches one of your redirect rules, the App reads its sender and text on your phone and sends it, with the prefix you configured, to the number you chose. It uses Android's standard SMS service, through your mobile carrier. Scheduled messages are sent the same way, at the time you chose. These messages go only to the numbers you specified, and appear in that conversation in the App like any other message you sent. We do not relay, copy or store them on any server.
+
+A rule can instead run a **phone action**: ring at full volume with a sound you choose, vibrate, or change your phone's sound mode. The App compares the incoming message's sender and text with your rule on your phone and performs the action there. Nothing is sent anywhere, and the message is not stored again. A song you pick stays where it is; the App only keeps permission to play it.
 
 ## 5. What stays on your phone
 
 Your SMS and MMS messages are kept in Android's own message storage on your phone, where every messaging app keeps them; deleting a message or conversation in the App deletes it there. In addition, the App keeps the following in its local database. None of it is sent to us.
 
-- **Redirect rules:** name, category, sender to match, target number and order
+- **Automation rules:** name, category, sender to match, and order; for a redirect, the target number; for a phone action, the text to look for in messages, the action, and the chosen sound's name and location on your phone
 - **Scheduled messages:** name, category, contact or number, message text, date and time, repeat pattern and stop date
 - **Forward history** (on by default, can be turned off): up to the last 50 forwarded messages, with sender, target, matched rule, time and message text
 - **Scheduled-send history** (on by default, can be turned off): up to the last 50 sent scheduled messages
@@ -142,9 +144,11 @@ Each permission is requested only when a feature needs it, and none of them give
 | Permission | Why |
 |---|---|
 | Default SMS app (role) | Be your messaging app: receive SMS and MMS, save them and the messages you send, and restore backups. Requested first, before any SMS permission. Android grants the SMS permissions below together with it. Messages and Restore need it; the other features can work without it |
-| `READ_SMS` / `RECEIVE_SMS` | Granted with the default SMS app role, or, if you declined the role, asked for on its own when you first use Redirect, Schedule or Backup. Show your conversations, receive new messages, back them up to Gmail, and check them against your forwarding rules |
+| `READ_SMS` / `RECEIVE_SMS` | Granted with the default SMS app role, or, if you declined the role, asked for on its own when you first use Automate, Schedule or Backup. Show your conversations, receive new messages, back them up to Gmail, and check them against your automation rules |
 | `SEND_SMS` | Send the messages you write, forward and schedule |
 | `RECEIVE_MMS` / `RECEIVE_WAP_PUSH` | Receive picture and group messages (MMS) |
+| `VIBRATE` | Vibrate when a phone-action rule asks for it |
+| Do Not Disturb access (`ACCESS_NOTIFICATION_POLICY`) | Only if you create a rule that changes the sound mode, and only after you allow it in Android's settings: switch the ringer to or from silent |
 | `REQUEST_INSTALL_PACKAGES` (GitHub version only) | Hand a downloaded update to Android's installer, which asks you to confirm |
 | `READ_CONTACTS` | Show names instead of numbers in conversations, and let you pick a contact for a rule or a scheduled message |
 | `POST_NOTIFICATIONS` | Notify you of new messages, show backup and restore progress, and confirm forwarded and scheduled messages |

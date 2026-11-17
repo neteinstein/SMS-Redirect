@@ -15,7 +15,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         BackupSettingsEntity::class,
         SmsBackupStateEntity::class,
     ],
-    version = 11,
+    version = 12,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -34,6 +34,28 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun smsBackupStateDao(): SmsBackupStateDao
 
     companion object {
+        /**
+         * The columns v12 adds to `rules` for automation (phone-action rules), as Room declares
+         * them. `AppDatabaseMigrationTest` checks each one against the exported 12.json schema,
+         * so the migration cannot drift from the entity.
+         */
+        val RULES_V12_COLUMNS =
+            listOf(
+                "`ruleType` TEXT NOT NULL DEFAULT 'REDIRECT'",
+                "`messageText` TEXT NOT NULL DEFAULT ''",
+                "`phoneAction` TEXT NOT NULL DEFAULT ''",
+                "`phoneActionValue` TEXT NOT NULL DEFAULT ''",
+                "`phoneActionLabel` TEXT NOT NULL DEFAULT ''",
+            )
+
+        /** Every existing rule becomes a redirect rule, which is what it already was. */
+        val MIGRATION_11_12 =
+            object : Migration(11, 12) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    RULES_V12_COLUMNS.forEach { column -> db.execSQL("ALTER TABLE `rules` ADD COLUMN $column") }
+                }
+            }
+
         /**
          * Only the `showNotifications` column's SQL default changed (true -> false); every
          * other column keeps its previous default. Rebuilds the table instead of relying on

@@ -8,7 +8,7 @@ yourself; wording and categories change over time.
 **This form covers the Play build only.** The app ships in two flavors from one
 codebase (see `app/build.gradle.kts`): the **play** flavor uploaded to Google Play
 is the SMS/MMS messaging app (declared as the **Default SMS handler**) with
-Redirect, Schedule, Backup and Restore, and no self-update; the **github** flavor
+Automate (formerly Redirect), Schedule, Backup and Restore, and no self-update; the **github** flavor
 is an APK attached to GitHub releases that additionally checks GitHub for updates.
 Only the Play build is distributed through Play, so only its behaviour is declared
 here. The GitHub build's update check is covered by [`PrivacyPolicy.md`](../PrivacyPolicy.md).

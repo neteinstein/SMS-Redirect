@@ -27,7 +27,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Settings
@@ -66,7 +65,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.neteinstein.smsredirect.R
 import com.neteinstein.smsredirect.domain.model.Rule
+import com.neteinstein.smsredirect.domain.model.RuleType
 import com.neteinstein.smsredirect.presentation.components.WarningBanner
+import com.neteinstein.smsredirect.presentation.rule.phoneActionSummary
+import com.neteinstein.smsredirect.presentation.rule.ruleIcon
 import com.neteinstein.smsredirect.presentation.theme.CategoryAccentColors
 import com.neteinstein.smsredirect.presentation.theme.Dimens
 import kotlin.math.absoluteValue
@@ -409,7 +411,7 @@ private fun RuleCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    imageVector = Icons.Default.Folder,
+                    imageVector = ruleIcon(rule.phoneAction.takeIf { rule.type == RuleType.PHONE_ACTION }),
                     contentDescription = null,
                     modifier =
                         Modifier
@@ -425,14 +427,29 @@ private fun RuleCard(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                     )
-                    val senderDisplay = buildSenderTargetDisplay(rule.senderText, senderContactName)
-                    Text(
-                        stringResource(R.string.home_sender_format, senderDisplay),
-                    )
-                    val targetDisplay = buildSenderTargetDisplay(rule.targetNumber, targetContactName)
-                    Text(
-                        stringResource(R.string.home_target_format, targetDisplay),
-                    )
+                    val phoneAction = rule.phoneAction
+                    if (rule.type == RuleType.PHONE_ACTION && phoneAction != null) {
+                        val senderDisplay =
+                            if (rule.senderText.isBlank()) {
+                                stringResource(R.string.home_sender_anyone)
+                            } else {
+                                buildSenderTargetDisplay(rule.senderText, senderContactName)
+                            }
+                        Text(stringResource(R.string.home_sender_format, senderDisplay))
+                        if (rule.messageText.isNotBlank()) {
+                            Text(stringResource(R.string.home_message_text_format, rule.messageText))
+                        }
+                        Text(stringResource(R.string.home_action_format, phoneActionSummary(phoneAction)))
+                    } else {
+                        val senderDisplay = buildSenderTargetDisplay(rule.senderText, senderContactName)
+                        Text(
+                            stringResource(R.string.home_sender_format, senderDisplay),
+                        )
+                        val targetDisplay = buildSenderTargetDisplay(rule.targetNumber, targetContactName)
+                        Text(
+                            stringResource(R.string.home_target_format, targetDisplay),
+                        )
+                    }
                 }
                 Icon(
                     imageVector = Icons.Default.DragHandle,

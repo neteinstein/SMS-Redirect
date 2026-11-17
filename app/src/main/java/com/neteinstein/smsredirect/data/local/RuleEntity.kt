@@ -13,4 +13,10 @@ data class RuleEntity(
     val targetNumber: String,
     @ColumnInfo(defaultValue = "0") val sortOrder: Int = 0,
     @ColumnInfo(defaultValue = "") val category: String = "",
+    // v12: automation. Each column must match AppDatabase.RULES_V12_COLUMNS exactly.
+    @ColumnInfo(defaultValue = "REDIRECT") val ruleType: String = "REDIRECT",
+    @ColumnInfo(defaultValue = "") val messageText: String = "",
+    @ColumnInfo(defaultValue = "") val phoneAction: String = "",
+    @ColumnInfo(defaultValue = "") val phoneActionValue: String = "",
+    @ColumnInfo(defaultValue = "") val phoneActionLabel: String = "",
 )

@@ -24,7 +24,7 @@
     <string name="battery_banner_message">Background running is not enabled. Messages, forwarding and scheduled SMS might be delayed.</string>
     <string name="battery_banner_action">Fix now</string>
 
-    <string name="home_title_rules">Redirect Rules</string>
+    <string name="home_title_rules">Automations</string>
     <string name="home_cd_settings">Settings</string>
     <string name="home_cd_history">History</string>
     <string name="home_cd_add_rule">Add rule</string>
@@ -67,7 +67,7 @@
     <string name="settings_language_system_default">System default</string>
     <string name="settings_landing_screen_label">Landing screen</string>
     <string name="settings_landing_screen_backup">SMS Backup</string>
-    <string name="settings_landing_screen_redirect">Redirect</string>
+    <string name="settings_landing_screen_redirect">Automate</string>
     <string name="settings_landing_screen_schedule">Schedule</string>
     <string name="settings_send_while_roaming">Send while roaming</string>
     <string name="settings_keep_history">Keep history</string>
@@ -104,7 +104,7 @@
     <string name="settings_history_rule_format">Rule: %1$s</string>
     <string name="settings_history_unknown_sender">Unknown sender</string>
 
-    <string name="main_tab_redirect">Redirect</string>
+    <string name="main_tab_redirect">Automate</string>
     <string name="main_tab_schedule">Schedule</string>
 
     <string name="repeat_type_none">None</string>
@@ -309,7 +309,7 @@
     <string name="default_sms_rationale_not_now">Not now</string>
     <string name="default_sms_rationale_confirm">Continue</string>
     <string name="default_sms_declined_title">SMS Toolbox is not your default SMS app</string>
-    <string name="default_sms_declined_message">Messages and Restore only work while SMS Toolbox is your default SMS app; until then they are shown disabled. Redirect, Schedule and Backup still work. You can set it any time from the Messages or Restore tab.</string>
+    <string name="default_sms_declined_message">Messages and Restore only work while SMS Toolbox is your default SMS app; until then they are shown disabled. Automate, Schedule and Backup still work. You can set it any time from the Messages or Restore tab.</string>
     <string name="default_sms_declined_message_tools">You can keep your current messaging app and give SMS Toolbox only the SMS permissions this feature needs. Messages and Restore stay disabled until SMS Toolbox is your default SMS app.</string>
     <string name="default_sms_declined_permissions_only">Use SMS permissions only</string>
     <string name="new_message_title">New message</string>
@@ -357,7 +357,7 @@
     <string name="messages_disabled_banner">Messages is disabled: set SMS Toolbox as your default SMS app to send and receive messages.</string>
     <string name="restore_disabled_banner">Restore is disabled: Android only lets the default SMS app add messages. Set SMS Toolbox as your default SMS app to restore.</string>
     <string name="default_sms_banner_action">Set as default</string>
-    <string name="messages_disabled_placeholder">Your conversations will appear here once SMS Toolbox is your default SMS app. Redirect, Schedule and Backup work without it.</string>
+    <string name="messages_disabled_placeholder">Your conversations will appear here once SMS Toolbox is your default SMS app. Automate, Schedule and Backup work without it.</string>
     <string name="conversation_mms_not_downloaded">Picture message not downloaded yet</string>
     <string name="conversation_mms_downloading">Downloading picture message…</string>
     <string name="conversation_mms_download">Download</string>
@@ -378,4 +378,48 @@
     <string name="unused_app_info_message">Android resets the permissions of apps you do not open for a few months, which would stop forwarding, schedules and backup. This is why you get a monthly reminder.\n\nYou can switch off \"Manage app if unused\" (called \"Remove permissions and free up space\" on some phones) for this app instead. The reminders then stop on their own.</string>
     <string name="unused_app_info_open_settings">Open settings</string>
     <string name="unused_app_info_dismiss">Got it</string>
+
+    <!-- Automate: phone-action rules -->
+    <string name="rule_type_title">What should happen?</string>
+    <string name="rule_type_redirect">Redirect</string>
+    <string name="rule_type_phone_action">Phone action</string>
+    <string name="rule_label_sender_optional">Sender (optional)</string>
+    <string name="rule_label_message_text">Message contains</string>
+    <string name="rule_message_text_supporting">Not case-sensitive. Leave empty to match every message from the sender.</string>
+    <string name="rule_label_action">Action</string>
+    <string name="phone_action_ring">Ring at maximum volume</string>
+    <string name="phone_action_vibrate">Vibrate</string>
+    <string name="phone_action_sound_mode">Change sound mode</string>
+    <string name="rule_ring_description">Rings at full volume for up to a minute, even when the phone is on silent. Stop it from the notification.</string>
+    <string name="rule_label_sound">Sound: %1$s</string>
+    <string name="rule_sound_default">Default alarm sound</string>
+    <string name="rule_action_pick_system_sound">System sounds</string>
+    <string name="rule_action_pick_song">Song from files</string>
+    <string name="rule_action_use_default_sound">Use default sound</string>
+    <string name="rule_label_vibration_pattern">Pattern</string>
+    <string name="vibration_pattern_short">Short</string>
+    <string name="vibration_pattern_long">Long</string>
+    <string name="vibration_pattern_double">Double</string>
+    <string name="vibration_pattern_heartbeat">Heartbeat</string>
+    <string name="vibration_pattern_sos">SOS</string>
+    <string name="vibration_pattern_alarm">Alarm (10 seconds)</string>
+    <string name="rule_label_sound_mode">Switch to</string>
+    <string name="sound_mode_ring">Ring</string>
+    <string name="sound_mode_vibrate">Vibrate</string>
+    <string name="sound_mode_silent">Silent</string>
+    <string name="sound_mode_toggle">Toggle ring / silent</string>
+    <string name="rule_sound_mode_access_message">Switching to or from silent needs Do Not Disturb access.</string>
+    <string name="rule_sound_mode_access_action">Allow</string>
+    <string name="rule_action_try">Try it now</string>
+    <string name="rule_try_rule_name">Test</string>
+    <string name="rule_error_missing_condition">Enter a sender, a message text, or both</string>
+    <string name="home_sender_anyone">Anyone</string>
+    <string name="home_message_text_format">Message contains: “%1$s”</string>
+    <string name="home_action_format">Action: %1$s</string>
+    <string name="phone_action_notification_channel">Automation alerts</string>
+    <string name="phone_action_notification_ringing_title">Ringing</string>
+    <string name="phone_action_notification_ringing_text">Rule: %1$s. Tap to stop.</string>
+    <string name="phone_action_notification_stop">Stop</string>
+    <string name="phone_action_notification_access_denied_title">Couldn\'t change the sound mode</string>
+    <string name="phone_action_notification_access_denied_text">Rule \"%1$s\" needs Do Not Disturb access. Tap to allow it.</string>
 </resources>
