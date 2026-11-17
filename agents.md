@@ -183,6 +183,11 @@ Both must pass before merging. Always run these locally before pushing.
   `release.yml` fails if the Play bundle's merged manifest has it. Gate features through
   `AppContainer.features` (`AppFeatures`), never by checking `BuildConfig.FLAVOR`; put
   update/install code in `app/src/github/` only.
+- **Never hardcode Play's `changesNotSentForReview`.** Play requires or refuses it depending on
+  the app's publishing state, which changes in Play Console. `.github/scripts/play_publish.py`
+  (used by `release.yml` and `publish-play-store.yml`) tries one setting and retries the commit
+  with the other; its tests run right before every upload. Errors only Play Console can fix,
+  such as the sensitive-permissions declaration, fail with an explanation instead.
 - **`versionCode` is derived from `versionName`** in `app/build.gradle.kts`, so the Play bundle
   and GitHub APK of a release match. Do not set it by hand or from a CI run number.
 

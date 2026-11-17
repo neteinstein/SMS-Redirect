@@ -65,14 +65,23 @@ jobs:
           PLAY_STORE_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
         run: echo "$PLAY_STORE_SERVICE_ACCOUNT_JSON" > play-store-key.json
 
+      - name: Set up the Play upload script
+        run: |
+          # A virtualenv: the runner's system Python refuses pip installs (PEP 668).
+          python3 -m venv "$RUNNER_TEMP/play-venv"
+          "$RUNNER_TEMP/play-venv/bin/pip" install --quiet google-auth==2.61.0 requests==2.32.5
+          (cd .github/scripts && "$RUNNER_TEMP/play-venv/bin/python" -m unittest test_play_publish)
+
+      # Not r0adkll/upload-google-play: its changesNotSentForReview input had to be hardcoded, and
+      # Play requires or refuses that parameter depending on the app's publishing state, so every
+      # fixed value eventually broke this step. The script picks it per upload; see its docstring.
       - name: Upload to Play Store
-        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
-        with:
-          serviceAccountJson: play-store-key.json
-          packageName: com.neteinstein.smsredirect
-          releaseFiles: app/build/outputs/bundle/playRelease/app-play-release.aab
-          tracks: ${{ inputs.track }}
-          changesNotSentForReview: true
+        run: >-
+          "$RUNNER_TEMP/play-venv/bin/python" .github/scripts/play_publish.py
+          --key play-store-key.json
+          --package com.neteinstein.smsredirect
+          --aab app/build/outputs/bundle/playRelease/app-play-release.aab
+          --track "${{ inputs.track }}"
 
       - name: Cleanup secrets
         if: always()
