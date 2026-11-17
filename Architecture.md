@@ -44,10 +44,14 @@ Two rules from that policy shape the code:
   it. It runs once on first launch, and again whenever an SMS feature is used without the role.
 - **Without the role, Messages and Restore are disabled, the rest works.** Both tabs stay visible
   but greyed out (`DISABLED_ALPHA`), with a warning bar whose "Set as default" action re-runs the
-  role request. Redirect, Schedule and Backup go through `requireSmsAccess`: the role is offered
+  role request. Automate, Schedule and Backup go through `requireSmsAccess`: the role is offered
   first, and only if the user declines it does the decline dialog offer "Use SMS permissions
-  only", which requests `toolSmsPermissions` (`RECEIVE_SMS`, `READ_SMS`, `SEND_SMS`). Both builds
-  behave identically here.
+  only", which requests `toolSmsPermissions` (`RECEIVE_SMS`, `READ_SMS`, `SEND_SMS`). Once the
+  user has declined Android's role dialog (`KEY_DEFAULT_SMS_DECLINED`), `requireSmsAccess` asks
+  for `toolSmsPermissions` directly instead of offering the role again. Creating or editing a
+  rule or a schedule is never gated: Automate and Schedule show a warning banner with "Allow"
+  (which runs `requireSmsAccess`) while those permissions are missing. Both builds behave
+  identically here.
 
 ## Messaging (SMS/MMS client)
 

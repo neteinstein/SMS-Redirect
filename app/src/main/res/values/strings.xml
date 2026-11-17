@@ -422,4 +422,7 @@
     <string name="phone_action_notification_stop">Stop</string>
     <string name="phone_action_notification_access_denied_title">Couldn\'t change the sound mode</string>
     <string name="phone_action_notification_access_denied_text">Rule \"%1$s\" needs Do Not Disturb access. Tap to allow it.</string>
+    <string name="sms_access_banner_automate">Your automations won\'t run until SMS Toolbox can receive and send SMS.</string>
+    <string name="sms_access_banner_schedule">Scheduled messages won\'t be sent until SMS Toolbox can send SMS.</string>
+    <string name="sms_access_banner_action">Allow</string>
 </resources>

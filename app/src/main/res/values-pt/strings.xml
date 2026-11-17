@@ -426,4 +426,7 @@
     <string name="phone_action_notification_stop">Parar</string>
     <string name="phone_action_notification_access_denied_title">Não foi possível mudar o modo de som</string>
     <string name="phone_action_notification_access_denied_text">A regra \"%1$s\" precisa de acesso a Não incomodar. Toque para o permitir.</string>
+    <string name="sms_access_banner_automate">As suas automatizações só funcionam quando o SMS Toolbox puder receber e enviar SMS.</string>
+    <string name="sms_access_banner_schedule">As mensagens agendadas só são enviadas quando o SMS Toolbox puder enviar SMS.</string>
+    <string name="sms_access_banner_action">Permitir</string>
 </resources>

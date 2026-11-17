@@ -1,7 +1,9 @@
 """Unit tests for play_publish.py, against a fake Play client. Run: python3 -m unittest."""
 
 import unittest
+from unittest import mock
 
+import play_publish
 from play_publish import PlayError, console_fix_for, publish
 
 MUST_NOT_SET = (
@@ -57,11 +59,20 @@ class FakePlay:
 
 
 class PublishTest(unittest.TestCase):
+    def setUp(self):
+        # Collect warnings instead of printing them: on GitHub Actions a printed "::warning::" is a
+        # workflow annotation, and these simulated rejections would show up on every release run.
+        self.warnings = []
+        patcher = mock.patch.object(play_publish, "warn", self.warnings.append)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_commits_without_the_flag_when_play_sends_changes_for_review_automatically(self):
         play = FakePlay(accepted_flag=False)
 
         self.assertEqual(20001700, publish(play, "app.aab", "internal"))
         self.assertEqual([("e1", False)], play.committed)
+        self.assertEqual([], self.warnings)
 
     def test_retries_with_the_flag_when_play_requires_it(self):
         play = FakePlay(accepted_flag=True)
@@ -70,6 +81,8 @@ class PublishTest(unittest.TestCase):
 
         self.assertEqual([("e1", True)], play.committed)
         self.assertEqual(1, sum(1 for c in play.calls if c[0] == "upload"), "bundle uploaded once")
+        self.assertEqual(1, len(self.warnings))
+        self.assertIn("changesNotSentForReview=false", self.warnings[0])
 
     def test_retries_without_the_flag_when_play_refuses_it(self):
         # Runs 90 and 91: the flag was hardcoded to true and Play refused it.
@@ -92,6 +105,7 @@ class PublishTest(unittest.TestCase):
         publish(play, "app.aab", "internal")
 
         self.assertIn(("track", "e1", "draft"), play.calls)
+        self.assertIn("draft", self.warnings[0])
         self.assertEqual([("e1", False)], play.committed)
 
     def test_other_errors_are_not_retried(self):

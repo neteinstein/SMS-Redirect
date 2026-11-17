@@ -58,6 +58,7 @@ import com.neteinstein.smsredirect.domain.model.RuleType
 import com.neteinstein.smsredirect.presentation.backup.BackupScreen
 import com.neteinstein.smsredirect.presentation.backup.BackupViewModel
 import com.neteinstein.smsredirect.presentation.backup.BackupViewModelFactory
+import com.neteinstein.smsredirect.presentation.components.WarningBanner
 import com.neteinstein.smsredirect.presentation.conversation.ConversationScreen
 import com.neteinstein.smsredirect.presentation.conversation.ConversationViewModel
 import com.neteinstein.smsredirect.presentation.conversation.ConversationViewModelFactory
@@ -262,6 +263,7 @@ class MainActivity : ComponentActivity() {
                 var roleCheckTick by remember { mutableIntStateOf(0) }
                 val isDefaultSmsApp =
                     remember(appResumeTick, roleCheckTick) { defaultSmsAppChecker.isDefaultSmsApp() }
+                val hasSmsAccessForTools = remember(appResumeTick, roleCheckTick) { hasToolSmsPermissions() }
 
                 val runPendingSmsAction = {
                     val action = pendingSmsAction
@@ -276,6 +278,7 @@ class MainActivity : ComponentActivity() {
                     }
                 val permissionsOnlyLauncher =
                     rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
+                        roleCheckTick++
                         if (hasToolSmsPermissions()) {
                             runPendingSmsAction()
                         } else {
@@ -290,6 +293,7 @@ class MainActivity : ComponentActivity() {
                             val missing = (smsPermissions + afterRolePermissions).filterNot(::isGranted)
                             if (missing.isEmpty()) runPendingSmsAction() else afterRolePermissionsLauncher.launch(missing.toTypedArray())
                         } else {
+                            markDeclinedDefaultSmsRole()
                             showDefaultSmsDeclined = true
                         }
                     }
@@ -315,13 +319,17 @@ class MainActivity : ComponentActivity() {
                 }
 
                 /**
-                 * For Redirect, Schedule and Backup, which also work without the role: the role is
+                 * For Automate, Schedule and Backup, which also work without the role: the role is
                  * still offered first, and only if the user declines it are the SMS permissions
-                 * these tools need requested on their own.
+                 * these tools need requested on their own. Once the user has declined the role,
+                 * it is not offered again here; the permissions are asked for directly.
                  */
                 val requireSmsAccess: (() -> Unit) -> Unit = { action ->
                     if (hasToolSmsPermissions()) {
                         action()
+                    } else if (hasDeclinedDefaultSmsRole() && !defaultSmsAppChecker.isDefaultSmsApp()) {
+                        pendingSmsAction = action
+                        permissionsOnlyLauncher.launch(toolSmsPermissions)
                     } else {
                         pendingSmsAction = action
                         pendingAllowsPermissionsOnly = true
@@ -506,8 +514,17 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
-                        val requestCreate: (String) -> Unit = { route ->
-                            requireSmsAccess { navController.navigate(route) }
+                        // Rules and schedules can be created and edited without SMS access; the
+                        // tab shows a banner (smsAccessBanner) until they can actually run.
+                        val requestCreate: (String) -> Unit = { route -> navController.navigate(route) }
+                        val smsAccessBanner: @Composable (Int) -> Unit = { messageRes ->
+                            if (!hasSmsAccessForTools) {
+                                WarningBanner(
+                                    message = stringResource(messageRes),
+                                    actionLabel = stringResource(R.string.sms_access_banner_action),
+                                    onActionClick = { requireSmsAccess { } },
+                                )
+                            }
                         }
 
                         // Posted on first use of Backup/Restore: without it the progress
@@ -681,7 +698,10 @@ class MainActivity : ComponentActivity() {
                                     onDragEnd = homeViewModel::commitReorder,
                                     bottomBar = bottomBar,
                                     showBackgroundWarning = showBatteryBanner,
-                                    topBanner = updateBanner,
+                                    topBanner = {
+                                        smsAccessBanner(R.string.sms_access_banner_automate)
+                                        updateBanner()
+                                    },
                                     onFixBackgroundWarning = { openBatteryOptimizationSettings() },
                                 )
                             }
@@ -711,7 +731,10 @@ class MainActivity : ComponentActivity() {
                                     onDragEnd = scheduleListViewModel::commitReorder,
                                     bottomBar = bottomBar,
                                     showBackgroundWarning = showBatteryBanner,
-                                    topBanner = updateBanner,
+                                    topBanner = {
+                                        smsAccessBanner(R.string.sms_access_banner_schedule)
+                                        updateBanner()
+                                    },
                                     onFixBackgroundWarning = { openBatteryOptimizationSettings() },
                                 )
                             }
@@ -1579,6 +1602,14 @@ class MainActivity : ComponentActivity() {
         getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit { putBoolean(KEY_DEFAULT_SMS_PROMPTED, true) }
     }
 
+    /** The user said no in Android's own default-SMS-app dialog at least once. */
+    private fun hasDeclinedDefaultSmsRole(): Boolean =
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getBoolean(KEY_DEFAULT_SMS_DECLINED, false)
+
+    private fun markDeclinedDefaultSmsRole() {
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit { putBoolean(KEY_DEFAULT_SMS_DECLINED, true) }
+    }
+
     /** Number and display name of a row picked from ACTION_PICK on phone numbers. */
     private fun resolvePickedPhone(uri: Uri): Pair<String, String?>? =
         runCatching {
@@ -1793,6 +1824,7 @@ class MainActivity : ComponentActivity() {
         private const val KEY_SIDELOAD_DISMISSED = "sideload_warning_dismissed"
         private const val KEY_BATTERY_BANNER_ENABLED = "battery_banner_enabled"
         private const val KEY_DEFAULT_SMS_PROMPTED = "default_sms_app_prompted"
+        private const val KEY_DEFAULT_SMS_DECLINED = "default_sms_role_declined"
 
         /** What a picture message can carry; the MMSC rejects most other types. */
         private val MMS_ATTACHMENT_TYPES = arrayOf("image/*", "video/*", "audio/*", "text/x-vcard", "text/vcard")
