@@ -4,7 +4,7 @@
 
 SMS Toolbox is a native Android app (Kotlin): a full SMS/MMS messaging app, used as the device's default SMS app (the primary feature, first tab and landing screen), with four tools on top, in tab order: automation rules on incoming SMS (Automate, formerly Redirect: forward the message, or run a phone action such as ring at max volume, vibrate or change the sound mode), sending scheduled messages (Schedule), backing up received and sent SMS to the user's own Gmail account over IMAP (Backup), and restoring them to a phone (Restore). See `Architecture.md` for the full system design.
 
-It ships as two product flavors of the `distribution` dimension: **`play`** (Google Play — every feature, no self-update) and **`github`** (APK on GitHub releases — every feature, plus a daily in-app update check against GitHub releases). Both share the `applicationId`, signing key and `versionCode` so either can install over the other. See `Architecture.md` → "Two distributions".
+It ships as two product flavors of the `distribution` dimension: **`play`** (Google Play — every feature, no self-update) and **`github`** (APK on GitHub releases — every feature, plus a daily in-app update check against GitHub releases, and Automate/Schedule/Backup ask for SMS permissions without offering the default SMS role first). Both share the `applicationId`, signing key and `versionCode` so either can install over the other. See `Architecture.md` → "Two distributions".
 
 The app is named "SMS Toolbox" but the `applicationId` and Kotlin package remain `com.neteinstein.smsredirect`, and the deep link remains `smsredirect://app` — changing them would create a new Play listing and cut existing users off from updates.
 
@@ -167,15 +167,17 @@ Both must pass before merging. Always run these locally before pushing.
 
 ## Traps (read before touching these areas)
 
-- **Play declares "Default SMS handler": the role always comes before any SMS permission.**
-  Never call a runtime-permission request for an SMS permission (`READ_SMS`, `RECEIVE_SMS`,
-  `SEND_SMS`, `RECEIVE_MMS`, `RECEIVE_WAP_PUSH`) except through `MainActivity`'s gate
-  (`requireDefaultSmsApp` / `requireSmsAccess`), which requests `RoleManager.ROLE_SMS` first.
-  Messages and Restore need the role itself and are shown disabled (warning bar + "Set as
-  default") without it; Automate, Schedule and Backup may fall back to `toolSmsPermissions`, but
-  only after the user declined the role. Creating or editing rules and schedules is never gated
-  on SMS access; those tabs show an "Allow" banner instead. Both builds behave the same; they differ only in the
-  self-update. Never use SMS permissions for OTP/verification,
+- **Play declares "Default SMS handler": in the Play build the role always comes before any SMS
+  permission.** Never call a runtime-permission request for an SMS permission (`READ_SMS`,
+  `RECEIVE_SMS`, `SEND_SMS`, `RECEIVE_MMS`, `RECEIVE_WAP_PUSH`) except through `MainActivity`'s
+  gate (`requireDefaultSmsApp` / `requireSmsAccess`). Messages and Restore need the role itself
+  and are shown disabled (warning bar + "Set as default") without it. Automate, Schedule and
+  Backup run on `toolSmsPermissions` alone: the GitHub build asks for them directly, the Play
+  build only after the user declined the role. That difference is
+  `AppFeatures.smsPermissionsWithoutRole`, false for Play; never turn it on there, since Play
+  requires a "Default SMS handler" app to hold the role before asking for SMS permissions.
+  Creating or editing rules and schedules is never gated on SMS access; those tabs show an
+  "Allow" banner instead. Never use SMS permissions for OTP/verification,
   analytics on message content, or ads, and do not add a library that declares SMS permissions.
   Keep the four default-SMS components (`SMS_DELIVER`, `WAP_PUSH_DELIVER`, `SENDTO`,
   `RESPOND_VIA_MESSAGE`) working: `release.yml` fails the Play release without them.
