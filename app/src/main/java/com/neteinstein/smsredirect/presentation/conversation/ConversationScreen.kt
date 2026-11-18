@@ -210,6 +210,7 @@ private fun MessageBubble(
     onRetry: () -> Unit,
     onDownload: () -> Unit,
 ) {
+    val context = LocalContext.current
     val incoming = message.isIncoming
     val container = if (incoming) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.primaryContainer
     val content = if (incoming) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimaryContainer
@@ -287,7 +288,7 @@ private fun MessageBubble(
                         else -> {
                             val time =
                                 DateUtils.formatDateTime(
-                                    null,
+                                    context,
                                     message.dateEpochMs,
                                     DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_ABBREV_ALL,
                                 )
