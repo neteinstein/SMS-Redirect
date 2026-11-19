@@ -1,8 +1,9 @@
 # Videos
 
-This folder holds two videos with different jobs:
+This folder holds three videos with different jobs. `sms-toolbox-navigation.mp4` is current;
+the other two are out of date:
 
-> ⚠️ **Out of date for Google Play.** Both videos predate SMS Toolbox becoming an
+> ⚠️ **Out of date for Google Play.** The launch and permissions-demo videos predate SMS Toolbox becoming an
 > SMS/MMS messaging app: they have no Messages tab, show the old standalone SMS
 > permission prompt, and present the default-SMS role as temporary. The Play
 > declaration is now "Default SMS handler", whose demonstration video must show the
@@ -12,8 +13,45 @@ This folder holds two videos with different jobs:
 
 | File | Use it for |
 |---|---|
+| `sms-toolbox-navigation.mp4` | App access's optional *"video that shows how to navigate your app"* link. 1:35, current five-tab app |
 | `sms-toolbox-launch.mp4` | The store listing's promo video, social posts, the README. 24 s, with music |
 | `sms-toolbox-demo.mp4` | The Permissions declaration form's demonstration video. 2:19, shows every permission prompt and the restore's temporary default-SMS role |
+
+## Navigation video: `sms-toolbox-navigation.mp4`
+
+A 1:35 walkthrough of how to get around the app (1920x1080, 30 fps, H.264 with a
+silent AAC track). A tap marker shows every tap; the caption on the left says what
+the screen is for, and the tab chips under it show which tab you are on.
+`sms-toolbox-navigation.jpg` is its poster.
+
+| Time | Screen | What it shows |
+|---|---|---|
+| 0:00 | Title | "SMS Toolbox: How to navigate the app" |
+| 0:04 | Messages | The five tabs at the bottom; ⚙ Settings top right; + creates something on the current tab |
+| 0:14 | Messages → conversation | Open a conversation, reply, go back with ← |
+| 0:23 | Messages → New message | + on Messages: pick recipients, then Next |
+| 0:30 | Automate | Rules by category; + → Create Rule: Redirect, then Phone action |
+| 0:45 | Automate → Redirect History | The history icon |
+| 0:51 | Schedule | Scheduled texts; + → Create Schedule SMS; history icon → Scheduled SMS History |
+| 1:08 | Backup | Email subject, Gmail label, turning backup on |
+| 1:16 | Restore | "Restore messages" |
+| 1:20 | Settings | Language, landing screen, delivery reports, Gmail account |
+| 1:25 | Messages | Back to the first tab |
+| 1:30 | Summary | Every tab and what it is for |
+
+Like the screenshots it is rendered, not recorded: `scripts/navigation_video/nav.js`
+drives the screens defined in `scripts/store_assets/store.html` (real strings, colors
+and layouts), so a change to a screen there updates the screenshots and this video
+alike. Every name, number and message is fictional.
+
+For Play: Play Console → **App content** → **App access** → the optional video link.
+Upload the MP4 to YouTube as **Unlisted** and paste the link.
+
+Rebuild it (needs Node + Playwright with Chromium, and ffmpeg):
+
+```bash
+store-listing/scripts/navigation_video/build.sh
+```
 
 ## Launch video: `sms-toolbox-launch.mp4`
 

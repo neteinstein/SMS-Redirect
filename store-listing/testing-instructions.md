@@ -43,6 +43,19 @@ see the **Security notes** at the end of this document for how to rotate it
 safely instead of just revoking it. Never reuse a personal account's
 credentials here.
 
+### Navigation video (optional link)
+
+The same App access entry has an optional field: *"Add an optional link to a
+video that shows how to navigate your app"*. Use
+[`video/sms-toolbox-navigation.mp4`](video/sms-toolbox-navigation.mp4): a 1:35
+walkthrough that taps through every tab and screen (Messages, a conversation,
+New message, Automate with its Redirect and Phone action rules and Redirect
+History, Schedule and its history, Backup, Restore, Settings). Upload it to
+YouTube as **Unlisted** (not Private, or the reviewer can't open it) and paste
+the link. It is a rendered walkthrough built from the app's real screens and
+strings, not a screen recording, which is fine for this field: it explains
+navigation, not the permission flow. That is the job of the next video.
+
 ### Demonstration video (Permissions declaration form)
 
 The **App content > Sensitive app permissions > Permissions declaration form**

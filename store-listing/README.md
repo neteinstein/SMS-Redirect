@@ -1,7 +1,7 @@
 # Play Store listing assets
 
 > **This listing is for the Play build: an SMS/MMS messaging app** (Play core use
-> case "Default SMS handler") with Redirect, Schedule, Backup and Restore. The app
+> case "Default SMS handler") with Automate, Schedule, Backup and Restore. The app
 > is built in two flavors (`app/build.gradle.kts`); the **play** flavor, uploaded to
 > Google Play, and the **github** flavor, attached to each GitHub release, are
 > identical except for the **Updates** section in Settings (GitHub only: Play forbids
@@ -28,7 +28,8 @@ store-listing/
 ├── scripts/store_assets/build.sh     regenerates everything under graphics/ + screenshots/ (needs Playwright)
 ├── scripts/generate_demo_video.py    regenerates the permissions demo video (needs Pillow + ffmpeg)
 ├── scripts/launch_video/build.sh     regenerates the launch video (needs Playwright + ffmpeg)
-├── video/                            launch video, permissions demo video + storyboard (see video/README.md)
+├── scripts/navigation_video/build.sh regenerates the app-navigation video (needs Playwright + ffmpeg)
+├── video/                            navigation video, launch video, permissions demo video (see video/README.md)
 ├── data-safety.md                    cheat-sheet for the Data safety questionnaire
 └── testing-instructions.md           App access instructions + internal-track QA checklist
 ```
@@ -38,9 +39,9 @@ store-listing/
 | Play Console field | File | Limit | Current length |
 |---|---|---|---|
 | App name | `text/<locale>/title.txt` | 30 chars | 26 (en-US) / 26 (pt-PT) |
-| Short description | `text/<locale>/short_description.txt` | 80 chars | 77 (en-US) / 80 (pt-PT) |
-| Full description | `text/<locale>/full_description.txt` | 4000 chars | 2693 (en-US) / 3124 (pt-PT) |
-| What's new (this release) | `text/<locale>/release_notes.txt` | 500 chars | 328 (en-US) / 368 (pt-PT) |
+| Short description | `text/<locale>/short_description.txt` | 80 chars | 80 (en-US) / 79 (pt-PT) |
+| Full description | `text/<locale>/full_description.txt` | 4000 chars | 3051 (en-US) / 3505 (pt-PT) |
+| What's new (this release) | `text/<locale>/release_notes.txt` | 500 chars | 427 (en-US) / 470 (pt-PT) |
 
 Paste each file's contents verbatim into the matching field for that locale.
 The store title is **"SMS Toolbox: Text Messages"** (pt-PT: "SMS Toolbox: Mensagens SMS"),
@@ -87,7 +88,7 @@ order. Upload them in this order:
 | 2 | `02-conversation.png` | Photos, groups and delivery reports | A conversation with a picture message (MMS) |
 | 3 | `03-backup.png` | Every text, safe in your own Gmail | Backup tab, running |
 | 4 | `04-restore.png` | New phone? Bring every text back | Restore tab, mid-run |
-| 5 | `05-redirect.png` | Forward the texts that matter | Redirect tab, rules by category |
+| 5 | `05-automate.png` | Texts that take action | Automate tab ("Automations"): redirect rules and a phone-action rule, by category |
 | 6 | `06-schedule.png` | Write it now, send it later | Schedule tab |
 | 7 | `07-privacy.png` | No account. No server. Just your Gmail. | Settings → Gmail backup, dark theme |
 
@@ -126,6 +127,20 @@ store-listing/scripts/store_assets/build.sh --only 02-conversation # one screens
 ```
 
 `build.sh` needs Node with Playwright (Chromium), and Python 3 with Pillow.
+
+## App navigation video
+
+`video/sms-toolbox-navigation.mp4` (1:35, 1920x1080, 30 fps, H.264, silent) taps
+through every tab and screen of the current app: Messages (a conversation, New
+message), Automate (Create Rule with Redirect and Phone action, Redirect History),
+Schedule (Create Schedule SMS, Scheduled SMS History), Backup, Restore and
+Settings. It is for the optional *"link to a video that shows how to navigate your
+app"* under **App content → App access** (see
+[`testing-instructions.md`](testing-instructions.md)). Upload it to YouTube as
+**Unlisted** and paste the link. Rebuild it with
+`store-listing/scripts/navigation_video/build.sh`; it renders the same screens as
+the screenshots (`scripts/store_assets/store.html`), so changes there show up in
+both.
 
 ## Promo video
 
@@ -171,7 +186,7 @@ the Messages tab is the first tab and the landing screen, it receives SMS
 (`SMS_DELIVER`) and MMS (`WAP_PUSH_DELIVER` → download → save), sends SMS and
 MMS (pictures, group messages), notifies with inline reply, handles `sms:`
 links and Share (`SENDTO`/`SEND`) and quick replies from the call screen
-(`RESPOND_VIA_MESSAGE`). Redirect, Schedule, Backup and Restore are tools on top
+(`RESPOND_VIA_MESSAGE`). Automate, Schedule, Backup and Restore are tools on top
 of that messaging app. The declaration has to match what the app visibly is, and
 a reviewer who opens it lands on the inbox.
 
@@ -181,7 +196,7 @@ How the app satisfies the policy, so the form and the video can say so:
   API-29+ replacement for `Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT`, which no
   longer does anything on Android 10+; this app's minSdk is 33). The SMS
   permissions are granted *with* the role. Only when the user explicitly declines
-  the role, and then asks to use Redirect, Schedule or Backup anyway ("Use SMS
+  the role, and then asks to use Automate, Schedule or Backup anyway ("Use SMS
   permissions only"), are the three SMS permissions those tools need requested
   on their own. Messages and Restore are then shown **disabled**, with a warning
   bar and a "Set as default" button: the messaging app and restore never work
