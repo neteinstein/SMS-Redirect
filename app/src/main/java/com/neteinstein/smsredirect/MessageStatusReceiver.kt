@@ -164,7 +164,7 @@ class MessageStatusReceiver : BroadcastReceiver() {
             incoming.text.ifBlank {
                 if (incoming.hasAttachment) context.getString(R.string.messages_picture_message) else ""
             }
-        val suspicious = container.assessIncomingMessageUseCase(sender, incoming.text).suspicious
+        val suspicious = container.assessIncomingMessageUseCase(sender, incoming.text, incoming.subject).suspicious
         MessageNotifications.showIncoming(context, incoming.threadId, name, text, suspicious)
     }
 

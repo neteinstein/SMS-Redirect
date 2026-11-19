@@ -211,7 +211,7 @@ fun ConversationScreen(
                         message = message,
                         senderLabel =
                             if (state.isGroup && message.isIncoming) state.contactNames[message.address] ?: message.address else null,
-                        linksEnabled = message.key !in state.risk.flaggedMessageKeys,
+                        linkState = state.linkStateOf(message),
                         onOpenAttachment = onOpenAttachment,
                         onLongClick = { selected = message },
                         onRetry = { onRetry(message) },
@@ -275,7 +275,7 @@ private fun sendFailureText(failure: SendFailure): String =
 private fun MessageBubble(
     message: ConversationMessage,
     senderLabel: String?,
-    linksEnabled: Boolean,
+    linkState: MessageLinkState,
     onOpenAttachment: (MessageAttachment) -> Unit,
     onLongClick: () -> Unit,
     onRetry: () -> Unit,
@@ -338,7 +338,7 @@ private fun MessageBubble(
                 if (message.body.isNotEmpty()) {
                     MessageBody(
                         body = message.body,
-                        linksEnabled = linksEnabled,
+                        linkState = linkState,
                         onOpenLink = onOpenLink,
                         onBlockedLink = onBlockedLink,
                     )
@@ -390,21 +390,24 @@ private fun MessageBubble(
 /**
  * The message text with its web links tappable. In a message flagged as spam or fraud the links
  * are shown in the error colour and do not open: tapping one asks whether to trust the sender.
+ * Until a received message has been checked its links are plain text.
  */
 @Composable
 private fun MessageBody(
     body: String,
-    linksEnabled: Boolean,
+    linkState: MessageLinkState,
     onOpenLink: (String) -> Unit,
     onBlockedLink: (String) -> Unit,
 ) {
     val open by rememberUpdatedState(onOpenLink)
     val blocked by rememberUpdatedState(onBlockedLink)
+    val linksEnabled = linkState == MessageLinkState.OPEN
     val linkColor = if (linksEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
     val text =
-        remember(body, linksEnabled, linkColor) {
+        remember(body, linkState, linkColor) {
             buildAnnotatedString {
                 append(body)
+                if (linkState == MessageLinkState.PENDING) return@buildAnnotatedString
                 // Never fails on a bounded input, but a message must always render.
                 runCatching { MessageLinks.find(body) }.getOrDefault(emptyList()).forEach { link ->
                     addLink(

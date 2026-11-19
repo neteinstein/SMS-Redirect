@@ -15,8 +15,13 @@ import kotlinx.coroutines.withContext
 data class ConversationRisk(
     /** [ConversationMessage.key]s of the flagged messages. */
     val flaggedMessageKeys: Set<String>,
-    /** The senders of those messages, in order of appearance. */
+    /** The senders of those messages, in order of appearance, one entry per person. */
     val flaggedSenders: List<String>,
+    /**
+     * Every message this result covers. A received message that is not in it arrived after the
+     * check ran: its links stay closed until the next result includes it.
+     */
+    val assessedMessageKeys: Set<String> = emptySet(),
 ) {
     val isFlagged: Boolean get() = flaggedMessageKeys.isNotEmpty()
 
@@ -32,6 +37,19 @@ private fun SpamFraudDetector.assessSafely(text: String): SpamAssessment =
     runCatching { assess(text) }.getOrElse { SpamAssessment(emptySet(), suspicious = true) }
 
 /**
+ * The body on its own (its links are the tappable ones, and a long subject must not use up the
+ * link limit), then with the subject, whose wording may be the scam half of an MMS.
+ */
+private fun SpamFraudDetector.assessMessage(
+    body: String,
+    subject: String?,
+): SpamAssessment {
+    val alone = assessSafely(body)
+    if (alone.suspicious || subject.isNullOrBlank()) return alone
+    return assessSafely("$subject\n$body")
+}
+
+/**
  * The spam/fraud check of one received message, for its notification. Messages from a contact
  * or a sender the user trusts are never flagged.
  */
@@ -43,11 +61,12 @@ class AssessIncomingMessageUseCase(
     suspend operator fun invoke(
         sender: String,
         text: String,
+        subject: String? = null,
     ): SpamAssessment {
-        if (sender.isBlank() || text.isBlank()) return SpamAssessment.SAFE
+        if (sender.isBlank() || (text.isBlank() && subject.isNullOrBlank())) return SpamAssessment.SAFE
         if (trustedSenderRepository.get().containsAddress(sender)) return SpamAssessment.SAFE
         if (contactNameResolver.lookupNameByNumber(sender) != null) return SpamAssessment.SAFE
-        return detector.assessSafely(text)
+        return detector.assessMessage(text, subject)
     }
 }
 
@@ -78,20 +97,19 @@ class AssessConversationRiskUseCase(
             val contact = isContact.getOrPut(message.address) { contactNameResolver.lookupNameByNumber(message.address) != null }
             if (!contact && isSuspicious(message)) flagged += message
         }
-        if (flagged.isEmpty()) return ConversationRisk.NONE
         return ConversationRisk(
             flaggedMessageKeys = flagged.map { it.key }.toSet(),
-            flaggedSenders = flagged.map { it.address }.distinctBy { it.filter(Char::isLetterOrDigit).lowercase() },
+            // One entry per person: `ann.lee@x.com` and `annlee@x.com` are two people.
+            flaggedSenders =
+                flagged.map { it.address }.fold(mutableListOf()) { senders, address ->
+                    if (senders.none { MessagingAddresses.same(it, address) }) senders += address
+                    senders
+                },
+            assessedMessageKeys = messages.map { it.key }.toSet(),
         )
     }
 
-    /**
-     * The body on its own (its links are the tappable ones; a long subject must not use up the
-     * link limit), and with the subject, whose wording may be the scam half of the message.
-     */
-    private fun isSuspicious(message: ConversationMessage): Boolean =
-        detector.assessSafely(message.body).suspicious ||
-            (!message.subject.isNullOrBlank() && detector.assessSafely("${message.subject}\n${message.body}").suspicious)
+    private fun isSuspicious(message: ConversationMessage): Boolean = detector.assessMessage(message.body, message.subject).suspicious
 }
 
 class ObserveTrustedSendersUseCase(

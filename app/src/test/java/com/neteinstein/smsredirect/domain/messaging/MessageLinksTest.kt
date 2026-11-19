@@ -17,6 +17,25 @@ class MessageLinksTest {
     }
 
     @Test
+    fun `a bare domain keeps its query and fragment`() {
+        assertEquals(
+            listOf("https://example.com?invite=abc123", "https://example.com#section"),
+            urls("Join example.com?invite=abc123 or read example.com#section"),
+        )
+    }
+
+    @Test
+    fun `closing brackets the link opened are kept, sentence ones dropped`() {
+        assertEquals(
+            listOf("https://en.wikipedia.org/wiki/Kotlin_(programming_language)"),
+            urls("See https://en.wikipedia.org/wiki/Kotlin_(programming_language)."),
+        )
+        assertEquals(listOf("http://[2001:db8::1]"), urls("Router at http://[2001:db8::1]"))
+        assertEquals(listOf("https://x.com"), urls("(see x.com)"))
+        assertEquals(listOf("https://example.com?a=1"), urls("Did you see example.com?a=1?"))
+    }
+
+    @Test
     fun `keeps http links as they are`() {
         assertEquals(listOf("http://192.168.1.10/login"), urls("Open http://192.168.1.10/login now"))
     }

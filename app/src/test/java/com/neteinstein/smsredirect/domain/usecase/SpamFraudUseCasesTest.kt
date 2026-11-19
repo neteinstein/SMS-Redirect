@@ -37,6 +37,35 @@ class SpamFraudUseCasesTest {
         }
 
     @Test
+    fun `an mms notification is checked with its subject`() =
+        runTest {
+            val useCase = AssessIncomingMessageUseCase(SpamFraudDetector(), FakeTrustedSenderRepository(), FakeContactNameResolver())
+
+            assertFalse(useCase(stranger, "https://example.com").suspicious)
+            assertTrue(useCase(stranger, "https://example.com", subject = "Verify your account").suspicious)
+        }
+
+    @Test
+    fun `distinct senders whose addresses differ only in punctuation are both listed`() =
+        runTest {
+            val useCase = AssessConversationRiskUseCase(SpamFraudDetector(), FakeContactNameResolver())
+            val messages = listOf(message(1, "ann.lee@company.com", scam), message(2, "annlee@company.com", scam))
+
+            val risk = useCase(messages, trusted = emptySet())
+
+            assertEquals(listOf("ann.lee@company.com", "annlee@company.com"), risk.flaggedSenders)
+        }
+
+    @Test
+    fun `the result lists every message it covered`() =
+        runTest {
+            val useCase = AssessConversationRiskUseCase(SpamFraudDetector(), FakeContactNameResolver())
+            val messages = listOf(message(1, stranger, "Hello"), message(2, stranger, "Hi", status = MessageStatus.SENT))
+
+            assertEquals(setOf("sms-1", "sms-2"), useCase(messages, trusted = emptySet()).assessedMessageKeys)
+        }
+
+    @Test
     fun `contacts and trusted senders are never flagged`() =
         runTest {
             val useCase =
@@ -93,7 +122,7 @@ class SpamFraudUseCasesTest {
             TrustSendersUseCase(repository)(listOf(stranger))
 
             // Then
-            assertEquals(ConversationRisk.NONE, assess(messages, repository.get()))
+            assertFalse(assess(messages, repository.get()).isFlagged)
         }
 
     @Test
@@ -129,6 +158,9 @@ class SpamFraudUseCasesTest {
         runTest {
             val useCase = AssessConversationRiskUseCase(SpamFraudDetector(), FakeContactNameResolver(mapOf(friend to "Ana")))
 
-            assertEquals(ConversationRisk.NONE, useCase(listOf(message(1, friend, scam)), trusted = emptySet()))
+            val risk = useCase(listOf(message(1, friend, scam)), trusted = emptySet())
+
+            assertFalse(risk.isFlagged)
+            assertEquals(setOf("sms-1"), risk.assessedMessageKeys)
         }
 }

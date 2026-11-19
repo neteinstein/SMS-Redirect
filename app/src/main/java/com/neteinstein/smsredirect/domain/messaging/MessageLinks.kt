@@ -42,11 +42,13 @@ object MessageLinks {
         Regex(
             """(?i)\bhttps?://[^\s<>"']+""" +
                 """|\bwww\.[^\s<>"']+""" +
-                """|(?<![@\w.-])(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+([a-z]{2,24})\b(?::\d{1,5})?(?:/[^\s<>"']*)?""",
+                """|(?<![@\w.-])(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+([a-z]{2,24})\b(?::\d{1,5})?(?:[/?#][^\s<>"']*)?""",
         )
 
     /** Dropped from the end of a link: sentence punctuation is almost never part of it. */
     private const val TRAILING = ".,;:!?)]}'\""
+
+    private val OPENERS = mapOf(')' to '(', ']' to '[', '}' to '{')
 
     fun find(text: String): List<MessageLink> {
         val links = ArrayList<MessageLink>()
@@ -67,7 +69,7 @@ object MessageLinks {
     ): MessageLink? {
         val bareTld = match.groups[1]?.value
         if (bareTld != null && bareTld.lowercase() !in KNOWN_TLDS) return null
-        val raw = match.value.trimEnd { it in TRAILING }
+        val raw = trimTrailing(match.value)
         if (raw.isEmpty()) return null
         // Only `http(s)` ever opens: anything else (`com.app:1/x://y`) gets `https://` in front.
         val url =
@@ -79,6 +81,23 @@ object MessageLinks {
         val host = hostOf(url) ?: return null
         val start = offset + match.range.first
         return MessageLink(start, start + raw.length, raw, url, host)
+    }
+
+    /**
+     * Drops sentence punctuation after a link, but keeps a closing bracket the link itself opened:
+     * `.../Kotlin_(programming_language)` and `http://[2001:db8::1]` stay whole, `(see x.com)` loses
+     * its `)`.
+     */
+    private fun trimTrailing(link: String): String {
+        var end = link.length
+        while (end > 0 && link[end - 1] in TRAILING) {
+            val prefix = link.substring(0, end)
+            val closer = link[end - 1]
+            val opener = OPENERS[closer]
+            if (opener != null && prefix.count { it == opener } >= prefix.count { it == closer }) break
+            end--
+        }
+        return link.substring(0, end)
     }
 
     /**

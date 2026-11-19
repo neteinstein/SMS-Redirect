@@ -62,6 +62,29 @@ data class ConversationUiState(
 
     /** Shown in the composer so the user knows a picture, group or email message uses MMS. */
     val sendsAsMms: Boolean get() = requiresMms(addresses, attachments.isNotEmpty())
+
+    /**
+     * Whether [message]'s links open. A received message is checked in the background, so until
+     * the latest result covers it its links are [MessageLinkState.PENDING]: shown as plain text.
+     */
+    fun linkStateOf(message: ConversationMessage): MessageLinkState =
+        when {
+            !message.isIncoming -> MessageLinkState.OPEN
+            message.key in risk.flaggedMessageKeys -> MessageLinkState.BLOCKED
+            message.key !in risk.assessedMessageKeys -> MessageLinkState.PENDING
+            else -> MessageLinkState.OPEN
+        }
+}
+
+enum class MessageLinkState {
+    /** Tappable: sent by this phone, or checked and not flagged. */
+    OPEN,
+
+    /** Flagged as spam or fraud: tapping asks whether to trust the sender. */
+    BLOCKED,
+
+    /** Not checked yet: not a link until it is. */
+    PENDING,
 }
 
 /**
