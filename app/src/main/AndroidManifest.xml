@@ -2,6 +2,16 @@
 <manifest xmlns:tools="http://schemas.android.com/tools"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Required on purpose. SMS Toolbox is an SMS/MMS messaging app: on a device without
+         telephony there is no SMS role to hold and nothing to send, receive, back up or restore.
+         The SMS permissions below already imply this feature; declaring it states the decision.
+         Play Console reports it before review as "Required hardware feature declarations are
+         restricting your app's availability". Do not answer that by making it optional, which
+         would offer the app on devices where it cannot work. See PublishToStore.md. -->
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="true" />
+
     <uses-permission android:name="android.permission.READ_SMS"
         tools:ignore="SmsAndCallLogPolicy" />
     <uses-permission android:name="android.permission.RECEIVE_SMS"
