@@ -6,6 +6,7 @@ import com.neteinstein.smsredirect.FakeScheduledSmsScheduler
 import com.neteinstein.smsredirect.FakeSettingsRepository
 import com.neteinstein.smsredirect.domain.model.LandingScreen
 import com.neteinstein.smsredirect.domain.model.PhoneAction
+import com.neteinstein.smsredirect.domain.model.RepeatType
 import com.neteinstein.smsredirect.domain.model.Rule
 import com.neteinstein.smsredirect.domain.model.RuleType
 import com.neteinstein.smsredirect.domain.model.ScheduledSms
@@ -62,7 +63,14 @@ class BackupUseCasesTest {
                 ExportBackupUseCase(sourceRuleRepository, sourceScheduledSmsRepository, sourceSettingsRepository)()
 
             val result =
-                ImportBackupUseCase(ruleRepository, scheduledSmsRepository, settingsRepository, scheduler)(json)
+                ImportBackupUseCase(
+                    ruleRepository,
+                    scheduledSmsRepository,
+                    settingsRepository,
+                    scheduler,
+                    // Before the schedule's date, so it is still to be sent.
+                    now = { 500L },
+                )(json)
 
             assertEquals(1, result.importedRules)
             assertEquals(1, result.importedScheduledSms)
@@ -72,6 +80,47 @@ class BackupUseCasesTest {
             assertFalse(settingsRepository.getKeepScheduleHistory())
             assertEquals(LandingScreen.SCHEDULE, settingsRepository.getLandingScreen())
             assertEquals(1, scheduler.scheduleInitialCalls.size)
+        }
+
+    @Test
+    fun `import arms only sends still ahead, never a date that has passed`() =
+        runTest {
+            val now = 10_000_000L
+            val source = FakeScheduledSmsRepository()
+            // Sent on the old phone already: importing must not send it again.
+            source.insert(ScheduledSms(name = "Sent one-off", contactNumber = "1", message = "a", dateEpochMs = now - 60_000))
+            // Started sending on the old phone: only its next repeat is still to come.
+            source.insert(
+                ScheduledSms(
+                    name = "Running repeat",
+                    contactNumber = "2",
+                    message = "b",
+                    dateEpochMs = now - 60_000,
+                    repeatType = RepeatType.HOURLY,
+                ),
+            )
+            source.insert(ScheduledSms(name = "Pending one-off", contactNumber = "3", message = "c", dateEpochMs = now + 60_000))
+            val json = ExportBackupUseCase(FakeRuleRepository(), source, FakeSettingsRepository())()
+            val scheduledSmsRepository = FakeScheduledSmsRepository()
+            val scheduler = FakeScheduledSmsScheduler()
+
+            val result =
+                ImportBackupUseCase(
+                    FakeRuleRepository(),
+                    scheduledSmsRepository,
+                    FakeSettingsRepository(),
+                    scheduler,
+                    now = { now },
+                )(json)
+
+            // Every schedule is restored, including the finished one-off, so the user still sees it.
+            assertEquals(3, result.importedScheduledSms)
+            val imported = scheduledSmsRepository.getScheduledSmsSnapshot().associateBy { it.name }
+            assertEquals(listOf("Pending one-off"), scheduler.scheduleInitialCalls.map { it.name })
+            assertEquals(
+                listOf(imported.getValue("Running repeat").id to now - 60_000 + 3_600_000),
+                scheduler.scheduleNextCalls,
+            )
         }
 
     @Test

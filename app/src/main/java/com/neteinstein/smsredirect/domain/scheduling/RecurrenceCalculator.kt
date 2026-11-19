@@ -1,6 +1,7 @@
 package com.neteinstein.smsredirect.domain.scheduling
 
 import com.neteinstein.smsredirect.domain.model.RepeatType
+import com.neteinstein.smsredirect.domain.model.ScheduledSms
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.ZoneId
@@ -45,6 +46,29 @@ object RecurrenceCalculator {
         val nextEpochMs = candidate.toInstant().toEpochMilli()
         if (stopAtEpochMs != null && nextEpochMs > stopAtEpochMs) return null
         return nextEpochMs
+    }
+
+    /**
+     * When [scheduledSms] will next be sent, as seen at [nowEpochMs]: its own date while that is still
+     * ahead, otherwise the first repeat strictly after now. Null when nothing is left to send - a
+     * one-off whose date has passed, or a repeating schedule that has reached its stop date.
+     *
+     * A date that has passed is treated as already sent (or missed), never as due now. That is what
+     * keeps an edit or an import from sending the message again immediately.
+     */
+    fun upcomingSend(
+        scheduledSms: ScheduledSms,
+        nowEpochMs: Long,
+        zoneId: ZoneId = ZoneId.systemDefault(),
+    ): Long? {
+        if (scheduledSms.dateEpochMs > nowEpochMs) return scheduledSms.dateEpochMs
+        return nextOccurrence(
+            anchorEpochMs = scheduledSms.dateEpochMs,
+            repeatType = scheduledSms.repeatType,
+            afterEpochMs = nowEpochMs,
+            stopAtEpochMs = scheduledSms.stopAtEpochMs,
+            zoneId = zoneId,
+        )
     }
 
     /** Computes the anchor's occurrence [count] intervals of [repeatType] ahead, directly from the anchor. */

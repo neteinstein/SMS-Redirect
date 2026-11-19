@@ -45,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -65,12 +66,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.neteinstein.smsredirect.R
 import com.neteinstein.smsredirect.domain.model.RepeatType
 import com.neteinstein.smsredirect.domain.model.ScheduledSms
 import com.neteinstein.smsredirect.presentation.components.WarningBanner
 import com.neteinstein.smsredirect.presentation.theme.CategoryAccentColors
 import com.neteinstein.smsredirect.presentation.theme.Dimens
+import kotlinx.coroutines.delay
 import java.text.DateFormat
 import java.util.Date
 import kotlin.math.absoluteValue
@@ -81,6 +85,8 @@ import kotlin.math.roundToInt
 fun ScheduleListScreen(
     scheduledSmsList: List<ScheduledSms>,
     contactNames: Map<String, String>,
+    /** Scheduled SMS id → when it will next be sent; absent when nothing is left to send. */
+    nextSendTimes: Map<Long, Long>,
     onAddScheduledSms: () -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -93,8 +99,20 @@ fun ScheduleListScreen(
     /** Shown above the content, e.g. the "update available" banner. */
     topBanner: @Composable () -> Unit = {},
     onFixBackgroundWarning: () -> Unit = {},
+    /** Recomputes [nextSendTimes] against the current time. */
+    onRefreshNextSendTimes: () -> Unit = {},
 ) {
     var itemToDelete by remember { mutableStateOf<ScheduledSms?>(null) }
+
+    // "Next send" is worked out against the clock, and a send does not change the stored schedule,
+    // so recompute it whenever the screen is shown and again once the earliest time shown has passed.
+    val currentOnRefreshNextSendTimes by rememberUpdatedState(onRefreshNextSendTimes)
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { currentOnRefreshNextSendTimes() }
+    LaunchedEffect(nextSendTimes) {
+        val earliest = nextSendTimes.values.minOrNull() ?: return@LaunchedEffect
+        delay((earliest - System.currentTimeMillis()).coerceAtLeast(0) + NEXT_SEND_REFRESH_MARGIN_MS)
+        currentOnRefreshNextSendTimes()
+    }
 
     itemToDelete?.let { item ->
         AlertDialog(
@@ -261,6 +279,7 @@ fun ScheduleListScreen(
                                 ScheduledSmsCard(
                                     scheduledSms = scheduledSms,
                                     contactName = contactNames[scheduledSms.contactNumber],
+                                    nextSendEpochMs = nextSendTimes[scheduledSms.id],
                                     accentColor = categoryAccentColor(category),
                                     onEdit = onEditScheduledSms,
                                     onDelete = { itemToDelete = it },
@@ -383,10 +402,14 @@ private fun categoryAccentColor(category: String): Color {
     return CategoryAccentColors[index]
 }
 
+/** Waits this long past a shown send time before recomputing, so the clock is surely past it. */
+private const val NEXT_SEND_REFRESH_MARGIN_MS = 1_000L
+
 @Composable
 private fun ScheduledSmsCard(
     scheduledSms: ScheduledSms,
     contactName: String?,
+    nextSendEpochMs: Long?,
     accentColor: Color,
     onEdit: (Long) -> Unit,
     onDelete: (ScheduledSms) -> Unit,
@@ -437,10 +460,14 @@ private fun ScheduledSmsCard(
                     val contactDisplay = buildContactDisplay(scheduledSms.contactNumber, contactName)
                     Text(stringResource(R.string.schedule_contact_format, contactDisplay))
                     Text(
-                        stringResource(
-                            R.string.schedule_next_send_format,
-                            DateFormat.getDateTimeInstance().format(Date(scheduledSms.dateEpochMs)),
-                        ),
+                        if (nextSendEpochMs != null) {
+                            stringResource(
+                                R.string.schedule_next_send_format,
+                                DateFormat.getDateTimeInstance().format(Date(nextSendEpochMs)),
+                            )
+                        } else {
+                            stringResource(R.string.schedule_no_next_send)
+                        },
                     )
                     if (scheduledSms.repeatType != RepeatType.NONE) {
                         Text(stringResource(R.string.schedule_repeat_format, repeatTypeLabel(scheduledSms.repeatType)))

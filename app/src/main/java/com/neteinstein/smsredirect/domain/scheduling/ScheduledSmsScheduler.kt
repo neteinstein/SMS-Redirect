@@ -20,3 +20,22 @@ interface ScheduledSmsScheduler {
     /** Cancels any pending work for the scheduled SMS with [scheduledSmsId]. */
     fun cancel(scheduledSmsId: Long)
 }
+
+/**
+ * Arms the send of [scheduledSms] that is still ahead of [nowEpochMs] (see
+ * [RecurrenceCalculator.upcomingSend]) and returns its time, or arms nothing and returns null when no
+ * send is left. Use this, not [ScheduledSmsScheduler.scheduleInitial], for a schedule that may already
+ * have sent: `scheduleInitial` with a date in the past fires at once and sends the SMS again.
+ */
+fun ScheduledSmsScheduler.scheduleUpcoming(
+    scheduledSms: ScheduledSms,
+    nowEpochMs: Long,
+): Long? {
+    val sendAt = RecurrenceCalculator.upcomingSend(scheduledSms, nowEpochMs) ?: return null
+    if (sendAt == scheduledSms.dateEpochMs) {
+        scheduleInitial(scheduledSms)
+    } else {
+        scheduleNext(scheduledSms.id, sendAt)
+    }
+    return sendAt
+}
