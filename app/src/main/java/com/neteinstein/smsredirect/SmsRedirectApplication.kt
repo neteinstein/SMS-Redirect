@@ -153,7 +153,7 @@ class SmsRedirectApplication : Application() {
         val forwardHistoryRepository = ForwardHistoryRepositoryImpl(database.forwardHistoryDao())
         val scheduledSmsRepository = ScheduledSmsRepositoryImpl(database.scheduledSmsDao())
         val scheduledSmsHistoryRepository = ScheduledSmsHistoryRepositoryImpl(database.scheduledSmsHistoryDao())
-        val findMatchingRuleUseCase = FindMatchingRuleUseCase(repository)
+        val findMatchingRuleUseCase = FindMatchingRuleUseCase(repository, settingsRepository)
         val canForwardSmsUseCase = CanForwardSmsUseCase(settingsRepository)
         val getKeepHistoryNowUseCase = GetKeepHistoryNowUseCase(settingsRepository)
         val getForwardPrefixNowUseCase = GetForwardPrefixNowUseCase(settingsRepository)
@@ -352,7 +352,7 @@ class SmsRedirectApplication : Application() {
                 phoneActionExecutor = AndroidPhoneActionExecutor(this, soundModeAccessChecker),
                 soundModeAccessChecker = soundModeAccessChecker,
                 triggerPhoneActionsUseCase =
-                    TriggerPhoneActionsUseCase(FindMatchingPhoneActionRulesUseCase(repository), phoneActionScheduler),
+                    TriggerPhoneActionsUseCase(FindMatchingPhoneActionRulesUseCase(repository, settingsRepository), phoneActionScheduler),
             )
     }
 }
