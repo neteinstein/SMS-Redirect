@@ -52,7 +52,10 @@ class SpamFraudDetector {
     fun assess(text: String): SpamAssessment {
         if (text.isBlank()) return SpamAssessment.SAFE
         val links = MessageLinks.find(text)
-        val linkSignals = links.flatMap(::linkSignals).toSet()
+        val linkSignals =
+            links.flatMap(::linkSignals).toSet() +
+                // A right-to-left override anywhere before a link can make it read backwards.
+                if (links.isNotEmpty() && BIDI.containsMatchIn(text)) setOf(SpamSignal.DECEPTIVE_LINK) else emptySet()
         val wordSignals = wordSignals(normalize(text))
         val signals = linkSignals + wordSignals
         val suspicious =
@@ -94,6 +97,8 @@ class SpamFraudDetector {
 
         /** Hosts this deep (`a.b.c.d.example.com`) are almost always disguising the real domain. */
         private const val MAX_HONEST_LABELS = 5
+
+        private val BIDI = Regex("[\u202A-\u202E\u2066-\u2069]")
 
         private val IPV4 = Regex("""\d{1,3}(?:\.\d{1,3}){3}""")
 

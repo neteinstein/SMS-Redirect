@@ -74,10 +74,9 @@ class AssessConversationRiskUseCase(
         val flagged = mutableListOf<ConversationMessage>()
         for (message in messages) {
             if (!message.isIncoming || message.address.isBlank()) continue
-            val text = listOfNotNull(message.subject, message.body).joinToString("\n")
-            if (text.isBlank() || trusted.containsAddress(message.address)) continue
+            if ((message.subject.isNullOrBlank() && message.body.isBlank()) || trusted.containsAddress(message.address)) continue
             val contact = isContact.getOrPut(message.address) { contactNameResolver.lookupNameByNumber(message.address) != null }
-            if (!contact && detector.assessSafely(text).suspicious) flagged += message
+            if (!contact && isSuspicious(message)) flagged += message
         }
         if (flagged.isEmpty()) return ConversationRisk.NONE
         return ConversationRisk(
@@ -85,6 +84,14 @@ class AssessConversationRiskUseCase(
             flaggedSenders = flagged.map { it.address }.distinctBy { it.filter(Char::isLetterOrDigit).lowercase() },
         )
     }
+
+    /**
+     * The body on its own (its links are the tappable ones; a long subject must not use up the
+     * link limit), and with the subject, whose wording may be the scam half of the message.
+     */
+    private fun isSuspicious(message: ConversationMessage): Boolean =
+        detector.assessSafely(message.body).suspicious ||
+            (!message.subject.isNullOrBlank() && detector.assessSafely("${message.subject}\n${message.body}").suspicious)
 }
 
 class ObserveTrustedSendersUseCase(

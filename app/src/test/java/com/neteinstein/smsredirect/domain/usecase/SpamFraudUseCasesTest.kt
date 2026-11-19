@@ -73,6 +73,15 @@ class SpamFraudUseCasesTest {
         }
 
     @Test
+    fun `links in a long subject do not hide a scam link in the body`() =
+        runTest {
+            val useCase = AssessConversationRiskUseCase(SpamFraudDetector(), FakeContactNameResolver())
+            val mms = message(1, stranger, scam).copy(isMms = true, subject = "example.com ".repeat(200))
+
+            assertEquals(setOf("mms-1"), useCase(listOf(mms), trusted = emptySet()).flaggedMessageKeys)
+        }
+
+    @Test
     fun `trusting the sender clears the conversation`() =
         runTest {
             // Given

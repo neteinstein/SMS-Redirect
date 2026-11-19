@@ -444,7 +444,10 @@ private fun TrustSenderDialog(
     // The host the browser will really use, in ASCII so a look-alike (`pаypal.com`) shows as `xn--...`.
     val site =
         url?.let { link ->
-            MessageLinks.hostOf(link)?.let { host -> runCatching { IDN.toASCII(host) }.getOrDefault(host) } ?: link
+            // If the host cannot be converted, never show its look-alike Unicode form.
+            MessageLinks.hostOf(link)?.let { host ->
+                runCatching { IDN.toASCII(host) }.getOrElse { if (host.all { it.code < 0x80 }) host else "?" }
+            } ?: "?"
         }
     AlertDialog(
         onDismissRequest = onDismiss,

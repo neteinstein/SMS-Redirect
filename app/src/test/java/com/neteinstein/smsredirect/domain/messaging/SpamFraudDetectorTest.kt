@@ -43,6 +43,11 @@ class SpamFraudDetectorTest {
     }
 
     @Test
+    fun `a right-to-left override before a link is flagged`() {
+        assertTrue(suspicious("Pay: \u202Eevil.com/moc.knab//:sptth"))
+    }
+
+    @Test
     fun `a huge input is assessed without failing`() {
         assertFalse(suspicious("a.".repeat(50_000) + "1"))
     }
