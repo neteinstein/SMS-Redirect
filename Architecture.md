@@ -451,7 +451,9 @@ run as `NOT_DEFAULT_SMS_APP` instead of counting every remaining message as fail
 
 Every rule has a `type` (`RuleType`): `REDIRECT` or `PHONE_ACTION`. The sender test is shared (`Rule.matchesSender`): a rule's sender matches if
 - the sender **equals** the rule's `senderText` (case-insensitive, e.g. an alphanumeric sender ID), OR
-- the sender's digits match the rule's `phoneNumber` digits exactly.
+- the sender is the rule's `phoneNumber`, with or without its country code. The rule editor saves a number typed without a country code with the `defaultPrefix` in front, but carriers often deliver local senders without one, so:
+  - `MessagingAddresses.same` decides first: formatting never matters, a local number of 7+ digits matches the international number it is the tail of (in either direction), and two numbers that both carry a country code must be equal;
+  - otherwise a local sender matches when the `defaultPrefix` followed by its digits is exactly the rule's number. This is how a short code saved as `+3514800` matches the sender `4800`, without `14800` matching it too. Both matching use cases read the prefix from `SettingsRepository` per message.
 
 **Redirect rules** (`FindMatchingRuleUseCase`) are evaluated in sort order and the **first** match wins. Phone-action rules are skipped, even when sorted first. If no redirect rule matches, the message is not forwarded.
 

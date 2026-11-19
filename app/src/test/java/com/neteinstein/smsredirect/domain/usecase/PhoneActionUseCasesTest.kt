@@ -2,6 +2,7 @@ package com.neteinstein.smsredirect.domain.usecase
 
 import com.neteinstein.smsredirect.FakePhoneActionScheduler
 import com.neteinstein.smsredirect.FakeRuleRepository
+import com.neteinstein.smsredirect.FakeSettingsRepository
 import com.neteinstein.smsredirect.domain.model.PhoneAction
 import com.neteinstein.smsredirect.domain.model.Rule
 import com.neteinstein.smsredirect.domain.model.RuleType
@@ -46,11 +47,12 @@ class PhoneActionUseCasesTest {
             sortOrder = 3,
         )
     private val repository = FakeRuleRepository(listOf(redirect, ring, vibrateFromBank, silenceFromBoss))
+    private val settings = FakeSettingsRepository()
 
     @Test
     fun `finds every matching phone action rule, not just the first`() =
         runTest {
-            val matches = FindMatchingPhoneActionRulesUseCase(repository)("BANK", "Where are you?")
+            val matches = FindMatchingPhoneActionRulesUseCase(repository, settings)("BANK", "Where are you?")
 
             assertEquals(listOf(ring, vibrateFromBank), matches)
         }
@@ -58,7 +60,7 @@ class PhoneActionUseCasesTest {
     @Test
     fun `redirect rules are not phone action matches`() =
         runTest {
-            val matches = FindMatchingPhoneActionRulesUseCase(repository)("BANK", "your statement")
+            val matches = FindMatchingPhoneActionRulesUseCase(repository, settings)("BANK", "your statement")
 
             assertEquals(listOf(vibrateFromBank), matches)
         }
@@ -67,7 +69,7 @@ class PhoneActionUseCasesTest {
     fun `trigger schedules each matching action with its rule name`() =
         runTest {
             val scheduler = FakePhoneActionScheduler()
-            val useCase = TriggerPhoneActionsUseCase(FindMatchingPhoneActionRulesUseCase(repository), scheduler)
+            val useCase = TriggerPhoneActionsUseCase(FindMatchingPhoneActionRulesUseCase(repository, settings), scheduler)
 
             val count = useCase("+351 911 111 111", "Meeting moved, where are you")
 
@@ -83,10 +85,50 @@ class PhoneActionUseCasesTest {
         runTest {
             val scheduler = FakePhoneActionScheduler()
 
-            val count = TriggerPhoneActionsUseCase(FindMatchingPhoneActionRulesUseCase(repository), scheduler)("x", "hi")
+            val count = TriggerPhoneActionsUseCase(FindMatchingPhoneActionRulesUseCase(repository, settings), scheduler)("x", "hi")
 
             assertEquals(0, count)
             assertEquals(emptyList<Any>(), scheduler.scheduled)
+        }
+
+    @Test
+    fun `phone action rule matches its sender without the country code`() =
+        runTest {
+            val matches = FindMatchingPhoneActionRulesUseCase(repository, settings)("911111111", "Meeting at 3")
+
+            assertEquals(listOf(silenceFromBoss), matches)
+        }
+
+    @Test
+    fun `every phone action rule matching the sender in either form runs`() =
+        runTest {
+            val ringFromBossLocal =
+                Rule(
+                    id = 5,
+                    name = "Boss rings",
+                    senderText = "911111111",
+                    phoneNumber = "911111111",
+                    type = RuleType.PHONE_ACTION,
+                    phoneAction = PhoneAction.Ring(),
+                    sortOrder = 4,
+                )
+            val shortCodeBuzz =
+                Rule(
+                    id = 6,
+                    name = "Carrier buzz",
+                    senderText = "+3514800",
+                    phoneNumber = "+3514800",
+                    type = RuleType.PHONE_ACTION,
+                    phoneAction = PhoneAction.Vibrate(VibrationPattern.SOS),
+                    sortOrder = 5,
+                )
+            val rules = FakeRuleRepository(listOf(redirect, ring, vibrateFromBank, silenceFromBoss, ringFromBossLocal, shortCodeBuzz))
+            val find = FindMatchingPhoneActionRulesUseCase(rules, settings)
+
+            assertEquals(listOf(silenceFromBoss, ringFromBossLocal), find("911111111", "meeting"))
+            assertEquals(listOf(silenceFromBoss, ringFromBossLocal), find("+351911111111", "meeting"))
+            assertEquals(listOf(shortCodeBuzz), find("4800", "hello"))
+            assertEquals(emptyList<Rule>(), find("14800", "hello"))
         }
 
     @Test
@@ -95,7 +137,7 @@ class PhoneActionUseCasesTest {
             val actionFirst = vibrateFromBank.copy(sortOrder = -1)
             val repo = FakeRuleRepository(listOf(actionFirst, redirect))
 
-            assertEquals(redirect, FindMatchingRuleUseCase(repo)("BANK"))
-            assertNull(FindMatchingRuleUseCase(FakeRuleRepository(listOf(vibrateFromBank)))("BANK"))
+            assertEquals(redirect, FindMatchingRuleUseCase(repo, settings)("BANK"))
+            assertNull(FindMatchingRuleUseCase(FakeRuleRepository(listOf(vibrateFromBank)), settings)("BANK"))
         }
 }

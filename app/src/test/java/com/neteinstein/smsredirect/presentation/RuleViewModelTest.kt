@@ -4,6 +4,7 @@ import com.neteinstein.smsredirect.FakeRuleRepository
 import com.neteinstein.smsredirect.FakeSettingsRepository
 import com.neteinstein.smsredirect.domain.model.Rule
 import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
+import com.neteinstein.smsredirect.domain.usecase.FindMatchingRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetCategoriesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetDefaultPrefixNowUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetRuleUseCase
@@ -17,6 +18,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -520,5 +522,37 @@ class RuleViewModelTest {
 
             assertTrue(vm.uiState.value.saved)
             assertEquals(null, vm.uiState.value.error)
+        }
+
+    @Test
+    fun `rule saved with the default prefix matches the sender as it arrives without it`() =
+        runTest {
+            val repository = FakeRuleRepository()
+            val vm =
+                RuleViewModel(
+                    GetRuleUseCase(repository),
+                    AddRuleUseCase(repository),
+                    UpdateRuleUseCase(repository),
+                    repository,
+                    getDefaultPrefixNowUseCase,
+                    GetCategoriesUseCase(repository),
+                )
+            val findMatchingRule = FindMatchingRuleUseCase(repository, settingsRepository)
+
+            vm.onSenderChanged("912 345 678")
+            vm.onTargetChanged("911222333")
+            vm.saveRule()
+            advanceUntilIdle()
+            vm.clearSavedFlag()
+            vm.onSenderChanged("4800")
+            vm.onTargetChanged("911222444")
+            vm.saveRule()
+            advanceUntilIdle()
+
+            assertEquals(listOf("+3514800", "+351912345678"), repository.getRulesSnapshot().map { it.phoneNumber })
+            assertEquals("+351911222333", findMatchingRule("912345678")?.targetNumber)
+            assertEquals("+351911222333", findMatchingRule("+351912345678")?.targetNumber)
+            assertEquals("+351911222444", findMatchingRule("4800")?.targetNumber)
+            assertNull(findMatchingRule("14800"))
         }
 }

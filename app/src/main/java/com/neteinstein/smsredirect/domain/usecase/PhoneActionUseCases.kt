@@ -3,15 +3,23 @@ package com.neteinstein.smsredirect.domain.usecase
 import com.neteinstein.smsredirect.domain.device.PhoneActionScheduler
 import com.neteinstein.smsredirect.domain.model.Rule
 import com.neteinstein.smsredirect.domain.repository.RuleRepository
+import com.neteinstein.smsredirect.domain.repository.SettingsRepository
 
-/** Every phone-action rule an SMS from [sender] with [body] triggers, in sort order. */
+/**
+ * Every phone-action rule an SMS from [sender] with [body] triggers, in sort order. See
+ * [Rule.matchesSender] for how a sender without a country code matches.
+ */
 class FindMatchingPhoneActionRulesUseCase(
     private val ruleRepository: RuleRepository,
+    private val settingsRepository: SettingsRepository,
 ) {
     suspend operator fun invoke(
         sender: String?,
         body: String,
-    ): List<Rule> = ruleRepository.getRulesSnapshot().filter { it.triggersPhoneAction(sender, body) }
+    ): List<Rule> {
+        val defaultPrefix = settingsRepository.getDefaultPrefix()
+        return ruleRepository.getRulesSnapshot().filter { it.triggersPhoneAction(sender, body, defaultPrefix) }
+    }
 }
 
 /**
