@@ -46,7 +46,9 @@ These reports travel only between your phone, your carrier and the other person'
 
 **Sharing into the App.** Other apps can open a new message in the App (a contact's "message" button, an `sms:` link, or Share). Nothing is sent until you tap Send.
 
-**What the App does not do with your messages.** It does not send them to us, does not analyse them, does not use them for advertising, and does not keep a copy of them anywhere except your phone's message storage (and your own Gmail, only if you turn on backup, Section 2). It does not use SMS to verify an account.
+**Spam and fraud warnings.** When a message arrives from someone who is not in your contacts, the App checks it on your phone for common signs of scams: links that hide or disguise where they go (link shorteners, bare IP addresses, look-alike domains) and wording such as requests for passwords or card details, prizes, or parcel fees. A message that looks like spam or fraud is marked in its notification, the conversation shows a warning, and the message's links do not open. If you know the sender, you can mark them as trusted: the warning goes away and their links open. The check runs entirely on your phone; nothing about it is sent to us or anyone else. Your list of trusted senders is kept on your phone (Section 5).
+
+**What the App does not do with your messages.** It does not send them to us, does not analyse them for any purpose other than showing them to you and the on-device spam and fraud check above, does not use them for advertising, and does not keep a copy of them anywhere except your phone's message storage (and your own Gmail, only if you turn on backup, Section 2). It does not use SMS to verify an account.
 
 ## 2. Gmail backup
 
@@ -91,6 +93,7 @@ Your SMS and MMS messages are kept in Android's own message storage on your phon
 - **Backup record:** a one-way hash and a timestamp for each message already in Gmail. No message text
 - **Gmail backup settings:** your Gmail address, your encrypted app password, the email subject template and the label name
 - **App settings:** landing tab, roaming and notification preferences, forwarding prefix, default country prefix and history toggles
+- **Trusted senders:** the numbers you marked as trusted after a spam or fraud warning. Not included in the settings export file
 
 You can view, change or delete this data in the App at any time, and remove all of it by clearing the App's storage or uninstalling it.
 

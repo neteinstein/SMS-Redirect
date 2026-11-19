@@ -165,6 +165,16 @@ is on screen (`visibleThreadId`). `MainActivity.dismissAllNotifications()` leave
 when there is no recipient); nothing is sent until the user taps Send. `HeadlessSmsSendService`
 sends call-screen quick replies through the same `MessageSender`.
 
+### Spam and fraud warnings
+
+All on the device; nothing about a message is sent anywhere.
+
+- `MessageLinks` (domain, pure Kotlin) finds web links: `http(s)://`, `www.` and bare `domain.tld/...` (bare only with a known ending, so `e.g.` or `file.txt` are not links). It does not use `android.util.Patterns`, so unit tests see the real behaviour.
+- `SpamFraudDetector` (domain) flags a message from its links (shortener, bare IP, punycode / `bank.com@evil.net` / `bank.com.evil.net`, cheap throwaway endings) and its wording (urgency, credentials, money or prizes, parcel or toll fees), in English and Portuguese with accents stripped. With a link: any link signal, credential or money wording, or two kinds of wording. Without a link: three kinds. `SpamSignal` values are computed, never persisted.
+- Contacts and trusted senders are never checked. `TrustedSenderRepository` → `SharedPreferencesTrustedSenderRepository` (a string set; deliberately not in Room and not in `ExportBackupUseCase`). Addresses match with `MessagingAddresses.same`.
+- `AssessIncomingMessageUseCase` labels the incoming SMS/MMS notification ("Possible spam or fraud", via `setSubText`). `AssessConversationRiskUseCase` gives `ConversationViewModel` the flagged message keys, re-run when messages arrive or the trusted set changes.
+- `ConversationScreen` makes links tappable (`LinkAnnotation.Clickable`, opened through `MainActivity.openUrl`). In flagged messages links are drawn in the error colour and open nothing. A `WarningBanner` sits on top. The banner's "Trust sender" or a tap on a disabled link opens a confirmation that shows the real destination; confirming trusts the sender (`TrustSendersUseCase`) and, for a link, opens it.
+
 ## SMS Backup to Gmail Pipeline
 
 ```

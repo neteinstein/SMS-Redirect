@@ -855,6 +855,9 @@ class MainActivity : ComponentActivity() {
                                         deleteMessageUseCase = appContainer.deleteMessageUseCase,
                                         contactNameResolver = appContainer.contactNameResolver,
                                         downloadMmsUseCase = appContainer.downloadMmsUseCase,
+                                        assessConversationRiskUseCase = appContainer.assessConversationRiskUseCase,
+                                        observeTrustedSendersUseCase = appContainer.observeTrustedSendersUseCase,
+                                        trustSendersUseCase = appContainer.trustSendersUseCase,
                                     ),
                             )
                         val state by conversationViewModel.uiState.collectAsState()
@@ -915,6 +918,8 @@ class MainActivity : ComponentActivity() {
                             onDelete = conversationViewModel::delete,
                             onDownload = conversationViewModel::download,
                             onErrorShown = conversationViewModel::onErrorShown,
+                            onOpenLink = ::openUrl,
+                            onTrustSenders = conversationViewModel::trustFlaggedSenders,
                         )
                     }
 

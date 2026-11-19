@@ -43,6 +43,7 @@ object MessageNotifications {
         threadId: Long,
         senderName: String,
         text: String,
+        suspicious: Boolean = false,
     ) {
         if (visibleThreadId == threadId) return
         val manager = notificationManagerOrNull(context) ?: return
@@ -69,6 +70,8 @@ object MessageNotifications {
                 .setStyle(style)
                 .setContentTitle(senderName)
                 .setContentText(text)
+                // Flagged by the on-device spam/fraud check; the conversation shows the full warning.
+                .setSubText(if (suspicious) context.getString(R.string.spam_notification_label) else null)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)

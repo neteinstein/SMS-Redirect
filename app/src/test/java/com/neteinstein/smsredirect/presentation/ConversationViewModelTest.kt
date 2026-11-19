@@ -5,19 +5,24 @@ import com.neteinstein.smsredirect.FakeDefaultSmsAppChecker
 import com.neteinstein.smsredirect.FakeMessageSender
 import com.neteinstein.smsredirect.FakeMessageStore
 import com.neteinstein.smsredirect.FakeMmsDownloadRequester
+import com.neteinstein.smsredirect.FakeTrustedSenderRepository
 import com.neteinstein.smsredirect.domain.messaging.SendFailure
 import com.neteinstein.smsredirect.domain.messaging.SendOutcome
+import com.neteinstein.smsredirect.domain.messaging.SpamFraudDetector
 import com.neteinstein.smsredirect.domain.model.ConversationMessage
 import com.neteinstein.smsredirect.domain.model.MessageAttachment
 import com.neteinstein.smsredirect.domain.model.MessageStatus
 import com.neteinstein.smsredirect.domain.model.OutgoingAttachment
+import com.neteinstein.smsredirect.domain.usecase.AssessConversationRiskUseCase
 import com.neteinstein.smsredirect.domain.usecase.DeleteMessageUseCase
 import com.neteinstein.smsredirect.domain.usecase.DownloadMmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetConversationAddressesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetConversationMessagesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetOrCreateConversationUseCase
 import com.neteinstein.smsredirect.domain.usecase.MarkConversationReadUseCase
+import com.neteinstein.smsredirect.domain.usecase.ObserveTrustedSendersUseCase
 import com.neteinstein.smsredirect.domain.usecase.SendMessageUseCase
+import com.neteinstein.smsredirect.domain.usecase.TrustSendersUseCase
 import com.neteinstein.smsredirect.presentation.conversation.ConversationViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,6 +47,7 @@ class ConversationViewModelTest {
     private val sender = FakeMessageSender(SendOutcome.Queued(7))
     private val checker = FakeDefaultSmsAppChecker(isDefault = true)
     private val downloader = FakeMmsDownloadRequester()
+    private val trusted = FakeTrustedSenderRepository()
 
     @Before
     fun setUp() {
@@ -72,6 +78,9 @@ class ConversationViewModelTest {
         deleteMessageUseCase = DeleteMessageUseCase(store),
         contactNameResolver = FakeContactNameResolver(mapOf(ana to "Ana")),
         downloadMmsUseCase = DownloadMmsUseCase(downloader),
+        assessConversationRiskUseCase = AssessConversationRiskUseCase(SpamFraudDetector(), FakeContactNameResolver(mapOf(ana to "Ana"))),
+        observeTrustedSendersUseCase = ObserveTrustedSendersUseCase(trusted),
+        trustSendersUseCase = TrustSendersUseCase(trusted),
     )
 
     @Test

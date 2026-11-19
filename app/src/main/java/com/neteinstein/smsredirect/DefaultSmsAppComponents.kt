@@ -66,7 +66,8 @@ class SmsDeliverReceiver : BroadcastReceiver() {
                     return@launch
                 }
                 val name = container.contactNameResolver.lookupNameByNumber(address) ?: address
-                MessageNotifications.showIncoming(context, threadId, name, body)
+                val suspicious = container.assessIncomingMessageUseCase(address, body).suspicious
+                MessageNotifications.showIncoming(context, threadId, name, body, suspicious)
             } finally {
                 pending.finish()
             }

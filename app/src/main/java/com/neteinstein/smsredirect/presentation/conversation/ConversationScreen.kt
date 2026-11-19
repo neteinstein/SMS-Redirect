@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
@@ -56,6 +57,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,16 +68,23 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.neteinstein.smsredirect.R
+import com.neteinstein.smsredirect.domain.messaging.MessageLinks
 import com.neteinstein.smsredirect.domain.messaging.SendFailure
 import com.neteinstein.smsredirect.domain.model.ConversationMessage
 import com.neteinstein.smsredirect.domain.model.MessageAttachment
 import com.neteinstein.smsredirect.domain.model.MessageReceipt
 import com.neteinstein.smsredirect.domain.model.MessageStatus
 import com.neteinstein.smsredirect.domain.model.OutgoingAttachment
+import com.neteinstein.smsredirect.presentation.components.WarningBanner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -95,6 +104,8 @@ fun ConversationScreen(
     onDelete: (ConversationMessage) -> Unit,
     onErrorShown: () -> Unit,
     onDownload: (ConversationMessage) -> Unit = {},
+    onOpenLink: (String) -> Unit = {},
+    onTrustSenders: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val errorText =
@@ -107,6 +118,8 @@ fun ConversationScreen(
         }
     }
     var selected by remember { mutableStateOf<ConversationMessage?>(null) }
+    // Asking whether to trust the flagged senders; holds the tapped link, if a link started it.
+    var trustPrompt by remember { mutableStateOf<TrustPrompt?>(null) }
 
     Scaffold(
         topBar = {
@@ -145,30 +158,60 @@ fun ConversationScreen(
         val newestFirst = remember(state.messages) { state.messages.asReversed() }
         // Reverse layout keeps the newest message at the bottom and in view as messages arrive.
         LaunchedEffect(newestFirst.firstOrNull()?.key) { listState.animateScrollToItem(0) }
-        LazyColumn(
-            state = listState,
-            reverseLayout = true,
+        Column(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .padding(padding),
-            contentPadding =
-                androidx.compose.foundation.layout
-                    .PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            items(newestFirst, key = { it.key }) { message ->
-                MessageBubble(
-                    message = message,
-                    senderLabel =
-                        if (state.isGroup && message.isIncoming) state.contactNames[message.address] ?: message.address else null,
-                    onOpenAttachment = onOpenAttachment,
-                    onLongClick = { selected = message },
-                    onRetry = { onRetry(message) },
-                    onDownload = { onDownload(message) },
+            if (state.risk.isFlagged) {
+                WarningBanner(
+                    message = stringResource(R.string.spam_warning_banner),
+                    actionLabel = stringResource(R.string.spam_trust_action),
+                    onActionClick = { trustPrompt = TrustPrompt(url = null) },
                 )
             }
+            LazyColumn(
+                state = listState,
+                reverseLayout = true,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                contentPadding =
+                    androidx.compose.foundation.layout
+                        .PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                items(newestFirst, key = { it.key }) { message ->
+                    MessageBubble(
+                        message = message,
+                        senderLabel =
+                            if (state.isGroup && message.isIncoming) state.contactNames[message.address] ?: message.address else null,
+                        linksEnabled = message.key !in state.risk.flaggedMessageKeys,
+                        onOpenAttachment = onOpenAttachment,
+                        onLongClick = { selected = message },
+                        onRetry = { onRetry(message) },
+                        onDownload = { onDownload(message) },
+                        onOpenLink = onOpenLink,
+                        onBlockedLink = { url -> trustPrompt = TrustPrompt(url) },
+                    )
+                }
+            }
         }
+    }
+
+    trustPrompt?.let { prompt ->
+        TrustSenderDialog(
+            senders = state.risk.flaggedSenders.joinToString(", ") { state.contactNames[it] ?: it },
+            url = prompt.url,
+            onDismiss = { trustPrompt = null },
+            onConfirm = {
+                trustPrompt = null
+                onTrustSenders()
+                prompt.url?.let(onOpenLink)
+            },
+        )
     }
 
     selected?.let { message ->
@@ -205,10 +248,13 @@ private fun sendFailureText(failure: SendFailure): String =
 private fun MessageBubble(
     message: ConversationMessage,
     senderLabel: String?,
+    linksEnabled: Boolean,
     onOpenAttachment: (MessageAttachment) -> Unit,
     onLongClick: () -> Unit,
     onRetry: () -> Unit,
     onDownload: () -> Unit,
+    onOpenLink: (String) -> Unit,
+    onBlockedLink: (String) -> Unit,
 ) {
     val context = LocalContext.current
     val incoming = message.isIncoming
@@ -262,7 +308,14 @@ private fun MessageBubble(
                         }
                     }
                 }
-                if (message.body.isNotEmpty()) Text(message.body, style = MaterialTheme.typography.bodyLarge)
+                if (message.body.isNotEmpty()) {
+                    MessageBody(
+                        body = message.body,
+                        linksEnabled = linksEnabled,
+                        onOpenLink = onOpenLink,
+                        onBlockedLink = onBlockedLink,
+                    )
+                }
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)) {
@@ -305,6 +358,83 @@ private fun MessageBubble(
             )
         }
     }
+}
+
+/**
+ * The message text with its web links tappable. In a message flagged as spam or fraud the links
+ * are shown in the error colour and do not open: tapping one asks whether to trust the sender.
+ */
+@Composable
+private fun MessageBody(
+    body: String,
+    linksEnabled: Boolean,
+    onOpenLink: (String) -> Unit,
+    onBlockedLink: (String) -> Unit,
+) {
+    val open by rememberUpdatedState(onOpenLink)
+    val blocked by rememberUpdatedState(onBlockedLink)
+    val linkColor = if (linksEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+    val text =
+        remember(body, linksEnabled, linkColor) {
+            buildAnnotatedString {
+                append(body)
+                MessageLinks.find(body).forEach { link ->
+                    addLink(
+                        LinkAnnotation.Clickable(
+                            tag = link.url,
+                            styles =
+                                TextLinkStyles(
+                                    SpanStyle(
+                                        color = linkColor,
+                                        textDecoration = if (linksEnabled) TextDecoration.Underline else TextDecoration.None,
+                                    ),
+                                ),
+                            linkInteractionListener = { if (linksEnabled) open(link.url) else blocked(link.url) },
+                        ),
+                        link.start,
+                        link.end,
+                    )
+                }
+            }
+        }
+    Text(text, style = MaterialTheme.typography.bodyLarge)
+}
+
+private data class TrustPrompt(
+    val url: String?,
+)
+
+/** The override: the user confirms they know the sender, so the warning lifts and links open. */
+@Composable
+private fun TrustSenderDialog(
+    senders: String,
+    url: String?,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+        title = { Text(stringResource(R.string.spam_trust_title, senders)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.spam_trust_message))
+                url?.let {
+                    Text(
+                        stringResource(R.string.spam_trust_link, it),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(if (url != null) R.string.spam_trust_and_open else R.string.spam_trust_confirm))
+            }
+        },
+    )
 }
 
 /** "Delivered", "Read", ... for a sent message whose receipt has come in; null when there is none. */
