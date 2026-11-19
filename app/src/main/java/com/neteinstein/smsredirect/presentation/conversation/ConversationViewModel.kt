@@ -16,10 +16,12 @@ import com.neteinstein.smsredirect.domain.usecase.DownloadMmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetConversationAddressesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetConversationMessagesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetOrCreateConversationUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetTrustedAmongUseCase
 import com.neteinstein.smsredirect.domain.usecase.MarkConversationReadUseCase
 import com.neteinstein.smsredirect.domain.usecase.ObserveTrustedSendersUseCase
 import com.neteinstein.smsredirect.domain.usecase.SendMessageUseCase
 import com.neteinstein.smsredirect.domain.usecase.TrustSendersUseCase
+import com.neteinstein.smsredirect.domain.usecase.UntrustSendersUseCase
 import com.neteinstein.smsredirect.domain.usecase.requiresMms
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,6 +50,8 @@ data class ConversationUiState(
     val downloadFailed: Boolean = false,
     /** Received messages that look like spam or fraud: warned about, their links disabled. */
     val risk: ConversationRisk = ConversationRisk.NONE,
+    /** People in this conversation the user trusts: offered "Stop trusting". */
+    val trustedSenders: List<String> = emptyList(),
 ) {
     /** "Ana", "Ana, Rui" or the bare number when there is no contact. */
     val title: String get() = addresses.joinToString(", ") { contactNames[it] ?: it }
@@ -82,6 +86,8 @@ class ConversationViewModel(
     private val assessConversationRiskUseCase: AssessConversationRiskUseCase,
     observeTrustedSendersUseCase: ObserveTrustedSendersUseCase,
     private val trustSendersUseCase: TrustSendersUseCase,
+    private val untrustSendersUseCase: UntrustSendersUseCase,
+    private val getTrustedAmongUseCase: GetTrustedAmongUseCase = GetTrustedAmongUseCase(),
 ) : ViewModel() {
     private val _uiState =
         MutableStateFlow(
@@ -115,11 +121,23 @@ class ConversationViewModel(
                 if (visible) markRead()
             }.launchIn(viewModelScope)
         // Re-checked when messages arrive or the user trusts a sender.
-        combine(uiState.map { it.messages }.distinctUntilChanged(), observeTrustedSendersUseCase()) { messages, trusted ->
-            messages to trusted
-        }.mapLatest { (messages, trusted) -> assessConversationRiskUseCase(messages, trusted) }
+        val trusted = observeTrustedSendersUseCase()
+        combine(uiState.map { it.messages }.distinctUntilChanged(), trusted) { messages, trustedSet ->
+            messages to trustedSet
+        }.mapLatest { (messages, trustedSet) -> assessConversationRiskUseCase(messages, trustedSet) }
             .onEach { risk -> _uiState.value = _uiState.value.copy(risk = risk) }
             .launchIn(viewModelScope)
+        combine(uiState.map { it.addresses }.distinctUntilChanged(), trusted) { addresses, trustedSet ->
+            getTrustedAmongUseCase(addresses, trustedSet)
+        }.onEach { senders -> _uiState.value = _uiState.value.copy(trustedSenders = senders) }
+            .launchIn(viewModelScope)
+    }
+
+    /** Undoes a trust decision: this conversation's messages are checked, and flagged, again. */
+    fun stopTrustingSenders() {
+        val senders = _uiState.value.trustedSenders
+        if (senders.isEmpty()) return
+        viewModelScope.launch { untrustSendersUseCase(senders) }
     }
 
     /** The user confirmed they know who sent the flagged messages: lift the warning, enable links. */
@@ -237,6 +255,7 @@ class ConversationViewModelFactory(
     private val assessConversationRiskUseCase: AssessConversationRiskUseCase,
     private val observeTrustedSendersUseCase: ObserveTrustedSendersUseCase,
     private val trustSendersUseCase: TrustSendersUseCase,
+    private val untrustSendersUseCase: UntrustSendersUseCase,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
@@ -256,5 +275,6 @@ class ConversationViewModelFactory(
             assessConversationRiskUseCase,
             observeTrustedSendersUseCase,
             trustSendersUseCase,
+            untrustSendersUseCase,
         ) as T
 }

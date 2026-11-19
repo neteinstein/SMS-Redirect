@@ -72,10 +72,11 @@ class SpamFraudDetector {
         val suffixLength = if (tld.length == 2 && labels.size >= 3 && labels[labels.lastIndex - 1] in SECOND_LEVEL) 2 else 1
         return buildList {
             if (host in SHORTENERS) add(SpamSignal.SHORTENED_LINK)
-            if (IPV4.matches(host) || host.startsWith("[")) add(SpamSignal.IP_ADDRESS_LINK)
+            // Dotted, IPv6 or a single integer (`http://3232235777` is 192.168.1.1).
+            if (IPV4.matches(host) || host.startsWith("[") || host.all { it.isDigit() }) add(SpamSignal.IP_ADDRESS_LINK)
             val deceptive =
                 labels.any { it.startsWith("xn--") } ||
-                    MessageLinks.hasUserInfo(link.url) ||
+                    MessageLinks.isObfuscated(link) ||
                     labels.dropLast(suffixLength).any { it in GENERIC_TLDS } ||
                     labels.size >= MAX_HONEST_LABELS
             if (deceptive) add(SpamSignal.DECEPTIVE_LINK)

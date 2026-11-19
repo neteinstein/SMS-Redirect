@@ -12,4 +12,7 @@ interface TrustedSenderRepository {
     suspend fun get(): Set<String>
 
     suspend fun trust(address: String)
+
+    /** Removes these exact stored entries (match them first with `MessagingAddresses.same`). */
+    suspend fun untrust(addresses: Set<String>)
 }

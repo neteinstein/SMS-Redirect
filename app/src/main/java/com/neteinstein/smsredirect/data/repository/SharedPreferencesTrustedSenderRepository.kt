@@ -28,6 +28,11 @@ class SharedPreferencesTrustedSenderRepository(
         prefs.edit { putStringSet(KEY_TRUSTED, HashSet(updated)) }
     }
 
+    override suspend fun untrust(addresses: Set<String>) {
+        val updated = state.updateAndGet { it - addresses }
+        prefs.edit { putStringSet(KEY_TRUSTED, HashSet(updated)) }
+    }
+
     companion object {
         const val PREFS_NAME = "trusted_senders"
         private const val KEY_TRUSTED = "trusted_senders"

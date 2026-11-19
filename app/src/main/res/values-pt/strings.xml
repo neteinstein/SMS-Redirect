@@ -370,8 +370,11 @@
     <string name="spam_warning_banner">Possível spam ou fraude. As ligações nas mensagens assinaladas estão desativadas. Nunca partilhe códigos, palavras-passe ou dados do cartão.</string>
     <string name="spam_trust_action">Confiar</string>
     <string name="spam_trust_title">Confiar em %1$s?</string>
-    <string name="spam_trust_message">Esta mensagem parece spam ou uma burla. Se confiar no remetente, o aviso desaparece e as ligações passam a abrir. Faça-o apenas se souber quem a enviou.</string>
-    <string name="spam_trust_link">A ligação abre:\n%1$s</string>
+    <string name="spam_trust_message">Esta mensagem parece spam ou uma burla. Se confiar no remetente, o aviso desaparece e as ligações passam a abrir. Faça-o apenas se souber quem a enviou: nomes e números de remetentes podem ser falsificados.</string>
+    <string name="spam_trust_link">A ligação abre o site %1$s:\n%2$s</string>
+    <string name="spam_open_once">Abrir só esta vez</string>
+    <string name="spam_stop_trusting">Deixar de confiar neste remetente</string>
+    <string name="conversation_cd_more">Mais opções</string>
     <string name="spam_trust_confirm">Confio neste remetente</string>
     <string name="spam_trust_and_open">Confiar e abrir</string>
     <string name="spam_notification_label">Possível spam ou fraude</string>

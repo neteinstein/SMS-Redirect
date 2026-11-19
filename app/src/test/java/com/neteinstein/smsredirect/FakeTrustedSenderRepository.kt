@@ -16,4 +16,8 @@ class FakeTrustedSenderRepository(
     override suspend fun trust(address: String) {
         state.value = state.value + address
     }
+
+    override suspend fun untrust(addresses: Set<String>) {
+        state.value = state.value - addresses
+    }
 }

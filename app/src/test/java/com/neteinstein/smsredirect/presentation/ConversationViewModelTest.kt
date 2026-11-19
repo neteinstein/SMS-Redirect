@@ -23,6 +23,7 @@ import com.neteinstein.smsredirect.domain.usecase.MarkConversationReadUseCase
 import com.neteinstein.smsredirect.domain.usecase.ObserveTrustedSendersUseCase
 import com.neteinstein.smsredirect.domain.usecase.SendMessageUseCase
 import com.neteinstein.smsredirect.domain.usecase.TrustSendersUseCase
+import com.neteinstein.smsredirect.domain.usecase.UntrustSendersUseCase
 import com.neteinstein.smsredirect.presentation.conversation.ConversationViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -78,10 +79,40 @@ class ConversationViewModelTest {
         deleteMessageUseCase = DeleteMessageUseCase(store),
         contactNameResolver = FakeContactNameResolver(mapOf(ana to "Ana")),
         downloadMmsUseCase = DownloadMmsUseCase(downloader),
-        assessConversationRiskUseCase = AssessConversationRiskUseCase(SpamFraudDetector(), FakeContactNameResolver(mapOf(ana to "Ana"))),
+        assessConversationRiskUseCase =
+            AssessConversationRiskUseCase(SpamFraudDetector(), FakeContactNameResolver(mapOf(ana to "Ana")), dispatcher),
         observeTrustedSendersUseCase = ObserveTrustedSendersUseCase(trusted),
         trustSendersUseCase = TrustSendersUseCase(trusted),
+        untrustSendersUseCase = UntrustSendersUseCase(trusted),
     )
+
+    @Test
+    fun `a scam from a stranger is flagged until the sender is trusted, and again after stop trusting`() =
+        runTest {
+            // Given
+            val stranger = "+351910000000"
+            val scam = ConversationMessage(2, false, 8, stranger, "Pay the parcel fee at bit.ly/abc", 2_000, MessageStatus.RECEIVED)
+            store = FakeMessageStore(messages = listOf(scam), threadAddresses = mutableMapOf(8L to listOf(stranger)))
+            val vm = createViewModel(threadId = 8)
+            advanceUntilIdle()
+            assertEquals(setOf("sms-2"), vm.uiState.value.risk.flaggedMessageKeys)
+
+            // When
+            vm.trustFlaggedSenders()
+            advanceUntilIdle()
+
+            // Then
+            assertFalse(vm.uiState.value.risk.isFlagged)
+            assertEquals(listOf(stranger), vm.uiState.value.trustedSenders)
+
+            // When
+            vm.stopTrustingSenders()
+            advanceUntilIdle()
+
+            // Then
+            assertTrue(vm.uiState.value.risk.isFlagged)
+            assertEquals(emptyList<String>(), vm.uiState.value.trustedSenders)
+        }
 
     @Test
     fun `an existing conversation loads its people, names and messages`() =

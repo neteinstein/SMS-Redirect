@@ -6,7 +6,10 @@ import com.neteinstein.smsredirect.domain.messaging.SpamAssessment
 import com.neteinstein.smsredirect.domain.messaging.SpamFraudDetector
 import com.neteinstein.smsredirect.domain.model.ConversationMessage
 import com.neteinstein.smsredirect.domain.repository.TrustedSenderRepository
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 
 /** Which received messages of a conversation look like spam or fraud, and from whom. */
 data class ConversationRisk(
@@ -24,6 +27,10 @@ data class ConversationRisk(
 
 private fun Set<String>.containsAddress(address: String): Boolean = any { MessagingAddresses.same(it, address) }
 
+/** A check that fails (it never should: see `MessageLinks`) errs on the side of a warning. */
+private fun SpamFraudDetector.assessSafely(text: String): SpamAssessment =
+    runCatching { assess(text) }.getOrElse { SpamAssessment(emptySet(), suspicious = true) }
+
 /**
  * The spam/fraud check of one received message, for its notification. Messages from a contact
  * or a sender the user trusts are never flagged.
@@ -40,19 +47,26 @@ class AssessIncomingMessageUseCase(
         if (sender.isBlank() || text.isBlank()) return SpamAssessment.SAFE
         if (trustedSenderRepository.get().containsAddress(sender)) return SpamAssessment.SAFE
         if (contactNameResolver.lookupNameByNumber(sender) != null) return SpamAssessment.SAFE
-        return detector.assess(text)
+        return detector.assessSafely(text)
     }
 }
 
 /**
  * The spam/fraud check of a conversation: every received message whose sender is neither a
- * contact nor in [trusted]. Sent messages are never checked.
+ * contact nor in [trusted]. Sent messages are never checked. Runs on [dispatcher], off the main
+ * thread: a long conversation is a lot of text.
  */
 class AssessConversationRiskUseCase(
     private val detector: SpamFraudDetector,
     private val contactNameResolver: ContactNameResolver,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
     suspend operator fun invoke(
+        messages: List<ConversationMessage>,
+        trusted: Set<String>,
+    ): ConversationRisk = withContext(dispatcher) { assess(messages, trusted) }
+
+    private suspend fun assess(
         messages: List<ConversationMessage>,
         trusted: Set<String>,
     ): ConversationRisk {
@@ -63,7 +77,7 @@ class AssessConversationRiskUseCase(
             val text = listOfNotNull(message.subject, message.body).joinToString("\n")
             if (text.isBlank() || trusted.containsAddress(message.address)) continue
             val contact = isContact.getOrPut(message.address) { contactNameResolver.lookupNameByNumber(message.address) != null }
-            if (!contact && detector.assess(text).suspicious) flagged += message
+            if (!contact && detector.assessSafely(text).suspicious) flagged += message
         }
         if (flagged.isEmpty()) return ConversationRisk.NONE
         return ConversationRisk(
@@ -77,6 +91,24 @@ class ObserveTrustedSendersUseCase(
     private val repository: TrustedSenderRepository,
 ) {
     operator fun invoke(): Flow<Set<String>> = repository.observe()
+}
+
+/** The trusted senders among [addresses], e.g. to offer "Stop trusting" in their conversation. */
+class GetTrustedAmongUseCase {
+    operator fun invoke(
+        addresses: List<String>,
+        trusted: Set<String>,
+    ): List<String> = addresses.filter { trusted.containsAddress(it) }
+}
+
+/** Undoes [TrustSendersUseCase]: these senders' messages are checked, and flagged, again. */
+class UntrustSendersUseCase(
+    private val repository: TrustedSenderRepository,
+) {
+    suspend operator fun invoke(addresses: List<String>) {
+        val stored = repository.get().filter { entry -> addresses.any { MessagingAddresses.same(entry, it) } }.toSet()
+        if (stored.isNotEmpty()) repository.untrust(stored)
+    }
 }
 
 /** The user confirmed they know these senders: stop flagging them and let their links open. */

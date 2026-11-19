@@ -37,6 +37,17 @@ class SpamFraudDetectorTest {
     }
 
     @Test
+    fun `integer IPs and look-alike letters are flagged`() {
+        assertTrue(suspicious("Hi, see http://3232235777/x"))
+        assertTrue(suspicious("Hi, see https://p\u0430ypal.com/login"))
+    }
+
+    @Test
+    fun `a huge input is assessed without failing`() {
+        assertFalse(suspicious("a.".repeat(50_000) + "1"))
+    }
+
+    @Test
     fun `prize wording in portuguese with accents is flagged with a link`() {
         assertTrue(suspicious("Parabéns! Ganhou um PRÉMIO. Reclame em https://premios-portugal.com/r"))
     }

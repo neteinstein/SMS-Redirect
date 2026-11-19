@@ -33,8 +33,11 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
@@ -87,6 +90,7 @@ import com.neteinstein.smsredirect.domain.model.OutgoingAttachment
 import com.neteinstein.smsredirect.presentation.components.WarningBanner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.net.IDN
 
 /** One conversation: message bubbles, picture messages, and the composer. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -106,6 +110,7 @@ fun ConversationScreen(
     onDownload: (ConversationMessage) -> Unit = {},
     onOpenLink: (String) -> Unit = {},
     onTrustSenders: () -> Unit = {},
+    onStopTrusting: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val errorText =
@@ -138,6 +143,24 @@ fun ConversationScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
+                    }
+                },
+                actions = {
+                    // Only a trusted sender has something to undo here.
+                    if (state.trustedSenders.isNotEmpty()) {
+                        var menuOpen by remember { mutableStateOf(false) }
+                        IconButton(onClick = { menuOpen = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.conversation_cd_more))
+                        }
+                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.spam_stop_trusting)) },
+                                onClick = {
+                                    menuOpen = false
+                                    onStopTrusting()
+                                },
+                            )
+                        }
                     }
                 },
             )
@@ -206,6 +229,10 @@ fun ConversationScreen(
             senders = state.risk.flaggedSenders.joinToString(", ") { state.contactNames[it] ?: it },
             url = prompt.url,
             onDismiss = { trustPrompt = null },
+            onOpenOnce = {
+                trustPrompt = null
+                prompt.url?.let(onOpenLink)
+            },
             onConfirm = {
                 trustPrompt = null
                 onTrustSenders()
@@ -378,7 +405,8 @@ private fun MessageBody(
         remember(body, linksEnabled, linkColor) {
             buildAnnotatedString {
                 append(body)
-                MessageLinks.find(body).forEach { link ->
+                // Never fails on a bounded input, but a message must always render.
+                runCatching { MessageLinks.find(body) }.getOrDefault(emptyList()).forEach { link ->
                     addLink(
                         LinkAnnotation.Clickable(
                             tag = link.url,
@@ -410,8 +438,14 @@ private fun TrustSenderDialog(
     senders: String,
     url: String?,
     onDismiss: () -> Unit,
+    onOpenOnce: () -> Unit,
     onConfirm: () -> Unit,
 ) {
+    // The host the browser will really use, in ASCII so a look-alike (`pаypal.com`) shows as `xn--...`.
+    val site =
+        url?.let { link ->
+            MessageLinks.hostOf(link)?.let { host -> runCatching { IDN.toASCII(host) }.getOrDefault(host) } ?: link
+        }
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
@@ -421,7 +455,7 @@ private fun TrustSenderDialog(
                 Text(stringResource(R.string.spam_trust_message))
                 url?.let {
                     Text(
-                        stringResource(R.string.spam_trust_link, it),
+                        stringResource(R.string.spam_trust_link, site.orEmpty(), it),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -430,8 +464,13 @@ private fun TrustSenderDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
         confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text(stringResource(if (url != null) R.string.spam_trust_and_open else R.string.spam_trust_confirm))
+            Row {
+                if (url != null) {
+                    TextButton(onClick = onOpenOnce) { Text(stringResource(R.string.spam_open_once)) }
+                }
+                TextButton(onClick = onConfirm) {
+                    Text(stringResource(if (url != null) R.string.spam_trust_and_open else R.string.spam_trust_confirm))
+                }
             }
         },
     )

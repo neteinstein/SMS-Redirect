@@ -98,6 +98,24 @@ class SpamFraudUseCasesTest {
         }
 
     @Test
+    fun `stop trusting removes the sender in whatever form it was stored`() =
+        runTest {
+            // Given
+            val repository = FakeTrustedSenderRepository(setOf("910000000", friend))
+
+            // When
+            UntrustSendersUseCase(repository)(listOf(stranger))
+
+            // Then
+            assertEquals(setOf(friend), repository.get())
+        }
+
+    @Test
+    fun `finds which people of a conversation are trusted`() {
+        assertEquals(listOf(stranger), GetTrustedAmongUseCase()(listOf(stranger, friend), setOf("910000000")))
+    }
+
+    @Test
     fun `a contact's scam-looking message is not flagged`() =
         runTest {
             val useCase = AssessConversationRiskUseCase(SpamFraudDetector(), FakeContactNameResolver(mapOf(friend to "Ana")))

@@ -53,6 +53,46 @@ class MessageLinksTest {
     }
 
     @Test
+    fun `a huge dotted run does not exhaust the regex stack`() {
+        // 100k characters of `a.a.a...`: on one regex pass this overflows the backtracking stack.
+        val attack = "a.".repeat(50_000) + "1"
+        assertEquals(emptyList<String>(), urls(attack))
+        assertEquals(listOf("https://x.com"), urls("$attack x.com"))
+    }
+
+    @Test
+    fun `tokens longer than the limit are never links`() {
+        val long = "https://example.com/" + "a".repeat(MessageLinks.MAX_TOKEN_LENGTH)
+        assertEquals(emptyList<String>(), urls(long))
+    }
+
+    @Test
+    fun `at most MAX_LINKS links are returned`() {
+        assertEquals(MessageLinks.MAX_LINKS, MessageLinks.find("x.co ".repeat(500)).size)
+    }
+
+    @Test
+    fun `every link opens as http or https`() {
+        assertEquals(listOf("https://com.example.app:1/x://y"), urls("tap com.example.app:1/x://y"))
+        assertEquals(listOf("https://Example.com/A"), urls("HTTPS://Example.com/A"))
+    }
+
+    @Test
+    fun `a backslash ends the host as in browsers`() {
+        assertEquals("evil.net", MessageLinks.hostOf("https://evil.net\\.bank.com/x"))
+    }
+
+    @Test
+    fun `disguised links are obfuscated`() {
+        fun obfuscated(text: String) = MessageLinks.isObfuscated(MessageLinks.find(text).single())
+        assertTrue(obfuscated("https://p\u0430ypal.com/login"))
+        assertTrue(obfuscated("https://bit%2Ely/x"))
+        assertTrue(obfuscated("https://evil.net\\.bank.com/x"))
+        assertTrue(obfuscated("https://bank.com\u202Eevil.net"))
+        assertFalse(obfuscated("https://www.paypal.com/login"))
+    }
+
+    @Test
     fun `no links in plain text`() {
         assertEquals(emptyList<String>(), urls("Olá! Chego às 19h, até já."))
     }

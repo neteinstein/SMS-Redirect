@@ -128,6 +128,7 @@ import com.neteinstein.smsredirect.domain.usecase.ShouldSendKeepAliveReminderUse
 import com.neteinstein.smsredirect.domain.usecase.ShouldShowUnusedAppInfoUseCase
 import com.neteinstein.smsredirect.domain.usecase.TriggerPhoneActionsUseCase
 import com.neteinstein.smsredirect.domain.usecase.TrustSendersUseCase
+import com.neteinstein.smsredirect.domain.usecase.UntrustSendersUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateMessagingSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateScheduledSmsUseCase
@@ -359,6 +360,7 @@ class SmsRedirectApplication : Application() {
                 assessConversationRiskUseCase = AssessConversationRiskUseCase(spamFraudDetector, contactNameResolver),
                 observeTrustedSendersUseCase = ObserveTrustedSendersUseCase(trustedSenderRepository),
                 trustSendersUseCase = TrustSendersUseCase(trustedSenderRepository),
+                untrustSendersUseCase = UntrustSendersUseCase(trustedSenderRepository),
                 keepAliveReminderScheduler = WorkManagerKeepAliveReminderScheduler(this),
                 shouldSendKeepAliveReminderUseCase = ShouldSendKeepAliveReminderUseCase(unusedAppRestrictionChecker),
                 shouldShowUnusedAppInfoUseCase =
@@ -458,6 +460,7 @@ data class AppContainer(
     val assessConversationRiskUseCase: AssessConversationRiskUseCase,
     val observeTrustedSendersUseCase: ObserveTrustedSendersUseCase,
     val trustSendersUseCase: TrustSendersUseCase,
+    val untrustSendersUseCase: UntrustSendersUseCase,
     val keepAliveReminderScheduler: KeepAliveReminderScheduler,
     val shouldSendKeepAliveReminderUseCase: ShouldSendKeepAliveReminderUseCase,
     val shouldShowUnusedAppInfoUseCase: ShouldShowUnusedAppInfoUseCase,
