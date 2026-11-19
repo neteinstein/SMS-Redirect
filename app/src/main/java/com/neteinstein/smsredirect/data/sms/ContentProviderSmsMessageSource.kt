@@ -144,7 +144,7 @@ class ContentProviderSmsMessageSource(
             contentResolver.query(Telephony.Sms.CONTENT_URI, projection, queryArgs, null)
         } catch (e: SecurityException) {
             // READ_SMS not granted. Return nothing so the worker no-ops instead of crashing.
-            Log.w(TAG, "SMS provider query denied", e)
+            Log.w(TAG, "SMS provider query denied: ${e.javaClass.simpleName}")
             null
         }
 

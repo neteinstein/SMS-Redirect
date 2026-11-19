@@ -96,7 +96,7 @@ class BackupSmsWorker(
         } catch (e: Exception) {
             // Unlike SmsForwarder, this does not swallow the failure: retry/backoff only works
             // if the worker actually reports one.
-            Log.w(TAG, "Backup run failed", e)
+            Log.w(TAG, "Backup run failed: ${e.javaClass.simpleName}")
             container.crashReporter.recordException(e)
             BackupNotifications.cancelProgress(applicationContext)
             if (runAttemptCount >= MAX_ATTEMPTS) Result.failure() else Result.retry()

@@ -36,7 +36,7 @@ class SmsReceiver : BroadcastReceiver() {
         val sender = messages.first().originatingAddress
         val body = messages.joinToString(separator = "") { it.messageBody.orEmpty() }
 
-        Log.i(TAG, "SMS received from='$sender', bodyLength=${body.length}")
+        Log.i(TAG, "SMS received — hasSender=${!sender.isNullOrBlank()}, bodyLength=${body.length}")
 
         val container = (context.applicationContext as SmsRedirectApplication).appContainer
         if (container.features.forwarding) {
@@ -50,7 +50,7 @@ class SmsReceiver : BroadcastReceiver() {
                     val scheduled = container.triggerPhoneActionsUseCase(sender, body)
                     if (scheduled > 0) Log.i(TAG, "Scheduled $scheduled phone action(s)")
                 } catch (e: Exception) {
-                    Log.e(TAG, "Could not match phone-action rules", e)
+                    Log.e(TAG, "Could not match phone-action rules: ${e.javaClass.simpleName}")
                 } finally {
                     pending.finish()
                 }

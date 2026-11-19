@@ -104,7 +104,7 @@ class RestoreSmsWorker(
             }
         } catch (e: Exception) {
             // Reported, not swallowed (unlike SmsForwarder), so retry/backoff actually works.
-            Log.w(TAG, "Restore run failed", e)
+            Log.w(TAG, "Restore run failed: ${e.javaClass.simpleName}")
             container.crashReporter.recordException(e)
             BackupNotifications.cancelRestoreProgress(applicationContext)
             if (attempt >= MAX_ATTEMPTS) fail(SmsRestoreFailure.NETWORK) else Result.retry()

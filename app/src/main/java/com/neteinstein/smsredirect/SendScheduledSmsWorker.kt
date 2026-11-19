@@ -37,7 +37,7 @@ class SendScheduledSmsWorker(
             app.appContainer.scheduledSmsSender.send(applicationContext, id)
             Result.success()
         } catch (e: Exception) {
-            Log.e(TAG, "Error sending scheduled SMS", e)
+            Log.e(TAG, "Error sending scheduled SMS id=$id: ${e.javaClass.simpleName}")
             Result.retry()
         }
     }
