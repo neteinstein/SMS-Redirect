@@ -160,8 +160,9 @@ that one is `video/sms-toolbox-demo.mp4` and has to show the permission flow.
 
 ## ⚠️ Before this can go live: the SMS permissions declaration
 
-The Play build requests `READ_SMS`, `RECEIVE_SMS`, `SEND_SMS`, `RECEIVE_MMS` and
-`RECEIVE_WAP_PUSH`. Play Console blocks publishing until you complete **App content >
+The Play build requests `READ_SMS`, `RECEIVE_SMS`, `SEND_SMS`, `RECEIVE_MMS`,
+`RECEIVE_WAP_PUSH` and `READ_CELL_BROADCASTS` (granted only with the default SMS role;
+Android needs it to recognize the role holder as the default SMS app). Play Console blocks publishing until you complete **App content >
 Sensitive app permissions > Permissions declaration form** and justify them under
 one of Google's permitted core uses.
 

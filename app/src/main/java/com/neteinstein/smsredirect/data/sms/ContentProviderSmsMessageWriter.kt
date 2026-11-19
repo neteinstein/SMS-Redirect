@@ -1,5 +1,6 @@
 package com.neteinstein.smsredirect.data.sms
 
+import android.app.role.RoleManager
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
@@ -15,10 +16,25 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+/**
+ * Asks [RoleManager] whether this app holds the SMS role -- the source of truth since Android 10.
+ *
+ * `Telephony.Sms.getDefaultSmsPackage()` is only a fallback: called from the role holder's own
+ * process it returns null whenever one of the app ops reserved for the default SMS app
+ * (`WRITE_SMS`, `READ_CELL_BROADCASTS`) is not allowed, and the app cannot fix that itself. On
+ * Android 15 and later, `READ_CELL_BROADCASTS` stays denied unless the manifest declares that
+ * permission, so an app relying on it alone never sees itself as the default SMS app.
+ */
 class AndroidDefaultSmsAppChecker(
     private val context: Context,
 ) : DefaultSmsAppChecker {
-    override fun isDefaultSmsApp(): Boolean = Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
+    override fun isDefaultSmsApp(): Boolean {
+        val roleManager = context.getSystemService(RoleManager::class.java)
+        if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_SMS)) {
+            return roleManager.isRoleHeld(RoleManager.ROLE_SMS)
+        }
+        return Telephony.Sms.getDefaultSmsPackage(context) == context.packageName
+    }
 }
 
 /**

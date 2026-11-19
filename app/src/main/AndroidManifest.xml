@@ -15,6 +15,12 @@
         tools:ignore="SmsAndCallLogPolicy" />
     <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH"
         tools:ignore="SmsAndCallLogPolicy" />
+    <!-- Part of the SMS permission set the default SMS role grants. Android checks its app op
+         when it decides whether the role holder really is the default SMS app: undeclared, the
+         op stays denied and Telephony.Sms.getDefaultSmsPackage() returns null to this app even
+         while it holds the role. Not used to read cell broadcasts. -->
+    <uses-permission android:name="android.permission.READ_CELL_BROADCASTS"
+        tools:ignore="SmsAndCallLogPolicy,ProtectedPermissions" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <!-- Gmail SMS backup connects directly to imap.gmail.com. Both of these otherwise
          arrive only via manifest merge from the Firebase and WorkManager AARs; declaring
