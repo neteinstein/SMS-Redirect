@@ -1,1 +1,1 @@
-SMS & MMS messaging app, with Gmail backup, restore, redirect and scheduling.
+SMS & MMS messaging app, with Gmail backup, restore, automations and scheduling.

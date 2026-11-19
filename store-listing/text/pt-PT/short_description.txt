@@ -1,1 +1,1 @@
-App de mensagens SMS e MMS, com cópia no Gmail, restauro, reencaminhar, agendar.
+App de mensagens SMS e MMS, com cópia no Gmail, restauro, automatizar, agendar.

@@ -227,8 +227,8 @@ function topBar(title, actions = [], back = false, sub = "") {
   return `<div class="topbar ${back ? "back" : ""}">${back ? `<div class="ib on">${ic("arrow_back")}</div>` : ""}<h1>${title}${sub ? `<small>${sub}</small>` : ""}</h1>${actions.map(a => `<div class="ib">${ic(a)}</div>`).join("")}</div>`;
 }
 // MainTab, in display order. Messages first: it is the declared core use case and the landing tab.
-const TABS = ["chat", "forward", "schedule", "backup", "restore"];
-const TAB = { messages: 0, redirect: 1, schedule: 2, backup: 3, restore: 4 };
+const TABS = ["chat", "auto_mode", "schedule", "backup", "restore"]; // Automate is MainTab.REDIRECT (Icons.Default.AutoMode)
+const TAB = { messages: 0, automate: 1, schedule: 2, backup: 3, restore: 4 };
 function navBar(sel, fab) {
   // MainBottomBar shows the selected tab's label only when there is room; with all five tabs
   // and the FAB on a phone there is not, so every tab is drawn as its icon.
@@ -278,15 +278,16 @@ const SCREENS = {
     </div>`,
     { nav: TAB.restore, title: "Restore from Gmail", actions: ["settings"], flush: true }),
 
+  // Automate tab: HomeScreen ("Automations"), redirect rules and a phone-action rule.
   rules: () => app(`
     ${catHead("Work", "2 rules", 0)}
-    ${ruleCard("Work OTP", "WorkBank", "Me (+351 912 345 ***)", 0, true)}
+    ${ruleCard("Work OTP", "WorkBank", "Me (+351 912 345 ***)", 0)}
     ${ruleCard("Delivery codes", "DHL", "Me (+351 912 345 ***)", 0)}
     ${catHead("Family", "1 rule", 1)}
-    ${ruleCard("Mom's phone", "Mom (+351 933 111 ***)", "Ana (+351 961 222 ***)", 1)}
+    ${actionCard("Mom calling for help", "Mom (+351 933 111 ***)", "urgent", "Ring at maximum volume", 1)}
     ${catHead("Alerts", "1 rule", 4)}
     ${ruleCard("Power outage", "EDP", "+351 960 123 456", 4)}`,
-    { nav: 1, title: "Redirect Rules", actions: ["history", "settings"], fab: true }),
+    { nav: TAB.automate, title: "Automations", actions: ["history", "settings"], fab: true }),
 
   ruleForm: () => app(`
     ${tf("Rule Name", "Work OTP")}
@@ -401,6 +402,11 @@ function ruleCard(name, sender, target, a, hl = false) {
   const c = ACCENTS[a];
   return `<div class="rcard ${hl ? "hl" : ""}"><div class="acc" style="background:${c}"></div><div class="in">${ic("folder", "lead", `color:${c}`)}<div style="flex:1;min-width:0"><div class="t">${name}</div><div class="l">Sender: ${sender}</div><div class="l">Target: ${target}</div></div><div class="trail">${ic("drag_handle")}<div class="ib">${ic("delete")}</div></div></div></div>`;
 }
+// A phone-action rule card: sender, "Message contains" and the action instead of a target.
+function actionCard(name, sender, text, action, a) {
+  const c = ACCENTS[a];
+  return `<div class="rcard"><div class="acc" style="background:${c}"></div><div class="in">${ic("folder", "lead", `color:${c}`)}<div style="flex:1;min-width:0"><div class="t">${name}</div><div class="l">Sender: ${sender}</div><div class="l">Message contains: “${text}”</div><div class="l">Action: ${action}</div></div><div class="trail">${ic("drag_handle")}<div class="ib">${ic("delete")}</div></div></div></div>`;
+}
 function schedCard(name, contact, next, repeat, a) {
   const c = ACCENTS[a];
   return `<div class="rcard"><div class="acc" style="background:${c}"></div><div class="in">${ic("schedule", "lead", `color:${c}`)}<div style="flex:1;min-width:0"><div class="t">${name}</div><div class="l">Contact: ${contact}</div><div class="l">Next send: ${next}</div><div class="l">Repeat: ${repeat}</div></div><div class="trail">${ic("drag_handle")}<div class="ib">${ic("delete")}</div></div></div></div>`;
@@ -462,11 +468,11 @@ const SHOTS = [
       [F.stat("2176", "messages restored so far", "#188038"), { phone: { x: 30, y: 1120, w: 280, rot: -3 }, tablet: { x: 800, y: 640, w: 280, rot: -3 } }],
       [F.chip("done_all", "Already on the phone? Skipped.", "#188038"), { phone: { x: 360, y: 1420, w: 0, rot: 2 }, tablet: { x: 1360, y: 760, w: 0, rot: 2 } }],
     ] },
-  { key: "05-redirect", eye: ["forward", "Redirect", "#EA4335"], head: "Forward the texts <em>that matter</em>", sub: "Rules by sender or number pass them on to another phone.",
+  { key: "05-automate", eye: ["auto_mode", "Automate", "#EA4335"], head: "Texts that <em>take action</em>", sub: "Forward them to another phone, or ring at full volume, even on silent.",
     glow: ["#1A73E8", "#EA4335"], screen: () => SCREENS.rules(),
     floats: [
-      [F.chip("forward", "WorkBank → +351 912 345 678", "#1A73E8"), { phone: { x: 40, y: 1505, w: 0, rot: -2 }, tablet: { x: 780, y: 780, w: 0, rot: -2 } }],
-      [F.chip("check", "First matching rule wins", "#34A853"), { phone: { x: 480, y: 1595, w: 0, rot: 2 }, tablet: { x: 1450, y: 420, w: 0, rot: 3 } }],
+      [F.chip("forward", "WorkBank → +351 912 345 678", "#1A73E8"), { phone: { x: 40, y: 1530, w: 0, rot: -2 }, tablet: { x: 780, y: 780, w: 0, rot: -2 } }],
+      [F.chip("notifications_active", "Mom: “urgent” → ring at max volume", "#EA4335"), { phone: { x: 230, y: 1375, w: 0, rot: 2 }, tablet: { x: 1380, y: 420, w: 0, rot: 3 } }],
     ] },
   { key: "06-schedule", eye: ["schedule", "Schedule", "#E37400"], head: "Write it now, <em>send it later</em>", sub: "Once, daily, on work days, monthly or yearly.",
     glow: ["#F9AB00", "#9334E6"], screen: () => SCREENS.scheduleList(),
@@ -570,7 +576,7 @@ function renderFeature() {
     `<div class="copy" style="left:64px;top:84px;width:470px">
       <div style="display:flex;align-items:center;gap:22px">${appIcon(96)}<div class="headline" style="font-size:58px">SMS Toolbox</div></div>
       <div class="headline" style="font-size:40px;margin-top:30px;line-height:1.12">Your SMS &amp; MMS app, <em>with Gmail backup</em></div>
-      <div class="sub" style="font-size:21px;margin-top:18px">Plus restore, redirect and schedule. No account, no server.</div>
+      <div class="sub" style="font-size:21px;margin-top:18px">Plus restore, automations and scheduling. No account, no server.</div>
     </div>` +
     device(SCREENS.conversation(), { x: 560, y: 70, scale: 0.53, rot: -6 }) +
     device(SCREENS.messages(), { x: 760, y: 40, scale: 0.56, rot: 5 });

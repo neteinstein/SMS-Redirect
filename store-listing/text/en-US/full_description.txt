@@ -1,4 +1,4 @@
-SMS Toolbox is a messaging app for your text messages. Set it as your default SMS app to send and receive SMS and MMS, and get a toolbox around them: back up to your own Gmail, restore on a new phone, redirect and schedule. No account to create, and no server of ours in between.
+SMS Toolbox is a messaging app for your text messages. Set it as your default SMS app to send and receive SMS and MMS, and get a toolbox around them: back up to your own Gmail, restore on a new phone, automate and schedule. No account to create, and no server of ours in between.
 
 SEND AND RECEIVE SMS AND MMS
 • All your conversations in one list, newest first, with contact names and unread markers
@@ -10,9 +10,10 @@ SEND AND RECEIVE SMS AND MMS
 • Failed messages are marked, and can be sent again with a tap
 • Optional delivery reports for SMS and MMS, and MMS read reports
 
-REDIRECT
-• Forward incoming SMS that match your rules (by sender or number) to another phone
-• Rules in the order you choose, optional prefix, and a forward history
+AUTOMATE
+• Redirect: forward incoming SMS that match your rules (by sender or number) to another phone, with an optional prefix and a forward history
+• Phone actions: when a text from a sender, or containing words you choose, arrives, ring at maximum volume (even on silent), vibrate or change the sound mode
+• Rules grouped by category, in the order you choose
 
 SCHEDULE
 • Write a message once and have it sent later: once, daily, on work days, every two weeks, monthly or yearly
@@ -34,6 +35,6 @@ PRIVATE BY DESIGN
 • Fully open source: github.com/neteinstein/SMS-Redirect
 
 PERMISSIONS, EXPLAINED
-SMS Toolbox first asks to become your default SMS app; Android then gives it access to your SMS and MMS, which it needs to show, send and receive them. Prefer to keep your current messaging app? Redirect, Schedule and Backup still work with SMS permissions only; Messages and Restore stay disabled until SMS Toolbox is your default SMS app. Contacts: show names instead of numbers. Notifications: new messages, backup and restore progress. Battery exemption: deliver, forward and send scheduled messages on time. Internet: reach Gmail when backup is on.
+SMS Toolbox first asks to become your default SMS app; Android then gives it access to your SMS and MMS, which it needs to show, send and receive them. Prefer to keep your current messaging app? Automate, Schedule and Backup still work with SMS permissions only; Messages and Restore stay disabled until SMS Toolbox is your default SMS app. Contacts: show names instead of numbers. Notifications: new messages, backup and restore progress. Do Not Disturb access (only if you ask for it): let a phone-action rule switch the sound mode. Battery exemption: deliver, forward and send scheduled messages on time. Internet: reach Gmail when backup is on.
 
 Questions or feedback? Email play-store-neteinstein@googlegroups.com or open an issue on GitHub.

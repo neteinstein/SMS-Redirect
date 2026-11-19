@@ -1,3 +1,3 @@
 • SMS Toolbox is now a full messaging app: send and receive SMS, picture messages (MMS) and group messages, with notifications and quick reply.
 • Make it your default SMS app from the new Messages tab.
-• Tabs: Messages, Redirect, Schedule, Backup and Restore. Gmail backup and restore work as before, and your settings are kept.
+• Tabs: Messages, Automate, Schedule, Backup and Restore. Automate forwards texts or rings, vibrates or changes the sound mode when a matching text arrives. Gmail backup and restore work as before, and your settings are kept.

@@ -1,4 +1,4 @@
-O SMS Toolbox é uma app de mensagens para as suas SMS. Defina-a como a sua app de SMS predefinida para enviar e receber SMS e MMS e tenha à volta delas uma caixa de ferramentas: cópia de segurança no seu próprio Gmail, restauro num telemóvel novo, reencaminhamento e agendamento. Sem conta para criar e sem nenhum servidor nosso pelo meio.
+O SMS Toolbox é uma app de mensagens para as suas SMS. Defina-a como a sua app de SMS predefinida para enviar e receber SMS e MMS e tenha à volta delas uma caixa de ferramentas: cópia de segurança no seu próprio Gmail, restauro num telemóvel novo, automatizações e agendamento. Sem conta para criar e sem nenhum servidor nosso pelo meio.
 
 ENVIAR E RECEBER SMS E MMS
 • Todas as suas conversas numa lista, as mais recentes primeiro, com nomes dos contactos e marcas de não lidas
@@ -10,9 +10,10 @@ ENVIAR E RECEBER SMS E MMS
 • As mensagens que falham ficam assinaladas e podem ser reenviadas com um toque
 • Relatórios de entrega opcionais para SMS e MMS, e confirmações de leitura de MMS
 
-REENCAMINHAR
-• Reencaminhe para outro telemóvel as SMS recebidas que correspondam às suas regras (por remetente ou número)
-• Regras pela ordem que escolher, prefixo opcional e histórico de reencaminhamentos
+AUTOMATIZAR
+• Reencaminhar: envie para outro telemóvel as SMS recebidas que correspondam às suas regras (por remetente ou número), com prefixo opcional e histórico de reencaminhamentos
+• Ações no telemóvel: quando chega uma SMS de um remetente, ou com as palavras que escolher, tocar no volume máximo (mesmo em silêncio), vibrar ou mudar o modo de som
+• Regras agrupadas por categoria, pela ordem que escolher
 
 AGENDAR
 • Escreva uma mensagem uma vez e ela é enviada mais tarde: uma vez, diariamente, em dias úteis, de duas em duas semanas, mensal ou anualmente
@@ -34,6 +35,6 @@ PRIVADA DE RAIZ
 • Totalmente open source: github.com/neteinstein/SMS-Redirect
 
 PERMISSÕES, EXPLICADAS
-O SMS Toolbox pede primeiro para ser a sua app de SMS predefinida; o Android dá-lhe então acesso às suas SMS e MMS, de que precisa para as mostrar, enviar e receber. Prefere manter a sua app de mensagens atual? Reencaminhar, Agendar e Cópia continuam a funcionar só com permissões de SMS; as Mensagens e o Restauro ficam desativados até o SMS Toolbox ser a sua app de SMS predefinida. Contactos: mostrar nomes em vez de números. Notificações: novas mensagens e progresso da cópia e do restauro. Isenção de bateria: entregar, reencaminhar e enviar mensagens agendadas a horas. Internet: aceder ao Gmail quando a cópia está ligada.
+O SMS Toolbox pede primeiro para ser a sua app de SMS predefinida; o Android dá-lhe então acesso às suas SMS e MMS, de que precisa para as mostrar, enviar e receber. Prefere manter a sua app de mensagens atual? Automatizar, Agendar e Backup continuam a funcionar só com permissões de SMS; as Mensagens e o Restauro ficam desativados até o SMS Toolbox ser a sua app de SMS predefinida. Contactos: mostrar nomes em vez de números. Notificações: novas mensagens e progresso da cópia e do restauro. Acesso ao modo Não incomodar (só se o pedir): permitir que uma regra de ação mude o modo de som. Isenção de bateria: entregar, reencaminhar e enviar mensagens agendadas a horas. Internet: aceder ao Gmail quando a cópia está ligada.
 
 Perguntas ou sugestões? Envie um email para play-store-neteinstein@googlegroups.com ou abra um issue no GitHub.
