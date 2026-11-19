@@ -97,7 +97,7 @@ class ScheduledSmsSender(
                     smsManager.sendMultipartTextMessage(scheduledSms.contactNumber, null, parts, null, null)
                 }
             }
-            Log.i(TAG, "Scheduled SMS sent successfully to '${scheduledSms.contactNumber}'")
+            Log.i(TAG, "Scheduled SMS id=${scheduledSms.id} sent successfully")
             analyticsTracker.logEvent(
                 AnalyticsEvents.SCHEDULED_SMS_SENT,
                 mapOf(
@@ -124,7 +124,7 @@ class ScheduledSmsSender(
                 Log.d(TAG, "Keep schedule history disabled, skipping history record")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to send scheduled SMS to '${scheduledSms.contactNumber}'", e)
+            Log.e(TAG, "Failed to send scheduled SMS id=${scheduledSms.id}: ${e.javaClass.simpleName}")
             crashReporter.recordException(e)
             analyticsTracker.logEvent(
                 AnalyticsEvents.SCHEDULED_SMS_SENT,
@@ -209,7 +209,7 @@ class ScheduledSmsSender(
                 .build()
 
         notificationManager.notify(notificationId++, notification)
-        Log.d(TAG, "Notification shown for scheduled SMS sent to $contactDisplay")
+        Log.d(TAG, "Scheduled SMS sent notification shown")
     }
 
     private suspend fun buildContactDisplay(contactNumber: String): String {

@@ -68,7 +68,7 @@ class SmsForwarder(
         sender: String?,
         body: String,
     ) {
-        Log.d(TAG, "forward() called — sender='$sender', bodyLength=${body.length}")
+        Log.d(TAG, "forward() called — hasSender=${!sender.isNullOrBlank()}, bodyLength=${body.length}")
 
         if (body.isBlank()) {
             Log.w(TAG, "Skipping: body is blank")
@@ -93,11 +93,11 @@ class SmsForwarder(
 
         val rule = findMatchingRuleUseCase(sender)
         if (rule == null) {
-            Log.i(TAG, "Skipping: no matching rule found for sender='$sender'")
+            Log.i(TAG, "Skipping: no matching rule found")
             return
         }
 
-        Log.i(TAG, "Matched rule id=${rule.id} name='${rule.name}' — forwarding to '${rule.targetNumber}'")
+        Log.i(TAG, "Matched rule id=${rule.id} — forwarding")
 
         val dedupKey = "${rule.targetNumber}:${body.hashCode()}"
         val now = System.currentTimeMillis()
@@ -136,7 +136,7 @@ class SmsForwarder(
                     smsManager.sendMultipartTextMessage(rule.targetNumber, null, parts, null, null)
                 }
             }
-            Log.i(TAG, "SMS forwarded successfully to '${rule.targetNumber}'")
+            Log.i(TAG, "SMS forwarded successfully by rule id=${rule.id}")
             analyticsTracker.logEvent(
                 AnalyticsEvents.SMS_FORWARDED,
                 mapOf(AnalyticsEvents.Param.SUCCESS to true),
@@ -159,7 +159,7 @@ class SmsForwarder(
                 Log.d(TAG, "Keep history disabled, skipping history record")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to send SMS to '${rule.targetNumber}'", e)
+            Log.e(TAG, "Failed to forward SMS by rule id=${rule.id}: ${e.javaClass.simpleName}")
             crashReporter.recordException(e)
             analyticsTracker.logEvent(
                 AnalyticsEvents.SMS_FORWARDED,
@@ -234,7 +234,7 @@ class SmsForwarder(
                 .build()
 
         notificationManager.notify(notificationId++, notification)
-        Log.d(TAG, "Notification shown for redirect to $contactDisplay via rule '$ruleName'")
+        Log.d(TAG, "Forward notification shown")
     }
 
     private suspend fun buildContactDisplay(targetNumber: String): String {

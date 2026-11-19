@@ -45,7 +45,7 @@ class ForwardSmsWorker(
                     request,
                 )
 
-            Log.d(TAG, "Enqueued forwarding work for sender='$sender'")
+            Log.d(TAG, "Enqueued forwarding work")
         }
     }
 
@@ -53,7 +53,7 @@ class ForwardSmsWorker(
         val sender = inputData.getString(KEY_SENDER)
         val body = inputData.getString(KEY_BODY).orEmpty()
 
-        Log.d(TAG, "doWork() — sender='$sender', bodyLength=${body.length}")
+        Log.d(TAG, "doWork() — hasSender=${!sender.isNullOrBlank()}, bodyLength=${body.length}")
 
         if (body.isBlank()) {
             Log.w(TAG, "Skipping: body is blank")
@@ -65,7 +65,7 @@ class ForwardSmsWorker(
             app.appContainer.smsForwarder.forward(applicationContext, sender, body)
             Result.success()
         } catch (e: Exception) {
-            Log.e(TAG, "Error during SMS forwarding", e)
+            Log.e(TAG, "Error during SMS forwarding: ${e.javaClass.simpleName}")
             Result.retry()
         }
     }

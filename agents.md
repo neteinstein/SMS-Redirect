@@ -239,6 +239,13 @@ Both must pass before merging. Always run these locally before pushing.
   Every codec change needs a round-trip test in `MmsPduTest`.
 - **`SmsForwarder` swallows exceptions**, which is why `ForwardSmsWorker`'s `Result.retry()` is
   effectively dead for send failures. Do not copy that pattern; new workers must report failures.
+- **Logs must never contain phone numbers or message content.** Logcat is readable over adb and
+  ends up in bug reports, and the release build keeps `Log.d/i`. No `Log.*` call may interpolate
+  a sender, recipient or rule target number, a contact or rule/schedule name, a message body or
+  an email address. Log ids (rule id, scheduled SMS id), lengths, counts and outcomes instead.
+  In code that handles numbers, messages or mail, log `e.javaClass.simpleName`, never `e.message`
+  and never the throwable itself (`Log.w(TAG, msg, e)` prints the message, which can echo an
+  address).
 
 ## Important Notes
 

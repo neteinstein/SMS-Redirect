@@ -67,7 +67,7 @@ class ContentProviderSmsMessageWriter(
                         null,
                     )
                 } catch (e: SecurityException) {
-                    Log.w(TAG, "SMS provider query denied", e)
+                    Log.w(TAG, "SMS provider query denied: ${e.javaClass.simpleName}")
                     null
                 } ?: return@withContext emptyList()
             cursor.use { readStored(it) }
@@ -97,11 +97,11 @@ class ContentProviderSmsMessageWriter(
             try {
                 contentResolver.insert(Telephony.Sms.CONTENT_URI, values) != null
             } catch (e: SecurityException) {
-                Log.w(TAG, "SMS provider insert denied", e)
+                Log.w(TAG, "SMS provider insert denied: ${e.javaClass.simpleName}")
                 false
             } catch (e: IllegalArgumentException) {
                 // OEM providers reject rows they consider malformed; never fatal for a restore.
-                Log.w(TAG, "SMS provider rejected a row", e)
+                Log.w(TAG, "SMS provider rejected a row: ${e.javaClass.simpleName}")
                 false
             }
         }
