@@ -147,6 +147,7 @@ Each permission is requested only when a feature needs it, and none of them give
 | `READ_SMS` / `RECEIVE_SMS` | Granted with the default SMS app role, or asked for on its own when you first use Automate, Schedule or Backup: in the Google Play version only if you declined the role, in the GitHub version directly. Show your conversations, receive new messages, back them up to Gmail, and check them against your automation rules |
 | `SEND_SMS` | Send the messages you write, forward and schedule |
 | `RECEIVE_MMS` / `RECEIVE_WAP_PUSH` | Receive picture and group messages (MMS) |
+| `READ_CELL_BROADCASTS` | Granted only with the default SMS app role. Android checks it to confirm that the App really is your default SMS app; the App does not read cell broadcasts (emergency alerts) |
 | `VIBRATE` | Vibrate when a phone-action rule asks for it |
 | `MODIFY_AUDIO_SETTINGS` | Raise the alarm volume for a ring and put it back afterwards, and change the sound mode when a rule asks for it |
 | Do Not Disturb access (`ACCESS_NOTIFICATION_POLICY`) | Only if you create a rule that changes the sound mode, and only after you allow it in Android's settings: switch the ringer to or from silent |

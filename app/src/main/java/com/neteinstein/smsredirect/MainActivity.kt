@@ -265,6 +265,12 @@ class MainActivity : ComponentActivity() {
                 val isDefaultSmsApp =
                     remember(appResumeTick, roleCheckTick) { defaultSmsAppChecker.isDefaultSmsApp() }
                 val hasSmsAccessForTools = remember(appResumeTick, roleCheckTick) { hasToolSmsPermissions() }
+                // Holding the role means the user accepted it, so the role is offered again first if
+                // it is ever lost. Earlier builds could not see a role they held and recorded every
+                // acceptance as a decline.
+                LaunchedEffect(isDefaultSmsApp) {
+                    if (isDefaultSmsApp) clearDeclinedDefaultSmsRole()
+                }
 
                 val runPendingSmsAction = {
                     val action = pendingSmsAction
@@ -1619,6 +1625,10 @@ class MainActivity : ComponentActivity() {
 
     private fun markDeclinedDefaultSmsRole() {
         getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit { putBoolean(KEY_DEFAULT_SMS_DECLINED, true) }
+    }
+
+    private fun clearDeclinedDefaultSmsRole() {
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit { remove(KEY_DEFAULT_SMS_DECLINED) }
     }
 
     /** Number and display name of a row picked from ACTION_PICK on phone numbers. */

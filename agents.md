@@ -181,6 +181,13 @@ Both must pass before merging. Always run these locally before pushing.
   analytics on message content, or ads, and do not add a library that declares SMS permissions.
   Keep the four default-SMS components (`SMS_DELIVER`, `WAP_PUSH_DELIVER`, `SENDTO`,
   `RESPOND_VIA_MESSAGE`) working: `release.yml` fails the Play release without them.
+- **Ask `RoleManager` whether the app is the default SMS app, and keep `READ_CELL_BROADCASTS`
+  declared.** Called from the role holder's own process, `Telephony.Sms.getDefaultSmsPackage()`
+  returns null while the `READ_CELL_BROADCASTS` app op is denied, and Android (15+, at least)
+  keeps that op denied unless the permission is declared. Without both, the app holds the role
+  yet tells the user it is not the default SMS app, in a loop: Play review rejected it for that.
+  `READ_CELL_BROADCASTS` comes only with the role: never request it at runtime, and never add it
+  to `smsPermissions` / `toolSmsPermissions`.
 - **The Play build must never self-update.** `REQUEST_INSTALL_PACKAGES` lives in
   `app/src/github/AndroidManifest.xml`, the play manifest removes it as a guard, and
   `release.yml` fails if the Play bundle's merged manifest has it. Gate features through
