@@ -362,6 +362,18 @@
     <string name="conversation_mms_downloading">Downloading picture message…</string>
     <string name="conversation_mms_download">Download</string>
     <string name="conversation_mms_download_failed">The picture message could not be downloaded. Turn on mobile data and try again.</string>
+    <!-- Spam / fraud warnings: computed on the device, nothing is sent anywhere. -->
+    <string name="spam_warning_banner">Possible spam or fraud. Links in flagged messages are disabled. Never share codes, passwords or card details.</string>
+    <string name="spam_trust_action">Trust sender</string>
+    <string name="spam_trust_title">Trust %1$s?</string>
+    <string name="spam_trust_message">This message looks like spam or a scam. If you trust the sender, the warning goes away and their links open. Only do this if you know who sent it: sender names and numbers can be faked.</string>
+    <string name="spam_trust_link">The link goes to the site %1$s:\n%2$s</string>
+    <string name="spam_open_once">Open once</string>
+    <string name="spam_stop_trusting">Stop trusting this sender</string>
+    <string name="conversation_cd_more">More options</string>
+    <string name="spam_trust_confirm">I trust this sender</string>
+    <string name="spam_trust_and_open">Trust and open</string>
+    <string name="spam_notification_label">Possible spam or fraud</string>
     <string name="settings_receipts_section">Message receipts</string>
     <string name="settings_sms_delivery_reports">SMS delivery reports</string>
     <string name="settings_mms_delivery_reports">MMS delivery reports</string>

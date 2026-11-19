@@ -366,6 +366,18 @@
     <string name="conversation_mms_downloading">A transferir a mensagem com imagem…</string>
     <string name="conversation_mms_download">Transferir</string>
     <string name="conversation_mms_download_failed">Não foi possível transferir a mensagem com imagem. Ative os dados móveis e tente novamente.</string>
+    <!-- Avisos de spam / fraude: calculados no dispositivo, nada é enviado. -->
+    <string name="spam_warning_banner">Possível spam ou fraude. As ligações nas mensagens assinaladas estão desativadas. Nunca partilhe códigos, palavras-passe ou dados do cartão.</string>
+    <string name="spam_trust_action">Confiar</string>
+    <string name="spam_trust_title">Confiar em %1$s?</string>
+    <string name="spam_trust_message">Esta mensagem parece spam ou uma burla. Se confiar no remetente, o aviso desaparece e as ligações passam a abrir. Faça-o apenas se souber quem a enviou: nomes e números de remetentes podem ser falsificados.</string>
+    <string name="spam_trust_link">A ligação abre o site %1$s:\n%2$s</string>
+    <string name="spam_open_once">Abrir só esta vez</string>
+    <string name="spam_stop_trusting">Deixar de confiar neste remetente</string>
+    <string name="conversation_cd_more">Mais opções</string>
+    <string name="spam_trust_confirm">Confio neste remetente</string>
+    <string name="spam_trust_and_open">Confiar e abrir</string>
+    <string name="spam_notification_label">Possível spam ou fraude</string>
     <string name="settings_receipts_section">Confirmações de mensagens</string>
     <string name="settings_sms_delivery_reports">Relatórios de entrega de SMS</string>
     <string name="settings_mms_delivery_reports">Relatórios de entrega de MMS</string>

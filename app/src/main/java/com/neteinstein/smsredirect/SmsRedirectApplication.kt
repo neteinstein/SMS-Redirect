@@ -21,6 +21,7 @@ import com.neteinstein.smsredirect.data.repository.ScheduledSmsRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.SettingsRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.SharedPreferencesKeepAliveReminderRepository
 import com.neteinstein.smsredirect.data.repository.SharedPreferencesMessagingSettingsRepository
+import com.neteinstein.smsredirect.data.repository.SharedPreferencesTrustedSenderRepository
 import com.neteinstein.smsredirect.data.repository.SmsBackupSettingsRepositoryImpl
 import com.neteinstein.smsredirect.data.repository.SmsBackupStateRepositoryImpl
 import com.neteinstein.smsredirect.data.scheduling.WorkManagerKeepAliveReminderScheduler
@@ -42,6 +43,7 @@ import com.neteinstein.smsredirect.domain.device.PhoneActionScheduler
 import com.neteinstein.smsredirect.domain.device.SoundModeAccessChecker
 import com.neteinstein.smsredirect.domain.mail.SmsMailFactory
 import com.neteinstein.smsredirect.domain.messaging.MessageStore
+import com.neteinstein.smsredirect.domain.messaging.SpamFraudDetector
 import com.neteinstein.smsredirect.domain.model.AppFeatures
 import com.neteinstein.smsredirect.domain.repository.ForwardHistoryRepository
 import com.neteinstein.smsredirect.domain.repository.RuleRepository
@@ -57,6 +59,8 @@ import com.neteinstein.smsredirect.domain.sms.SmsMessageWriter
 import com.neteinstein.smsredirect.domain.update.AppUpdateInstaller
 import com.neteinstein.smsredirect.domain.usecase.AddRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.AddScheduledSmsUseCase
+import com.neteinstein.smsredirect.domain.usecase.AssessConversationRiskUseCase
+import com.neteinstein.smsredirect.domain.usecase.AssessIncomingMessageUseCase
 import com.neteinstein.smsredirect.domain.usecase.BackupSmsMessageUseCase
 import com.neteinstein.smsredirect.domain.usecase.CanForwardSmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.CheckForAppUpdateUseCase
@@ -101,6 +105,7 @@ import com.neteinstein.smsredirect.domain.usecase.GetSmsBackupSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ImportBackupUseCase
 import com.neteinstein.smsredirect.domain.usecase.MarkConversationReadUseCase
 import com.neteinstein.smsredirect.domain.usecase.MarkUnusedAppInfoShownUseCase
+import com.neteinstein.smsredirect.domain.usecase.ObserveTrustedSendersUseCase
 import com.neteinstein.smsredirect.domain.usecase.RecordForwardHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.RecordScheduledSmsHistoryUseCase
 import com.neteinstein.smsredirect.domain.usecase.ReorderRulesUseCase
@@ -122,6 +127,8 @@ import com.neteinstein.smsredirect.domain.usecase.SetShowNotificationsUseCase
 import com.neteinstein.smsredirect.domain.usecase.ShouldSendKeepAliveReminderUseCase
 import com.neteinstein.smsredirect.domain.usecase.ShouldShowUnusedAppInfoUseCase
 import com.neteinstein.smsredirect.domain.usecase.TriggerPhoneActionsUseCase
+import com.neteinstein.smsredirect.domain.usecase.TrustSendersUseCase
+import com.neteinstein.smsredirect.domain.usecase.UntrustSendersUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateMessagingSettingsUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateRuleUseCase
 import com.neteinstein.smsredirect.domain.usecase.UpdateScheduledSmsUseCase
@@ -179,6 +186,11 @@ class SmsRedirectApplication : Application() {
             SharedPreferencesMessagingSettingsRepository(
                 getSharedPreferences(SharedPreferencesMessagingSettingsRepository.PREFS_NAME, MODE_PRIVATE),
             )
+        val trustedSenderRepository =
+            SharedPreferencesTrustedSenderRepository(
+                getSharedPreferences(SharedPreferencesTrustedSenderRepository.PREFS_NAME, MODE_PRIVATE),
+            )
+        val spamFraudDetector = SpamFraudDetector()
         val messageSender = AndroidMessageSender(this, messageStore, messagingSettingsRepository)
         val mmsDownloader = AndroidMmsDownloader(this, messageStore, messagingSettingsRepository)
         // Send/download PDU files whose platform callback never came (process killed, reboot).
@@ -343,6 +355,12 @@ class SmsRedirectApplication : Application() {
                 deleteMessageUseCase = DeleteMessageUseCase(messageStore),
                 sendMessageUseCase = SendMessageUseCase(messageSender, defaultSmsAppChecker),
                 downloadMmsUseCase = DownloadMmsUseCase(mmsDownloader),
+                assessIncomingMessageUseCase =
+                    AssessIncomingMessageUseCase(spamFraudDetector, trustedSenderRepository, contactNameResolver),
+                assessConversationRiskUseCase = AssessConversationRiskUseCase(spamFraudDetector, contactNameResolver),
+                observeTrustedSendersUseCase = ObserveTrustedSendersUseCase(trustedSenderRepository),
+                trustSendersUseCase = TrustSendersUseCase(trustedSenderRepository),
+                untrustSendersUseCase = UntrustSendersUseCase(trustedSenderRepository),
                 keepAliveReminderScheduler = WorkManagerKeepAliveReminderScheduler(this),
                 shouldSendKeepAliveReminderUseCase = ShouldSendKeepAliveReminderUseCase(unusedAppRestrictionChecker),
                 shouldShowUnusedAppInfoUseCase =
@@ -438,6 +456,11 @@ data class AppContainer(
     val deleteMessageUseCase: DeleteMessageUseCase,
     val sendMessageUseCase: SendMessageUseCase,
     val downloadMmsUseCase: DownloadMmsUseCase,
+    val assessIncomingMessageUseCase: AssessIncomingMessageUseCase,
+    val assessConversationRiskUseCase: AssessConversationRiskUseCase,
+    val observeTrustedSendersUseCase: ObserveTrustedSendersUseCase,
+    val trustSendersUseCase: TrustSendersUseCase,
+    val untrustSendersUseCase: UntrustSendersUseCase,
     val keepAliveReminderScheduler: KeepAliveReminderScheduler,
     val shouldSendKeepAliveReminderUseCase: ShouldSendKeepAliveReminderUseCase,
     val shouldShowUnusedAppInfoUseCase: ShouldShowUnusedAppInfoUseCase,

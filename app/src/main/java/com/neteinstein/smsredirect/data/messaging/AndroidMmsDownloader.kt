@@ -28,6 +28,8 @@ data class IncomingMms(
     val from: String?,
     val text: String,
     val hasAttachment: Boolean,
+    /** Checked with [text] for spam and fraud; a scam's wording is often in the subject. */
+    val subject: String? = null,
 )
 
 /** How a download that reported back ended. */
@@ -193,6 +195,7 @@ class AndroidMmsDownloader(
                         from = message.from,
                         text = message.text,
                         hasAttachment = message.parts.any { !it.isText && !it.isSmil },
+                        subject = message.subject,
                     ),
                 )
             } finally {

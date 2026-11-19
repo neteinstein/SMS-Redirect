@@ -9,21 +9,31 @@ import com.neteinstein.smsredirect.domain.messaging.SendOutcome
 import com.neteinstein.smsredirect.domain.model.ConversationMessage
 import com.neteinstein.smsredirect.domain.model.MessageStatus
 import com.neteinstein.smsredirect.domain.model.OutgoingAttachment
+import com.neteinstein.smsredirect.domain.usecase.AssessConversationRiskUseCase
+import com.neteinstein.smsredirect.domain.usecase.ConversationRisk
 import com.neteinstein.smsredirect.domain.usecase.DeleteMessageUseCase
 import com.neteinstein.smsredirect.domain.usecase.DownloadMmsUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetConversationAddressesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetConversationMessagesUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetOrCreateConversationUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetTrustedAmongUseCase
 import com.neteinstein.smsredirect.domain.usecase.MarkConversationReadUseCase
+import com.neteinstein.smsredirect.domain.usecase.ObserveTrustedSendersUseCase
 import com.neteinstein.smsredirect.domain.usecase.SendMessageUseCase
+import com.neteinstein.smsredirect.domain.usecase.TrustSendersUseCase
+import com.neteinstein.smsredirect.domain.usecase.UntrustSendersUseCase
 import com.neteinstein.smsredirect.domain.usecase.requiresMms
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
@@ -38,6 +48,10 @@ data class ConversationUiState(
     val error: SendFailure? = null,
     /** Set when a "not downloaded" picture message could not start downloading. */
     val downloadFailed: Boolean = false,
+    /** Received messages that look like spam or fraud: warned about, their links disabled. */
+    val risk: ConversationRisk = ConversationRisk.NONE,
+    /** People in this conversation the user trusts: offered "Stop trusting". */
+    val trustedSenders: List<String> = emptyList(),
 ) {
     /** "Ana", "Ana, Rui" or the bare number when there is no contact. */
     val title: String get() = addresses.joinToString(", ") { contactNames[it] ?: it }
@@ -48,6 +62,29 @@ data class ConversationUiState(
 
     /** Shown in the composer so the user knows a picture, group or email message uses MMS. */
     val sendsAsMms: Boolean get() = requiresMms(addresses, attachments.isNotEmpty())
+
+    /**
+     * Whether [message]'s links open. A received message is checked in the background, so until
+     * the latest result covers it its links are [MessageLinkState.PENDING]: shown as plain text.
+     */
+    fun linkStateOf(message: ConversationMessage): MessageLinkState =
+        when {
+            !message.isIncoming -> MessageLinkState.OPEN
+            message.key in risk.flaggedMessageKeys -> MessageLinkState.BLOCKED
+            message.key !in risk.assessedMessageKeys -> MessageLinkState.PENDING
+            else -> MessageLinkState.OPEN
+        }
+}
+
+enum class MessageLinkState {
+    /** Tappable: sent by this phone, or checked and not flagged. */
+    OPEN,
+
+    /** Flagged as spam or fraud: tapping asks whether to trust the sender. */
+    BLOCKED,
+
+    /** Not checked yet: not a link until it is. */
+    PENDING,
 }
 
 /**
@@ -69,6 +106,11 @@ class ConversationViewModel(
     private val deleteMessageUseCase: DeleteMessageUseCase,
     private val contactNameResolver: ContactNameResolver,
     private val downloadMmsUseCase: DownloadMmsUseCase,
+    private val assessConversationRiskUseCase: AssessConversationRiskUseCase,
+    observeTrustedSendersUseCase: ObserveTrustedSendersUseCase,
+    private val trustSendersUseCase: TrustSendersUseCase,
+    private val untrustSendersUseCase: UntrustSendersUseCase,
+    private val getTrustedAmongUseCase: GetTrustedAmongUseCase = GetTrustedAmongUseCase(),
 ) : ViewModel() {
     private val _uiState =
         MutableStateFlow(
@@ -101,6 +143,31 @@ class ConversationViewModel(
                 _uiState.value = _uiState.value.copy(messages = messages)
                 if (visible) markRead()
             }.launchIn(viewModelScope)
+        // Re-checked when messages arrive or the user trusts a sender.
+        val trusted = observeTrustedSendersUseCase()
+        combine(uiState.map { it.messages }.distinctUntilChanged(), trusted) { messages, trustedSet ->
+            messages to trustedSet
+        }.mapLatest { (messages, trustedSet) -> assessConversationRiskUseCase(messages, trustedSet) }
+            .onEach { risk -> _uiState.value = _uiState.value.copy(risk = risk) }
+            .launchIn(viewModelScope)
+        combine(uiState.map { it.addresses }.distinctUntilChanged(), trusted) { addresses, trustedSet ->
+            getTrustedAmongUseCase(addresses, trustedSet)
+        }.onEach { senders -> _uiState.value = _uiState.value.copy(trustedSenders = senders) }
+            .launchIn(viewModelScope)
+    }
+
+    /** Undoes a trust decision: this conversation's messages are checked, and flagged, again. */
+    fun stopTrustingSenders() {
+        val senders = _uiState.value.trustedSenders
+        if (senders.isEmpty()) return
+        viewModelScope.launch { untrustSendersUseCase(senders) }
+    }
+
+    /** The user confirmed they know who sent the flagged messages: lift the warning, enable links. */
+    fun trustFlaggedSenders() {
+        val senders = _uiState.value.risk.flaggedSenders
+        if (senders.isEmpty()) return
+        viewModelScope.launch { trustSendersUseCase(senders) }
     }
 
     fun onVisible(isVisible: Boolean) {
@@ -208,6 +275,10 @@ class ConversationViewModelFactory(
     private val deleteMessageUseCase: DeleteMessageUseCase,
     private val contactNameResolver: ContactNameResolver,
     private val downloadMmsUseCase: DownloadMmsUseCase,
+    private val assessConversationRiskUseCase: AssessConversationRiskUseCase,
+    private val observeTrustedSendersUseCase: ObserveTrustedSendersUseCase,
+    private val trustSendersUseCase: TrustSendersUseCase,
+    private val untrustSendersUseCase: UntrustSendersUseCase,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
@@ -224,5 +295,9 @@ class ConversationViewModelFactory(
             deleteMessageUseCase,
             contactNameResolver,
             downloadMmsUseCase,
+            assessConversationRiskUseCase,
+            observeTrustedSendersUseCase,
+            trustSendersUseCase,
+            untrustSendersUseCase,
         ) as T
 }

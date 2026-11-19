@@ -855,6 +855,10 @@ class MainActivity : ComponentActivity() {
                                         deleteMessageUseCase = appContainer.deleteMessageUseCase,
                                         contactNameResolver = appContainer.contactNameResolver,
                                         downloadMmsUseCase = appContainer.downloadMmsUseCase,
+                                        assessConversationRiskUseCase = appContainer.assessConversationRiskUseCase,
+                                        observeTrustedSendersUseCase = appContainer.observeTrustedSendersUseCase,
+                                        trustSendersUseCase = appContainer.trustSendersUseCase,
+                                        untrustSendersUseCase = appContainer.untrustSendersUseCase,
                                     ),
                             )
                         val state by conversationViewModel.uiState.collectAsState()
@@ -915,6 +919,9 @@ class MainActivity : ComponentActivity() {
                             onDelete = conversationViewModel::delete,
                             onDownload = conversationViewModel::download,
                             onErrorShown = conversationViewModel::onErrorShown,
+                            onOpenLink = ::openMessageLink,
+                            onTrustSenders = conversationViewModel::trustFlaggedSenders,
+                            onStopTrusting = conversationViewModel::stopTrustingSenders,
                         )
                     }
 
@@ -1746,6 +1753,16 @@ class MainActivity : ComponentActivity() {
 
     private fun openGoogleAppPasswordsPage() {
         openUrl(GOOGLE_APP_PASSWORDS_URL)
+    }
+
+    /**
+     * A link tapped in a message: text anyone could have sent. Only `http(s)` opens, and only in
+     * an app that declares itself browsable.
+     */
+    private fun openMessageLink(url: String) {
+        val uri = url.toUri().normalizeScheme()
+        if (uri.scheme != "http" && uri.scheme != "https") return
+        runCatching { startActivity(Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE)) }
     }
 
     private fun openUrl(url: String) {
