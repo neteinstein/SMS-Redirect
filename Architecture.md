@@ -521,6 +521,12 @@ ScheduledSmsRepository        ScheduledSmsScheduler (interface)
 - Abstracts the platform scheduling mechanism out of the domain layer, mirroring the `ContactNameResolver` domain/data split.
 - `scheduleInitial` / `scheduleNext` both enqueue a unique `OneTimeWorkRequest` keyed by `"scheduled_sms_<id>"` with `ExistingWorkPolicy.REPLACE`, so editing or re-arming a scheduled SMS always supersedes any previously pending work for that id.
 - `cancel` removes the unique work when a scheduled SMS is deleted, or when it's edited (cancel-then-reschedule-fresh, see `UpdateScheduledSmsUseCase`).
+- **Only a new schedule may arm a date that has passed.** `AddScheduledSmsUseCase` calls `scheduleInitial`, so a new schedule whose date is already past sends at once. Edit (`UpdateScheduledSmsUseCase`) and backup import (`ImportBackupUseCase`) call the `scheduleUpcoming` extension instead, which arms `RecurrenceCalculator.upcomingSend`:
+  - the stored date while it is still ahead;
+  - otherwise, the next repeat after now;
+  - otherwise, nothing.
+
+  A passed date was already sent (or missed), so re-arming it would send the SMS a second time.
 
 #### 2. SendScheduledSmsWorker (WorkManager CoroutineWorker)
 - Receives the scheduled SMS's row id as input data and delegates to `ScheduledSmsSender`.
@@ -538,6 +544,8 @@ ScheduledSmsRepository        ScheduledSmsScheduler (interface)
 
 1. **No clamping drift.** A monthly reminder anchored on the 31st clamps to the 28th/30th in short months (`java.time`'s `plusMonths` behavior), but the *following* occurrence is still computed as `anchor.plusMonths(2)`, correctly landing back on the 31st — not drifting to the 28th forever, which naive chaining off the previous result would cause.
 2. **No catch-up bursts.** If the device was off or the app was killed for a long time, `nextOccurrence(afterEpochMs = now)` returns only the single next occurrence after "now" — missed occurrences are skipped silently instead of firing a burst of catch-up sends. A `MAX_ITERATIONS` safety cap (10,000) guarantees the search always terminates.
+
+`upcomingSend(scheduledSms, now)` is the send that is actually next: the schedule's own date while that is still ahead, otherwise `nextOccurrence(afterEpochMs = now)`, or null when nothing is left. Both edit/import arming and the Schedule list's "Next send" use it (through `GetNextScheduledSendUseCase`). A send does not change the stored row, so the list recomputes when the screen resumes and once the earliest shown time passes.
 
 Supported `RepeatType`s: `NONE` (single send), `DAILY`, `WORK_WEEK_DAYS` (skips Saturday/Sunday), `BIWEEKLY`, `MONTHLY`, `YEARLY`. An optional `stopAtEpochMs` bounds how far the recurrence extends; once the next computed occurrence would land after it, recurrence stops.
 

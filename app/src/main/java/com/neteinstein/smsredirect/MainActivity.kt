@@ -736,9 +736,11 @@ class MainActivity : ComponentActivity() {
                                     )
                                 val scheduledSmsList by scheduleListViewModel.scheduledSmsList.collectAsState()
                                 val contactNames by scheduleListViewModel.contactNames.collectAsState()
+                                val nextSendTimes by scheduleListViewModel.nextSendTimes.collectAsState()
                                 ScheduleListScreen(
                                     scheduledSmsList = scheduledSmsList,
                                     contactNames = contactNames,
+                                    nextSendTimes = nextSendTimes,
                                     onAddScheduledSms = { requestCreate(Routes.scheduleRoute()) },
                                     onOpenHistory = { navController.navigate(Routes.ScheduleHistory) },
                                     onOpenSettings = { navController.navigate(Routes.Settings) },
@@ -753,6 +755,7 @@ class MainActivity : ComponentActivity() {
                                         updateBanner()
                                     },
                                     onFixBackgroundWarning = { openBatteryOptimizationSettings() },
+                                    onRefreshNextSendTimes = scheduleListViewModel::refreshNextSendTimes,
                                 )
                             }
                         }

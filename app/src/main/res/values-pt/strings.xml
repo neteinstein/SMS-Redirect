@@ -139,6 +139,7 @@
     <string name="schedule_default_name_format">SMS Agendado #%1$d</string>
     <string name="schedule_contact_format">Contacto: %1$s</string>
     <string name="schedule_next_send_format">Próximo envio: %1$s</string>
+    <string name="schedule_no_next_send">Sem próximo envio</string>
     <string name="schedule_repeat_format">Repetição: %1$s</string>
     <string name="schedule_cd_delete">Apagar</string>
 

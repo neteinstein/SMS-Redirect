@@ -13,6 +13,7 @@ import com.neteinstein.smsredirect.domain.repository.RuleRepository
 import com.neteinstein.smsredirect.domain.repository.ScheduledSmsRepository
 import com.neteinstein.smsredirect.domain.repository.SettingsRepository
 import com.neteinstein.smsredirect.domain.scheduling.ScheduledSmsScheduler
+import com.neteinstein.smsredirect.domain.scheduling.scheduleUpcoming
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -33,6 +34,7 @@ class ImportBackupUseCase(
     private val settingsRepository: SettingsRepository,
     private val scheduledSmsScheduler: ScheduledSmsScheduler,
     private val analyticsTracker: AnalyticsTracker = NoOpAnalyticsTracker,
+    private val now: () -> Long = System::currentTimeMillis,
 ) {
     suspend operator fun invoke(json: String): BackupImportResult {
         val trimmed = json.trim()
@@ -140,7 +142,9 @@ class ImportBackupUseCase(
 
             if (!isDuplicate && scheduledSms.isValid()) {
                 val id = scheduledSmsRepository.insert(scheduledSms)
-                scheduledSmsScheduler.scheduleInitial(scheduledSms.copy(id = id))
+                // A backup holds schedules that were already sending on the old phone. Arm only what
+                // is still ahead: arming a passed date would send each one again at once.
+                scheduledSmsScheduler.scheduleUpcoming(scheduledSms.copy(id = id), now())
                 importedCount++
             }
         }

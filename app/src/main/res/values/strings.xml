@@ -135,6 +135,7 @@
     <string name="schedule_default_name_format">Scheduled SMS #%1$d</string>
     <string name="schedule_contact_format">Contact: %1$s</string>
     <string name="schedule_next_send_format">Next send: %1$s</string>
+    <string name="schedule_no_next_send">No upcoming send</string>
     <string name="schedule_repeat_format">Repeat: %1$s</string>
     <string name="schedule_cd_delete">Delete</string>
 

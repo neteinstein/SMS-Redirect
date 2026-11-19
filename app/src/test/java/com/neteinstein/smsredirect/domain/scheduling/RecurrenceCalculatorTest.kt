@@ -1,6 +1,7 @@
 package com.neteinstein.smsredirect.domain.scheduling
 
 import com.neteinstein.smsredirect.domain.model.RepeatType
+import com.neteinstein.smsredirect.domain.model.ScheduledSms
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -314,6 +315,101 @@ class RecurrenceCalculatorTest {
                 anchorEpochMs = anchor,
                 repeatType = RepeatType.DAILY,
                 afterEpochMs = wayInTheFuture,
+                zoneId = ZoneOffset.UTC,
+            )
+
+        assertNull(result)
+    }
+
+    // --- upcomingSend ---
+
+    private fun scheduled(
+        dateEpochMs: Long,
+        repeatType: RepeatType,
+        stopAtEpochMs: Long? = null,
+    ) = ScheduledSms(
+        id = 1,
+        contactNumber = "555",
+        message = "hi",
+        dateEpochMs = dateEpochMs,
+        repeatType = repeatType,
+        stopAtEpochMs = stopAtEpochMs,
+    )
+
+    @Test
+    fun `upcomingSend is the schedule's own date while that is still ahead`() {
+        val date = epoch(2025, 7, 15, 10, 0)
+
+        val result =
+            RecurrenceCalculator.upcomingSend(
+                scheduled(date, RepeatType.DAILY),
+                nowEpochMs = epoch(2025, 7, 15, 9, 0),
+                zoneId = ZoneOffset.UTC,
+            )
+
+        assertEquals(date, result)
+    }
+
+    @Test
+    fun `upcomingSend moves a repeating schedule past its first send to the next occurrence`() {
+        val result =
+            RecurrenceCalculator.upcomingSend(
+                scheduled(epoch(2025, 7, 15, 10, 0), RepeatType.DAILY),
+                nowEpochMs = epoch(2025, 7, 15, 10, 1),
+                zoneId = ZoneOffset.UTC,
+            )
+
+        assertEquals(epoch(2025, 7, 16, 10, 0), result)
+    }
+
+    @Test
+    fun `upcomingSend skips every occurrence that has already passed`() {
+        val result =
+            RecurrenceCalculator.upcomingSend(
+                scheduled(epoch(2025, 7, 15, 10, 0), RepeatType.DAILY),
+                nowEpochMs = epoch(2025, 7, 20, 12, 0),
+                zoneId = ZoneOffset.UTC,
+            )
+
+        assertEquals(epoch(2025, 7, 21, 10, 0), result)
+    }
+
+    @Test
+    fun `upcomingSend treats a date equal to now as already due, not upcoming`() {
+        val date = epoch(2025, 7, 15, 10, 0)
+
+        val result =
+            RecurrenceCalculator.upcomingSend(
+                scheduled(date, RepeatType.DAILY),
+                nowEpochMs = date,
+                zoneId = ZoneOffset.UTC,
+            )
+
+        assertEquals(epoch(2025, 7, 16, 10, 0), result)
+    }
+
+    @Test
+    fun `upcomingSend has nothing left for a one-off whose date has passed`() {
+        val result =
+            RecurrenceCalculator.upcomingSend(
+                scheduled(epoch(2025, 7, 15, 10, 0), RepeatType.NONE),
+                nowEpochMs = epoch(2025, 7, 15, 10, 1),
+                zoneId = ZoneOffset.UTC,
+            )
+
+        assertNull(result)
+    }
+
+    @Test
+    fun `upcomingSend has nothing left once a repeating schedule reaches its stop date`() {
+        val result =
+            RecurrenceCalculator.upcomingSend(
+                scheduled(
+                    epoch(2025, 7, 15, 10, 0),
+                    RepeatType.DAILY,
+                    stopAtEpochMs = epoch(2025, 7, 17, 12, 0),
+                ),
+                nowEpochMs = epoch(2025, 7, 17, 10, 1),
                 zoneId = ZoneOffset.UTC,
             )
 

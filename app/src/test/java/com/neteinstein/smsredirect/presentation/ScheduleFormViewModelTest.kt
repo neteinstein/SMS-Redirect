@@ -46,11 +46,13 @@ class ScheduleFormViewModelTest {
         scheduler: FakeScheduledSmsScheduler = FakeScheduledSmsScheduler(),
         settingsRepository: FakeSettingsRepository = FakeSettingsRepository(),
         contacts: Map<String, String> = emptyMap(),
+        // The dates in these tests are small epoch values; a clock at 0 keeps them all still ahead.
+        now: () -> Long = { 0L },
     ): ScheduleFormViewModel =
         ScheduleFormViewModel(
             getScheduledSmsUseCase = GetScheduledSmsUseCase(repository),
             addScheduledSmsUseCase = AddScheduledSmsUseCase(repository, scheduler),
-            updateScheduledSmsUseCase = UpdateScheduledSmsUseCase(repository, scheduler),
+            updateScheduledSmsUseCase = UpdateScheduledSmsUseCase(repository, scheduler, now = now),
             getScheduledSmsCategoriesUseCase = GetScheduledSmsCategoriesUseCase(repository),
             scheduledSmsRepository = repository,
             getDefaultPrefixNowUseCase = GetDefaultPrefixNowUseCase(settingsRepository),
@@ -180,6 +182,36 @@ class ScheduleFormViewModelTest {
             assertEquals("updated", repository.getScheduledSmsSnapshot().first().message)
             assertEquals(listOf(1L), scheduler.cancelCalls)
             assertEquals(1, scheduler.scheduleInitialCalls.size)
+        }
+
+    @Test
+    fun `editing the repeat of a schedule that already sent does not send it again`() =
+        runTest {
+            val firstSend = 1_000_000L
+            val existing =
+                ScheduledSms(
+                    id = 1,
+                    contactNumber = "+351912345678",
+                    message = "Daily text",
+                    dateEpochMs = firstSend,
+                    repeatType = RepeatType.DAILY,
+                )
+            val repository = FakeScheduledSmsRepository(listOf(existing))
+            val scheduler = FakeScheduledSmsScheduler()
+            val vm = createViewModel(repository = repository, scheduler = scheduler, now = { firstSend + 60_000 })
+
+            vm.loadScheduledSms(1)
+            advanceUntilIdle()
+            vm.onRepeatTypeChanged(RepeatType.WORK_WEEK_DAYS)
+            vm.saveScheduledSms()
+            advanceUntilIdle()
+
+            assertTrue(vm.uiState.value.saved)
+            assertEquals(RepeatType.WORK_WEEK_DAYS, repository.getScheduledSms(1)?.repeatType)
+            // Arming the stored date again would fire at once: only a later occurrence may be armed.
+            assertTrue(scheduler.scheduleInitialCalls.isEmpty())
+            assertEquals(1, scheduler.scheduleNextCalls.size)
+            assertTrue(scheduler.scheduleNextCalls.single().second > firstSend + 60_000)
         }
 
     @Test

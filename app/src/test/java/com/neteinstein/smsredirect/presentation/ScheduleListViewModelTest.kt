@@ -3,8 +3,10 @@ package com.neteinstein.smsredirect.presentation
 import com.neteinstein.smsredirect.FakeContactNameResolver
 import com.neteinstein.smsredirect.FakeScheduledSmsRepository
 import com.neteinstein.smsredirect.FakeScheduledSmsScheduler
+import com.neteinstein.smsredirect.domain.model.RepeatType
 import com.neteinstein.smsredirect.domain.model.ScheduledSms
 import com.neteinstein.smsredirect.domain.usecase.DeleteScheduledSmsUseCase
+import com.neteinstein.smsredirect.domain.usecase.GetNextScheduledSendUseCase
 import com.neteinstein.smsredirect.domain.usecase.GetScheduledSmsListUseCase
 import com.neteinstein.smsredirect.domain.usecase.ReorderScheduledSmsUseCase
 import com.neteinstein.smsredirect.presentation.schedule.ScheduleListViewModel
@@ -130,5 +132,42 @@ class ScheduleListViewModelTest {
             advanceUntilIdle()
 
             assertEquals(emptyMap<String, String>(), vm.contactNames.value)
+        }
+
+    @Test
+    fun `next send is the upcoming occurrence, not the first send time`() =
+        runTest {
+            val hour = 3_600_000L
+            val firstSend = 100 * hour
+            var now = firstSend - hour
+            val repository =
+                FakeScheduledSmsRepository(
+                    listOf(
+                        ScheduledSms(
+                            id = 1,
+                            contactNumber = "555",
+                            message = "hourly",
+                            dateEpochMs = firstSend,
+                            repeatType = RepeatType.HOURLY,
+                        ),
+                        ScheduledSms(id = 2, contactNumber = "555", message = "one-off", dateEpochMs = firstSend),
+                    ),
+                )
+            val vm =
+                ScheduleListViewModel(
+                    GetScheduledSmsListUseCase(repository),
+                    DeleteScheduledSmsUseCase(repository, FakeScheduledSmsScheduler()),
+                    ReorderScheduledSmsUseCase(repository),
+                    getNextScheduledSendUseCase = GetNextScheduledSendUseCase(now = { now }),
+                )
+            advanceUntilIdle()
+            assertEquals(mapOf(1L to firstSend, 2L to firstSend), vm.nextSendTimes.value)
+
+            // Both send; the stored schedules do not change, so the list has to be refreshed.
+            now = firstSend + 60_000
+            vm.refreshNextSendTimes()
+
+            // The repeat shows its next send; the one-off has none left.
+            assertEquals(mapOf(1L to firstSend + hour), vm.nextSendTimes.value)
         }
 }
