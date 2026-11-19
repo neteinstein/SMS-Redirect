@@ -33,7 +33,8 @@ const path = require('path');
     if (f % 300 === 0) console.log('frame', f, '/', N);
   }
   ff.stdin.end();
-  await new Promise(r => ff.on('close', r));
+  const code = await new Promise(r => ff.on('close', (c, sig) => r(sig ? sig : c)));
+  if (code !== 0) { console.error('ffmpeg failed:', code); await b.close(); process.exit(1); }
   await b.close();
   console.log('done', DUR.toFixed(1) + 's');
 })();

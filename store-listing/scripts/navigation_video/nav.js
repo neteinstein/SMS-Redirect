@@ -30,29 +30,36 @@ document.head.insertAdjacentHTML("beforeend", `<style>
 </style>`);
 
 // ---------------- extra / updated screens ----------------
+// RuleScreen, in its order: type selector, name, category, sender, then Target (Redirect) or
+// the phone-action section, then Save Rule.
 const ruleTypeBlock = (phone) => `
-    <div class="body" style="margin-top:18px;font-weight:500">What should happen?</div>
+    <div class="body" style="margin-top:4px;font-weight:500">What should happen?</div>
     <div class="seg"><div class="${phone ? "" : "on"}">${phone ? "" : ic("check")}Redirect</div><div class="${phone ? "on" : ""}">${phone ? ic("check") : ""}Phone action</div></div>`;
+const categoryField = (v) => tf("Category", v, { trail: ic("arrow_drop_down", "", "color:var(--on-variant)") });
+const senderField = (label, v) => `<div class="row">${tf(label, v).replace('class="tf', 'style="flex:1" class="tf')}<div class="ib" style="margin-top:14px;color:var(--primary)">${ic("contact_phone")}</div></div>`;
 
 const RULE_FORM_REDIRECT = () => app(`
-    ${tf("Rule Name", "Optional - auto-generated if empty", { ph: true })}
     ${ruleTypeBlock(false)}
-    <div class="row">${tf("Sender", "WorkBank").replace('class="tf', 'style="flex:1" class="tf')}<div class="ib" style="margin-top:14px;color:var(--primary)">${ic("contact_phone")}</div></div>
-    <div class="row">${tf("Target Number", "+351 912 345 678").replace('class="tf', 'style="flex:1" class="tf')}<div class="ib" style="margin-top:14px;color:var(--primary)">${ic("contact_phone")}</div></div>
-    ${tf("Category", "Work", { trail: ic("arrow_drop_down", "", "color:var(--on-variant)") })}
+    ${tf("Rule Name", "Optional - auto-generated if empty", { ph: true })}
+    ${categoryField("Work")}
+    ${senderField("Sender", "WorkBank")}
+    ${senderField("Target Number", "+351 912 345 678")}
     <div class="btn big" style="margin-top:24px">Save Rule</div>`,
   { title: "Create Rule", back: true });
 
 const RULE_FORM_PHONE = () => app(`
-    ${tf("Rule Name", "Mom calling for help")}
     ${ruleTypeBlock(true)}
-    <div class="row">${tf("Sender (optional)", "Mom").replace('class="tf', 'style="flex:1" class="tf')}<div class="ib" style="margin-top:14px;color:var(--primary)">${ic("contact_phone")}</div></div>
+    ${tf("Rule Name", "Mom calling for help")}
+    ${categoryField("Family")}
+    ${senderField("Sender (optional)", "Mom")}
     ${tf("Message contains", "urgent")}
     <p class="small muted" style="margin:4px 16px 0">Not case-sensitive. Leave empty to match every message from the sender.</p>
     ${tf("Action", "Ring at maximum volume", { trail: ic("arrow_drop_down", "", "color:var(--on-variant)") })}
     <p class="small muted" style="margin-top:8px">Rings at full volume for up to a minute, even when the phone is on silent. Stop it from the notification.</p>
-    <div class="obtn" style="margin-top:14px">Try it now</div>
-    <div class="btn big" style="margin-top:14px">Save Rule</div>`,
+    <div style="font-size:16px;margin-top:8px">Sound: Default alarm sound</div>
+    <div class="row" style="gap:8px;margin-top:4px"><div class="obtn" style="padding:0 20px">System sounds</div><div class="obtn" style="padding:0 20px">Song from files</div></div>
+    <div class="obtn" style="margin-top:12px">Try it now</div>
+    <div class="btn big" style="margin-top:16px">Save Rule</div>`,
   { title: "Create Rule", back: true });
 
 const NEW_MESSAGE = () => app(`
